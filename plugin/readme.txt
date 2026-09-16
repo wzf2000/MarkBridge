@@ -3,7 +3,7 @@ Tags: markdown, blocks, editor, mathjax, revisions
 Requires at least: 7.1
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 0.7.0-rc.1
+Stable tag: 0.7.0-rc.2
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -20,5 +20,5 @@ This release candidate requires Linux, Node.js 24 LTS, bubblewrap and a configur
 3. Upload the built plugin, enable MarkBridge and verify isolated drafts before adopting existing content.
 
 == Changelog ==
-= 0.7.0-rc.1 =
-Public source candidate: portable runtime configuration, readable formatting, Unicode emoji and release documentation.
+= 0.7.0-rc.2 =
+Includes the content-preserving trash/restore fix and a uniquely versioned candidate package.

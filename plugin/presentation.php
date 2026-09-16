@@ -70,7 +70,7 @@ add_action(
             'markbridge-emoji',
             plugins_url(mbb_asset('emoji.js'), __FILE__),
             [],
-            '0.7.0-rc.1',
+            '0.7.0-rc.2',
             true,
         );
     },
