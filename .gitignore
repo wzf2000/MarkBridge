@@ -10,5 +10,5 @@ dist/
 plugin/kernel.js
 plugin/emoji.js
 plugin/assets.json
-plugin/*-????????????.*
+plugin/*-[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f].*
 plugin/vendor/mathjax*/
