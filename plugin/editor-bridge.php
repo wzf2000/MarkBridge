@@ -590,6 +590,7 @@ add_filter(
     function ($result, $server, $r) {
         if (
             $r->get_method() !== 'GET' &&
+            $r->get_method() !== 'DELETE' &&
             preg_match('~^/wp/v2/(?:posts|pages)/(\d+)(?:/|$)~', $r->get_route(), $m) &&
             mbb_managed((int) $m[1]) &&
             current_user_can('edit_post', (int) $m[1])
@@ -635,7 +636,9 @@ add_action('admin_menu', function () {
             $page = max(1, absint($_GET['mbb_page'] ?? 1));
             $posts = get_posts([
                 'post_type' => 'post',
-                'post_status' => array_keys(get_post_stati()),
+                'post_status' => array_values(
+                    array_diff(array_keys(get_post_stati()), ['trash', 'auto-draft']),
+                ),
                 'numberposts' => 101,
                 'offset' => ($page - 1) * 100,
                 'orderby' => ['date' => 'DESC', 'ID' => 'DESC'],
@@ -716,3 +719,5 @@ function mbb_enqueue_ui()
     );
 }
 add_action('admin_enqueue_scripts', 'mbb_enqueue_ui');
+
+require_once __DIR__ . '/lifecycle.php';
