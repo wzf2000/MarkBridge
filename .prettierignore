@@ -4,7 +4,7 @@ plugin/vendor/
 plugin/licenses/
 plugin/kernel.js
 plugin/emoji.js
-plugin/*-????????????.*
+plugin/*-[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f].*
 plugin/assets.json
 dist/
 .runtime/

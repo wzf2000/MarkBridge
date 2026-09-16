@@ -1,1 +1,57 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc"><title id="title">MarkBridge</title><desc id="desc">Markdown and WordPress blocks, kept together.</desc><defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#101525"/><stop offset="1" stop-color="#202b43"/></linearGradient><linearGradient id="accent"><stop stop-color="#7dd3fc"/><stop offset="1" stop-color="#c4b5fd"/></linearGradient></defs><rect width="1200" height="360" rx="24" fill="url(#bg)"/><path d="M0 290 Q310 100 600 260 T1200 170" fill="none" stroke="#344466" stroke-width="1"/><text x="72" y="94" fill="#7dd3fc" font-family="monospace" font-size="15" letter-spacing="4">WRITE IN MARKDOWN. THINK IN BLOCKS.</text><text x="68" y="184" fill="#f8fafc" font-family="system-ui,sans-serif" font-size="76" font-weight="750">MarkBridge</text><text x="74" y="232" fill="#b6c5da" font-family="system-ui,sans-serif" font-size="23">Two ways to write. One document to trust.</text><rect x="780" y="84" width="132" height="180" rx="15" fill="#17243a" stroke="#56708c"/><text x="807" y="147" fill="#7dd3fc" font-family="monospace" font-size="33">M↓</text><path d="M805 184h80m-80 18h58m-58 18h68" stroke="#597088" stroke-width="6" stroke-linecap="round"/><path d="M937 153h49m-11-10 11 10-11 10m11 35h-49m11-10-11 10 11 10" fill="none" stroke="url(#accent)" stroke-width="4"/><rect x="1011" y="84" width="132" height="180" rx="15" fill="#20213b" stroke="#766f9d"/><rect x="1035" y="113" width="83" height="33" rx="5" fill="#a5b4fc"/><rect x="1035" y="161" width="37" height="61" rx="5" fill="#6e81b1"/><rect x="1082" y="161" width="36" height="61" rx="5" fill="#a78bfa"/></svg>
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="1200"
+  height="360"
+  viewBox="0 0 1200 360"
+  role="img"
+  aria-labelledby="title desc"
+>
+  <title id="title">MarkBridge</title>
+  <desc id="desc">Markdown and WordPress blocks, kept together.</desc>
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1">
+      <stop stop-color="#101525" />
+      <stop offset="1" stop-color="#202b43" />
+    </linearGradient>
+    <linearGradient id="accent">
+      <stop stop-color="#7dd3fc" />
+      <stop offset="1" stop-color="#c4b5fd" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="360" rx="24" fill="url(#bg)" />
+  <path d="M0 290 Q310 100 600 260 T1200 170" fill="none" stroke="#344466" stroke-width="1" />
+  <text x="72" y="94" fill="#7dd3fc" font-family="monospace" font-size="15" letter-spacing="4">
+    WRITE IN MARKDOWN. THINK IN BLOCKS.
+  </text>
+  <text
+    x="68"
+    y="184"
+    fill="#f8fafc"
+    font-family="system-ui,sans-serif"
+    font-size="76"
+    font-weight="750"
+  >
+    MarkBridge
+  </text>
+  <text x="74" y="232" fill="#b6c5da" font-family="system-ui,sans-serif" font-size="23">
+    Two ways to write. One document to trust.
+  </text>
+  <rect x="780" y="84" width="132" height="180" rx="15" fill="#17243a" stroke="#56708c" />
+  <text x="807" y="147" fill="#7dd3fc" font-family="monospace" font-size="33">M↓</text>
+  <path
+    d="M805 184h80m-80 18h58m-58 18h68"
+    stroke="#597088"
+    stroke-width="6"
+    stroke-linecap="round"
+  />
+  <path
+    d="M937 153h49m-11-10 11 10-11 10m11 35h-49m11-10-11 10 11 10"
+    fill="none"
+    stroke="url(#accent)"
+    stroke-width="4"
+  />
+  <rect x="1011" y="84" width="132" height="180" rx="15" fill="#20213b" stroke="#766f9d" />
+  <rect x="1035" y="113" width="83" height="33" rx="5" fill="#a5b4fc" />
+  <rect x="1035" y="161" width="37" height="61" rx="5" fill="#6e81b1" />
+  <rect x="1082" y="161" width="36" height="61" rx="5" fill="#a78bfa" />
+</svg>

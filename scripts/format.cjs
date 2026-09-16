@@ -22,7 +22,7 @@ function files(dir) {
     if (entry.isDirectory()) return files(file);
     const relative = path.relative(root, file).replaceAll(path.sep, '/');
     if (/^plugin\/(kernel\.js|emoji\.js|assets\.json|.*-[a-f0-9]{12}\.)/.test(relative)) return [];
-    return /\.(php|js|cjs|css|json|md|html|yml|yaml)$/.test(file) ? [file] : [];
+    return /\.(php|js|cjs|css|json|md|html|svg|yml|yaml)$/.test(file) ? [file] : [];
   });
 }
 (async () => {
@@ -36,7 +36,11 @@ function files(dir) {
           end_with_newline: true,
           preserve_newlines: true,
         })
-      : await prettier.format(input, { ...(await prettier.resolveConfig(file)), filepath: file });
+      : await prettier.format(input, {
+          ...(await prettier.resolveConfig(file)),
+          filepath: file,
+          ...(file.endsWith('.svg') ? { parser: 'html' } : {}),
+        });
     if (input === output) continue;
     changed++;
     if (check) console.error(path.relative(root, file));
