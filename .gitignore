@@ -1,0 +1,14 @@
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+.env*
+*.sql*
+*.log
+dist/
+.runtime/
+plugin/kernel.js
+plugin/emoji.js
+plugin/assets.json
+plugin/*-????????????.*
+plugin/vendor/mathjax*/

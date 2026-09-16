@@ -1,0 +1,29 @@
+{
+  "name": "markbridge",
+  "version": "0.7.0-rc.1",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/copy-math-assets.cjs && esbuild src/kernel.js --bundle --format=iife --global-name=MBB --outfile=plugin/kernel.js && esbuild src/emoji.js --bundle --format=iife --outfile=plugin/emoji.js && node scripts/build-ui-assets.cjs",
+    "format": "node scripts/format.cjs",
+    "format:check": "node scripts/format.cjs --check",
+    "test": "node tests/kernel.cjs",
+    "check": "npm run format:check && npm run build && python3 scripts/check_release.py",
+    "package": "python3 scripts/package.py"
+  },
+  "dependencies": {
+    "markdown-it": "14.3.2",
+    "mathjax": "4.1.3",
+    "emojilib": "2.4.0"
+  },
+  "devDependencies": {
+    "@prettier/plugin-php": "0.25.0",
+    "esbuild": "0.25.10",
+    "js-beautify": "2.0.3",
+    "prettier": "3.9.6"
+  },
+  "description": "Markdown and WordPress blocks, kept together.",
+  "license": "GPL-3.0-or-later",
+  "engines": {
+    "node": ">=24.15.0"
+  }
+}

@@ -1,0 +1,170 @@
+#mbb-toolbar {
+  position: fixed;
+  bottom: 22px;
+  left: 12px;
+  right: auto;
+  width: max-content;
+  box-sizing: border-box;
+  flex-wrap: wrap;
+  z-index: 30;
+  background: #fff;
+  border: 1px solid #bbb;
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: 0 2px 10px #0002;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font: 14px system-ui;
+}
+#mbb-toolbar button,
+#mbb-dialog button {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+#mbb-dialog {
+  width: min(1060px, 92vw);
+  height: 86vh;
+  max-height: 90vh;
+  border: 1px solid #bbb;
+  border-radius: 10px;
+  padding: 18px;
+  box-sizing: border-box;
+  font: 15px/1.5 system-ui;
+}
+#mbb-dialog::backdrop {
+  background: #0006;
+}
+.mbb-dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.mbb-fields {
+  display: flex;
+  gap: 16px;
+}
+.mbb-fields label {
+  flex: 1;
+}
+.mbb-fields input {
+  display: block;
+  width: 100%;
+  margin: 4px 0 12px;
+}
+.mbb-actions {
+  display: flex;
+  gap: 12px;
+  margin: 12px 0;
+}
+#mbb-source {
+  display: block;
+  width: 100%;
+  height: 32vh;
+  margin-top: 12px;
+  font: 14px/1.5 monospace;
+  box-sizing: border-box;
+}
+#mbb-source[hidden] {
+  display: none;
+}
+#mbb-dialog iframe {
+  width: 100%;
+  height: 42vh;
+  border: 1px solid #ddd;
+}
+.mbb-diff-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.mbb-diff-grid pre {
+  max-height: 220px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 12px;
+}
+.mbb-before {
+  background: #fff0f0;
+}
+.mbb-after {
+  background: #edffed;
+}
+.mbb-error {
+  color: #b32d2e;
+}
+.mbb-status {
+  color: #126b35;
+}
+@media (max-width: 600px) {
+  #mbb-toolbar {
+    bottom: 8px;
+    font-size: 12px;
+  }
+  #mbb-toolbar span {
+    display: none;
+  }
+  .mbb-fields {
+    display: block;
+  }
+  .mbb-diff-grid {
+    grid-template-columns: 1fr;
+  }
+  #mbb-dialog {
+    width: 96vw;
+    padding: 12px;
+  }
+  #mbb-dialog h2 {
+    font-size: 18px;
+  }
+}
+
+#mbb-revisions-dialog {
+  width: min(1060px, 92vw);
+  height: 86vh;
+  max-height: 90vh;
+  border: 1px solid #bbb;
+  border-radius: 10px;
+  padding: 18px;
+  box-sizing: border-box;
+  font: 15px/1.5 system-ui;
+}
+#mbb-revisions-dialog::backdrop {
+  background: #0006;
+}
+#mbb-revisions-dialog button {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+#mbb-revisions-dialog select {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  margin: 10px 0;
+}
+#mbb-revisions-dialog iframe {
+  width: 100%;
+  height: 42vh;
+  border: 1px solid #ddd;
+}
+@media (max-width: 600px) {
+  #mbb-revisions-dialog {
+    width: 96vw;
+    padding: 12px;
+  }
+  #mbb-revisions-dialog h2 {
+    font-size: 18px;
+  }
+  #mbb-revisions-dialog .mbb-actions {
+    flex-wrap: wrap;
+  }
+}
+
+#mbb-toolbar[hidden] {
+  display: none !important;
+}
+#mbb-toolbar button {
+  max-width: 100%;
+  white-space: normal;
+}

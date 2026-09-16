@@ -1,0 +1,68 @@
+.mbb-document {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.mbb-document pre {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.mbb-document table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.mbb-document .mbb-typeset {
+  display: inline-block;
+  max-width: 100%;
+  overflow-x: auto;
+  vertical-align: middle;
+}
+.mbb-document pre.wp-block-mbb-math {
+  white-space: normal;
+  background: transparent;
+}
+.mbb-document mjx-container[display='true'] {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.mbb-reading .post-page .row > [class*='col-'],
+.mbb-reading .post-content-inner {
+  min-width: 0;
+  max-width: 100%;
+}
+.mbb-math-preview {
+  padding: 8px;
+  border: 1px solid #ddd;
+  max-width: 100%;
+  overflow: auto;
+}
+.mbb-math-preview small {
+  display: block;
+  color: #555;
+}
+@media (max-width: 767px) {
+  .mbb-reading .post-page .col-padding {
+    padding: 16px !important;
+  }
+}
+
+.mbb-paragraph-preview p {
+  margin: 8px 0 0;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.mbb-paragraph-preview .mbb-typeset {
+  display: inline-block;
+  max-width: 100%;
+  overflow-x: auto;
+  vertical-align: middle;
+}
+.mbb-paragraph-preview mjx-container {
+  max-width: 100%;
+}
+.mbb-paragraph-preview button {
+  margin-left: 8px;
+}
