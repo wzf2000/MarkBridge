@@ -21,7 +21,12 @@ function files(dir) {
     const file = path.join(dir, entry.name);
     if (entry.isDirectory()) return files(file);
     const relative = path.relative(root, file).replaceAll(path.sep, '/');
-    if (/^plugin\/(kernel\.js|emoji\.js|assets\.json|.*-[a-f0-9]{12}\.)/.test(relative)) return [];
+    if (
+      /^plugin\/(kernel\.js|emoji\.js|assets\.json|runtime-contract\.json|vendor-manifest\.json|.*-[a-f0-9]{12}\.)/.test(
+        relative,
+      )
+    )
+      return [];
     return /\.(php|js|cjs|css|json|md|html|svg|yml|yaml)$/.test(file) ? [file] : [];
   });
 }

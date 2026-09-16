@@ -12,3 +12,5 @@ plugin/emoji.js
 plugin/assets.json
 plugin/*-[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f].*
 plugin/vendor/mathjax*/
+plugin/runtime-contract.json
+plugin/vendor-manifest.json

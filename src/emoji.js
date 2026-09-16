@@ -11,10 +11,27 @@ function renderEmoji(root) {
       )
     )
       continue;
-    node.nodeValue = node.nodeValue.replace(
-      /:([a-zA-Z0-9_+\-]+):/g,
-      (match, name) => emojis.lib[name]?.char ?? match,
-    );
+    const images = window.MBB_EMOJI_IMAGES || {};
+    const parts = node.nodeValue.split(/(:[a-zA-Z0-9_+\-]+:)/g);
+    if (parts.length === 1) continue;
+    const fragment = document.createDocumentFragment();
+    for (const part of parts) {
+      const name = part.startsWith(':') && part.endsWith(':') ? part.slice(1, -1) : '';
+      const fallback = emojis.lib[name]?.char ?? part;
+      if (name && Object.hasOwn(images, name)) {
+        const img = document.createElement('img');
+        img.src = images[name];
+        img.alt = part;
+        img.width = img.height = 20;
+        img.className = 'mbb-emoji';
+        img.style.cssText = 'display:inline-block;width:1.25em;height:1.25em;vertical-align:middle';
+        img.addEventListener('error', () => img.replaceWith(document.createTextNode(fallback)), {
+          once: true,
+        });
+        fragment.append(img);
+      } else fragment.append(document.createTextNode(fallback));
+    }
+    node.replaceWith(fragment);
   }
 }
 if (document.readyState === 'loading')

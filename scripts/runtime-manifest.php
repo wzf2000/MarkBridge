@@ -16,6 +16,18 @@ foreach ($scripts->to_do as $handle) {
     if (!$relative || !is_file(ABSPATH . ltrim($relative, '/'))) {
         throw new RuntimeException('Non-core script dependency: ' . $handle);
     }
-    $paths[] = $relative;
+    $paths[$relative] = hash_file('sha256', ABSPATH . ltrim($relative, '/'));
 }
-echo wp_json_encode(['wordpress' => get_bloginfo('version'), 'scripts' => $paths]);
+echo wp_json_encode([
+    'format' => 1,
+    'wordpress' => get_bloginfo('version'),
+    'scripts' => array_keys($paths),
+    'core_sha256' => $paths,
+    'public_roots' => array_values(
+        array_filter([
+            realpath(ABSPATH),
+            realpath(WP_CONTENT_DIR),
+            realpath(wp_upload_dir(null, false)['basedir']),
+        ]),
+    ),
+]);

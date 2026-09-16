@@ -69,77 +69,17 @@ function mbb_error($code, $message, $status = 409)
 }
 function mbb_convert($input)
 {
-    $lock_path = sys_get_temp_dir() . '/mbb-converter-' . hash('sha256', ABSPATH) . '.lock';
-    $cli = false;
-    $slot = null;
-    if (!$cli) {
-        $slot = fopen($lock_path, 'c');
-        if (!$slot || !flock($slot, LOCK_EX | LOCK_NB)) {
-            return mbb_error('busy', '转换服务正在处理另一请求，请稍后重试。', 409);
-        }
+    $diagnostics = mbb_runtime_diagnostics();
+    if (!$diagnostics['ok']) {
+        return mbb_error(
+            'runtime_incompatible',
+            '转换运行环境未配置或与当前插件、WordPress 不兼容，原内容未写入。',
+            503,
+        );
     }
-    $worker_root = mbb_is_lab() ? mbb_runtime() : '/opt/markbridge-runtime';
-    $command = ['/usr/bin/timeout', '25'];
-    if (!mbb_is_lab()) {
-        $command = array_merge($command, [
-            '/usr/bin/env',
-            '-i',
-            'PATH=/usr/bin:/bin',
-            'HOME=/tmp',
-            '/usr/bin/bwrap',
-            '--unshare-all',
-            '--die-with-parent',
-            '--new-session',
-            '--ro-bind',
-            '/usr',
-            '/usr',
-            '--ro-bind',
-            '/lib',
-            '/lib',
-            '--ro-bind',
-            '/lib64',
-            '/lib64',
-            '--ro-bind',
-            mbb_runtime(),
-            $worker_root,
-            '--proc',
-            '/proc',
-            '--dev',
-            '/dev',
-            '--tmpfs',
-            '/tmp',
-            '--setenv',
-            'HOME',
-            '/tmp',
-            '--chdir',
-            '/tmp',
-        ]);
-    }
-    $command = array_merge($command, [
-        mbb_is_lab() ? '/usr/bin/node' : $worker_root . '/node/bin/node',
-        mbb_is_lab() ? __DIR__ . '/worker.cjs' : $worker_root . '/worker.cjs',
-        $worker_root,
-    ]);
-    // CLI callers use the same operating-system identity and lock as PHP-FPM.
-    $pipes = [];
-    $process = proc_open($command, [['pipe', 'r'], ['pipe', 'w'], ['pipe', 'w']], $pipes);
-    if (!is_resource($process)) {
-        return mbb_error('worker', '转换服务不可用。', 503);
-    }
-    fwrite($pipes[0], wp_json_encode($input));
-    fclose($pipes[0]);
-    $output = stream_get_contents($pipes[1]);
-    fclose($pipes[1]);
-    stream_get_contents($pipes[2]);
-    fclose($pipes[2]);
-    $exit = proc_close($process);
-    if ($slot) {
-        flock($slot, LOCK_UN);
-        fclose($slot);
-    }
-    $result = json_decode($output, true);
-    if ($exit !== 0 || !is_array($result)) {
-        return mbb_error('worker', '转换服务未完成，原内容未写入。', 503);
+    $result = mbb_run_worker($input);
+    if (is_wp_error($result)) {
+        return $result;
     }
     if (empty($result['ok'])) {
         return mbb_error(

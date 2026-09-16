@@ -1,9 +1,9 @@
 {
   "name": "markbridge",
-  "version": "0.7.0-rc.2",
+  "version": "0.7.0-rc.3",
   "private": true,
   "scripts": {
-    "build": "node scripts/copy-math-assets.cjs && esbuild src/kernel.js --bundle --format=iife --global-name=MBB --outfile=plugin/kernel.js && esbuild src/emoji.js --bundle --format=iife --outfile=plugin/emoji.js && node scripts/build-ui-assets.cjs",
+    "build": "node scripts/copy-math-assets.cjs && esbuild src/kernel.js --bundle --format=iife --global-name=MBB --outfile=plugin/kernel.js && esbuild src/emoji.js --bundle --format=iife --outfile=plugin/emoji.js && node scripts/build-ui-assets.cjs && node scripts/build-runtime-contract.cjs",
     "format": "node scripts/format.cjs",
     "format:check": "node scripts/format.cjs --check",
     "test": "node tests/kernel.cjs",

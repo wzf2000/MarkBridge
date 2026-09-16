@@ -8,7 +8,7 @@
 </p>
 
 <p align="center"><strong>用 Markdown 写作，用区块调整。保存时，让两种格式保持一致。</strong></p>
-<p align="center"><a href="#开始使用">开始使用</a> · <a href="docs/INSTALL.md">安装</a> · <a href="docs/ARCHITECTURE.md">工作原理</a> · <a href="CONTRIBUTING.md">参与开发</a> · <a href="CHANGELOG.md">更新记录</a></p>
+<p align="center"><a href="#开始使用">开始使用</a> · <a href="docs/index.md">文档</a> · <a href="docs/INSTALL.md">安装</a> · <a href="CONTRIBUTING.md">参与开发</a> · <a href="CHANGELOG.md">更新记录</a></p>
 
 ## 为什么是 MarkBridge？
 
@@ -36,7 +36,7 @@ flowchart LR
 
 ## 开始使用
 
-**当前为 `0.7.0-rc.2`，面向能管理服务器的 WordPress 站点。** 它需要一个私有 Node.js 转换运行环境和 Linux 沙箱，不能只上传 ZIP 就完成配置。当前未提交 WordPress.org 插件目录。
+**当前为 `0.7.0-rc.3`，面向能管理服务器的 WordPress 站点。** 它需要一个私有 Node.js 转换运行环境和 Linux 沙箱，不能只上传 ZIP 就完成配置。当前未提交 WordPress.org 插件目录。
 
 1. 按照 [安装指南](docs/INSTALL.md) 构建插件、准备私有转换运行环境并启用。
 2. 打开后台 **工具 → Markdown 编辑桥**，输入稳定文档 ID、标题和 Markdown。
@@ -67,7 +67,7 @@ flowchart LR
 
 ## 后续计划
 
-正式版剩余验收及 1.0.0 开发交接见 [版本路线图](docs/ROADMAP.md)。计划与实际验收结果分别记录，未完成项不代表已提供的功能。
+统一发行与正式版验收正在实施，原 1.0.0 候选及边界见 [版本路线](docs/plans/active/ROADMAP.md)。计划与实际验收结果分别记录，未完成项不代表已提供的功能。
 
 ## 开发
 
@@ -81,9 +81,11 @@ npm run check
 npm run package
 ```
 
+发行打包要求已提交的干净工作树；完整自动检查见 [发布流程](docs/RELEASING.md)。
+
 Node.js 使用 **24 LTS（24.15.0+）**。格式规范、运行测试和目录说明见 [CONTRIBUTING.md](CONTRIBUTING.md)。PHP 使用 4 空格与 PER-CS 式括号；JS/CSS/JSON 使用 2 空格；目标 100 列。
 
-构建得到 `dist/markbridge-0.7.0-rc.2.zip`。仓库保留可读源码，构建产物与第三方文件不参与手工格式化。完整运行测试需要按安装指南准备与目标 WordPress 匹配的私有运行环境。
+构建得到 `dist/markbridge-0.7.0-rc.3.zip`。仓库保留可读源码，构建产物与第三方文件不参与手工格式化。完整运行测试需要按安装指南准备与目标 WordPress 匹配的私有运行环境。
 
 ## 许可证与致谢
 
