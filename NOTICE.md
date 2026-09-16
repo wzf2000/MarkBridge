@@ -22,7 +22,7 @@ Upstream release metadata: https://github.com/LuRenJiasWorld/WP-Editor.md/blob/m
 
 The copied legacy Prism/clipboard assets keep their original bytes and notices; their provenance is the former WP Editor.md dependency bundle. New asset versions require a separate review.
 
-The previous site-specific emoji image pack is **not distributed**. Public builds use Unicode characters rendered by the reader's fonts.
+Emoji image packs are **not distributed**. Builds use Unicode characters rendered by the reader's fonts.
 
 ## Development tools
 

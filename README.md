@@ -36,7 +36,7 @@ flowchart LR
 
 ## 开始使用
 
-**当前为 `0.7.0-rc.2`，面向能管理服务器的 WordPress 站点。** 它需要一个私有 Node.js 转换运行环境和 Linux 沙箱，不能只上传 ZIP 就完成配置。公开候选尚未替换原维护站点的版本，也未提交 WordPress.org 插件目录。
+**当前为 `0.7.0-rc.2`，面向能管理服务器的 WordPress 站点。** 它需要一个私有 Node.js 转换运行环境和 Linux 沙箱，不能只上传 ZIP 就完成配置。当前未提交 WordPress.org 插件目录。
 
 1. 按照 [安装指南](docs/INSTALL.md) 构建插件、准备私有转换运行环境并启用。
 2. 打开后台 **工具 → Markdown 编辑桥**，输入稳定文档 ID、标题和 Markdown。
