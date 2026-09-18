@@ -98,6 +98,20 @@ function mbb_source_audit_permission($r)
     }
     return true;
 }
+function mbb_source_record_audit($id, $fields)
+{
+    update_post_meta(
+        $id,
+        '_mbb_source_web_audit',
+        array_merge(
+            [
+                'user_id' => get_current_user_id(),
+                'time' => current_time('mysql', true),
+            ],
+            $fields,
+        ),
+    );
+}
 function mbb_error($code, $message, $status = 409)
 {
     return new WP_Error($code, $message, ['status' => $status]);
@@ -615,14 +629,33 @@ add_action('rest_api_init', function () {
             }
             $target = mbb_source_target($p);
             if (is_wp_error($target)) {
+                mbb_source_record_audit($id, [
+                    'source_sha256_before' => null,
+                    'source_sha256_after' => null,
+                    'result' => 'failed',
+                    'code' => $target->get_error_code(),
+                ]);
                 return $target;
             }
             $current = mbb_source_fingerprint($target);
             if (is_wp_error($current)) {
+                mbb_source_record_audit($id, [
+                    'source_sha256_before' => null,
+                    'source_sha256_after' => null,
+                    'result' => 'failed',
+                    'code' => $current->get_error_code(),
+                ]);
                 return $current;
             }
             if (!hash_equals($r['source_sha256'], $current['sha256'])) {
-                return mbb_error('source_conflict', '源文件已变化，请重新读取后再确认。');
+                $error = mbb_error('source_conflict', '源文件已变化，请重新读取后再确认。');
+                mbb_source_record_audit($id, [
+                    'source_sha256_before' => $current['sha256'],
+                    'source_sha256_after' => null,
+                    'result' => 'failed',
+                    'code' => $error->get_error_code(),
+                ]);
+                return $error;
             }
             $GLOBALS['mbb_source_web_write'] = true;
             try {
@@ -633,21 +666,17 @@ add_action('rest_api_init', function () {
                 $GLOBALS['mbb_source_web_write'] = false;
             }
             if (is_wp_error($result)) {
-                update_post_meta($id, '_mbb_source_web_audit', [
-                    'user_id' => get_current_user_id(),
+                mbb_source_record_audit($id, [
                     'source_sha256_before' => $current['sha256'],
                     'source_sha256_after' => null,
-                    'time' => current_time('mysql', true),
                     'result' => 'failed',
                     'code' => $result->get_error_code(),
                 ]);
                 return $result;
             }
-            update_post_meta($id, '_mbb_source_web_audit', [
-                'user_id' => get_current_user_id(),
+            mbb_source_record_audit($id, [
                 'source_sha256_before' => $current['sha256'],
                 'source_sha256_after' => hash('sha256', $r['source']),
-                'time' => current_time('mysql', true),
                 'result' => 'saved',
             ]);
             return $result;
