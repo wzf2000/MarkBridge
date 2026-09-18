@@ -312,7 +312,12 @@
           if (document.querySelector('#mbb-new-post')) return true;
           const button = el(
             'button',
-            { type: 'button', id: 'mbb-new-post', class: 'components-button is-secondary' },
+            {
+              type: 'button',
+              id: 'mbb-new-post',
+              class: 'components-button is-secondary mbb-new-post-button',
+              'aria-label': '导入 Markdown 文件',
+            },
             '导入 Markdown',
           );
           button.onclick = () => {
@@ -325,7 +330,9 @@
             }
             open(0);
           };
-          toolbar.prepend(button);
+          // Keep Gutenberg's document tools (add block, undo, redo) together;
+          // the import action follows them as a secondary, clearly separated action.
+          toolbar.append(button);
           return true;
         };
         if (!install()) {

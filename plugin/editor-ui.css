@@ -22,6 +22,27 @@
   padding: 8px 12px;
   cursor: pointer;
 }
+#mbb-new-post {
+  margin-left: 8px;
+  min-height: 36px;
+  white-space: nowrap;
+  border-color: #3858e9;
+  color: #1e1e1e;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px #3858e9;
+  transition:
+    background-color 80ms ease,
+    box-shadow 80ms ease;
+}
+#mbb-new-post:hover,
+#mbb-new-post:focus-visible {
+  background: #f0f6fc;
+  box-shadow: inset 0 0 0 1px #1e3fbf;
+}
+#mbb-new-post:focus-visible {
+  outline: 2px solid #3858e9;
+  outline-offset: 1px;
+}
 #mbb-dialog {
   width: min(1060px, 92vw);
   height: 86vh;
@@ -117,6 +138,11 @@
   }
   #mbb-dialog h2 {
     font-size: 18px;
+  }
+  #mbb-new-post {
+    margin-left: 4px;
+    padding-left: 8px;
+    padding-right: 8px;
   }
 }
 
