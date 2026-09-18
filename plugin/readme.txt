@@ -20,5 +20,5 @@ This release requires Linux, Node.js 24 LTS, bubblewrap and a configured private
 3. Upload the built plugin, enable MarkBridge and verify isolated drafts before adopting existing content.
 
 == Changelog ==
-== 1.0.0 ==
+= 1.0.0 =
 Adds administrator runtime diagnostics, optional image data packs, the new-post Markdown import action and commit-linked release manifests.

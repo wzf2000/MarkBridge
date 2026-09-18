@@ -91,7 +91,6 @@ jobs:
       - name: Run conversion and editor tests
         env:
           MARKBRIDGE_TEST_RUNTIME: ${{ github.workspace }}/.ci-runtime
-          MARKBRIDGE_TEST_SKIP_BLOCKS: '1'
         run: npm test
 
       - name: Run source writeback safety tests

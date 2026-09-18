@@ -122,7 +122,10 @@ function mbb_source_atomic_write($path, $contents)
     if ($ok) {
         chmod($temp, $mode);
         if (function_exists('chown')) {
-            $ok = chown($temp, $owner) && chgrp($temp, $group);
+            $ok = chown($temp, $owner);
+        }
+        if ($ok && function_exists('chgrp')) {
+            $ok = chgrp($temp, $group);
         }
     }
     if ($ok && function_exists('fsync')) {

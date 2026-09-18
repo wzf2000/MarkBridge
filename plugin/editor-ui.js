@@ -159,7 +159,7 @@
           ? '内容未变，无需重复写入。'
           : base?.source_managed
             ? '已安全写回源文件，并同时保存 Markdown 和区块。'
-            : '已同时保存 Markdown 和区块.',
+            : '已同时保存 Markdown 和区块。',
       );
       window.location.assign(result.editor_url);
     } catch (e) {
