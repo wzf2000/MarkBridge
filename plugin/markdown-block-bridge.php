@@ -32,7 +32,7 @@ add_action('init', function () {
         set_url_scheme(plugins_url(mbb_asset('math.js'), __FILE__), 'https'),
         [],
         substr(hash_file('sha256', __DIR__ . '/math.js'), 0, 12),
-        true,
+        false,
     );
     wp_localize_script('mbb-math', 'MBB_MATH_CONFIG', ['front' => !is_admin()]);
 });
