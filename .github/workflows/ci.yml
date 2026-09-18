@@ -1,0 +1,80 @@
+name: MarkBridge CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify source and tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['24.15.0']
+        php: ['8.2']
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Run conversion and editor tests
+        run: npm test
+
+      - name: Run source writeback safety tests
+        run: php tests/source-writeback.php
+
+      - name: Check release sources and PHP syntax
+        run: python3 scripts/check_release.py
+
+      - name: Build browser assets
+        run: npm run build
+
+      - name: Re-check generated release sources
+        run: python3 scripts/check_release.py
+
+      - name: Build and verify release package
+        run: |
+          python3 scripts/package.py
+          rm -rf /tmp/markbridge-package-check
+          mkdir -p /tmp/markbridge-package-check
+          unzip -q "dist/markbridge-$(node -p "require('./package.json').version").zip" -d /tmp/markbridge-package-check
+          python3 scripts/verify_package.py \
+            /tmp/markbridge-package-check/markbridge \
+            --manifest /tmp/markbridge-package-check/markbridge/release-manifest.json
+
+      - name: Upload verification artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: markbridge-ci-${{ github.sha }}
+          path: |
+            plugin/assets.json
+            plugin/runtime-contract.json
+            plugin/vendor-manifest.json
+          if-no-files-found: error
