@@ -105,6 +105,11 @@ function mbb_source_fingerprint($path)
 
 function mbb_source_atomic_write($path, $contents)
 {
+    if (!is_string($path) || !is_file($path) || is_link($path)) {
+        return new WP_Error('source_write_failed', '源文件目标不存在或不是普通文件。', [
+            'status' => 500,
+        ]);
+    }
     $dir = dirname($path);
     $temp = tempnam($dir, '.markbridge-');
     if ($temp === false) {
