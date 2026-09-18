@@ -286,7 +286,7 @@
       docId.readOnly = !!base;
       source.value = base?.source_managed ? source.value : base?.document.source || '';
       publication.value = base?.post_status || 'draft';
-      if (id && id === cfg.postId && selectedMode === 'markdown') {
+      if (id && id === cfg.postId && selectedMode === 'markdown' && !base?.source_managed) {
         const current = wp.blocks.serialize(wp.data.select('core/block-editor').getBlocks());
         const converted = await api('preview', {
           post_id: id,
