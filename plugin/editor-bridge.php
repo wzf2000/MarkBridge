@@ -637,14 +637,14 @@ function mbb_enqueue_ui()
         plugins_url(mbb_asset('editor-ui.js'), __FILE__),
         ['wp-data', 'wp-blocks', 'mbb-math'],
         substr(hash_file('sha256', __DIR__ . '/editor-ui.js'), 0, 12),
-        true,
+        false,
     );
     wp_enqueue_script(
         'mbb-revisions-ui',
         plugins_url('revisions-ui.js', __FILE__),
         ['mbb-editor-ui'],
         substr(hash_file('sha256', __DIR__ . '/revisions-ui.js'), 0, 12),
-        true,
+        false,
     );
     wp_localize_script('mbb-editor-ui', 'MBB_EDITOR', [
         'root' => rest_url('mbb/v1'),
