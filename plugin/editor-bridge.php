@@ -465,7 +465,9 @@ function mbb_save($r)
         if ($wpdb->query('START TRANSACTION') === false) {
             if ($source_target && $source_backup !== null) {
                 $restored = mbb_source_atomic_write($source_target, $source_backup);
-                if (is_wp_error($restored)) return mbb_error('source_restore_failed', '保存失败且无法回退源文件。', 500);
+                if (is_wp_error($restored)) {
+                    return mbb_error('source_restore_failed', '保存失败且无法回退源文件。', 500);
+                }
             }
             return mbb_error('transaction', '无法开启保存事务。', 500);
         }
