@@ -303,7 +303,7 @@
       .querySelectorAll('.mbb-open')
       .forEach((b) => b.addEventListener('click', () => open(Number(b.dataset.post))));
     if (!Number(cfg.postId)) {
-      if (document.body.classList.contains('post-new-php')) {
+      if (/\/post-new\.php$/.test(window.location.pathname)) {
         const install = () => {
           const toolbar = document.querySelector(
             '.edit-post-header-toolbar, .edit-post-header__settings',
