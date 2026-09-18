@@ -45,21 +45,21 @@ for (let start = 0; start < fixtures.length; start += 5) {
   });
 }
 if (!process.env.MARKBRIDGE_TEST_SKIP_BLOCKS) {
-for (let start = 0; start < documents.length; start += 5) {
-  const batch = documents.slice(start, start + 5);
-  const results = convert(
-    batch.map((base) => ({
-      mode: 'blocks',
-      base,
-      serialized: base.serialized,
-      documentId: base.documentId,
-    })),
-  );
-  results.forEach((result, index) => {
-    assert(result.ok, JSON.stringify(result));
-    assert.equal(result.document.source, batch[index].source);
-  });
-}
+  for (let start = 0; start < documents.length; start += 5) {
+    const batch = documents.slice(start, start + 5);
+    const results = convert(
+      batch.map((base) => ({
+        mode: 'blocks',
+        base,
+        serialized: base.serialized,
+        documentId: base.documentId,
+      })),
+    );
+    results.forEach((result, index) => {
+      assert(result.ok, JSON.stringify(result));
+      assert.equal(result.document.source, batch[index].source);
+    });
+  }
 } else {
   console.log('Block export round trips skipped: no WordPress block runtime configured.');
 }
