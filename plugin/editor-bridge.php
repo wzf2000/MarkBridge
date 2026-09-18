@@ -616,6 +616,8 @@ add_action('rest_api_init', function () {
             $GLOBALS['mbb_source_web_write'] = true;
             try {
                 $result = mbb_save($r);
+            } catch (Throwable $e) {
+                $result = mbb_error('source_save_failed', '源文件和配对正文均未完成保存。', 500);
             } finally {
                 $GLOBALS['mbb_source_web_write'] = false;
             }
