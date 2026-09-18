@@ -308,7 +308,8 @@
           const toolbar = document.querySelector(
             '.edit-post-header-toolbar, .edit-post-header__settings',
           );
-          if (!toolbar || document.querySelector('#mbb-new-post')) return !!toolbar;
+          if (!toolbar) return false;
+          if (document.querySelector('#mbb-new-post')) return true;
           const button = el(
             'button',
             { type: 'button', id: 'mbb-new-post', class: 'components-button is-secondary' },
