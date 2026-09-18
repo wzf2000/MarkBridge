@@ -74,6 +74,19 @@ function mbb_permission($r)
     }
     return true;
 }
+function mbb_source_write_permission($r)
+{
+    $permission = mbb_permission($r);
+    if (is_wp_error($permission)) {
+        return $permission;
+    }
+    $id = absint($r->get_param('post_id'));
+    $capability = apply_filters('mbb_source_write_capability', 'edit_post', $id);
+    if (!$capability || !current_user_can($capability, $id)) {
+        return new WP_Error('source_forbidden', '无权写回这篇文章的源文件。', ['status' => 403]);
+    }
+    return true;
+}
 function mbb_error($code, $message, $status = 409)
 {
     return new WP_Error($code, $message, ['status' => $status]);
@@ -579,7 +592,7 @@ add_action('rest_api_init', function () {
     ]);
     register_rest_route('mbb/v1', '/source-save', [
         'methods' => 'POST',
-        'permission_callback' => 'mbb_permission',
+        'permission_callback' => 'mbb_source_write_permission',
         'callback' => function ($r) {
             $id = absint($r['post_id']);
             $p = get_post($id);
