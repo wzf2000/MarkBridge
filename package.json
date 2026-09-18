@@ -6,7 +6,7 @@
     "build": "node scripts/copy-math-assets.cjs && esbuild src/kernel.js --bundle --format=iife --global-name=MBB --outfile=plugin/kernel.js && esbuild src/emoji.js --bundle --format=iife --outfile=plugin/emoji.js && node scripts/build-ui-assets.cjs && node scripts/build-runtime-contract.cjs",
     "format": "node scripts/format.cjs",
     "format:check": "node scripts/format.cjs --check",
-    "test": "node tests/kernel.cjs",
+    "test": "node tests/kernel.cjs && node tests/r10-04.cjs",
     "check": "npm run format:check && npm run build && python3 scripts/check_release.py",
     "package": "python3 scripts/package.py"
   },
