@@ -87,6 +87,17 @@ function mbb_source_write_permission($r)
     }
     return true;
 }
+function mbb_source_audit_permission($r)
+{
+    $id = absint($r->get_param('post_id'));
+    if (!$id || !current_user_can('manage_options')) {
+        return new WP_Error('forbidden', '只有管理员可以查看源文件写回审计。', ['status' => 403]);
+    }
+    if (get_post_meta($id, '_mbb_source_managed', true) !== 'file') {
+        return new WP_Error('source_managed', '该文章没有文件来源绑定。', ['status' => 409]);
+    }
+    return true;
+}
 function mbb_error($code, $message, $status = 409)
 {
     return new WP_Error($code, $message, ['status' => $status]);
@@ -640,6 +651,18 @@ add_action('rest_api_init', function () {
                 'result' => 'saved',
             ]);
             return $result;
+        },
+    ]);
+    register_rest_route('mbb/v1', '/source-audit', [
+        'methods' => 'GET',
+        'permission_callback' => 'mbb_source_audit_permission',
+        'callback' => function ($r) {
+            $id = absint($r['post_id']);
+            return [
+                'post_id' => $id,
+                'document_id' => mbb_id($id),
+                'audit' => get_post_meta($id, '_mbb_source_web_audit', true) ?: null,
+            ];
         },
     ]);
     register_rest_route('mbb/v1', '/save', [
