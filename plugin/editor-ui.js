@@ -331,7 +331,7 @@
         if (!install()) {
           let attempts = 0;
           const timer = setInterval(() => {
-            if (install() || ++attempts > 100) clearInterval(timer);
+            if (install() || ++attempts > 300) clearInterval(timer);
           }, 100);
         }
       }
