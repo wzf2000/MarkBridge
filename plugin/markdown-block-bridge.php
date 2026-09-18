@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: MarkBridge
- * Version: 0.7.0-rc.2
+ * Version: 0.7.0-rc.3
  * License: GPL-3.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  * Requires at least: 7.1
@@ -12,22 +12,11 @@
 if (!defined('ABSPATH')) {
     exit();
 }
-// A private conversion runtime is configured by the site administrator.
+require_once __DIR__ . '/includes/runtime-settings.php';
+
 function mbb_is_lab()
 {
     return false;
-}
-function mbb_runtime()
-{
-    return defined('MARKBRIDGE_RUNTIME') ? rtrim(MARKBRIDGE_RUNTIME, '/') : '';
-}
-if (!mbb_runtime() || !is_file(mbb_runtime() . '/worker.cjs')) {
-    add_action('admin_notices', function () {
-        if (current_user_can('manage_options')) {
-            echo '<div class="notice notice-warning"><p>MarkBridge：请先按照安装说明配置私有转换运行环境（MARKBRIDGE_RUNTIME）。</p></div>';
-        }
-    });
-    return;
 }
 function mbb_asset($file)
 {
@@ -116,6 +105,8 @@ require_once __DIR__ . '/editor-bridge.php';
 require_once __DIR__ . '/revisions.php';
 
 require_once __DIR__ . '/compatibility.php';
+
+require_once __DIR__ . '/emoji-packs.php';
 
 add_filter('body_class', function ($classes) {
     if (is_singular() && mbb_managed(get_queried_object_id())) {

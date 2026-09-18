@@ -3,7 +3,7 @@ Tags: markdown, blocks, editor, mathjax, revisions
 Requires at least: 7.1
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 0.7.0-rc.2
+Stable tag: 0.7.0-rc.3
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -16,9 +16,9 @@ This release candidate requires Linux, Node.js 24 LTS, bubblewrap and a configur
 
 == Installation ==
 1. Build a private, site-matched runtime using scripts/prepare_runtime.py from the source repository.
-2. Set MARKBRIDGE_RUNTIME in wp-config.php outside the public document root.
+2. Validate the private runtime in Settings, or define the overriding MARKBRIDGE_RUNTIME server constant.
 3. Upload the built plugin, enable MarkBridge and verify isolated drafts before adopting existing content.
 
 == Changelog ==
-= 0.7.0-rc.2 =
-Includes the content-preserving trash/restore fix and a uniquely versioned candidate package.
+= 0.7.0-rc.3 =
+Adds administrator runtime diagnostics, optional image data packs and commit-linked release manifests.

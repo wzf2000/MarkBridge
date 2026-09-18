@@ -70,9 +70,10 @@ add_action(
             'markbridge-emoji',
             plugins_url(mbb_asset('emoji.js'), __FILE__),
             [],
-            '0.7.0-rc.2',
+            '0.7.0-rc.3',
             true,
         );
+        wp_localize_script('markbridge-emoji', 'MBB_EMOJI_IMAGES', mbb_emoji_config());
     },
     9,
 );
@@ -98,4 +99,30 @@ function mbb_task_markers($html)
     );
 }
 add_filter('the_content', 'mbb_task_markers', 10);
-add_filter('comment_text', 'mbb_task_markers', 10);
+// Comment KSES strips list wrappers; run after WordPress restores paragraphs.
+add_filter('comment_text', 'mbb_task_markers', 40);
+
+// Preserve named shortcodes until the selected front-end renderer runs.
+// Keep WordPress handling of ASCII faces and its existing HTML/code exclusions.
+function mbb_convert_smilies($text)
+{
+    global $wpsmiliestrans;
+    if (!is_array($wpsmiliestrans)) {
+        return convert_smilies($text);
+    }
+    $original = $wpsmiliestrans;
+    try {
+        foreach ($wpsmiliestrans as $code => $replacement) {
+            if (preg_match('/\A:[a-zA-Z0-9_+\-]+:\z/D', $code)) {
+                $wpsmiliestrans[$code] = $code;
+            }
+        }
+        return convert_smilies($text);
+    } finally {
+        $wpsmiliestrans = $original;
+    }
+}
+foreach (['the_content', 'comment_text'] as $hook) {
+    remove_filter($hook, 'convert_smilies', 20);
+    add_filter($hook, 'mbb_convert_smilies', 20);
+}
