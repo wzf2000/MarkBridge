@@ -625,8 +625,9 @@ function mbb_enqueue_ui()
     if ($id && !current_user_can('edit_post', $id)) {
         return;
     }
-    $new_post = !$id && $screen && $screen->base === 'post';
-    if (!$tool && (!$screen || $screen->base !== 'post' || (!$new_post && !mbb_managed($id)))) {
+    $post_screen = $screen && in_array($screen->base, ['post', 'post-new'], true);
+    $new_post = !$id && $post_screen;
+    if (!$tool && (!$post_screen || (!$new_post && !mbb_managed($id)))) {
         return;
     }
     wp_enqueue_script(
