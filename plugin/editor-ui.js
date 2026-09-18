@@ -302,7 +302,7 @@
     document
       .querySelectorAll('.mbb-open')
       .forEach((b) => b.addEventListener('click', () => open(Number(b.dataset.post))));
-    if (!cfg.postId) {
+    if (!Number(cfg.postId)) {
       if (document.body.classList.contains('post-new-php')) {
         const install = () => {
           const toolbar = document.querySelector(
