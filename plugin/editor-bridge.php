@@ -346,13 +346,11 @@ function mbb_save($r)
     if (!is_string($docId) || !preg_match('/^[A-Za-z][A-Za-z0-9_-]{2,63}$/', $docId)) {
         return mbb_error('identity', '文档ID无效。', 422);
     }
-    $prefix =
-        defined('WP_CLI') &&
-        WP_CLI &&
+    $source_lock =
         $id &&
-        get_post_meta($id, '_mbb_source_managed', true) === 'file'
-            ? '/mbb-source-locks-'
-            : '/mbb-locks-';
+        get_post_meta($id, '_mbb_source_managed', true) === 'file' &&
+        ((defined('WP_CLI') && WP_CLI) || !empty($GLOBALS['mbb_source_web_write']));
+    $prefix = $source_lock ? '/mbb-source-locks-' : '/mbb-locks-';
     $dir = sys_get_temp_dir() . $prefix . hash('sha256', ABSPATH);
     if (!is_dir($dir)) {
         mkdir($dir, 0700, true);
@@ -603,9 +601,20 @@ add_action('rest_api_init', function () {
                 return mbb_error('source_conflict', '源文件已变化，请重新读取后再确认。');
             }
             $GLOBALS['mbb_source_web_write'] = true;
-            $result = mbb_save($r);
-            $GLOBALS['mbb_source_web_write'] = false;
+            try {
+                $result = mbb_save($r);
+            } finally {
+                $GLOBALS['mbb_source_web_write'] = false;
+            }
             if (is_wp_error($result)) {
+                update_post_meta($id, '_mbb_source_web_audit', [
+                    'user_id' => get_current_user_id(),
+                    'source_sha256_before' => $current['sha256'],
+                    'source_sha256_after' => null,
+                    'time' => current_time('mysql', true),
+                    'result' => 'failed',
+                    'code' => $result->get_error_code(),
+                ]);
                 return $result;
             }
             update_post_meta($id, '_mbb_source_web_audit', [
