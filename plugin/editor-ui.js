@@ -270,7 +270,6 @@
         try {
           const fresh = await api('source?post_id=' + id);
           base.source_sha256 = fresh.source_sha256;
-          base.source_write_available = true;
           source.value = fresh.source;
         } catch (e) {
           base.source_write_available = false;

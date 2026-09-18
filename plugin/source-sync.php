@@ -115,17 +115,20 @@ function mbb_source_atomic_write($path, $contents)
     if ($temp === false) {
         return new WP_Error('source_write_failed', '无法创建源文件暂存文件。', ['status' => 500]);
     }
-    $mode = fileperms($path) & 0777;
+    $permissions = fileperms($path);
+    $mode = $permissions === false ? 0644 : $permissions & 0777;
     $owner = fileowner($path);
     $group = filegroup($path);
     $ok = file_put_contents($temp, $contents, LOCK_EX) !== false;
     if ($ok) {
-        chmod($temp, $mode);
-        if (function_exists('chown')) {
-            $ok = chown($temp, $owner);
+        if ($permissions !== false) {
+            @chmod($temp, $mode);
         }
-        if ($ok && function_exists('chgrp')) {
-            $ok = chgrp($temp, $group);
+        if ($owner !== false && function_exists('chown')) {
+            @chown($temp, $owner);
+        }
+        if ($group !== false && function_exists('chgrp')) {
+            @chgrp($temp, $group);
         }
     }
     if ($ok && function_exists('fsync')) {
