@@ -55,9 +55,7 @@ function mbb_state($id)
         $target = mbb_source_target($p);
         $capability = apply_filters('mbb_source_write_capability', 'edit_post', $id);
         $state['source_write_available'] =
-            !is_wp_error($target) &&
-            (bool) $capability &&
-            current_user_can($capability, $id);
+            !is_wp_error($target) && (bool) $capability && current_user_can($capability, $id);
         if (!is_wp_error($target)) {
             $fingerprint = mbb_source_fingerprint($target);
             if (!is_wp_error($fingerprint)) {
