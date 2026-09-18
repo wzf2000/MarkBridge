@@ -1,0 +1,125 @@
+name: MarkBridge CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify source and tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['24.15.0']
+        php: ['8.2']
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Python checks
+        run: python -m pip install --disable-pip-version-check -r requirements-dev.txt
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build browser assets for the test runtime
+        run: npm run build
+
+      - name: Prepare public conversion test runtime
+        run: |
+          rm -rf .ci-runtime
+          mkdir -p .ci-runtime/node/bin .ci-runtime/run .ci-runtime/site/wp-content/plugins/markdown-block-bridge
+          cp "$(command -v node)" .ci-runtime/node/bin/node
+          cp plugin/worker.cjs .ci-runtime/worker.cjs
+          cp plugin/kernel.js .ci-runtime/site/wp-content/plugins/markdown-block-bridge/kernel.js
+          cat > .ci-runtime/run/worker-bootstrap.html <<'HTML'
+          <!doctype html><html><head><meta charset="utf-8"></head><body>
+          <script>
+          const blockTypes = {};
+          window.wp = {
+            blocks: {
+              registerBlockType(name, definition) { blockTypes[name] = definition; },
+              getBlockType(name) { return blockTypes[name]; },
+              createBlock(name, attributes = {}, innerBlocks = []) {
+                return { name, attributes, innerBlocks, isValid: true };
+              },
+              serialize() { return ''; },
+              parse() { return []; },
+            },
+            blockEditor: {
+              useBlockProps: () => ({}),
+              useInnerBlocksProps: () => ({}),
+            },
+            components: { TextControl() {}, TextareaControl() {} },
+            element: { Fragment: 'fragment', createElement() {}, useEffect() {}, useState() {} },
+            hooks: { addFilter() {} },
+            richText: { registerFormatType() {} },
+          };
+          </script>
+          <script src="http://markbridge.invalid/wp-content/plugins/markdown-block-bridge/kernel.js"></script>
+          </body></html>
+          HTML
+          cp runtime/package.json runtime/package-lock.json .ci-runtime/
+          PATH="$PWD/.ci-runtime/node/bin:$PATH" npm ci --prefix .ci-runtime --omit=dev --ignore-scripts
+
+      - name: Check formatting
+        env:
+          MARKBRIDGE_PYTHON: python
+        run: npm run format:check
+
+      - name: Run conversion and editor tests
+        env:
+          MARKBRIDGE_TEST_RUNTIME: ${{ github.workspace }}/.ci-runtime
+        run: npm test
+
+      - name: Run source writeback safety tests
+        run: php tests/source-writeback.php
+
+      - name: Check release sources and PHP syntax
+        run: python3 scripts/check_release.py
+
+      - name: Re-check generated release sources
+        run: python3 scripts/check_release.py
+
+      - name: Build and verify release package
+        env:
+          MARKBRIDGE_ALLOW_DIRTY_BUILD: '1'
+        run: |
+          python3 scripts/package.py
+          rm -rf /tmp/markbridge-package-check
+          mkdir -p /tmp/markbridge-package-check
+          unzip -q "dist/markbridge-$(node -p "require('./package.json').version").zip" -d /tmp/markbridge-package-check
+          python3 scripts/verify_package.py \
+            /tmp/markbridge-package-check/markbridge \
+            --manifest /tmp/markbridge-package-check/markbridge/release-manifest.json
+
+      - name: Upload verification artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: markbridge-ci-${{ github.sha }}
+          path: |
+            plugin/assets.json
+            plugin/runtime-contract.json
+            plugin/vendor-manifest.json
+          if-no-files-found: error

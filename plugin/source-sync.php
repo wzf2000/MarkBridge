@@ -61,3 +61,86 @@ function mbb_sync_write($id, $source, $title = null, $source_path = null, $statu
     }
     return $result['post_id'];
 }
+
+/**
+ * Resolve the already-bound source file for a document.
+ *
+ * The public plugin never accepts a path from a request. A site integration
+ * must resolve the path from its private mapping and return it through this
+ * filter; the common checks below then verify the existing file and binding.
+ */
+function mbb_source_target($post)
+{
+    $p = is_object($post) ? $post : get_post($post);
+    if (!$p || get_post_meta($p->ID, '_mbb_source_managed', true) !== 'file') {
+        return new WP_Error('source_unmanaged', '该文章没有绑定文件来源。', ['status' => 409]);
+    }
+    $path = apply_filters('mbb_source_write_target', null, $p);
+    if (!is_string($path) || $path === '' || !is_file($path) || is_link($path)) {
+        return new WP_Error('source_target_unavailable', '已绑定的源文件当前不可用。', [
+            'status' => 409,
+        ]);
+    }
+    $real = realpath($path);
+    if (!is_string($real) || !is_readable($real) || !is_writable($real)) {
+        return new WP_Error('source_target_unavailable', '已绑定的源文件当前不可写。', [
+            'status' => 409,
+        ]);
+    }
+    $bound = get_post_meta($p->ID, '_mbb_source_path_hash', true);
+    if (!$bound || !hash_equals((string) $bound, hash('sha256', $real))) {
+        return new WP_Error('source_binding', '源文件绑定校验失败。', ['status' => 409]);
+    }
+    return $real;
+}
+
+function mbb_source_fingerprint($path)
+{
+    $contents = file_get_contents($path);
+    if ($contents === false) {
+        return new WP_Error('source_read_failed', '无法读取源文件。', ['status' => 409]);
+    }
+    return ['sha256' => hash('sha256', $contents), 'contents' => $contents];
+}
+
+function mbb_source_atomic_write($path, $contents)
+{
+    if (!is_string($path) || !is_file($path) || is_link($path)) {
+        return new WP_Error('source_write_failed', '源文件目标不存在或不是普通文件。', [
+            'status' => 500,
+        ]);
+    }
+    $dir = dirname($path);
+    $temp = tempnam($dir, '.markbridge-');
+    if ($temp === false) {
+        return new WP_Error('source_write_failed', '无法创建源文件暂存文件。', ['status' => 500]);
+    }
+    $permissions = fileperms($path);
+    $mode = $permissions === false ? 0644 : $permissions & 0777;
+    $owner = fileowner($path);
+    $group = filegroup($path);
+    $ok = file_put_contents($temp, $contents, LOCK_EX) !== false;
+    if ($ok) {
+        if ($permissions !== false) {
+            @chmod($temp, $mode);
+        }
+        if ($owner !== false && function_exists('chown')) {
+            @chown($temp, $owner);
+        }
+        if ($group !== false && function_exists('chgrp')) {
+            @chgrp($temp, $group);
+        }
+    }
+    if ($ok && function_exists('fsync')) {
+        $handle = fopen($temp, 'r');
+        $ok = $handle && fsync($handle);
+        if ($handle) {
+            fclose($handle);
+        }
+    }
+    if (!$ok || !rename($temp, $path)) {
+        @unlink($temp);
+        return new WP_Error('source_write_failed', '源文件安全写入失败。', ['status' => 500]);
+    }
+    return true;
+}

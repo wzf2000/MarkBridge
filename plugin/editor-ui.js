@@ -45,8 +45,8 @@
   }
   function controls() {
     dialog.querySelectorAll('button,input,textarea,select').forEach((b) => (b.disabled = busy));
-    save.disabled = busy || !candidate || !!base?.source_managed;
-    if (base?.source_managed) {
+    save.disabled = busy || !candidate || (base?.source_managed && !base?.source_write_available);
+    if (base?.source_managed && !base?.source_write_available) {
       source.readOnly = true;
       title.readOnly = true;
       publication.disabled = true;
@@ -63,6 +63,7 @@
       expected: base?.expected || null,
       mode,
       post_status: publication.value,
+      source_sha256: base?.source_sha256 || null,
       featured_media:
         Number(base?.post_id) === Number(cfg.postId)
           ? (wp.data.select('core/editor').getEditedPostAttribute('featured_media') ??
@@ -152,8 +153,14 @@
     controls();
     message('正在保存两种表示……');
     try {
-      const result = await api('save', candidate);
-      message(result.noop ? '内容未变，无需重复写入。' : '已同时保存 Markdown 和区块。');
+      const result = await api(base?.source_managed ? 'source-save' : 'save', candidate);
+      message(
+        result.noop
+          ? '内容未变，无需重复写入。'
+          : base?.source_managed
+            ? '已安全写回源文件，并同时保存 Markdown 和区块。'
+            : '已同时保存 Markdown 和区块。',
+      );
       window.location.assign(result.editor_url);
     } catch (e) {
       message(e.message, true);
@@ -259,6 +266,17 @@
           ? structuredClone(cfg.state)
           : await api('document?post_id=' + id)
         : null;
+      if (base?.source_managed) {
+        try {
+          const fresh = await api('source?post_id=' + id);
+          base.expected = fresh.expected;
+          base.source_sha256 = fresh.source_sha256;
+          source.value = fresh.source;
+        } catch (e) {
+          base.source_write_available = false;
+          message('绑定源文件当前不可写，已保留只读查看和预览。');
+        }
+      }
       mode = selectedMode;
       title.value =
         selectedMode === 'blocks'
@@ -266,9 +284,9 @@
           : base?.title || '';
       docId.value = base?.document.documentId || '';
       docId.readOnly = !!base;
-      source.value = base?.document.source || '';
+      source.value = base?.source_managed ? source.value : base?.document.source || '';
       publication.value = base?.post_status || 'draft';
-      if (id && id === cfg.postId && selectedMode === 'markdown') {
+      if (id && id === cfg.postId && selectedMode === 'markdown' && !base?.source_managed) {
         const current = wp.blocks.serialize(wp.data.select('core/block-editor').getBlocks());
         const converted = await api('preview', {
           post_id: id,
@@ -285,7 +303,9 @@
       preview.srcdoc = '';
       message(
         base?.source_managed
-          ? '此文由源文件同步：可查看原文和预览，保存请使用同步工具。'
+          ? base.source_write_available
+            ? '已读取绑定源文件；请编辑后查看差异和预览，再明确确认写回。'
+            : '此文由源文件同步：当前源文件不可写，请使用同步工具。'
           : selectedMode === 'blocks'
             ? '将当前区块转换回 Markdown 并预览，尚未保存。'
             : '编辑或上传 Markdown，再检查差异。',

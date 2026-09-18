@@ -40,7 +40,7 @@ function mbb_document($p)
 function mbb_state($id)
 {
     $p = get_post($id);
-    return [
+    $state = [
         'post_id' => $id,
         'source_managed' => get_post_meta($id, '_mbb_source_managed', true) === 'file',
         'post_status' => $p->post_status,
@@ -51,6 +51,19 @@ function mbb_state($id)
         'editor_url' => admin_url('post.php?post=' . $id . '&action=edit'),
         'preview_url' => get_preview_post_link($id),
     ];
+    if ($state['source_managed']) {
+        $target = mbb_source_target($p);
+        $capability = apply_filters('mbb_source_write_capability', 'edit_post', $id);
+        $state['source_write_available'] =
+            !is_wp_error($target) && (bool) $capability && current_user_can($capability, $id);
+        if (!is_wp_error($target)) {
+            $fingerprint = mbb_source_fingerprint($target);
+            if (!is_wp_error($fingerprint)) {
+                $state['source_sha256'] = $fingerprint['sha256'];
+            }
+        }
+    }
+    return $state;
 }
 function mbb_permission($r)
 {
@@ -62,6 +75,44 @@ function mbb_permission($r)
         return new WP_Error('origin', '该文章不是Markdown来源文档。', ['status' => 403]);
     }
     return true;
+}
+function mbb_source_write_permission($r)
+{
+    $permission = mbb_permission($r);
+    if (is_wp_error($permission)) {
+        return $permission;
+    }
+    $id = absint($r->get_param('post_id'));
+    $capability = apply_filters('mbb_source_write_capability', 'edit_post', $id);
+    if (!$capability || !current_user_can($capability, $id)) {
+        return new WP_Error('source_forbidden', '无权写回这篇文章的源文件。', ['status' => 403]);
+    }
+    return true;
+}
+function mbb_source_audit_permission($r)
+{
+    $id = absint($r->get_param('post_id'));
+    if (!$id || !current_user_can('manage_options')) {
+        return new WP_Error('forbidden', '只有管理员可以查看源文件写回审计。', ['status' => 403]);
+    }
+    if (get_post_meta($id, '_mbb_source_managed', true) !== 'file') {
+        return new WP_Error('source_managed', '该文章没有文件来源绑定。', ['status' => 409]);
+    }
+    return true;
+}
+function mbb_source_record_audit($id, $fields)
+{
+    update_post_meta(
+        $id,
+        '_mbb_source_web_audit',
+        array_merge(
+            [
+                'user_id' => get_current_user_id(),
+                'time' => current_time('mysql', true),
+            ],
+            $fields,
+        ),
+    );
 }
 function mbb_error($code, $message, $status = 409)
 {
@@ -322,7 +373,8 @@ function mbb_save($r)
     if (
         $id &&
         get_post_meta($id, '_mbb_source_managed', true) === 'file' &&
-        !(defined('WP_CLI') && WP_CLI)
+        !(defined('WP_CLI') && WP_CLI) &&
+        empty($GLOBALS['mbb_source_web_write'])
     ) {
         return mbb_error(
             'source_managed',
@@ -334,13 +386,11 @@ function mbb_save($r)
     if (!is_string($docId) || !preg_match('/^[A-Za-z][A-Za-z0-9_-]{2,63}$/', $docId)) {
         return mbb_error('identity', '文档ID无效。', 422);
     }
-    $prefix =
-        defined('WP_CLI') &&
-        WP_CLI &&
+    $source_lock =
         $id &&
-        get_post_meta($id, '_mbb_source_managed', true) === 'file'
-            ? '/mbb-source-locks-'
-            : '/mbb-locks-';
+        get_post_meta($id, '_mbb_source_managed', true) === 'file' &&
+        ((defined('WP_CLI') && WP_CLI) || !empty($GLOBALS['mbb_source_web_write']));
+    $prefix = $source_lock ? '/mbb-source-locks-' : '/mbb-locks-';
     $dir = sys_get_temp_dir() . $prefix . hash('sha256', ABSPATH);
     if (!is_dir($dir)) {
         mkdir($dir, 0700, true);
@@ -373,6 +423,35 @@ function mbb_save($r)
         }
         $doc = $c['document'];
         $p = $id ? get_post($id) : null;
+        $source_backup = null;
+        $source_target = null;
+        if ($p && get_post_meta($id, '_mbb_source_managed', true) === 'file') {
+            if (empty($GLOBALS['mbb_source_web_write'])) {
+                return mbb_error(
+                    'source_managed',
+                    '此文章由源文件同步；请使用受控的源文件写回流程。',
+                );
+            }
+            $source_target = mbb_source_target($p);
+            if (is_wp_error($source_target)) {
+                return $source_target;
+            }
+            $current_source = mbb_source_fingerprint($source_target);
+            if (is_wp_error($current_source)) {
+                return $current_source;
+            }
+            if (
+                !hash_equals((string) ($r['source_sha256'] ?? ''), $current_source['sha256']) ||
+                !hash_equals((string) ($r['expected'] ?? ''), mbb_token($p))
+            ) {
+                return mbb_error('source_conflict', '源文件或文章内容已变化，请重新读取后再确认。');
+            }
+            $source_backup = $current_source['contents'];
+            $written = mbb_source_atomic_write($source_target, $doc['source']);
+            if (is_wp_error($written)) {
+                return $written;
+            }
+        }
         if (
             $p &&
             $p->post_content === $doc['serialized'] &&
@@ -384,6 +463,12 @@ function mbb_save($r)
             return array_merge(mbb_state($id), ['noop' => true]);
         }
         if ($wpdb->query('START TRANSACTION') === false) {
+            if ($source_target && $source_backup !== null) {
+                $restored = mbb_source_atomic_write($source_target, $source_backup);
+                if (is_wp_error($restored)) {
+                    return mbb_error('source_restore_failed', '保存失败且无法回退源文件。', 500);
+                }
+            }
             return mbb_error('transaction', '无法开启保存事务。', 500);
         }
         $GLOBALS['mbb_paired_save'] = true;
@@ -469,6 +554,15 @@ function mbb_save($r)
             }
         } catch (Throwable $e) {
             $wpdb->query('ROLLBACK');
+            if ($source_target && $source_backup !== null) {
+                $restored = mbb_source_atomic_write($source_target, $source_backup);
+                if (is_wp_error($restored)) {
+                    if (is_int($id)) {
+                        clean_post_cache($id);
+                    }
+                    return mbb_error('source_restore_failed', '保存失败且无法回退源文件。', 500);
+                }
+            }
             if (is_int($id)) {
                 clean_post_cache($id);
             }
@@ -478,6 +572,7 @@ function mbb_save($r)
             mbb_restore_source_filters($raw_source_filters);
             $GLOBALS['mbb_paired_save'] = false;
             $GLOBALS['mbb_pair_identity'] = null;
+            $GLOBALS['mbb_source_web_write'] = false;
         }
         return array_merge(mbb_state($id), [
             'noop' => false,
@@ -501,10 +596,114 @@ add_action('rest_api_init', function () {
             return mbb_state(absint($r['post_id']));
         },
     ]);
+    register_rest_route('mbb/v1', '/source', [
+        'methods' => 'GET',
+        'permission_callback' => 'mbb_permission',
+        'callback' => function ($r) {
+            $id = absint($r['post_id']);
+            $p = get_post($id);
+            if (!$p || get_post_meta($id, '_mbb_source_managed', true) !== 'file') {
+                return mbb_error('source_managed', '该文章没有可写回的文件来源。', 409);
+            }
+            $target = mbb_source_target($p);
+            if (is_wp_error($target)) {
+                return $target;
+            }
+            $fingerprint = mbb_source_fingerprint($target);
+            if (is_wp_error($fingerprint)) {
+                return $fingerprint;
+            }
+            return [
+                'post_id' => $id,
+                'expected' => mbb_token($p),
+                'source_sha256' => $fingerprint['sha256'],
+                'source' => $fingerprint['contents'],
+            ];
+        },
+    ]);
     register_rest_route('mbb/v1', '/preview', [
         'methods' => 'POST',
         'permission_callback' => 'mbb_permission',
         'callback' => 'mbb_preview',
+    ]);
+    register_rest_route('mbb/v1', '/source-save', [
+        'methods' => 'POST',
+        'permission_callback' => 'mbb_source_write_permission',
+        'callback' => function ($r) {
+            $id = absint($r['post_id']);
+            $p = get_post($id);
+            if (!$p || get_post_meta($id, '_mbb_source_managed', true) !== 'file') {
+                return mbb_error('source_managed', '该文章没有可写回的文件来源。', 409);
+            }
+            if (!is_string($r['source'] ?? null) || !is_string($r['source_sha256'] ?? null)) {
+                return mbb_error('source_input', '缺少源文件内容或版本指纹。', 422);
+            }
+            $target = mbb_source_target($p);
+            if (is_wp_error($target)) {
+                mbb_source_record_audit($id, [
+                    'source_sha256_before' => null,
+                    'source_sha256_after' => null,
+                    'result' => 'failed',
+                    'code' => $target->get_error_code(),
+                ]);
+                return $target;
+            }
+            $current = mbb_source_fingerprint($target);
+            if (is_wp_error($current)) {
+                mbb_source_record_audit($id, [
+                    'source_sha256_before' => null,
+                    'source_sha256_after' => null,
+                    'result' => 'failed',
+                    'code' => $current->get_error_code(),
+                ]);
+                return $current;
+            }
+            if (!hash_equals($r['source_sha256'], $current['sha256'])) {
+                $error = mbb_error('source_conflict', '源文件已变化，请重新读取后再确认。');
+                mbb_source_record_audit($id, [
+                    'source_sha256_before' => $current['sha256'],
+                    'source_sha256_after' => null,
+                    'result' => 'failed',
+                    'code' => $error->get_error_code(),
+                ]);
+                return $error;
+            }
+            $GLOBALS['mbb_source_web_write'] = true;
+            try {
+                $result = mbb_save($r);
+            } catch (Throwable $e) {
+                $result = mbb_error('source_save_failed', '源文件和配对正文均未完成保存。', 500);
+            } finally {
+                $GLOBALS['mbb_source_web_write'] = false;
+            }
+            if (is_wp_error($result)) {
+                mbb_source_record_audit($id, [
+                    'source_sha256_before' => $current['sha256'],
+                    'source_sha256_after' => null,
+                    'result' => 'failed',
+                    'code' => $result->get_error_code(),
+                ]);
+                return $result;
+            }
+            mbb_source_record_audit($id, [
+                'source_sha256_before' => $current['sha256'],
+                'source_sha256_after' => hash('sha256', $r['source']),
+                'result' => 'saved',
+            ]);
+            return $result;
+        },
+    ]);
+    register_rest_route('mbb/v1', '/source-audit', [
+        'methods' => 'GET',
+        'permission_callback' => 'mbb_source_audit_permission',
+        'callback' => function ($r) {
+            $id = absint($r['post_id']);
+            return [
+                'post_id' => $id,
+                'document_id' => mbb_id($id),
+                'audit' => get_post_meta($id, '_mbb_source_web_audit', true) ?: null,
+            ];
+        },
     ]);
     register_rest_route('mbb/v1', '/save', [
         'methods' => 'POST',

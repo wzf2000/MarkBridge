@@ -1,7 +1,9 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
-const { JSDOM } = require('/var/lib/markbridge-0.7.0-rc.3/node_modules/jsdom');
+const runtime = process.env.MARKBRIDGE_TEST_RUNTIME;
+assert(runtime, 'Set MARKBRIDGE_TEST_RUNTIME to a prepared private runtime.');
+const { JSDOM } = require(require('node:path').join(runtime, 'node_modules/jsdom'));
 
 const source = fs.readFileSync('plugin/editor-ui.js', 'utf8');
 

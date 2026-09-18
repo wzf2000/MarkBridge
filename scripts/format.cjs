@@ -13,6 +13,7 @@ const ignored = new Set([
   'licenses',
   'dist',
   '.runtime',
+  '.ci-runtime',
   '__pycache__',
 ]);
 function files(dir) {
