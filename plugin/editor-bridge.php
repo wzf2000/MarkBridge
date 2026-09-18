@@ -625,7 +625,9 @@ function mbb_enqueue_ui()
     if ($id && !current_user_can('edit_post', $id)) {
         return;
     }
-    $post_screen = $screen && in_array($screen->base, ['post', 'post-new'], true);
+    $post_screen =
+        ($screen && in_array($screen->base, ['post', 'post-new'], true)) ||
+        basename($_SERVER['PHP_SELF'] ?? '') === 'post-new.php';
     $new_post = !$id && $post_screen;
     if (!$tool && (!$post_screen || (!$new_post && !mbb_managed($id)))) {
         return;
