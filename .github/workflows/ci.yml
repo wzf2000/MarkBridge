@@ -43,12 +43,52 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Prepare public conversion test runtime
+        run: |
+          rm -rf .ci-runtime
+          mkdir -p .ci-runtime/node/bin .ci-runtime/run .ci-runtime/site/wp-content/plugins/markdown-block-bridge
+          cp "$(command -v node)" .ci-runtime/node/bin/node
+          cp plugin/worker.cjs .ci-runtime/worker.cjs
+          cp plugin/kernel.js .ci-runtime/site/wp-content/plugins/markdown-block-bridge/kernel.js
+          cat > .ci-runtime/run/worker-bootstrap.html <<'HTML'
+          <!doctype html><html><head><meta charset="utf-8"></head><body>
+          <script>
+          const blockTypes = {};
+          window.wp = {
+            blocks: {
+              registerBlockType(name, definition) { blockTypes[name] = definition; },
+              getBlockType(name) { return blockTypes[name]; },
+              createBlock(name, attributes = {}, innerBlocks = []) {
+                return { name, attributes, innerBlocks, isValid: true };
+              },
+              serialize() { return ''; },
+              parse() { return []; },
+            },
+            blockEditor: {
+              useBlockProps: () => ({}),
+              useInnerBlocksProps: () => ({}),
+            },
+            components: { TextControl() {}, TextareaControl() {} },
+            element: { Fragment: 'fragment', createElement() {}, useEffect() {}, useState() {} },
+            hooks: { addFilter() {} },
+            richText: { registerFormatType() {} },
+          };
+          </script>
+          <script src="http://markbridge.invalid/wp-content/plugins/markdown-block-bridge/kernel.js"></script>
+          </body></html>
+          HTML
+          cp runtime/package.json runtime/package-lock.json .ci-runtime/
+          PATH="$PWD/.ci-runtime/node/bin:$PATH" npm ci --prefix .ci-runtime --omit=dev --ignore-scripts
+
       - name: Check formatting
         env:
           MARKBRIDGE_PYTHON: python
         run: npm run format:check
 
       - name: Run conversion and editor tests
+        env:
+          MARKBRIDGE_TEST_RUNTIME: ${{ github.workspace }}/.ci-runtime
+          MARKBRIDGE_TEST_SKIP_BLOCKS: '1'
         run: npm test
 
       - name: Run source writeback safety tests

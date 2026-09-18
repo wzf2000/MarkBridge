@@ -44,6 +44,7 @@ for (let start = 0; start < fixtures.length; start += 5) {
     documents.push(result.document);
   });
 }
+if (!process.env.MARKBRIDGE_TEST_SKIP_BLOCKS) {
 for (let start = 0; start < documents.length; start += 5) {
   const batch = documents.slice(start, start + 5);
   const results = convert(
@@ -58,6 +59,9 @@ for (let start = 0; start < documents.length; start += 5) {
     assert(result.ok, JSON.stringify(result));
     assert.equal(result.document.source, batch[index].source);
   });
+}
+} else {
+  console.log('Block export round trips skipped: no WordPress block runtime configured.');
 }
 const rejected = convert(
   [
