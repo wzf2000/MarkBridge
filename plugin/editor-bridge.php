@@ -662,5 +662,6 @@ function mbb_enqueue_ui()
 }
 add_action('admin_enqueue_scripts', 'mbb_enqueue_ui');
 add_action('enqueue_block_editor_assets', 'mbb_enqueue_ui');
+add_action('admin_footer-post-new.php', 'mbb_enqueue_ui');
 
 require_once __DIR__ . '/lifecycle.php';
