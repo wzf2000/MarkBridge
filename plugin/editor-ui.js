@@ -334,6 +334,8 @@
             if (install() || ++attempts > 300) clearInterval(timer);
           }, 100);
         }
+        const observer = new MutationObserver(() => install());
+        observer.observe(document.body, { childList: true, subtree: true });
       }
       return;
     }
