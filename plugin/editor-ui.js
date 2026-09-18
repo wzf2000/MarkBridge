@@ -302,7 +302,40 @@
     document
       .querySelectorAll('.mbb-open')
       .forEach((b) => b.addEventListener('click', () => open(Number(b.dataset.post))));
-    if (!cfg.postId) return;
+    if (!cfg.postId) {
+      if (document.body.classList.contains('post-new-php')) {
+        const install = () => {
+          const toolbar = document.querySelector(
+            '.edit-post-header-toolbar, .edit-post-header__settings',
+          );
+          if (!toolbar || document.querySelector('#mbb-new-post')) return !!toolbar;
+          const button = el(
+            'button',
+            { type: 'button', id: 'mbb-new-post', class: 'components-button is-secondary' },
+            '导入 Markdown',
+          );
+          button.onclick = () => {
+            const editor = wp.data.select('core/editor');
+            const title = editor?.getEditedPostAttribute('title') || '';
+            const content = editor?.getEditedPostContent() || '';
+            if (title.trim() || content.trim()) {
+              window.alert('当前新文章已有未保存内容，请先保存或清空后再导入 Markdown。');
+              return;
+            }
+            open(0);
+          };
+          toolbar.prepend(button);
+          return true;
+        };
+        if (!install()) {
+          let attempts = 0;
+          const timer = setInterval(() => {
+            if (install() || ++attempts > 100) clearInterval(timer);
+          }, 100);
+        }
+      }
+      return;
+    }
     const timer = setInterval(() => {
       const editor = wp.data.select('core/editor');
       if (!editor?.getCurrentPostId()) return;

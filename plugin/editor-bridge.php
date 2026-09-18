@@ -625,7 +625,8 @@ function mbb_enqueue_ui()
     if ($id && !current_user_can('edit_post', $id)) {
         return;
     }
-    if (!$tool && (!$screen || $screen->base !== 'post' || !$id || !mbb_managed($id))) {
+    $new_post = !$id && $screen && $screen->base === 'post';
+    if (!$tool && (!$screen || $screen->base !== 'post' || (!$new_post && !mbb_managed($id)))) {
         return;
     }
     wp_enqueue_script(
@@ -649,7 +650,7 @@ function mbb_enqueue_ui()
         'canPublish' => current_user_can(
             $id && get_post_type($id) === 'page' ? 'publish_pages' : 'publish_posts',
         ),
-        'state' => $tool ? null : mbb_state($id),
+        'state' => $tool || $new_post ? null : mbb_state($id),
     ]);
     wp_enqueue_style(
         'mbb-editor-ui',
