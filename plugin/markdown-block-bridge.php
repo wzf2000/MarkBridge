@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: MarkBridge
- * Version: 0.7.0-rc.3
+ * Version: 0.7.0
  * License: GPL-3.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  * Requires at least: 7.1
@@ -29,7 +29,7 @@ function mbb_asset($file)
 add_action('init', function () {
     wp_register_script(
         'mbb-math',
-        plugins_url(mbb_asset('math.js'), __FILE__),
+        set_url_scheme(plugins_url(mbb_asset('math.js'), __FILE__), 'https'),
         [],
         substr(hash_file('sha256', __DIR__ . '/math.js'), 0, 12),
         true,

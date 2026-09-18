@@ -625,19 +625,23 @@ function mbb_enqueue_ui()
     if ($id && !current_user_can('edit_post', $id)) {
         return;
     }
-    if (!$tool && (!$screen || $screen->base !== 'post' || !$id || !mbb_managed($id))) {
+    $post_screen =
+        ($screen && in_array($screen->base, ['post', 'post-new'], true)) ||
+        basename($_SERVER['PHP_SELF'] ?? '') === 'post-new.php';
+    $new_post = !$id && $post_screen;
+    if (!$tool && (!$post_screen || (!$new_post && !mbb_managed($id)))) {
         return;
     }
     wp_enqueue_script(
         'mbb-editor-ui',
-        plugins_url(mbb_asset('editor-ui.js'), __FILE__),
+        set_url_scheme(plugins_url(mbb_asset('editor-ui.js'), __FILE__), 'https'),
         ['wp-data', 'wp-blocks', 'mbb-math'],
         substr(hash_file('sha256', __DIR__ . '/editor-ui.js'), 0, 12),
         true,
     );
     wp_enqueue_script(
         'mbb-revisions-ui',
-        plugins_url('revisions-ui.js', __FILE__),
+        set_url_scheme(plugins_url('revisions-ui.js', __FILE__), 'https'),
         ['mbb-editor-ui'],
         substr(hash_file('sha256', __DIR__ . '/revisions-ui.js'), 0, 12),
         true,
@@ -649,7 +653,7 @@ function mbb_enqueue_ui()
         'canPublish' => current_user_can(
             $id && get_post_type($id) === 'page' ? 'publish_pages' : 'publish_posts',
         ),
-        'state' => $tool ? null : mbb_state($id),
+        'state' => $tool || $new_post ? null : mbb_state($id),
     ]);
     wp_enqueue_style(
         'mbb-editor-ui',
@@ -659,5 +663,7 @@ function mbb_enqueue_ui()
     );
 }
 add_action('admin_enqueue_scripts', 'mbb_enqueue_ui');
+add_action('enqueue_block_editor_assets', 'mbb_enqueue_ui');
+add_action('admin_footer-post-new.php', 'mbb_enqueue_ui');
 
 require_once __DIR__ . '/lifecycle.php';

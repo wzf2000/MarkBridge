@@ -302,7 +302,50 @@
     document
       .querySelectorAll('.mbb-open')
       .forEach((b) => b.addEventListener('click', () => open(Number(b.dataset.post))));
-    if (!cfg.postId) return;
+    if (!Number(cfg.postId)) {
+      if (/\/post-new\.php$/.test(window.location.pathname)) {
+        const install = () => {
+          const toolbar = document.querySelector(
+            '.edit-post-header-toolbar, .edit-post-header__settings',
+          );
+          if (!toolbar) return false;
+          if (document.querySelector('#mbb-new-post')) return true;
+          const button = el(
+            'button',
+            {
+              type: 'button',
+              id: 'mbb-new-post',
+              class: 'components-button is-secondary mbb-new-post-button',
+              'aria-label': '导入 Markdown 文件',
+            },
+            '导入 Markdown',
+          );
+          button.onclick = () => {
+            const editor = wp.data.select('core/editor');
+            const title = editor?.getEditedPostAttribute('title') || '';
+            const content = editor?.getEditedPostContent() || '';
+            if (title.trim() || content.trim()) {
+              window.alert('当前新文章已有未保存内容，请先保存或清空后再导入 Markdown。');
+              return;
+            }
+            open(0);
+          };
+          // Keep Gutenberg's document tools (add block, undo, redo) together;
+          // the import action follows them as a secondary, clearly separated action.
+          toolbar.append(button);
+          return true;
+        };
+        if (!install()) {
+          let attempts = 0;
+          const timer = setInterval(() => {
+            if (install() || ++attempts > 300) clearInterval(timer);
+          }, 100);
+        }
+        const observer = new MutationObserver(() => install());
+        observer.observe(document.body, { childList: true, subtree: true });
+      }
+      return;
+    }
     const timer = setInterval(() => {
       const editor = wp.data.select('core/editor');
       if (!editor?.getCurrentPostId()) return;
