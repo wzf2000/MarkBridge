@@ -553,7 +553,13 @@ function mbb_save($r)
         } catch (Throwable $e) {
             $wpdb->query('ROLLBACK');
             if ($source_target && $source_backup !== null) {
-                mbb_source_atomic_write($source_target, $source_backup);
+                $restored = mbb_source_atomic_write($source_target, $source_backup);
+                if (is_wp_error($restored)) {
+                    if (is_int($id)) {
+                        clean_post_cache($id);
+                    }
+                    return mbb_error('source_restore_failed', '保存失败且无法回退源文件。', 500);
+                }
             }
             if (is_int($id)) {
                 clean_post_cache($id);

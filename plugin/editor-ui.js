@@ -269,6 +269,7 @@
       if (base?.source_managed) {
         try {
           const fresh = await api('source?post_id=' + id);
+          base.expected = fresh.expected;
           base.source_sha256 = fresh.source_sha256;
           source.value = fresh.source;
         } catch (e) {
