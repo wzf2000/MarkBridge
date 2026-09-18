@@ -29,7 +29,7 @@ function mbb_asset($file)
 add_action('init', function () {
     wp_register_script(
         'mbb-math',
-        plugins_url(mbb_asset('math.js'), __FILE__),
+        set_url_scheme(plugins_url(mbb_asset('math.js'), __FILE__), 'https'),
         [],
         substr(hash_file('sha256', __DIR__ . '/math.js'), 0, 12),
         true,
