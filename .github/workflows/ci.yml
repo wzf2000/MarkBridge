@@ -44,6 +44,8 @@ jobs:
         run: npm ci
 
       - name: Check formatting
+        env:
+          MARKBRIDGE_PYTHON: python
         run: npm run format:check
 
       - name: Run conversion and editor tests
