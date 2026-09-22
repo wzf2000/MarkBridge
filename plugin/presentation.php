@@ -70,7 +70,7 @@ add_action(
             'markbridge-emoji',
             plugins_url(mbb_asset('emoji.js'), __FILE__),
             [],
-            '1.0.0',
+            '1.0.1',
             true,
         );
         wp_localize_script('markbridge-emoji', 'MBB_EMOJI_IMAGES', mbb_emoji_config());
