@@ -366,14 +366,16 @@ function mbb_restore_source_filters($saved)
         }
     }
 }
-function mbb_save($r)
+function mbb_save($r, $cli_source_path = null)
 {
     global $wpdb;
     $id = absint($r['post_id']);
+    $cli_source_sync =
+        defined('WP_CLI') && WP_CLI && is_string($cli_source_path) && $cli_source_path !== '';
     if (
         $id &&
         get_post_meta($id, '_mbb_source_managed', true) === 'file' &&
-        !(defined('WP_CLI') && WP_CLI) &&
+        !$cli_source_sync &&
         empty($GLOBALS['mbb_source_web_write'])
     ) {
         return mbb_error(
@@ -389,7 +391,7 @@ function mbb_save($r)
     $source_lock =
         $id &&
         get_post_meta($id, '_mbb_source_managed', true) === 'file' &&
-        ((defined('WP_CLI') && WP_CLI) || !empty($GLOBALS['mbb_source_web_write']));
+        ($cli_source_sync || !empty($GLOBALS['mbb_source_web_write']));
     $prefix = $source_lock ? '/mbb-source-locks-' : '/mbb-locks-';
     $dir = sys_get_temp_dir() . $prefix . hash('sha256', ABSPATH);
     if (!is_dir($dir)) {
@@ -422,34 +424,57 @@ function mbb_save($r)
             return $c;
         }
         $doc = $c['document'];
+        if ($cli_source_sync) {
+            clean_post_cache($id);
+        }
         $p = $id ? get_post($id) : null;
+        if (
+            $cli_source_sync &&
+            (!$p || !mbb_managed($id) || get_post_meta($id, '_mbb_source_managed', true) !== 'file')
+        ) {
+            return mbb_error('conflict', '文章或文件来源身份已变化，请重新核对后再同步。');
+        }
         $source_backup = null;
         $source_target = null;
         if ($p && get_post_meta($id, '_mbb_source_managed', true) === 'file') {
-            if (empty($GLOBALS['mbb_source_web_write'])) {
+            if ($cli_source_sync) {
+                if (!hash_equals((string) ($r['expected'] ?? ''), mbb_token($p))) {
+                    return mbb_error('conflict', '文章已有新修改，请重新载入后合并。');
+                }
+                if (!mbb_cli_source_matches($id, $cli_source_path, $doc['source'])) {
+                    return mbb_error(
+                        'source_conflict',
+                        '源文件绑定或内容已变化，请重新读取后再同步。',
+                    );
+                }
+            } elseif (empty($GLOBALS['mbb_source_web_write'])) {
                 return mbb_error(
                     'source_managed',
                     '此文章由源文件同步；请使用受控的源文件写回流程。',
                 );
-            }
-            $source_target = mbb_source_target($p);
-            if (is_wp_error($source_target)) {
-                return $source_target;
-            }
-            $current_source = mbb_source_fingerprint($source_target);
-            if (is_wp_error($current_source)) {
-                return $current_source;
-            }
-            if (
-                !hash_equals((string) ($r['source_sha256'] ?? ''), $current_source['sha256']) ||
-                !hash_equals((string) ($r['expected'] ?? ''), mbb_token($p))
-            ) {
-                return mbb_error('source_conflict', '源文件或文章内容已变化，请重新读取后再确认。');
-            }
-            $source_backup = $current_source['contents'];
-            $written = mbb_source_atomic_write($source_target, $doc['source']);
-            if (is_wp_error($written)) {
-                return $written;
+            } else {
+                $source_target = mbb_source_target($p);
+                if (is_wp_error($source_target)) {
+                    return $source_target;
+                }
+                $current_source = mbb_source_fingerprint($source_target);
+                if (is_wp_error($current_source)) {
+                    return $current_source;
+                }
+                if (
+                    !hash_equals((string) ($r['source_sha256'] ?? ''), $current_source['sha256']) ||
+                    !hash_equals((string) ($r['expected'] ?? ''), mbb_token($p))
+                ) {
+                    return mbb_error(
+                        'source_conflict',
+                        '源文件或文章内容已变化，请重新读取后再确认。',
+                    );
+                }
+                $source_backup = $current_source['contents'];
+                $written = mbb_source_atomic_write($source_target, $doc['source']);
+                if (is_wp_error($written)) {
+                    return $written;
+                }
             }
         }
         if (

@@ -20,6 +20,16 @@ function mbb_source_text($post)
         ? preg_replace('/^&gt; /m', '> ', $source)
         : $source;
 }
+function mbb_cli_source_matches($id, $source_path, $source)
+{
+    if (is_string($source_path)) {
+        clearstatcache(true, $source_path);
+    }
+    $real = is_string($source_path) && is_file($source_path) ? realpath($source_path) : false;
+    return $real !== false &&
+        get_post_meta($id, '_mbb_source_path_hash', true) === hash('sha256', $real) &&
+        file_get_contents($source_path) === $source;
+}
 function mbb_sync_write($id, $source, $title = null, $source_path = null, $status = null)
 {
     if (!defined('WP_CLI') || !WP_CLI) {
@@ -30,13 +40,7 @@ function mbb_sync_write($id, $source, $title = null, $source_path = null, $statu
         throw new RuntimeException('Migrate this document before syncing');
     }
     if (get_post_meta($id, '_mbb_source_managed', true) === 'file') {
-        if (
-            !$source_path ||
-            !is_file($source_path) ||
-            file_get_contents($source_path) !== $source ||
-            get_post_meta($id, '_mbb_source_path_hash', true) !==
-                hash('sha256', realpath($source_path))
-        ) {
+        if (!mbb_cli_source_matches($id, $source_path, $source)) {
             throw new RuntimeException('Wrong source owner or source changed');
         }
     }
@@ -55,7 +59,7 @@ function mbb_sync_write($id, $source, $title = null, $source_path = null, $statu
         ]),
     );
     $r->set_header('Content-Type', 'application/json');
-    $result = mbb_save($r);
+    $result = mbb_save($r, $source_path);
     if (is_wp_error($result)) {
         throw new RuntimeException($result->get_error_message());
     }
