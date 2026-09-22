@@ -7,10 +7,15 @@ const { JSDOM } = require(require('node:path').join(runtime, 'node_modules/jsdom
 
 const source = fs.readFileSync('plugin/editor-ui.js', 'utf8');
 
-async function loadEditor(content = '', title = '') {
+async function loadEditor(content = '', title = '', options = {}) {
   const dom = new JSDOM(
     '<!doctype html><body class="post-new-php"><div class="edit-post-header-toolbar"></div></body>',
-    { url: 'https://example.test/wp-admin/post-new.php', runScripts: 'outside-only' },
+    {
+      url: options.postId
+        ? 'https://example.test/wp-admin/post.php'
+        : 'https://example.test/wp-admin/post-new.php',
+      runScripts: 'outside-only',
+    },
   );
   const alerts = [];
   const opened = [];
@@ -25,18 +30,24 @@ async function loadEditor(content = '', title = '') {
   dom.window.wp = {
     data: {
       select: () => ({
+        getCurrentPostId: () => options.postId || 0,
         getEditedPostAttribute: (key) => (key === 'title' ? title : 0),
         getEditedPostContent: () => content,
       }),
+      dispatch: () => ({ lockPostSaving() {}, lockPostAutosaving() {} }),
+      subscribe: () => () => {},
     },
   };
+  dom.window.requestAnimationFrame = (callback) => dom.window.setTimeout(callback, 0);
+  dom.window.structuredClone = structuredClone;
   dom.window.MBB_EDITOR = {
     root: 'https://example.test/wp-json/mbb/v1',
     nonce: 'test',
-    postId: 0,
+    postId: options.postId || 0,
     canPublish: false,
-    state: null,
+    state: options.state || null,
   };
+  dom.window.fetch = options.fetch || (() => Promise.reject(new Error('unexpected request')));
   dom.window.MBB_MATH = { style: '', preview: async (html) => html };
   vm.runInContext(source, dom.getInternalVMContext());
   await new Promise((resolve) => dom.window.setTimeout(resolve, 150));
@@ -61,7 +72,62 @@ async function loadEditor(content = '', title = '') {
   assert.equal(titled.opened.length, 0, 'unsaved title does not open import');
   assert.equal(titled.alerts.length, 1, 'unsaved title is protected');
 
-  console.log('R10-04 new-post entry, blank import and unsaved-content guards passed.');
+  const managedState = {
+    post_id: 42,
+    source_managed: true,
+    source_write_available: true,
+    expected: 'stored-token',
+    title: 'Managed',
+    post_status: 'draft',
+    document: { documentId: 'managed-42', source: '# Stored Markdown', serialized: '' },
+  };
+  const unavailable = await loadEditor('', '', {
+    postId: 42,
+    state: managedState,
+    fetch: async () => {
+      throw new Error('source unavailable');
+    },
+  });
+  await new Promise((resolve) => unavailable.dom.window.setTimeout(resolve, 180));
+  unavailable.dom.window.document.querySelector('#mbb-markdown').click();
+  await new Promise((resolve) => unavailable.dom.window.setTimeout(resolve, 20));
+  assert.equal(
+    unavailable.dom.window.document.querySelector('#mbb-source').value,
+    '# Stored Markdown',
+    'source failure falls back to stored Markdown instead of blank or stale text: ' +
+      unavailable.dom.window.document.querySelector('#mbb-dialog [role="status"]').textContent,
+  );
+  assert.equal(
+    unavailable.dom.window.document.querySelector('#mbb-save').disabled,
+    true,
+    'unavailable managed source remains read-only',
+  );
+
+  const fresh = await loadEditor('', '', {
+    postId: 42,
+    state: managedState,
+    fetch: async (url) => ({
+      ok: true,
+      async json() {
+        assert.match(url, /source\?post_id=42$/);
+        return {
+          expected: 'fresh-token',
+          source_sha256: 'fresh-source-hash',
+          source: '# Fresh Markdown',
+        };
+      },
+    }),
+  });
+  await new Promise((resolve) => fresh.dom.window.setTimeout(resolve, 180));
+  fresh.dom.window.document.querySelector('#mbb-markdown').click();
+  await new Promise((resolve) => fresh.dom.window.setTimeout(resolve, 20));
+  assert.equal(
+    fresh.dom.window.document.querySelector('#mbb-source').value,
+    '# Fresh Markdown',
+    'fresh source content takes precedence over stored fallback',
+  );
+
+  console.log('R10-04 new-post guards and managed-source fallback reads passed.');
 })().catch((error) => {
   console.error(error);
   process.exitCode = 1;

@@ -256,8 +256,10 @@
     if (!dialog) build();
     dialog.showModal();
     busy = true;
+    base = null;
     candidate = null;
     version++;
+    source.value = '';
     controls();
     message('正在读取服务器版本……');
     try {
@@ -266,6 +268,8 @@
           ? structuredClone(cfg.state)
           : await api('document?post_id=' + id)
         : null;
+      source.value = base?.document.source || '';
+      let sourceReadFailed = false;
       if (base?.source_managed) {
         try {
           const fresh = await api('source?post_id=' + id);
@@ -274,7 +278,7 @@
           source.value = fresh.source;
         } catch (e) {
           base.source_write_available = false;
-          message('绑定源文件当前不可写，已保留只读查看和预览。');
+          sourceReadFailed = true;
         }
       }
       mode = selectedMode;
@@ -284,7 +288,6 @@
           : base?.title || '';
       docId.value = base?.document.documentId || '';
       docId.readOnly = !!base;
-      source.value = base?.source_managed ? source.value : base?.document.source || '';
       publication.value = base?.post_status || 'draft';
       if (id && id === cfg.postId && selectedMode === 'markdown' && !base?.source_managed) {
         const current = wp.blocks.serialize(wp.data.select('core/block-editor').getBlocks());
@@ -303,9 +306,11 @@
       preview.srcdoc = '';
       message(
         base?.source_managed
-          ? base.source_write_available
-            ? '已读取绑定源文件；请编辑后查看差异和预览，再明确确认写回。'
-            : '此文由源文件同步：当前源文件不可写，请使用同步工具。'
+          ? sourceReadFailed
+            ? '无法读取绑定源文件，当前显示 WordPress 已保存的 Markdown（可能不是源文件最新版），仅供查看和预览。'
+            : base.source_write_available
+              ? '已读取绑定源文件；请编辑后查看差异和预览，再明确确认写回。'
+              : '已读取绑定源文件，当前仅供查看和预览，请使用同步工具更新。'
           : selectedMode === 'blocks'
             ? '将当前区块转换回 Markdown 并预览，尚未保存。'
             : '编辑或上传 Markdown，再检查差异。',

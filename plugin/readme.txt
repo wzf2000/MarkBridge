@@ -3,7 +3,7 @@ Tags: markdown, blocks, editor, mathjax, revisions
 Requires at least: 7.1
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 1.0.0
+Stable tag: 1.0.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -20,5 +20,8 @@ This release requires Linux, Node.js 24 LTS, bubblewrap and a configured private
 3. Upload the built plugin, enable MarkBridge and verify isolated drafts before adopting existing content.
 
 == Changelog ==
+= 1.0.1 =
+Show the saved Markdown when a bound source file cannot be read, and keep the editor read-only until the source is available.
+
 = 1.0.0 =
 Adds administrator runtime diagnostics, optional image data packs, the new-post Markdown import action and commit-linked release manifests.
