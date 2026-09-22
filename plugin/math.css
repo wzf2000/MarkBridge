@@ -21,6 +21,11 @@
 .mbb-document pre.wp-block-mbb-math {
   white-space: normal;
   background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  font-size: inherit;
 }
 .mbb-document mjx-container[display='true'] {
   display: block;

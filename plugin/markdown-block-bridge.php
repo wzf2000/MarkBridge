@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: MarkBridge
- * Version: 1.0.2
+ * Version: 1.0.3
  * License: GPL-3.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  * Requires at least: 7.1

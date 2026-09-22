@@ -408,7 +408,13 @@ function displayBoundaries(source) {
           continue;
         }
         if (!code && line.slice(i, i + 2) === '$$') {
-          marks.push({ pos: offset + i, own: line.trim() === '$$', indent: line.match(/^\s*/)[0] });
+          // A delimiter inside a quote is already on its own logical line.
+          // Leave quote markers for markdown-it to remove when entering that container.
+          marks.push({
+            pos: offset + i,
+            own: /^(?: {0,3}>[ \t]?)*\s*\$\$\s*$/.test(line),
+            indent: line.match(/^\s*/)[0],
+          });
           i++;
         }
       }
