@@ -27,6 +27,10 @@ const fixtures = [
   '- first\n\n  another paragraph\n- second\n',
   '> A quote\n\n~~deleted~~\n\n---\n',
   'Before\n\n<!--more-->\n\nAfter\n',
+  '> $$\n> \\mathrm{KL}(P\\|Q) = \\begin{cases}\n> \\int p(x)\\log \\frac{p(x)}{q(x)}\\,dx, & \\text{continuous} \\\\\n> \\sum_x p(x)\\log \\frac{p(x)}{q(x)}, & \\text{discrete}\n> \\end{cases}\n> $$\n',
+  '> Outer\n>\n> > $$\n> > x > y\n> > $$\n',
+  '- Item\n\n  > $$\n  > a+b\n  > $$\n',
+  '> ```text\n> $$\n> literal\n> $$\n> ```\n\n> `$$` is code.\n',
 ];
 const documents = [];
 for (let start = 0; start < fixtures.length; start += 5) {
@@ -75,6 +79,47 @@ assert(
   'Unsafe or unsupported input must be rejected.',
 );
 const { JSDOM } = require(path.join(runtime, 'node_modules/jsdom'));
+// Inspect the real parser's block tree independently of a host's serializer.
+// The public CI uses a minimal WordPress adapter; full round trips run above
+// when a site-matched runtime is supplied.
+const parser = new JSDOM('', { runScripts: 'outside-only' });
+parser.window.wp = {
+  element: { createElement() {} },
+  blockEditor: {},
+  components: {},
+  blocks: {
+    getBlockType: () => true,
+    createBlock: (name, attributes = {}, innerBlocks = []) => ({ name, attributes, innerBlocks }),
+  },
+};
+parser.window.eval(fs.readFileSync(path.join(__dirname, '../plugin/kernel.js'), 'utf8'));
+function flatten(blocks, parents = []) {
+  return blocks.flatMap((block) => [
+    { ...block, parents },
+    ...flatten(block.innerBlocks, [...parents, block.name]),
+  ]);
+}
+for (const [index, depth, tex] of [
+  [
+    7,
+    1,
+    '\\mathrm{KL}(P\\|Q) = \\begin{cases}\n\\int p(x)\\log \\frac{p(x)}{q(x)}\\,dx, & \\text{continuous} \\\\\n\\sum_x p(x)\\log \\frac{p(x)}{q(x)}, & \\text{discrete}\n\\end{cases}',
+  ],
+  [8, 2, 'x > y'],
+  [9, 1, 'a+b'],
+]) {
+  const blocks = flatten(parser.window.MBB.toBlocks(fixtures[index]));
+  const formula = blocks.find((block) => block.name === 'mbb/math');
+  assert(formula, 'Display math must remain inside its quote container.');
+  assert.equal(formula.parents.filter((name) => name === 'core/quote').length, depth);
+  if (index === 9) assert(formula.parents.includes('mbb/list-item'));
+  assert.equal(formula.attributes.tex.trim(), tex);
+}
+assert(
+  !flatten(parser.window.MBB.toBlocks(fixtures[10])).some((block) => block.name === 'mbb/math'),
+  'Quoted code is not math.',
+);
+parser.window.close();
 const dom = new JSDOM('<p>:rocket:</p><pre>:rocket:</pre><code>:smile:</code>', {
   runScripts: 'outside-only',
 });
@@ -84,4 +129,6 @@ assert.equal(dom.window.document.querySelector('p').textContent, '🚀');
 assert.equal(dom.window.document.querySelector('pre').textContent, ':rocket:');
 assert.equal(dom.window.document.querySelector('code').textContent, ':smile:');
 dom.window.close();
-console.log('7 exact round trips, 3 policy rejections and Unicode/code-boundary checks passed.');
+console.log(
+  `${fixtures.length} exact round trips, 3 policy rejections and math/code-boundary checks passed.`,
+);

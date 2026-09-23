@@ -1,7 +1,7 @@
 (() => {
   if (window.MBB_MATH) return;
   const root = new URL('.', document.currentScript.src).href;
-  let engine, ready;
+  let engine, ready, outputStyle;
   const cache = new Map();
   function load() {
     if (ready) return ready;
@@ -58,7 +58,7 @@
                 const timer = setTimeout(() => {
                   pending.delete(id);
                   reject(Error('公式排版超时，已保留源码，可重试。'));
-                }, 30000);
+                }, 120000);
                 pending.set(id, { resolve, reject, timer });
                 send({ action: 'render', id, tex, display });
               }),
@@ -69,7 +69,18 @@
           if (!p) return;
           pending.delete(m.id);
           clearTimeout(p.timer);
-          m.error ? p.reject(Error(m.error)) : p.resolve(m.html);
+          if (m.error) p.reject(Error(m.error));
+          else {
+            if (typeof m.css === 'string') {
+              if (!outputStyle) {
+                outputStyle = document.createElement('style');
+                outputStyle.dataset.mbbChtml = 'true';
+                document.head.append(outputStyle);
+              }
+              outputStyle.textContent = m.css;
+            }
+            p.resolve(m.html);
+          }
         }
       };
       window.addEventListener('message', receive);
@@ -115,6 +126,10 @@
           wrap.innerHTML = html;
           n.replaceChildren(wrap);
           n.dataset.mbbRendered = tex;
+          if (n.dataset.mbbMathError) {
+            delete n.dataset.mbbMathError;
+            n.removeAttribute('title');
+          }
         } catch (e) {
           n.dataset.mbbMathError = 'true';
           n.title = e.message;
@@ -126,10 +141,10 @@
     const doc = document.implementation.createHTMLDocument('');
     doc.body.innerHTML = html;
     await typeset(doc.body);
-    return doc.body.innerHTML;
+    return (outputStyle?.outerHTML || '') + doc.body.innerHTML;
   }
   const style =
-    'mjx-container{display:inline-block;max-width:100%}mjx-container[display="true"]{display:block;overflow-x:auto;overflow-y:hidden;padding:8px 0}mjx-container svg{max-width:none}.mbb-typeset{font-size:1em}.mbb-math-preview{padding:8px;border:1px solid #ddd;overflow-x:auto}.mbb-math-preview small{display:block;color:#555}[data-mbb-math-error]{text-decoration:underline wavy #b32d2e}';
+    'mjx-container{display:inline-block;max-width:100%}mjx-container[display="true"]{display:block;overflow-x:auto;overflow-y:hidden;padding:8px 0}mjx-container svg{max-width:none}mjx-container[jax="CHTML"][display="true"]{display:flex;justify-content:safe center}mjx-container[jax="CHTML"][display="true"]>mjx-math{flex-shrink:0}mjx-container[display="true"]>svg{display:block;margin-inline:auto}.mbb-typeset{font-size:1em;display:inline;overflow:visible;vertical-align:baseline}pre.wp-block-mbb-math>.mbb-typeset{display:block;width:100%;font-size:1.15em}.mbb-math-preview{padding:8px;border:1px solid #ddd;overflow-x:auto}.mbb-math-preview small{display:block;color:#555}[data-mbb-math-error]{text-decoration:underline wavy #b32d2e}';
   window.MBB_MATH = { render, typeset, preview, style };
   if (window.MBB_MATH_CONFIG?.front) {
     const start = () => typeset(document);

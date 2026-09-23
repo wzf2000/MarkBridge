@@ -13,20 +13,33 @@
   overflow-x: auto;
 }
 .mbb-document .mbb-typeset {
-  display: inline-block;
-  max-width: 100%;
-  overflow-x: auto;
-  vertical-align: middle;
+  display: inline;
+  overflow: visible;
+  vertical-align: baseline;
 }
 .mbb-document pre.wp-block-mbb-math {
   white-space: normal;
   background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  font-size: inherit;
+}
+.mbb-document pre.wp-block-mbb-math > .mbb-typeset {
+  display: block;
+  width: 100%;
+  font-size: 1.15em;
 }
 .mbb-document mjx-container[display='true'] {
   display: block;
   max-width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
+}
+.mbb-document mjx-container[display='true'] > svg {
+  display: block;
+  margin-inline: auto;
 }
 .mbb-reading .post-page .row > [class*='col-'],
 .mbb-reading .post-content-inner {
@@ -55,10 +68,9 @@
   overflow-wrap: anywhere;
 }
 .mbb-paragraph-preview .mbb-typeset {
-  display: inline-block;
-  max-width: 100%;
-  overflow-x: auto;
-  vertical-align: middle;
+  display: inline;
+  overflow: visible;
+  vertical-align: baseline;
 }
 .mbb-paragraph-preview mjx-container {
   max-width: 100%;
