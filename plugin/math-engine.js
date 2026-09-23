@@ -23,13 +23,22 @@ let renderQueue = Promise.resolve();
 const renderOne = async (tex, display) => {
   if (typeof tex !== 'string' || tex.length > 20000) throw Error('公式过长');
   await MathJax.startup.promise;
+  // MathJax adds later glyph rules through CSSOM, which requires a live sheet.
+  if (!document.getElementById('MJX-CHTML-styles')) {
+    document.head.appendChild(MathJax.chtmlStylesheet());
+  }
   const node = await MathJax.tex2chtmlPromise(tex, { display });
   if (node.querySelector('[data-mml-node="merror"]')) throw Error('公式语法无法排版');
   // CHTML can request additional font data while producing its stylesheet.
   // Its synchronous API signals this with a retry promise, not a TeX error.
   for (;;) {
     try {
-      return { html: node.outerHTML, css: MathJax.chtmlStylesheet().textContent };
+      const style = MathJax.chtmlStylesheet();
+      return {
+        html: node.outerHTML,
+        // textContent omits rules inserted with CSSStyleSheet.insertRule().
+        css: Array.from(style.sheet.cssRules, (rule) => rule.cssText).join('\n'),
+      };
     } catch (error) {
       if (!error.retry || typeof error.retry.then !== 'function') throw error;
       await error.retry;
