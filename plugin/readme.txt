@@ -3,7 +3,7 @@ Tags: markdown, blocks, editor, mathjax, revisions
 Requires at least: 7.1
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 1.0.8
+Stable tag: 1.0.9
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -20,6 +20,9 @@ This release requires Linux, Node.js 24 LTS, bubblewrap and a configured private
 3. Upload the built plugin, enable MarkBridge and verify isolated drafts before adopting existing content.
 
 == Changelog ==
+= 1.0.9 =
+Uses a block formatting context for numbered code to prevent cumulative line-number drift across fonts.
+
 = 1.0.8 =
 Aligns inline math with the text baseline without nested scrolling; enlarges display math by 15%.
 

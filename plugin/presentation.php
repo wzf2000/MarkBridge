@@ -55,7 +55,7 @@ add_action(
         wp_add_inline_style(
             'prism-plugin-line-numbers',
             '.mbb-reading .mbb-document pre.wp-block-mbb-code.line-numbers{padding-left:5em!important}' .
-                'pre.wp-block-mbb-code.line-numbers>code{font-size:inherit;line-height:inherit}',
+                'pre.wp-block-mbb-code.line-numbers>code{display:block;font-size:inherit;line-height:inherit}',
         );
         wp_enqueue_script(
             'copy-clipboard',
