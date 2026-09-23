@@ -58,7 +58,7 @@
                 const timer = setTimeout(() => {
                   pending.delete(id);
                   reject(Error('公式排版超时，已保留源码，可重试。'));
-                }, 30000);
+                }, 120000);
                 pending.set(id, { resolve, reject, timer });
                 send({ action: 'render', id, tex, display });
               }),
@@ -126,6 +126,10 @@
           wrap.innerHTML = html;
           n.replaceChildren(wrap);
           n.dataset.mbbRendered = tex;
+          if (n.dataset.mbbMathError) {
+            delete n.dataset.mbbMathError;
+            n.removeAttribute('title');
+          }
         } catch (e) {
           n.dataset.mbbMathError = 'true';
           n.title = e.message;

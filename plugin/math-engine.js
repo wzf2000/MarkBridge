@@ -16,15 +16,31 @@ window.MathJax = {
     font: 'mathjax-newcm',
     fontPath: new URL('vendor/mathjax-newcm-font', location.href).href,
   },
-  chtml: { adaptiveCSS: false },
+  chtml: { adaptiveCSS: true },
   options: { enableMenu: false, enableExplorer: false },
 };
-window.mbbRender = async (tex, display) => {
+let renderQueue = Promise.resolve();
+const renderOne = async (tex, display) => {
   if (typeof tex !== 'string' || tex.length > 20000) throw Error('公式过长');
   await MathJax.startup.promise;
   const node = await MathJax.tex2chtmlPromise(tex, { display });
   if (node.querySelector('[data-mml-node="merror"]')) throw Error('公式语法无法排版');
-  return { html: node.outerHTML, css: MathJax.chtmlStylesheet().textContent };
+  // CHTML can request additional font data while producing its stylesheet.
+  // Its synchronous API signals this with a retry promise, not a TeX error.
+  for (;;) {
+    try {
+      return { html: node.outerHTML, css: MathJax.chtmlStylesheet().textContent };
+    } catch (error) {
+      if (!error.retry || typeof error.retry.then !== 'function') throw error;
+      await error.retry;
+    }
+  }
+};
+
+window.mbbRender = (tex, display) => {
+  const result = renderQueue.then(() => renderOne(tex, display));
+  renderQueue = result.catch(() => {});
+  return result;
 };
 
 // No direct parent/child DOM access: browsers can isolate frame Window objects.
