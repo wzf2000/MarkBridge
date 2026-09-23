@@ -96,6 +96,9 @@ jobs:
       - name: Run source writeback safety tests
         run: php tests/source-writeback.php
 
+      - name: Run bound-file CLI synchronization tests
+        run: php tests/cli-source-sync.php
+
       - name: Check release sources and PHP syntax
         run: python3 scripts/check_release.py
 
