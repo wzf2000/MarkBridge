@@ -129,7 +129,7 @@
     return doc.body.innerHTML;
   }
   const style =
-    'mjx-container{display:inline-block;max-width:100%}mjx-container[display="true"]{display:block;overflow-x:auto;overflow-y:hidden;padding:8px 0}mjx-container svg{max-width:none}.mbb-typeset{font-size:1em}.mbb-math-preview{padding:8px;border:1px solid #ddd;overflow-x:auto}.mbb-math-preview small{display:block;color:#555}[data-mbb-math-error]{text-decoration:underline wavy #b32d2e}';
+    'mjx-container{display:inline-block;max-width:100%}mjx-container[display="true"]{display:block;overflow-x:auto;overflow-y:hidden;padding:8px 0}mjx-container svg{max-width:none}mjx-container[display="true"]>svg{display:block;margin-inline:auto}pre.wp-block-mbb-math>.mbb-typeset{display:block;width:100%}.mbb-typeset{font-size:1em}.mbb-math-preview{padding:8px;border:1px solid #ddd;overflow-x:auto}.mbb-math-preview small{display:block;color:#555}[data-mbb-math-error]{text-decoration:underline wavy #b32d2e}';
   window.MBB_MATH = { render, typeset, preview, style };
   if (window.MBB_MATH_CONFIG?.front) {
     const start = () => typeset(document);

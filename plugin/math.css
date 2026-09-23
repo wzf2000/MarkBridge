@@ -27,11 +27,19 @@
   padding: 0;
   font-size: inherit;
 }
+.mbb-document pre.wp-block-mbb-math > .mbb-typeset {
+  display: block;
+  width: 100%;
+}
 .mbb-document mjx-container[display='true'] {
   display: block;
   max-width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
+}
+.mbb-document mjx-container[display='true'] > svg {
+  display: block;
+  margin-inline: auto;
 }
 .mbb-reading .post-page .row > [class*='col-'],
 .mbb-reading .post-content-inner {
