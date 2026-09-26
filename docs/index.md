@@ -13,7 +13,7 @@ README 说明产品范围和最短开发入口；本页按用途区分持续有�
 
 ## ACTIVE
 
-当前没有实施中的计划；未发布功能及验证边界见下方归档与当前说明。
+当前没有实施中的计划；1.1.0 功能及验证边界见下方归档与当前说明。
 
 ## DEFERRED
 
@@ -21,13 +21,13 @@ README 说明产品范围和最短开发入口；本页按用途区分持续有�
 
 ## HISTORICAL
 
-- [脚注](plans/completed/FOOTNOTES.md)：命名引用、定义编辑与编号跳转已完成隔离验收，尚未发布。
+- [脚注](plans/completed/FOOTNOTES.md)：命名引用、定义编辑与编号跳转已纳入 1.1.0，验证边界见当前说明。
 
-- [正文任务列表](plans/completed/TASK-LISTS.md)：区块状态、Markdown 往返和后台编辑已完成隔离验收，尚未发布。
+- [正文任务列表](plans/completed/TASK-LISTS.md)：区块状态、Markdown 往返和后台编辑已纳入 1.1.0，验证边界见当前说明。
 
 - [公式阅读工具](plans/completed/MATH-READING.md)：前台复制、放大和键盘交互，已完成隔离验收。
 
-- [浏览器回归与长文差异、冲突处理](plans/completed/EDITOR-REVIEW-REGRESSION.md)：已完成实现与隔离验收，尚未发布。
+- [浏览器回归与长文差异、冲突处理](plans/completed/EDITOR-REVIEW-REGRESSION.md)：已纳入 1.1.0，验证边界见当前说明。
 
 - [统一发行与正式版原计划](plans/completed/ROADMAP.md)：保留原 R07/R10 完成标准；不作当前状态入口。
 - [0.7.0 候选验证记录](archive/VALIDATION-0.7.0-RC.md)：已运行检查及当时未覆盖范围。
