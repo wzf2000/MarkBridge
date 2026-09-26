@@ -68,11 +68,9 @@ if (!process.env.MARKBRIDGE_TEST_SKIP_BLOCKS) {
   console.log('Block export round trips skipped: no WordPress block runtime configured.');
 }
 const rejected = convert(
-  [
-    '<script>alert(1)</script>\n',
-    '<img src="x" onerror="alert(1)">\n',
-    'text[^1]\n\n[^1]: footnote\n',
-  ].map((source) => ({ mode: 'markdown', source, documentId: 'unsafe-test' })),
+  ['<script>alert(1)</script>\n', '<img src="x" onerror="alert(1)">\n', 'text[^missing]\n'].map(
+    (source) => ({ mode: 'markdown', source, documentId: 'unsafe-test' }),
+  ),
 );
 assert(
   rejected.every((result) => !result.ok),
@@ -87,6 +85,7 @@ parser.window.wp = {
   element: { createElement() {} },
   blockEditor: {},
   components: {},
+  richText: { registerFormatType() {} },
   blocks: {
     getBlockType: () => true,
     createBlock: (name, attributes = {}, innerBlocks = []) => ({ name, attributes, innerBlocks }),

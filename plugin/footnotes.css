@@ -1,0 +1,45 @@
+.mbb-footnote-ref {
+  vertical-align: super;
+  font-size: 0.75em;
+  line-height: 0;
+}
+.mbb-footnote-ref a,
+.mbb-footnote-backrefs a {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+.mbb-footnote-ref a:focus-visible,
+.mbb-footnote-backrefs a:focus-visible,
+.mbb-footnotes li:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+.mbb-footnotes {
+  border-top: 1px solid currentColor;
+  margin-block: 2em 0;
+  padding-block-start: 1em;
+  font-size: 0.9em;
+}
+.mbb-footnotes > ol {
+  padding-inline-start: 2em;
+}
+.mbb-footnotes li {
+  overflow-wrap: anywhere;
+}
+.mbb-footnotes li > :first-child {
+  margin-block-start: 0;
+}
+.mbb-footnotes li > :last-child {
+  margin-block-end: 0;
+}
+.mbb-footnotes pre,
+.mbb-footnotes .wp-block-mbb-math {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.mbb-footnote-backrefs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.5em;
+  margin-inline-start: 0.5em;
+}

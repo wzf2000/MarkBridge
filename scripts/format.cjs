@@ -14,6 +14,8 @@ const ignored = new Set([
   'dist',
   '.runtime',
   '.ci-runtime',
+  'test-results',
+  'playwright-report',
   '__pycache__',
 ]);
 function files(dir) {

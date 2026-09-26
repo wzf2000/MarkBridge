@@ -7,7 +7,18 @@ import re
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
-SKIP = {".git", ".venv", "node_modules", "vendor", "dist", ".runtime", ".ci-runtime", "__pycache__"}
+SKIP = {
+    ".git",
+    ".venv",
+    "node_modules",
+    "vendor",
+    "dist",
+    ".runtime",
+    ".ci-runtime",
+    "__pycache__",
+    "test-results",
+    "playwright-report",
+}
 
 
 def main():
@@ -71,7 +82,12 @@ def main():
     math = (ROOT / "plugin" / assets["math.js"]).read_text()
     if assets["math-engine.html"] not in math:
         raise RuntimeError("Formula loader does not reference the hashed engine")
-    for required in ["clipboard-LICENSE.txt", "emojilib-LICENSE.txt", "wp-editormd-GPL-3.0.txt"]:
+    for required in [
+        "clipboard-LICENSE.txt",
+        "emojilib-LICENSE.txt",
+        "wp-editormd-GPL-3.0.txt",
+        "markdown-it-footnote-LICENSE.txt",
+    ]:
         if not (ROOT / "plugin/licenses" / required).is_file():
             raise RuntimeError("Missing third-party license: " + required)
     print("Release source, PHP syntax, version and asset checks passed:", checked, "files")

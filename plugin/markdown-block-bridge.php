@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: MarkBridge
- * Version: 1.0.9
+ * Version: 1.1.0
  * License: GPL-3.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  * Requires at least: 7.1
@@ -57,6 +57,7 @@ add_action('enqueue_block_editor_assets', function () {
             'wp-block-editor',
             'wp-element',
             'wp-components',
+            'wp-data',
             'wp-rich-text',
             'wp-hooks',
             'mbb-math',
@@ -74,6 +75,18 @@ add_action('init', function () {
         ],
     ]);
     register_block_type('mbb/list-item', ['api_version' => 3]);
+    register_block_type('mbb/task-item', [
+        'api_version' => 3,
+        'attributes' => [
+            'content' => ['type' => 'string', 'default' => ''],
+            'checked' => ['type' => 'boolean', 'default' => false],
+        ],
+    ]);
+    register_block_type('mbb/footnotes', ['api_version' => 3]);
+    register_block_type('mbb/footnote', [
+        'api_version' => 3,
+        'attributes' => ['label' => ['type' => 'string', 'default' => '']],
+    ]);
     register_block_type('mbb/math', [
         'api_version' => 3,
         'attributes' => ['tex' => ['type' => 'string', 'default' => '']],
@@ -101,6 +114,7 @@ add_filter('render_block', function ($html) {
 require_once __DIR__ . '/source-sync.php';
 require_once __DIR__ . '/publication.php';
 require_once __DIR__ . '/editor-bridge.php';
+require_once __DIR__ . '/footnotes.php';
 
 require_once __DIR__ . '/revisions.php';
 
@@ -130,6 +144,14 @@ add_action('enqueue_block_assets', function () {
             plugins_url(mbb_asset('math.css'), __FILE__),
             [],
             substr(hash_file('sha256', __DIR__ . '/math.css'), 0, 12),
+        );
+    }
+    if (!is_admin()) {
+        wp_enqueue_style(
+            'mbb-footnotes',
+            plugins_url(mbb_asset('footnotes.css'), __FILE__),
+            [],
+            substr(hash_file('sha256', __DIR__ . '/footnotes.css'), 0, 12),
         );
     }
 });

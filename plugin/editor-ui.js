@@ -3,9 +3,14 @@
   let base = null,
     mode = 'markdown',
     candidate = null,
+    candidateSource = null,
+    conflict = null,
     version = 0,
+    epoch = 0,
+    loaded = false,
     busy = false;
-  let dialog, source, title, docId, publication, status, diff, preview, save;
+  let dialog, source, title, docId, publication, status, diff, preview, save, reviewButton;
+  let conflictPanel, conflictSummary, conflictDiff, conflictAdopt, conflictDownload;
   const el = (tag, attrs = {}, text = '') => {
     const n = document.createElement(tag);
     Object.entries(attrs).forEach(([k, v]) => n.setAttribute(k, v));
@@ -30,13 +35,21 @@
       headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': cfg.nonce },
       ...(data ? { body: JSON.stringify(data) } : {}),
     });
-    const json = await response.json();
-    if (!response.ok) throw Error(json.message || '请求失败');
+    const json = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const error = Error(
+        `${json.message || '请求失败'}（${json.code || 'HTTP'} / ${response.status}）`,
+      );
+      error.code = json.code;
+      error.status = response.status;
+      throw error;
+    }
     return json;
   }
   function invalidate() {
     version++;
     candidate = null;
+    candidateSource = null;
     if (save) save.disabled = true;
   }
   function message(text, error = false) {
@@ -45,8 +58,19 @@
   }
   function controls() {
     dialog.querySelectorAll('button,input,textarea,select').forEach((b) => (b.disabled = busy));
-    save.disabled = busy || !candidate || (base?.source_managed && !base?.source_write_available);
-    if (base?.source_managed && !base?.source_write_available) {
+    save.disabled =
+      busy || !!conflict || !candidate || (base?.source_managed && !base?.source_write_available);
+    reviewButton.disabled = busy || !loaded || (!!conflict && !conflict.adopted);
+    if (conflict) {
+      conflictAdopt.disabled = busy || !conflict.latest;
+      conflictDownload.disabled = busy || typeof conflict.markdown !== 'string';
+    }
+    if (conflict && !conflict.adopted) {
+      source.readOnly = true;
+      title.readOnly = true;
+      publication.disabled = true;
+      dialog.querySelector('#mbb-upload').disabled = true;
+    } else if (base?.source_managed && !base?.source_write_available) {
       source.readOnly = true;
       title.readOnly = true;
       publication.disabled = true;
@@ -55,6 +79,8 @@
       title.readOnly = false;
     }
   }
+  const active = (serial) => dialog.open && epoch === serial;
+  const isConflict = (error) => ['conflict', 'source_conflict'].includes(error.code);
   function request() {
     return {
       post_id: base?.post_id || 0,
@@ -77,49 +103,281 @@
           : null,
     };
   }
-  function showDiff(before, after) {
-    diff.replaceChildren();
+  // Unique-line anchors split long documents without allocating a line-count squared table.
+  // Small gaps use LCS for readable edits; large repeated gaps remain bounded replacements.
+  function lineDiff(before, after) {
     const a = before.split('\n'),
-      b = after.split('\n');
-    let start = 0,
-      endA = a.length,
-      endB = b.length;
-    while (start < Math.min(endA, endB) && a[start] === b[start]) start++;
-    while (endA > start && endB > start && a[endA - 1] === b[endB - 1]) {
-      endA--;
-      endB--;
+      b = after.split('\n'),
+      raw = [];
+    const add = (kind, value) => raw.push({ kind, text: value });
+    const gap = (as, ae, bs, be) => {
+      while (as < ae && bs < be && a[as] === b[bs]) (add('same', a[as++]), bs++);
+      const suffix = [];
+      while (as < ae && bs < be && a[ae - 1] === b[be - 1]) {
+        suffix.push(a[--ae]);
+        be--;
+      }
+      const na = ae - as,
+        nb = be - bs;
+      if (na && nb && na * nb <= 12000) {
+        const width = nb + 1,
+          table = new Uint16Array((na + 1) * width);
+        for (let i = na - 1; i >= 0; i--)
+          for (let j = nb - 1; j >= 0; j--)
+            table[i * width + j] =
+              a[as + i] === b[bs + j]
+                ? 1 + table[(i + 1) * width + j + 1]
+                : Math.max(table[(i + 1) * width + j], table[i * width + j + 1]);
+        let i = 0,
+          j = 0;
+        while (i < na && j < nb) {
+          if (a[as + i] === b[bs + j]) (add('same', a[as + i++]), j++);
+          else if (table[(i + 1) * width + j] >= table[i * width + j + 1])
+            add('removed', a[as + i++]);
+          else add('added', b[bs + j++]);
+        }
+        while (i < na) add('removed', a[as + i++]);
+        while (j < nb) add('added', b[bs + j++]);
+      } else {
+        for (let i = as; i < ae; i++) add('removed', a[i]);
+        for (let j = bs; j < be; j++) add('added', b[j]);
+      }
+      while (suffix.length) add('same', suffix.pop());
+    };
+    const countsA = new Map(),
+      countsB = new Map();
+    a.forEach((line, i) => {
+      const entry = countsA.get(line);
+      countsA.set(line, entry ? { count: entry.count + 1 } : { count: 1, index: i });
+    });
+    b.forEach((line, i) => {
+      const entry = countsB.get(line);
+      countsB.set(line, entry ? { count: entry.count + 1 } : { count: 1, index: i });
+    });
+    const pairs = [];
+    for (const [line, entry] of countsA) {
+      const other = countsB.get(line);
+      if (entry.count === 1 && other?.count === 1) pairs.push([entry.index, other.index]);
     }
-    diff.append(
-      el(
-        'p',
-        {},
-        start === a.length && start === b.length
-          ? '正文无变化。'
-          : `从第 ${start + 1} 行起：旧 ${endA - start} 行 → 新 ${endB - start} 行（含中间未变行）。`,
-      ),
+    pairs.sort((x, y) => x[0] - y[0]);
+    const tails = [],
+      previous = new Int32Array(pairs.length);
+    pairs.forEach((pair, i) => {
+      let low = 0,
+        high = tails.length;
+      while (low < high) {
+        const middle = (low + high) >>> 1;
+        if (pairs[tails[middle]][1] < pair[1]) low = middle + 1;
+        else high = middle;
+      }
+      previous[i] = low ? tails[low - 1] : -1;
+      tails[low] = i;
+    });
+    const anchors = [];
+    for (let i = tails.at(-1) ?? -1; i >= 0; i = previous[i]) anchors.push(pairs[i]);
+    anchors.reverse();
+    let as = 0,
+      bs = 0;
+    for (const [ai, bi] of anchors) {
+      gap(as, ai, bs, bi);
+      add('same', a[ai]);
+      as = ai + 1;
+      bs = bi + 1;
+    }
+    gap(as, a.length, bs, b.length);
+    let oldLine = 1,
+      newLine = 1;
+    return raw.map((row) => {
+      const numbered = {
+        ...row,
+        oldAt: oldLine,
+        newAt: newLine,
+        oldNo: row.kind === 'added' ? null : oldLine++,
+        newNo: row.kind === 'removed' ? null : newLine++,
+      };
+      return numbered;
+    });
+  }
+  function showDiff(before, after, target = diff) {
+    target.replaceChildren();
+    const rows = lineDiff(before, after),
+      changed = [];
+    rows.forEach((row, i) => {
+      if (row.kind !== 'same') changed.push(i);
+    });
+    if (!changed.length) {
+      target.append(el('p', {}, '正文无变化。'));
+      return;
+    }
+    const ranges = [];
+    for (const index of changed) {
+      const last = ranges.at(-1);
+      if (last && index - last.last <= 7) last.last = index;
+      else ranges.push({ first: index, last: index });
+    }
+    target.append(
+      el('p', {}, `共 ${ranges.length} 处差异；绿色为新增，红色为删除，灰色为未变上下文。`),
     );
-    const grid = el('div', { class: 'mbb-diff-grid' });
-    grid.append(
-      el('pre', { class: 'mbb-before' }, a.slice(start, endA).join('\n')),
-      el('pre', { class: 'mbb-after' }, b.slice(start, endB).join('\n')),
+    let shownHunks = 0;
+    const moreHunks = el(
+      'button',
+      { type: 'button', class: 'mbb-diff-more-hunks' },
+      '显示更多差异',
     );
-    diff.append(grid);
+    target.append(moreHunks);
+    const renderHunks = () => {
+      const limit = Math.min(ranges.length, shownHunks + 20);
+      for (; shownHunks < limit; shownHunks++) {
+        const { first, last } = ranges[shownHunks],
+          start = Math.max(0, first - 3),
+          end = Math.min(rows.length, last + 4),
+          part = rows.slice(start, end),
+          oldCount = part.filter((r) => r.oldNo !== null).length,
+          newCount = part.filter((r) => r.newNo !== null).length;
+        const hunk = el('section', {
+          class: 'mbb-diff-hunk',
+          'aria-label': `差异 ${shownHunks + 1}`,
+        });
+        hunk.append(
+          el('h4', {}, `@@ -${part[0].oldAt},${oldCount} +${part[0].newAt},${newCount} @@`),
+        );
+        const list = el('div', { class: 'mbb-diff-lines', role: 'list' });
+        hunk.append(list);
+        let shown = 0;
+        const more = el('button', { type: 'button', class: 'mbb-diff-more' }, '显示更多行');
+        const render = () => {
+          const rowLimit = Math.min(part.length, shown + 200),
+            fragment = document.createDocumentFragment();
+          for (; shown < rowLimit; shown++) {
+            const row = part[shown];
+            const line = el('div', { class: `mbb-diff-row mbb-${row.kind}`, role: 'listitem' });
+            line.append(
+              el('span', { class: 'mbb-diff-number', 'aria-label': '旧行号' }, row.oldNo ?? ''),
+              el('span', { class: 'mbb-diff-number', 'aria-label': '新行号' }, row.newNo ?? ''),
+              el(
+                'span',
+                { class: 'mbb-diff-text' },
+                `${row.kind === 'added' ? '+' : row.kind === 'removed' ? '−' : ' '} ${row.text}`,
+              ),
+            );
+            fragment.append(line);
+          }
+          list.append(fragment);
+          more.hidden = shown === part.length;
+        };
+        more.onclick = render;
+        render();
+        hunk.append(more);
+        target.insertBefore(hunk, moreHunks);
+      }
+      moreHunks.hidden = shownHunks === ranges.length;
+    };
+    moreHunks.onclick = renderHunks;
+    renderHunks();
+  }
+  function downloadCandidate() {
+    if (typeof conflict?.markdown !== 'string') return;
+    const name = (conflict.payload.documentId || `post-${conflict.payload.post_id}`)
+      .replace(/[^A-Za-z0-9_-]/g, '_')
+      .slice(0, 64);
+    const url = URL.createObjectURL(
+      new Blob([conflict.markdown], { type: 'text/markdown;charset=utf-8' }),
+    );
+    const link = el('a', { href: url, download: `${name || 'candidate'}.md` });
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+  async function refreshConflict() {
+    if (busy || !conflict) return;
+    const current = conflict,
+      serial = epoch;
+    current.latest = null;
+    current.adopted = false;
+    conflictAdopt.disabled = true;
+    busy = true;
+    controls();
+    conflictSummary.textContent = '正在读取服务器最新版……';
+    try {
+      const latest = await api(`document?post_id=${current.payload.post_id}`);
+      if (!active(serial) || conflict !== current) return;
+      let latestSource = latest.document.source;
+      if (latest.source_managed) {
+        const fresh = await api(`source?post_id=${current.payload.post_id}`);
+        if (!active(serial) || conflict !== current) return;
+        if (fresh.expected !== latest.expected)
+          throw Error('读取期间文章再次变化，请重新读取服务器最新版');
+        latest.expected = fresh.expected;
+        latest.source_sha256 = fresh.source_sha256;
+        latestSource = fresh.source;
+      }
+      current.latest = latest;
+      conflictSummary.textContent =
+        `服务器标题：${latest.title}；状态：${latest.post_status}。` +
+        `你的标题：${current.payload.title}；状态：${current.payload.post_status}。` +
+        '当前候选暂时锁定以保持比较准确。选择继续后可编辑，仍须重新预览全部差异并明确保存；不会自动合并。';
+      if (typeof current.markdown === 'string')
+        showDiff(latestSource, current.markdown, conflictDiff);
+      else
+        conflictDiff.replaceChildren(
+          el('p', {}, '区块候选尚无成功生成的 Markdown；保留当前区块，请先核对标题和状态。'),
+        );
+    } catch (error) {
+      if (!active(serial) || conflict !== current) return;
+      current.latest = null;
+      conflictDiff.replaceChildren();
+      conflictSummary.textContent = `无法读取服务器最新版：${error.message}。当前候选仍在编辑器中；请重试读取。`;
+    } finally {
+      if (active(serial) && conflict === current) {
+        busy = false;
+        controls();
+      }
+    }
+  }
+  function enterConflict(error, payload, markdown) {
+    candidate = null;
+    candidateSource = null;
+    conflict = { payload, markdown, latest: null };
+    conflictPanel.hidden = false;
+    conflictDiff.replaceChildren();
+    conflictSummary.textContent = `${error.message}。正在读取最新版以供比较。`;
+    message('检测到版本冲突，保存已停用。请检查下方服务器版本与当前候选。', true);
+  }
+  function adoptConflict() {
+    if (busy || !conflict?.latest) return;
+    base = conflict.latest;
+    conflict.latest = null;
+    conflict = null;
+    conflictPanel.hidden = true;
+    invalidate();
+    message('已保留你的修改并以服务器最新版继续；请重新预览全部差异，再明确保存。');
+    controls();
   }
   async function review() {
-    if (busy) return;
+    if (busy || (conflict && !conflict.adopted)) return;
     busy = true;
     candidate = null;
+    candidateSource = null;
     controls();
     message('正在由服务器校验并生成预览……');
-    const serial = version;
+    const serial = version,
+      session = epoch;
+    let payload;
     try {
-      const payload = request();
+      payload = request();
       const result = await api('preview', payload);
+      if (!active(session)) return;
       if (version !== serial) {
         message('内容已变化，请重新查看差异。');
         return;
       }
-      candidate = payload;
+      const rendered = await MBB_MATH.preview(result.html);
+      if (!active(session)) return;
+      if (version !== serial) {
+        message('内容已变化，请重新查看差异。');
+        return;
+      }
       save.textContent =
         payload.post_status === 'publish'
           ? '确认公开发布'
@@ -129,31 +387,50 @@
               ? '确认提交审核'
               : '确认保存草稿';
       showDiff(result.before, result.document.source);
+      // Fragment-only links otherwise inherit the parent URL in a srcdoc frame.
+      const previewContent = document.createElement('template');
+      previewContent.innerHTML = rendered;
+      for (const link of previewContent.content.querySelectorAll('a[href^="#"]'))
+        link.setAttribute('href', 'about:srcdoc' + link.getAttribute('href'));
       preview.srcdoc =
         '<!doctype html><html><head><meta charset="utf-8"><style>' +
         MBB_MATH.style +
+        (MBB_EDITOR.footnoteStyle || '') +
         'body{font:16px/1.7 system-ui;padding:16px;overflow-wrap:anywhere}pre{overflow:auto}table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:4px}img{max-width:100%}</style></head><body>' +
-        (await MBB_MATH.preview(result.html)) +
+        previewContent.innerHTML +
         '</body></html>';
+      candidate = payload;
+      candidateSource = result.document.source;
+      conflict = null;
+      conflictPanel.hidden = true;
       message(
         '校验通过；目标状态：' +
           publication.selectedOptions[0].textContent +
           '。请检查差异和预览后确认。',
       );
     } catch (e) {
-      message(e.message, true);
+      if (!active(session)) return;
+      if (isConflict(e) && payload) enterConflict(e, payload, payload.source ?? null);
+      else message(e.message, true);
     } finally {
-      busy = false;
-      controls();
+      if (active(session)) {
+        busy = false;
+        controls();
+        if (conflict && !conflict.adopted && !conflict.latest) refreshConflict();
+      }
     }
   }
   async function persist() {
     if (busy || !candidate) return;
+    const payload = candidate,
+      markdown = candidateSource,
+      session = epoch;
     busy = true;
     controls();
     message('正在保存两种表示……');
     try {
-      const result = await api(base?.source_managed ? 'source-save' : 'save', candidate);
+      const result = await api(base?.source_managed ? 'source-save' : 'save', payload);
+      if (!active(session)) return;
       message(
         result.noop
           ? '内容未变，无需重复写入。'
@@ -163,15 +440,31 @@
       );
       window.location.assign(result.editor_url);
     } catch (e) {
-      message(e.message, true);
-      candidate = null;
+      if (!active(session)) return;
+      if (isConflict(e)) enterConflict(e, payload, markdown);
+      else {
+        message(e.message, true);
+        candidate = null;
+        candidateSource = null;
+      }
     } finally {
-      busy = false;
-      controls();
+      if (active(session)) {
+        busy = false;
+        controls();
+        if (conflict && !conflict.adopted && !conflict.latest) refreshConflict();
+      }
     }
   }
   function build() {
     dialog = el('dialog', { id: 'mbb-dialog', 'aria-label': 'Markdown 与区块编辑' });
+    dialog.addEventListener('close', () => {
+      epoch++;
+      busy = false;
+      candidate = null;
+      candidateSource = null;
+      conflict = null;
+      loaded = false;
+    });
     const header = el('div', { class: 'mbb-dialog-header' });
     header.append(el('h2', {}, 'Markdown 与区块编辑'));
     const close = el('button', { type: 'button', 'aria-label': '关闭编辑桥' }, '关闭');
@@ -221,11 +514,25 @@
         message('文件过大。', true);
         return;
       }
-      source.value = await f.text();
-      source.hidden = false;
-      mode = 'upload';
-      invalidate();
-      message('文件已读取，尚未保存。请先查看差异。');
+      const serial = epoch;
+      busy = true;
+      controls();
+      try {
+        const value = await f.text();
+        if (!active(serial)) return;
+        source.value = value;
+        source.hidden = false;
+        mode = 'upload';
+        invalidate();
+        message('文件已读取，尚未保存。请先查看差异。');
+      } catch (error) {
+        if (active(serial)) message(error.message, true);
+      } finally {
+        if (active(serial)) {
+          busy = false;
+          controls();
+        }
+      }
     };
     upload.append(file);
     dialog.append(upload);
@@ -240,7 +547,7 @@
     };
     dialog.append(source);
     const actions = el('div', { class: 'mbb-actions' });
-    const reviewButton = el('button', { type: 'button', id: 'mbb-review' }, '查看差异与预览');
+    reviewButton = el('button', { type: 'button', id: 'mbb-review' }, '查看差异与预览');
     reviewButton.onclick = review;
     save = el('button', { type: 'button', id: 'mbb-save' }, '确认保存双格式');
     save.onclick = persist;
@@ -249,34 +556,89 @@
     status = el('p', { role: 'status' });
     diff = el('section', { 'aria-label': '修改差异' });
     preview = el('iframe', { title: '内置内容预览', sandbox: '' });
-    dialog.append(status, diff, preview);
+    conflictPanel = el('section', {
+      id: 'mbb-conflict',
+      'aria-labelledby': 'mbb-conflict-heading',
+    });
+    conflictPanel.hidden = true;
+    conflictPanel.append(
+      el('h3', { id: 'mbb-conflict-heading' }, '版本冲突：核对服务器与当前候选'),
+    );
+    conflictSummary = el('p', { role: 'status' });
+    conflictDiff = el('section', { 'aria-label': '服务器最新版与当前候选的差异' });
+    const conflictActions = el('div', { class: 'mbb-actions' });
+    const refresh = el(
+      'button',
+      { type: 'button', id: 'mbb-conflict-refresh' },
+      '重新读取服务器最新版',
+    );
+    refresh.onclick = refreshConflict;
+    conflictDownload = el(
+      'button',
+      { type: 'button', id: 'mbb-conflict-download' },
+      '下载当前候选 .md',
+    );
+    conflictDownload.onclick = downloadCandidate;
+    conflictAdopt = el(
+      'button',
+      { type: 'button', id: 'mbb-conflict-adopt' },
+      '保留我的修改，基于最新版继续',
+    );
+    conflictAdopt.onclick = adoptConflict;
+    conflictActions.append(refresh, conflictDownload, conflictAdopt);
+    conflictPanel.append(conflictSummary, conflictActions, conflictDiff);
+    dialog.append(status, conflictPanel, diff, preview);
     document.body.append(dialog);
   }
   async function open(id, selectedMode = 'markdown') {
     if (!dialog) build();
+    if (dialog.open) return;
+    const serial = ++epoch;
     dialog.showModal();
     busy = true;
+    loaded = false;
     base = null;
     candidate = null;
+    candidateSource = null;
+    conflict = null;
     version++;
     source.value = '';
+    title.value = '';
+    docId.value = '';
+    diff.replaceChildren();
+    preview.srcdoc = '';
+    conflictPanel.hidden = true;
+    conflictDiff.replaceChildren();
     controls();
     message('正在读取服务器版本……');
     try {
-      base = id
+      const freshBase = id
         ? id === cfg.postId
           ? structuredClone(cfg.state)
           : await api('document?post_id=' + id)
         : null;
+      if (!active(serial)) return;
+      base = freshBase;
       source.value = base?.document.source || '';
       let sourceReadFailed = false;
       if (base?.source_managed) {
         try {
-          const fresh = await api('source?post_id=' + id);
+          let fresh = await api('source?post_id=' + id);
+          if (!active(serial)) return;
+          if (fresh.expected !== base.expected) {
+            const current = await api('document?post_id=' + id);
+            if (!active(serial)) return;
+            fresh = await api('source?post_id=' + id);
+            if (!active(serial)) return;
+            if (fresh.expected !== current.expected)
+              throw Error('读取期间文章再次变化，请重新打开编辑器');
+            base = current;
+          }
           base.expected = fresh.expected;
           base.source_sha256 = fresh.source_sha256;
           source.value = fresh.source;
         } catch (e) {
+          if (!active(serial)) return;
           base.source_write_available = false;
           sourceReadFailed = true;
         }
@@ -298,12 +660,14 @@
           serialized: current,
           title: wp.data.select('core/editor').getEditedPostAttribute('title'),
         });
+        if (!active(serial)) return;
         source.value = converted.document.source;
         title.value = converted.title;
       }
       source.hidden = selectedMode === 'blocks';
       diff.replaceChildren();
       preview.srcdoc = '';
+      loaded = true;
       message(
         base?.source_managed
           ? sourceReadFailed
@@ -316,10 +680,12 @@
             : '编辑或上传 Markdown，再检查差异。',
       );
     } catch (e) {
-      message(e.message, true);
+      if (active(serial)) message(e.message, true);
     } finally {
-      busy = false;
-      controls();
+      if (active(serial)) {
+        busy = false;
+        controls();
+      }
     }
   }
   function setup() {

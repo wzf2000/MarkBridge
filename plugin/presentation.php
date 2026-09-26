@@ -86,7 +86,24 @@ add_filter('body_class', static function ($classes) {
     $classes[] = 'line-numbers';
     return $classes;
 });
-// Render task markers without altering literal code, scripts or stored text.
+// Managed task blocks carry their own state. Render only their retained marker.
+function mbb_content_task_markers($html)
+{
+    return preg_replace_callback(
+        '~(<li\b(?=[^>]*\bwp-block-mbb-task-item\b)[^>]*>\s*(?:<p\b[^>]*>\s*)?)\[([ xX])\](?=\s|<|$)\s*~i',
+        static function ($m) {
+            return $m[1] .
+                '<input type="checkbox" class="task-list-item-checkbox" disabled' .
+                (strtolower($m[2]) === 'x' ? ' checked' : '') .
+                ' /> ';
+        },
+        $html,
+    );
+}
+add_filter('the_content', 'mbb_content_task_markers', 10);
+add_filter('render_block_mbb/task-item', 'mbb_content_task_markers', 10);
+
+// Comments retain the existing plain-text marker behavior, outside literal code.
 function mbb_task_markers($html)
 {
     return preg_replace_callback(
@@ -103,7 +120,6 @@ function mbb_task_markers($html)
         $html,
     );
 }
-add_filter('the_content', 'mbb_task_markers', 10);
 // Comment KSES strips list wrappers; run after WordPress restores paragraphs.
 add_filter('comment_text', 'mbb_task_markers', 40);
 

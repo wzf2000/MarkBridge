@@ -10,15 +10,16 @@ Upstream release metadata: https://github.com/LuRenJiasWorld/WP-Editor.md/blob/m
 
 ## Dependencies and assets
 
-| Component                                   | License                                                | Distribution                                                              |
-| ------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------- |
-| markdown-it and its dependencies            | MIT / BSD / Python-2.0 as individually declared        | Bundled kernel; notices in `plugin/licenses`                              |
-| MathJax 4.1.3 and New Computer Modern fonts | Apache-2.0                                             | Copied from locked npm packages during build                              |
-| Prism                                       | MIT                                                    | Original vendored files and LICENSE retained                              |
-| clipboard.js                                | MIT                                                    | Original vendored file header retained; full license included             |
-| emojilib 2.4.0                              | MIT                                                    | Unicode shortcode data bundled in `emoji.js`; full license included       |
-| jsdom and its dependencies                  | Their respective licenses                              | Private runtime installed from lockfile; not shipped in plugin ZIP        |
-| WordPress / Gutenberg                       | GPL-2.0-or-later and notices in WordPress distribution | Core script snapshot rebuilt by each installer; not shipped in plugin ZIP |
+| Component                                   | License                                                | Distribution                                                                       |
+| ------------------------------------------- | ------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| markdown-it and its dependencies            | MIT / BSD / Python-2.0 as individually declared        | Bundled kernel; notices in `plugin/licenses`                                       |
+| markdown-it-footnote 4.0.0                  | MIT                                                    | Bundled kernel; full license in `plugin/licenses/markdown-it-footnote-LICENSE.txt` |
+| MathJax 4.1.3 and New Computer Modern fonts | Apache-2.0                                             | Copied from locked npm packages during build                                       |
+| Prism                                       | MIT                                                    | Original vendored files and LICENSE retained                                       |
+| clipboard.js                                | MIT                                                    | Original vendored file header retained; full license included                      |
+| emojilib 2.4.0                              | MIT                                                    | Unicode shortcode data bundled in `emoji.js`; full license included                |
+| jsdom and its dependencies                  | Their respective licenses                              | Private runtime installed from lockfile; not shipped in plugin ZIP                 |
+| WordPress / Gutenberg                       | GPL-2.0-or-later and notices in WordPress distribution | Core script snapshot rebuilt by each installer; not shipped in plugin ZIP          |
 
 The copied legacy Prism/clipboard assets keep their original bytes and notices; their provenance is the former WP Editor.md dependency bundle. New asset versions require a separate review.
 

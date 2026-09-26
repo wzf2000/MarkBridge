@@ -17,6 +17,101 @@
   overflow: visible;
   vertical-align: baseline;
 }
+.mbb-document .mbb-math-readable {
+  cursor: zoom-in;
+}
+.mbb-document span.mbb-math-readable:not([data-mbb-math-error]) {
+  text-decoration: underline dotted;
+  text-decoration-color: currentColor;
+  text-underline-offset: 0.18em;
+}
+.mbb-document .mbb-math-readable:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+.mbb-math-reader {
+  box-sizing: border-box;
+  width: min(92vw, 64rem);
+  max-width: none;
+  max-height: 88vh;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 1px solid #888;
+  border-radius: 0.6rem;
+  color: #222;
+  background: #fff;
+  overflow: auto;
+}
+.mbb-math-reader::backdrop {
+  background: rgb(0 0 0 / 65%);
+}
+.mbb-math-reader h2 {
+  margin: 0 0 0.8rem;
+  font: 600 1.25rem/1.4 sans-serif;
+}
+.mbb-math-reader-toolbar,
+.mbb-math-reader-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.mbb-math-reader button {
+  padding: 0.35rem 0.7rem;
+  border: 1px solid #666;
+  border-radius: 0.3rem;
+  color: inherit;
+  background: #fff;
+  font: 0.9rem/1.4 sans-serif;
+  cursor: pointer;
+}
+.mbb-math-reader button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.mbb-math-reader button:focus-visible,
+.mbb-math-reader-source:focus-visible {
+  outline: 2px solid #165ea8;
+  outline-offset: 2px;
+}
+.mbb-math-reader-scale {
+  font: 0.9rem/1.4 sans-serif;
+}
+.mbb-math-reader-render {
+  box-sizing: border-box;
+  min-height: 4rem;
+  max-width: 100%;
+  margin: 1rem 0;
+  padding: 0.5rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: pre-wrap;
+}
+.mbb-math-reader-render .mbb-typeset,
+.mbb-math-reader-render mjx-container {
+  max-width: none;
+}
+.mbb-math-reader-render mjx-container[display='true'] {
+  width: max-content;
+  min-width: 100%;
+}
+.mbb-math-reader label {
+  display: block;
+  font: 0.9rem/1.5 sans-serif;
+}
+.mbb-math-reader-source {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  margin: 0.25rem 0 1rem;
+  padding: 0.5rem;
+  font: 0.9rem/1.5 monospace;
+  resize: vertical;
+}
+.mbb-math-reader-status {
+  min-height: 1.4em;
+  margin: 0.5rem 0 0;
+  font: 0.85rem/1.4 sans-serif;
+}
 .mbb-document pre.wp-block-mbb-math {
   white-space: normal;
   background: transparent;

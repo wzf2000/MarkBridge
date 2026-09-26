@@ -178,6 +178,9 @@ function mbb_html_allowed($blocks)
             'core/more',
             'mbb/list',
             'mbb/list-item',
+            'mbb/task-item',
+            'mbb/footnotes',
+            'mbb/footnote',
             'mbb/math',
             'mbb/code',
         ];
@@ -283,7 +286,7 @@ function mbb_preview($r)
     $p = $c['post_id'] ? get_post($c['post_id']) : null;
     $c['before'] = $p ? $p->post_content_filtered : '';
     $c['before_title'] = $p ? $p->post_title : '';
-    $c['html'] = do_blocks($c['document']['serialized']);
+    $c['html'] = mbb_render_footnotes(do_blocks($c['document']['serialized']));
     return $c;
 }
 // Code/TeX attributes are plain text. The rendered HTML still passes normal KSES.
@@ -878,12 +881,19 @@ function mbb_enqueue_ui()
             $id && get_post_type($id) === 'page' ? 'publish_pages' : 'publish_posts',
         ),
         'state' => $tool || $new_post ? null : mbb_state($id),
+        'footnoteStyle' => file_get_contents(__DIR__ . '/footnotes.css'),
     ]);
     wp_enqueue_style(
         'mbb-editor-ui',
         plugins_url(mbb_asset('editor-ui.css'), __FILE__),
         [],
         substr(hash_file('sha256', __DIR__ . '/editor-ui.css'), 0, 12),
+    );
+    wp_enqueue_style(
+        'mbb-footnotes',
+        plugins_url(mbb_asset('footnotes.css'), __FILE__),
+        [],
+        substr(hash_file('sha256', __DIR__ . '/footnotes.css'), 0, 12),
     );
 }
 add_action('admin_enqueue_scripts', 'mbb_enqueue_ui');

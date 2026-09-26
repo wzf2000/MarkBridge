@@ -55,6 +55,8 @@ const { JSDOM, VirtualConsole } = require(path.join(ROOT, 'node_modules/jsdom'))
       } else vm.runInContext(s.textContent, dom.getInternalVMContext(), { timeout: 5000 });
     }
     const convert = (item) => {
+      if (item.mode === 'paired_restore')
+        return w.MBB.importPairedDocument(item.source, item.serialized, item.documentId);
       const source =
         item.mode === 'blocks' ? w.MBB.exportDocument(item.base, item.serialized) : item.source;
       return w.MBB.importDocument(source, item.documentId);
