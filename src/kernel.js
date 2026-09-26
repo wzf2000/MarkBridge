@@ -1,4 +1,6 @@
 import MarkdownIt from 'markdown-it';
+import footnotePlugin from 'markdown-it-footnote';
+import { registerFootnotes } from './footnotes.js';
 export const VERSION = '0.2.0';
 export class ConversionError extends Error {
   constructor(code, message, location = '') {
@@ -31,8 +33,9 @@ const esc = (s) =>
     .replace(/"/g, '&quot;');
 const boundaryMD = new MarkdownIt({ html: true });
 const md = new MarkdownIt({ html: true, linkify: false, typographer: false, breaks: false });
+const legacyMD = new MarkdownIt({ html: true, linkify: false, typographer: false, breaks: false });
 // Preserve escaped punctuation in image alternative text (markdown-it text_special).
-md.renderer.renderInlineAsText = function (tokens, options, env) {
+function renderInlineAsText(tokens, options, env) {
   return tokens
     .map((t) =>
       t.type === 'image'
@@ -44,31 +47,28 @@ md.renderer.renderInlineAsText = function (tokens, options, env) {
             : '',
     )
     .join('');
-};
+}
+md.renderer.renderInlineAsText = renderInlineAsText;
+legacyMD.renderer.renderInlineAsText = renderInlineAsText;
 // Math rules run inside the parser: fenced/inline code never enters these rules.
-md.block.ruler.before(
-  'fence',
-  'mbb_math',
-  (state, start, end, silent) => {
-    const begin = state.bMarks[start] + state.tShift[start];
-    if (state.src.slice(begin, state.eMarks[start]).trim() !== '$$') return false;
-    let last = start + 1;
-    while (
-      last < end &&
-      state.src.slice(state.bMarks[last] + state.tShift[last], state.eMarks[last]).trim() !== '$$'
-    )
-      last++;
-    if (last === end) fail('UNCLOSED_MATH', '块公式缺少结束 $$', `line:${start + 1}`);
-    if (silent) return true;
-    const token = state.push('mbb_math', '', 0);
-    token.content = state.getLines(start + 1, last, state.blkIndent, false);
-    token.map = [start, last + 1];
-    state.line = last + 1;
-    return true;
-  },
-  { alt: ['paragraph', 'reference', 'blockquote', 'list'] },
-);
-md.inline.ruler.before('escape', 'mbb_math', (state, silent) => {
+const mathBlockRule = (state, start, end, silent) => {
+  const begin = state.bMarks[start] + state.tShift[start];
+  if (state.src.slice(begin, state.eMarks[start]).trim() !== '$$') return false;
+  let last = start + 1;
+  while (
+    last < end &&
+    state.src.slice(state.bMarks[last] + state.tShift[last], state.eMarks[last]).trim() !== '$$'
+  )
+    last++;
+  if (last === end) fail('UNCLOSED_MATH', '块公式缺少结束 $$', `line:${start + 1}`);
+  if (silent) return true;
+  const token = state.push('mbb_math', '', 0);
+  token.content = state.getLines(start + 1, last, state.blkIndent, false);
+  token.map = [start, last + 1];
+  state.line = last + 1;
+  return true;
+};
+const mathInlineRule = (state, silent) => {
   const start = state.pos;
   if (state.src[start] !== '$') return false;
   if (state.src[start + 1] === '$') fail('MATH_DELIMITER', '块公式的 $$ 必须独占一行');
@@ -88,9 +88,74 @@ md.inline.ruler.before('escape', 'mbb_math', (state, silent) => {
   }
   state.pos = end + 1;
   return true;
+};
+for (const parser of [md, legacyMD]) {
+  parser.block.ruler.before('fence', 'mbb_math', mathBlockRule, {
+    alt: ['paragraph', 'reference', 'blockquote', 'list'],
+  });
+  parser.inline.ruler.before('escape', 'mbb_math', mathInlineRule);
+  parser.renderer.rules.mbb_inline_math = (tokens, idx) =>
+    `<span class="mbb-math" data-mbb-tex="${esc(tokens[idx].content)}">${esc('$' + tokens[idx].content + '$')}</span>`;
+}
+const footnoteLabel = /^[\p{L}\p{N}_-]{1,64}$/u;
+const validFootnoteLabel = (label, location = '') => {
+  if (typeof label !== 'string' || !footnoteLabel.test(label))
+    fail('FOOTNOTE_LABEL', '脚注名称需为1–64位字母、数字、下划线或连字符', location);
+  return label;
+};
+md.use(footnotePlugin);
+md.inline.ruler.before('footnote_ref', 'mbb_literal_html_code_ref', (state, silent) => {
+  const match = state.src.slice(state.pos, state.posMax).match(/^\[\^[^\]\n]+\]/u);
+  if (!match) return false;
+  let depth = 0;
+  for (const token of state.tokens) {
+    if (token.type !== 'html_inline') continue;
+    if (/^<(?:code|pre)(?:\s|>)/i.test(token.content)) depth++;
+    else if (/^<\/(?:code|pre)\s*>/i.test(token.content)) depth = Math.max(0, depth - 1);
+  }
+  if (!depth) return false;
+  if (!silent) state.push('text', '', 0).content = match[0];
+  state.pos += match[0].length;
+  return true;
 });
-md.renderer.rules.mbb_inline_math = (tokens, idx) =>
-  `<span class="mbb-math" data-mbb-tex="${esc(tokens[idx].content)}">${esc('$' + tokens[idx].content + '$')}</span>`;
+md.renderer.rules.footnote_ref = (tokens, idx) => {
+  const label = validFootnoteLabel(tokens[idx].meta?.label);
+  return `<span class="mbb-footnote-ref" data-mbb-footnote="${esc(label)}">[^${esc(label)}]</span>`;
+};
+// Check the token stream before the plugin moves definitions to the end. Its
+// default behavior intentionally ignores duplicate and unused definitions.
+md.core.ruler.before('footnote_tail', 'mbb_footnote_validate', (state) => {
+  const definitions = new Set();
+  const references = new Set();
+  let definition = null;
+  for (const token of state.tokens) {
+    if (token.type === 'footnote_reference_open') {
+      const label = validFootnoteLabel(token.meta?.label);
+      if (definitions.has(label)) fail('FOOTNOTE_DUPLICATE', `重复的脚注定义 ${label}`);
+      definitions.add(label);
+      definition = label;
+    } else if (token.type === 'footnote_reference_close') definition = null;
+    if (token.type !== 'inline') continue;
+    let rawCode = 0;
+    for (const child of token.children || []) {
+      if (child.type === 'html_inline') {
+        if (/^<(?:code|pre)(?:\s|>)/i.test(child.content)) rawCode++;
+        else if (/^<\/(?:code|pre)\s*>/i.test(child.content)) rawCode = Math.max(0, rawCode - 1);
+      }
+      if (rawCode) continue;
+      if (child.type === 'footnote_ref') {
+        const label = validFootnoteLabel(child.meta?.label);
+        if (definition) fail('FOOTNOTE_NESTED', '脚注定义不能包含脚注引用');
+        references.add(label);
+      } else if (child.type === 'text' && /\[\^[^\]\s]+\]/u.test(child.content)) {
+        fail('FOOTNOTE_MISSING', '脚注引用缺少定义');
+      }
+    }
+  }
+  for (const label of definitions)
+    if (!references.has(label)) fail('FOOTNOTE_ORPHAN', `脚注定义 ${label} 未被引用`);
+  state.env.mbbDefinitionOrder = [...definitions];
+});
 function api() {
   if (!globalThis.wp?.blocks) fail('ENVIRONMENT', '需要真实WordPress区块运行时');
   return wp.blocks;
@@ -134,9 +199,21 @@ function safeHTML(html, allowMath = false) {
       tag === 'span' &&
       node.className === 'mbb-math' &&
       node.hasAttribute('data-mbb-tex');
+    const footnote =
+      tag === 'span' &&
+      node.className === 'mbb-footnote-ref' &&
+      node.hasAttribute('data-mbb-footnote');
     if (!tags.has(tag) && !math) fail('UNSUPPORTED_HTML', `不支持HTML标签 ${tag}`);
     for (const a of node.attributes) {
-      if (!(math ? ['class', 'data-mbb-tex'] : attrs[tag] || []).includes(a.name))
+      if (
+        !(
+          math
+            ? ['class', 'data-mbb-tex']
+            : footnote
+              ? ['class', 'data-mbb-footnote']
+              : attrs[tag] || []
+        ).includes(a.name)
+      )
         fail('UNSAFE_HTML_ATTRIBUTE', `不支持属性 ${tag}.${a.name}`);
       if (['href', 'src'].includes(a.name)) safeURL(a.value);
       if (a.name === 'style')
@@ -155,7 +232,7 @@ function safeHTML(html, allowMath = false) {
           if (parts.length !== 2 || !values[key]?.test(value))
             fail('UNSAFE_STYLE', '不支持或不安全的样式');
         }
-      if (a.name === 'class' && !math && a.value !== 'wzf-exercise-hint')
+      if (a.name === 'class' && !math && !footnote && a.value !== 'wzf-exercise-hint')
         fail('UNSAFE_HTML_ATTRIBUTE', '不支持的显示类名');
       if (a.name === 'color' && !/^(?:[a-z]+|#[0-9a-f]{3,8})$/i.test(a.value))
         fail('UNSAFE_STYLE', '不安全的颜色');
@@ -164,6 +241,11 @@ function safeHTML(html, allowMath = false) {
     }
     if (math && node.textContent !== '$' + node.getAttribute('data-mbb-tex') + '$')
       fail('MATH_MISMATCH', '行内公式源码与显示文本不一致');
+    if (footnote) {
+      const label = validFootnoteLabel(node.getAttribute('data-mbb-footnote'));
+      if (node.textContent !== `[^${label}]` || node.children.length)
+        fail('FOOTNOTE_MISMATCH', '脚注标记与名称不一致');
+    }
     for (const c of node.childNodes) walk(c);
   };
   // DOMParser can relocate forbidden head nodes; inspect the entire parsed document.
@@ -230,6 +312,7 @@ function inline(token) {
     'image',
     'html_inline',
     'mbb_inline_math',
+    'footnote_ref',
   ]);
   for (const t of token.children || []) {
     if (!allowed.has(t.type))
@@ -253,7 +336,20 @@ function paragraph(node) {
     fail('INVALID_AST', '段落解析异常', loc(node));
   return inline(node.children[0].token);
 }
-function convert(nodes) {
+function taskParagraph(node) {
+  if (node?.token.type !== 'paragraph_open' || node.children.length !== 1) return null;
+  const token = node.children[0].token;
+  const marker = token.content.match(/^\[([ xX])\](?:[ \t]+|$)/);
+  if (!marker || token.children?.[0]?.type !== 'text') return null;
+  const first = token.children[0].content;
+  if (!first.startsWith(marker[0].trimEnd())) return null;
+  const children = token.children.map((child, index) =>
+    index === 0 ? { ...child, content: first.slice(marker[0].length) } : child,
+  );
+  const content = inline({ ...token, children });
+  return { checked: marker[1].toLowerCase() === 'x', content };
+}
+function convert(nodes, legacyTasks = false) {
   return nodes.map((node) => {
     const t = node.token;
     switch (t.type) {
@@ -296,9 +392,30 @@ function convert(nodes) {
         );
       }
       case 'blockquote_open':
-        return make('core/quote', {}, convert(node.children));
+        return make('core/quote', {}, convert(node.children, legacyTasks));
+      case 'footnote_block_open':
+        return make(
+          'mbb/footnotes',
+          {},
+          node.children.map((note) => {
+            if (note.token.type !== 'footnote_open')
+              fail('FOOTNOTE_STRUCTURE', '脚注定义结构不受支持', loc(note));
+            const label = validFootnoteLabel(note.token.meta?.label);
+            return make('mbb/footnote', { label }, convert(note.children, legacyTasks));
+          }),
+        );
       case 'bullet_list_open':
       case 'ordered_list_open': {
+        const hasTask = (items) =>
+          items.some(
+            (item) =>
+              taskParagraph(item.children[0]) ||
+              item.children.some(
+                (child) =>
+                  ['bullet_list_open', 'ordered_list_open'].includes(child.token.type) &&
+                  hasTask(child.children),
+              ),
+          );
         const complex = (items) =>
           items.some(
             (item) =>
@@ -311,11 +428,16 @@ function convert(nodes) {
                     complex(n.children),
                 ),
           );
-        if (complex(node.children))
+        if (complex(node.children) || (!legacyTasks && hasTask(node.children)))
           return make(
             'mbb/list',
             { ordered: t.type === 'ordered_list_open', start: Number(t.attrGet('start') || 1) },
-            node.children.map((item) => make('mbb/list-item', {}, convert(item.children))),
+            node.children.map((item) => {
+              const task = !legacyTasks && taskParagraph(item.children[0]);
+              return task
+                ? make('mbb/task-item', task, convert(item.children.slice(1), legacyTasks))
+                : make('mbb/list-item', {}, convert(item.children, legacyTasks));
+            }),
           );
         const items = node.children.map((item) => {
           if (
@@ -323,11 +445,11 @@ function convert(nodes) {
             item.children[0]?.token.type !== 'paragraph_open'
           )
             fail('LIST_STRUCTURE', '列表项结构不受支持', loc(item));
-          const text = item.children[0].children[0].token.content;
-          if (/^\[[ xX]\]\s/.test(text)) fail('TASK_LIST', '任务列表暂不支持', loc(item));
+          if (legacyTasks && /^\[[ xX]\]\s/.test(item.children[0].children[0].token.content))
+            fail('TASK_LIST', '任务列表暂不支持', loc(item));
           const content = paragraph(item.children[0]);
           const nested = item.children.slice(1);
-          return make('core/list-item', { content }, convert(nested));
+          return make('core/list-item', { content }, convert(nested, legacyTasks));
         });
         return make(
           'core/list',
@@ -439,13 +561,47 @@ function displayBoundaries(source) {
   }
   return source;
 }
-export function toBlocks(source) {
+export function toBlocks(source, legacyTasks = false, legacyFootnotes = false) {
   checkSource(source);
+  const normalized = displayBoundaries(source);
+  if (!legacyFootnotes) {
+    // The legacy link parser would treat [^id]: as an ordinary link target,
+    // changing the nesting of [link[^id]](url). Mask only that definition
+    // prefix while preserving other reference-style link definitions.
+    const linkProbe = normalized.replace(/^([ \t]{0,3})\[\^[^\]\n]+\]:/gm, '$1MBBFOOTNOTE:');
+    for (const token of legacyMD.parse(linkProbe, {})) {
+      if (token.type !== 'inline') continue;
+      let linkDepth = 0;
+      for (const child of token.children || []) {
+        if (child.type === 'image' && /\[\^[^\]\s]+\]/u.test(child.content))
+          fail('FOOTNOTE_IN_LINK', '图片文字不能包含脚注引用');
+        if (
+          child.type === 'link_open' ||
+          (child.type === 'html_inline' && /^<a(?:\s|>)/i.test(child.content))
+        )
+          linkDepth++;
+        else if (
+          child.type === 'link_close' ||
+          (child.type === 'html_inline' && /^<\/a\s*>/i.test(child.content))
+        )
+          linkDepth = Math.max(0, linkDepth - 1);
+        else if (linkDepth && child.type === 'text' && /\[\^[^\]\s]+\]/u.test(child.content))
+          fail('FOOTNOTE_IN_LINK', '链接文字不能包含脚注引用');
+      }
+    }
+  }
   const env = {};
-  const tokens = md.parse(displayBoundaries(source), env);
-  if (Object.keys(env.references || {}).some((x) => x.startsWith('^')))
+  const tokens = (legacyFootnotes ? legacyMD : md).parse(normalized, env);
+  if (legacyFootnotes && Object.keys(env.references || {}).some((x) => x.startsWith('^')))
     fail('UNSUPPORTED_FOOTNOTE', '脚注暂不支持');
-  return convert(tree(tokens));
+  const roots = tree(tokens.filter((token) => token.type !== 'footnote_anchor'));
+  const order = env.mbbDefinitionOrder || [];
+  for (const root of roots)
+    if (root.token.type === 'footnote_block_open')
+      root.children.sort(
+        (a, b) => order.indexOf(a.token.meta?.label) - order.indexOf(b.token.meta?.label),
+      );
+  return convert(roots, legacyTasks);
 }
 function textMD(text) {
   return text
@@ -518,14 +674,32 @@ function inlineMD(html) {
       case 'span':
         return n.hasAttribute('data-mbb-tex')
           ? '$' + n.getAttribute('data-mbb-tex') + '$'
-          : rawTag();
+          : n.hasAttribute('data-mbb-footnote')
+            ? '[^' + validFootnoteLabel(n.getAttribute('data-mbb-footnote')) + ']'
+            : rawTag();
       default:
         fail('UNSUPPORTED_INLINE_HTML', `不支持回写行内HTML ${n.localName}`);
     }
   };
   return [...root.childNodes].map(walk).join('');
 }
+function taskItemMarkdown(item, at, includeInner = true) {
+  const a = item.attributes;
+  if (typeof a.content !== 'string' || typeof a.checked !== 'boolean')
+    fail('TASK_STRUCTURE', '任务项状态或内容非法', at);
+  const first = '[' + (a.checked ? 'x' : ' ') + '] ' + inlineMD(a.content);
+  return includeInner && item.innerBlocks.length
+    ? first + '\n\n' + rawMarkdown(item.innerBlocks, at)
+    : first;
+}
 function rawMarkdown(blocks, path = 'blocks') {
+  if (path === 'blocks' && blocks.filter((b) => b.name === 'mbb/footnotes').length > 1)
+    fail('FOOTNOTE_STRUCTURE', '一篇文档只能有一个脚注定义区');
+  if (
+    path === 'blocks' &&
+    blocks.some((b, i) => b.name === 'mbb/footnotes' && i !== blocks.length - 1)
+  )
+    fail('FOOTNOTE_STRUCTURE', '脚注定义区必须位于文档末尾');
   return (
     blocks
       .map((b, i) => {
@@ -534,6 +708,29 @@ function rawMarkdown(blocks, path = 'blocks') {
         const a = b.attributes;
         const inner = b.innerBlocks || [];
         switch (b.name) {
+          case 'mbb/footnotes':
+            if (
+              path !== 'blocks' ||
+              inner.length === 0 ||
+              inner.some((n) => n.name !== 'mbb/footnote')
+            )
+              fail('FOOTNOTE_STRUCTURE', '脚注定义区必须在文档末尾并包含定义', at);
+            return inner
+              .map((note, j) => {
+                const label = validFootnoteLabel(note.attributes.label, `${at}[${j}]`);
+                if (!note.innerBlocks?.length) fail('FOOTNOTE_STRUCTURE', '脚注定义不能为空', at);
+                const body = rawMarkdown(note.innerBlocks, `${at}[${j}]`).trimEnd().split('\n');
+                return (
+                  `[^${label}]: ${body[0]}` +
+                  body
+                    .slice(1)
+                    .map((line) => '\n' + (line ? '    ' + line : ''))
+                    .join('')
+                );
+              })
+              .join('\n\n');
+          case 'mbb/footnote':
+            fail('FOOTNOTE_STRUCTURE', '脚注定义只能位于脚注区', at);
           case 'core/paragraph':
             return inlineMD(a.content);
           case 'core/image':
@@ -580,10 +777,14 @@ function rawMarkdown(blocks, path = 'blocks') {
           case 'mbb/list':
             return inner
               .map((item, j) => {
-                if (item.name !== 'mbb/list-item')
+                if (!['mbb/list-item', 'mbb/task-item'].includes(item.name))
                   fail('LIST_STRUCTURE', '复杂列表包含非列表项', at);
                 const marker = a.ordered ? String((a.start || 1) + j) + '. ' : '- ';
-                const lines = rawMarkdown(item.innerBlocks, at).trimEnd().split('\n');
+                const body =
+                  item.name === 'mbb/task-item'
+                    ? taskItemMarkdown(item, at)
+                    : rawMarkdown(item.innerBlocks, at);
+                const lines = body.trimEnd().split('\n');
                 return (
                   marker +
                   lines[0] +
@@ -674,6 +875,35 @@ export function importDocument(source, documentId) {
     serialized: api().serialize(blocks),
   };
 }
+function snapshotKind(source, serialized) {
+  for (const [legacyTasks, legacyFootnotes] of [
+    [false, false],
+    [true, true],
+    [false, true],
+  ]) {
+    try {
+      if (api().serialize(toBlocks(source, legacyTasks, legacyFootnotes)) === serialized)
+        return legacyFootnotes ? 'legacy' : 'current';
+    } catch (_error) {
+      // Only an exact complete block snapshot can use the historical parser.
+    }
+  }
+  return null;
+}
+export function importPairedDocument(source, serialized, documentId) {
+  if (typeof documentId !== 'string' || !documentId.trim())
+    fail('DOCUMENT_ID', '需要稳定document_id');
+  if (typeof serialized !== 'string' || !snapshotKind(source, serialized))
+    fail('SNAPSHOT_MISMATCH', '源快照与区块快照不匹配');
+  return {
+    schema: 1,
+    converter: VERSION,
+    origin: 'markdown_import',
+    documentId,
+    source,
+    serialized,
+  };
+}
 export function exportDocument(document, serialized) {
   if (
     document?.schema !== 1 ||
@@ -681,11 +911,12 @@ export function exportDocument(document, serialized) {
     document.origin !== 'markdown_import'
   )
     fail('DOCUMENT_MODEL', '不支持的来源或模型版本');
+  const kind = snapshotKind(document.source, document.serialized);
+  if (!kind) fail('SNAPSHOT_MISMATCH', '源快照与区块快照不匹配');
+  if (kind === 'legacy' && canonical(serialized) === canonical(document.serialized))
+    return document.source;
   const blocks = api().parse(serialized);
   const normalized = toMarkdown(blocks, document);
-  // The snapshot itself is checked; caller-supplied source is not trusted merely because it is cached.
-  const snapshot = api().serialize(toBlocks(document.source));
-  if (snapshot !== document.serialized) fail('SNAPSHOT_MISMATCH', '源快照与区块快照不匹配');
   return canonical(serialized) === canonical(document.serialized) ? document.source : normalized;
 }
 function MathPreview({ tex, display = false }) {
@@ -783,7 +1014,28 @@ function ParagraphPreview({ content }) {
   );
 }
 export function register() {
+  registerFootnotes();
   const el = wp.element.createElement;
+  const convertPlainList = (block) => {
+    if (block.name === 'core/list') return block;
+    if (block.name !== 'mbb/list' || !block.innerBlocks?.length) return null;
+    const items = block.innerBlocks.map((item) => {
+      if (item.name !== 'mbb/list-item' || item.innerBlocks?.[0]?.name !== 'core/paragraph')
+        return null;
+      const nested = item.innerBlocks.slice(1).map(convertPlainList);
+      if (nested.some((child) => !child)) return null;
+      return make('core/list-item', { content: item.innerBlocks[0].attributes.content }, nested);
+    });
+    if (items.some((item) => !item)) return null;
+    return make(
+      'core/list',
+      {
+        ordered: block.attributes.ordered,
+        ...(block.attributes.start !== 1 ? { start: block.attributes.start } : {}),
+      },
+      items,
+    );
+  };
   if (!api().getBlockType('mbb/list')) {
     api().registerBlockType('mbb/list', {
       apiVersion: 3,
@@ -794,18 +1046,50 @@ export function register() {
         start: { type: 'number', default: 1 },
       },
       supports: { html: false },
-      edit: ({ attributes: a }) =>
-        el(
-          a.ordered ? 'ol' : 'ul',
-          wp.blockEditor.useInnerBlocksProps(
-            wp.blockEditor.useBlockProps(a.ordered ? { start: a.start } : {}),
-            {
-              allowedBlocks: ['mbb/list-item'],
-              template: [['mbb/list-item']],
-              templateLock: false,
-            },
+      edit: ({ attributes: a, clientId, isSelected }) => {
+        const children = wp.data.useSelect(
+          (select) => select('core/block-editor').getBlocks(clientId),
+          [clientId],
+        );
+        const { removeBlock, replaceBlock } = wp.data.useDispatch('core/block-editor');
+        const plain = convertPlainList({ name: 'mbb/list', attributes: a, innerBlocks: children });
+        return el(
+          wp.element.Fragment,
+          {},
+          isSelected && (children.length === 0 || plain)
+            ? el(
+                wp.blockEditor.BlockControls,
+                {},
+                el(
+                  wp.components.ToolbarGroup,
+                  {},
+                  children.length === 0
+                    ? el(wp.components.ToolbarButton, {
+                        label: '删除空列表',
+                        onClick: () => removeBlock(clientId),
+                        children: '删除空列表',
+                      })
+                    : el(wp.components.ToolbarButton, {
+                        label: '转换为普通列表',
+                        onClick: () => replaceBlock(clientId, plain),
+                        children: '转换为普通列表',
+                      }),
+                ),
+              )
+            : null,
+          el(
+            a.ordered ? 'ol' : 'ul',
+            wp.blockEditor.useInnerBlocksProps(
+              wp.blockEditor.useBlockProps(a.ordered ? { start: a.start } : {}),
+              {
+                allowedBlocks: ['mbb/list-item', 'mbb/task-item'],
+                template: [['mbb/list-item']],
+                templateLock: false,
+              },
+            ),
           ),
-        ),
+        );
+      },
       save: ({ attributes: a }) =>
         el(
           a.ordered ? 'ol' : 'ul',
@@ -829,6 +1113,58 @@ export function register() {
         ),
       save: () =>
         el('li', wp.blockEditor.useInnerBlocksProps.save(wp.blockEditor.useBlockProps.save())),
+    });
+    api().registerBlockType('mbb/task-item', {
+      apiVersion: 3,
+      title: '任务项',
+      category: 'text',
+      parent: ['mbb/list'],
+      attributes: {
+        content: { type: 'string', default: '' },
+        checked: { type: 'boolean', default: false },
+      },
+      supports: { html: false },
+      edit: ({ attributes: a, setAttributes }) =>
+        el(
+          'li',
+          wp.blockEditor.useBlockProps(),
+          el(
+            'div',
+            { className: 'mbb-task-control', contentEditable: false },
+            el(wp.components.CheckboxControl, {
+              label: '已完成',
+              checked: a.checked,
+              onChange: (checked) => setAttributes({ checked }),
+            }),
+          ),
+          el(wp.blockEditor.RichText, {
+            tagName: 'p',
+            'aria-label': '任务内容',
+            value: a.content,
+            onChange: (content) => setAttributes({ content }),
+            placeholder: '任务内容',
+          }),
+          el(wp.blockEditor.InnerBlocks),
+        ),
+      save: ({ attributes: a }) =>
+        el(
+          'li',
+          wp.blockEditor.useBlockProps.save(),
+          el(
+            'p',
+            {},
+            '[' + (a.checked ? 'x' : ' ') + '] ',
+            el(wp.blockEditor.RichText.Content, { tagName: 'span', value: a.content }),
+          ),
+          el(wp.blockEditor.InnerBlocks.Content),
+        ),
+    });
+    api().registerBlockVariation('mbb/list', {
+      name: 'task-list',
+      title: '任务列表',
+      description: '插入可勾选的任务列表。',
+      scope: ['inserter'],
+      innerBlocks: [['mbb/task-item', { checked: false, content: '' }]],
     });
   }
   if (api().getBlockType('mbb/math')) return;

@@ -82,8 +82,9 @@ function mbb_revision_candidate($r, $p)
         return mbb_error('title', '历史标题不符合当前规则。', 422);
     }
     $doc = mbb_convert([
-        'mode' => 'markdown',
+        'mode' => 'paired_restore',
         'source' => $v->post_content_filtered,
+        'serialized' => $v->post_content,
         'documentId' => mbb_id($p->ID),
     ]);
     if (is_wp_error($doc)) {

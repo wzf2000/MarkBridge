@@ -3,6 +3,143 @@
   const root = new URL('.', document.currentScript.src).href;
   let engine, ready, outputStyle;
   const cache = new Map();
+  let reader, readerSource, readerRender, readerScale, readerStatus, readerOpener;
+  let readerSession = 0;
+  let readerPercent = 150;
+  const readerDefaultPercent = 150;
+  function readerButton(action, label) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.dataset.mbbReaderAction = action;
+    button.textContent = label;
+    return button;
+  }
+  function updateReaderScale() {
+    readerRender.style.fontSize = readerPercent + '%';
+    readerScale.textContent = readerPercent + '%';
+    reader.querySelector('[data-mbb-reader-action="decrease"]').disabled = readerPercent <= 100;
+    reader.querySelector('[data-mbb-reader-action="increase"]').disabled = readerPercent >= 300;
+  }
+  function createReader() {
+    if (reader) return;
+    reader = document.createElement('dialog');
+    reader.className = 'mbb-math-reader';
+    reader.setAttribute('aria-labelledby', 'mbb-math-reader-title');
+    const heading = document.createElement('h2');
+    heading.id = 'mbb-math-reader-title';
+    heading.textContent = '公式阅读';
+    const toolbar = document.createElement('div');
+    toolbar.className = 'mbb-math-reader-toolbar';
+    toolbar.append(
+      readerButton('decrease', '缩小'),
+      readerButton('reset', '重置大小'),
+      readerButton('increase', '放大'),
+    );
+    readerScale = document.createElement('output');
+    readerScale.className = 'mbb-math-reader-scale';
+    readerScale.setAttribute('aria-label', '当前公式大小');
+    toolbar.append(readerScale);
+    readerRender = document.createElement('div');
+    readerRender.className = 'mbb-math-reader-render';
+    const sourceLabel = document.createElement('label');
+    sourceLabel.textContent = 'TeX 源码';
+    readerSource = document.createElement('textarea');
+    readerSource.className = 'mbb-math-reader-source';
+    readerSource.readOnly = true;
+    readerSource.rows = 4;
+    sourceLabel.append(readerSource);
+    const footer = document.createElement('div');
+    footer.className = 'mbb-math-reader-footer';
+    footer.append(readerButton('copy', '复制 TeX'), readerButton('close', '关闭'));
+    readerStatus = document.createElement('p');
+    readerStatus.className = 'mbb-math-reader-status';
+    readerStatus.setAttribute('role', 'status');
+    readerStatus.setAttribute('aria-live', 'polite');
+    reader.append(heading, toolbar, readerRender, sourceLabel, footer, readerStatus);
+    reader.addEventListener('click', async (event) => {
+      const action = event.target.closest('[data-mbb-reader-action]')?.dataset.mbbReaderAction;
+      if (action === 'close') reader.close();
+      if (action === 'increase' || action === 'decrease' || action === 'reset') {
+        readerPercent =
+          action === 'reset'
+            ? readerDefaultPercent
+            : Math.max(100, Math.min(300, readerPercent + (action === 'increase' ? 25 : -25)));
+        updateReaderScale();
+      }
+      if (action === 'copy') {
+        const session = readerSession;
+        try {
+          await navigator.clipboard.writeText(readerSource.value);
+          if (!reader.open || session !== readerSession) return;
+          readerStatus.textContent = 'TeX 已复制';
+        } catch {
+          if (!reader.open || session !== readerSession) return;
+          readerSource.focus();
+          readerSource.select();
+          readerStatus.textContent = '无法自动复制，已选中源码，请手动复制';
+        }
+      }
+    });
+    reader.addEventListener('close', () => {
+      if (readerOpener?.isConnected) readerOpener.focus();
+      readerOpener = null;
+    });
+    document.body.append(reader);
+  }
+  function openReader(node) {
+    const tex = node.getAttribute('data-mbb-tex');
+    if (tex == null) return;
+    createReader();
+    readerSession++;
+    readerOpener = node;
+    readerStatus.textContent = '';
+    readerSource.value = tex;
+    readerRender.replaceChildren();
+    const typeset = node.dataset.mbbRendered === tex ? node.querySelector('.mbb-typeset') : null;
+    if (typeset) readerRender.append(typeset.cloneNode(true));
+    else {
+      readerRender.textContent = tex;
+      readerStatus.textContent =
+        node.dataset.mbbMathError === 'true'
+          ? '公式排版失败，显示 TeX 源码'
+          : '公式正在排版，暂时显示 TeX 源码';
+    }
+    readerPercent = readerDefaultPercent;
+    updateReaderScale();
+    reader.showModal();
+    reader.querySelector('[data-mbb-reader-action="close"]').focus();
+  }
+  function enableReader(node) {
+    if (
+      !window.MBB_MATH_CONFIG?.front ||
+      node.ownerDocument !== document ||
+      !node.isConnected ||
+      node.isContentEditable ||
+      node.parentElement?.closest(
+        'a,button,input,select,textarea,summary,[role="button"],[contenteditable]',
+      )
+    )
+      return;
+    node.setAttribute('aria-label', '查看公式：' + node.getAttribute('data-mbb-tex'));
+    if (node.dataset.mbbReaderReady) return;
+    node.dataset.mbbReaderReady = 'true';
+    node.classList.add('mbb-math-readable');
+    node.tabIndex = 0;
+    node.setAttribute('role', 'button');
+    node.setAttribute('aria-haspopup', 'dialog');
+    node.title = '点击或按 Enter 查看公式与 TeX';
+    node.addEventListener('click', () => {
+      if (!node.parentElement?.closest('a,button,input,select,textarea,summary,[contenteditable]'))
+        openReader(node);
+    });
+    node.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      if (node.parentElement?.closest('a,button,input,select,textarea,summary,[contenteditable]'))
+        return;
+      event.preventDefault();
+      openReader(node);
+    });
+  }
   function load() {
     if (ready) return ready;
     const frame = document.createElement('iframe');
@@ -108,16 +245,21 @@
     await Promise.all(
       nodes.map(async (n) => {
         const display = n.tagName === 'PRE',
-          tex = display ? n.querySelector('code')?.textContent : n.getAttribute('data-mbb-tex');
-        if (tex == null || n.dataset.mbbRendered === tex) return;
+          tex = display
+            ? (n.querySelector('code')?.textContent ?? n.getAttribute('data-mbb-tex'))
+            : n.getAttribute('data-mbb-tex');
+        if (tex == null) return;
         const expected = tex;
         n.setAttribute('data-mbb-tex', tex);
+        enableReader(n);
+        if (n.dataset.mbbRendered === tex) return;
         n.classList.add('tex2jax_ignore');
         try {
           const html = await render(tex, display);
           if (
-            (display ? n.querySelector('code')?.textContent : n.getAttribute('data-mbb-tex')) !==
-            expected
+            (display
+              ? (n.querySelector('code')?.textContent ?? n.getAttribute('data-mbb-tex'))
+              : n.getAttribute('data-mbb-tex')) !== expected
           )
             return;
           const wrap = document.createElement(display ? 'div' : 'span');
@@ -128,11 +270,12 @@
           n.dataset.mbbRendered = tex;
           if (n.dataset.mbbMathError) {
             delete n.dataset.mbbMathError;
-            n.removeAttribute('title');
+            if (n.dataset.mbbReaderReady) n.title = '点击或按 Enter 查看公式与 TeX';
+            else n.removeAttribute('title');
           }
         } catch (e) {
           n.dataset.mbbMathError = 'true';
-          n.title = e.message;
+          n.title = e.message + (n.dataset.mbbReaderReady ? '；点击或按 Enter 查看公式与 TeX' : '');
         }
       }),
     );

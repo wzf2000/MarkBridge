@@ -109,6 +109,9 @@ async function loadEditor(content = '', title = '', options = {}) {
     fetch: async (url) => ({
       ok: true,
       async json() {
+        if (/document\?post_id=42$/.test(url)) {
+          return { ...managedState, expected: 'fresh-token' };
+        }
         assert.match(url, /source\?post_id=42$/);
         return {
           expected: 'fresh-token',
@@ -126,6 +129,27 @@ async function loadEditor(content = '', title = '', options = {}) {
     '# Fresh Markdown',
     'fresh source content takes precedence over stored fallback',
   );
+
+  const inconsistent = await loadEditor('', '', {
+    postId: 42,
+    state: managedState,
+    fetch: async (url) => ({
+      ok: true,
+      async json() {
+        if (/document\?post_id=42$/.test(url)) return managedState;
+        return { expected: 'changed-again', source: '# Concurrent source' };
+      },
+    }),
+  });
+  await new Promise((resolve) => inconsistent.dom.window.setTimeout(resolve, 180));
+  inconsistent.dom.window.document.querySelector('#mbb-markdown').click();
+  await new Promise((resolve) => inconsistent.dom.window.setTimeout(resolve, 20));
+  assert.equal(
+    inconsistent.dom.window.document.querySelector('#mbb-source').value,
+    '# Stored Markdown',
+  );
+  assert.equal(inconsistent.dom.window.document.querySelector('#mbb-source').readOnly, true);
+  assert.equal(inconsistent.dom.window.document.querySelector('#mbb-save').disabled, true);
 
   console.log('R10-04 new-post guards and managed-source fallback reads passed.');
 })().catch((error) => {

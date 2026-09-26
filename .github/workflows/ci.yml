@@ -31,6 +31,7 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
           coverage: none
+          extensions: dom, libxml
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -60,6 +61,7 @@ jobs:
           window.wp = {
             blocks: {
               registerBlockType(name, definition) { blockTypes[name] = definition; },
+              registerBlockVariation() {},
               getBlockType(name) { return blockTypes[name]; },
               createBlock(name, attributes = {}, innerBlocks = []) {
                 return { name, attributes, innerBlocks, isValid: true };
@@ -92,6 +94,22 @@ jobs:
         env:
           MARKBRIDGE_TEST_RUNTIME: ${{ github.workspace }}/.ci-runtime
         run: npm test
+
+      - name: Install pinned Chromium for browser regressions
+        run: npx playwright install --with-deps --only-shell chromium
+
+      - name: Run browser regressions against built plugin assets
+        run: npx playwright test
+
+      - name: Upload browser failure screenshots and traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: markbridge-browser-failures-${{ github.sha }}
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore
 
       - name: Run source writeback safety tests
         run: php tests/source-writeback.php

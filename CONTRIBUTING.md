@@ -25,6 +25,21 @@ MARKBRIDGE_TEST_RUNTIME=/srv/markbridge-runtime-v1 npm test
 
 Black 默认位于 `.venv`；可用 `MARKBRIDGE_PYTHON` 指定另一个已安装 Black 的 Python。运行环境准备见安装指南。
 
+## 浏览器回归
+
+```sh
+npx playwright install --with-deps --only-shell chromium
+npm run test:browser
+```
+
+测试在本机回环地址启动合成页面，加载本次构建的编辑器、MathJax 和 Prism 资源；需要 Node.js 与 PHP。桌面和手机尺寸均运行 Chromium，手机项目并不代表 Safari 验收。`MARKBRIDGE_CHROMIUM_PATH` 可指定已安装的 Chromium；默认使用锁定 Playwright 对应的浏览器。
+
+公式和代码测试检查实际排版、字体请求及控制台告警。编辑流程测试使用模拟 REST 响应，不能代替真实 WordPress 权限、数据库和源文件写回验收。失败截图与 trace 存入忽略目录 `test-results/`，CI 失败时上传诊断附件。测试只使用合成内容，禁止加入生产凭据或真实文章。
+
+真实区块编辑器任务列表与脚注用例需要额外的已脱敏核心脚本运行环境，并把同一 WordPress 版本的 `wp-includes/css` 和 `wp-includes/fonts` 复制到该运行环境的 `site/wp-includes/`。设置 `MARKBRIDGE_TEST_RUNTIME` 后运行 Playwright；用例加载候选内核，覆盖真实区块控件与序列化，不登录站点或写数据库。未设置时明确跳过这些用例。公共 CI 最小适配器仅检查任务 AST 与拒绝边界，不能代替此层验收。
+
+设置 `MARKBRIDGE_WORDPRESS_SOURCE` 指向干净 WordPress 源码树后，`npm test` 额外使用真实 PHP KSES/区块解析库检查任务列表与脚注存储 HTML；不会加载 wp-config 或数据库。
+
 ## 目录
 
 - `src/`：转换内核与 Unicode 表情的可读源码。
