@@ -16,7 +16,7 @@ README 说明产品范围和最短开发入口；本页按用途区分持续有�
 
 ## ACTIVE
 
-- [1.2.0：可视化公式输入与原生数学兼容](plans/active/MATH-AUTHORING-1.2.0.md)：P1–P4及隔离功能回归完成；P5候选发行准备，未部署或公开发行。
+- [1.2.0：可视化公式输入与原生数学兼容](plans/active/MATH-AUTHORING-1.2.0.md)：P1–P4及隔离功能回归完成；候选包及最终ZIP隔离验收完成，待生产及公开发行授权。
 
 ## DEFERRED
 
