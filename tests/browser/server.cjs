@@ -89,6 +89,20 @@ http
     if (pathname === '/health') return response.writeHead(200).end('ok');
     if (pathname === '/front')
       return response.writeHead(200, { 'Content-Type': 'text/html' }).end(front);
+    if (pathname === '/native-editor') {
+      const sourceManaged = new URL(request.url, 'http://localhost').searchParams.has('source');
+      const setup = `<script>
+      MBB_EDITOR.postId=12;MBB_EDITOR.state={expected:'baseline-1',source_managed:${sourceManaged}};
+      const middlewares=[];window.nativeLocks=[];window.nativeRequests=[];
+      const post={getCurrentPostId:()=>12,getEditedPostContent:()=>'<p>draft</p>',getEditedPostAttribute:()=>''};
+      wp.data={select:()=>post,subscribe:()=>()=>{},dispatch:()=>({lockPostSaving:key=>nativeLocks.push(key),lockPostAutosaving:key=>nativeLocks.push('autosave:'+key)})};
+      wp.apiFetch=options=>middlewares.reduceRight((next,fn)=>opts=>fn(opts,next),opts=>{nativeRequests.push(opts);return window.nativeResult?window.nativeResult(opts):Promise.resolve({id:12,mbb_expected:'baseline-2'});})(options);
+      wp.apiFetch.use=fn=>middlewares.push(fn);
+      </script>`;
+      return response
+        .writeHead(200, { 'Content-Type': 'text/html' })
+        .end(editor.replace('</head>', setup + '</head>'));
+    }
     if (pathname === '/editor')
       return response.writeHead(200, { 'Content-Type': 'text/html' }).end(editor);
     if (pathname === '/footnotes-front') {

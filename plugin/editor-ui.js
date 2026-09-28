@@ -688,6 +688,44 @@
       }
     }
   }
+  // Native Gutenberg saves still go through server-side paired validation.
+  // Never refresh the baseline with a GET here: that could hide another editor's changes.
+  function installNativeSave() {
+    if (cfg.state?.source_managed || !cfg.state?.expected || !wp.apiFetch?.use) return false;
+    wp.apiFetch.use(async (options, next) => {
+      let route;
+      try {
+        const url = new URL(options.url || options.path || '', location.origin);
+        route = url.searchParams.get('rest_route') || url.pathname;
+      } catch {
+        return next(options);
+      }
+      const match = route.match(/\/wp\/v2\/(?:posts|pages)\/(\d+)\/?$/);
+      if (
+        !match ||
+        Number(match[1]) !== Number(cfg.postId) ||
+        !['POST', 'PUT', 'PATCH'].includes((options.method || 'GET').toUpperCase())
+      )
+        return next(options);
+      if (!options.data || typeof options.data !== 'object' || Array.isArray(options.data))
+        throw { code: 'mbb_request', message: '无法验证此保存请求，请重新打开编辑器后重试。' };
+      const result = await next({
+        ...options,
+        data: { ...options.data, mbb_expected: cfg.state.expected },
+      });
+      const data = options.parse === false ? await result.clone().json() : result;
+      if (typeof data?.mbb_expected === 'string') {
+        cfg.state.expected = data.mbb_expected;
+        if (typeof data.status === 'string') cfg.state.post_status = data.status;
+        if (typeof data.title?.raw === 'string') cfg.state.title = data.title.raw;
+        if (Number.isInteger(data.featured_media)) cfg.state.featured_media = data.featured_media;
+        if (cfg.state.document && typeof data.content?.raw === 'string')
+          cfg.state.document.serialized = data.content.raw;
+      }
+      return result;
+    });
+    return true;
+  }
   function setup() {
     document.querySelector('#mbb-new')?.addEventListener('click', () => open(0));
     document
@@ -741,7 +779,8 @@
       const editor = wp.data.select('core/editor');
       if (!editor?.getCurrentPostId()) return;
       clearInterval(timer);
-      wp.data.dispatch('core/editor').lockPostSaving('mbb-paired-save');
+      const nativeSave = installNativeSave();
+      if (!nativeSave) wp.data.dispatch('core/editor').lockPostSaving('mbb-paired-save');
       wp.data.dispatch('core/editor').lockPostAutosaving('mbb-paired-save');
       const bar = el('div', { id: 'mbb-toolbar' });
       const a = el(
@@ -753,7 +792,7 @@
       const b = el(
         'button',
         { type: 'button', id: 'mbb-block-review' },
-        cfg.state?.source_managed ? '区块预览' : '区块修改：预览并保存',
+        cfg.state?.source_managed ? '区块预览' : '查看差异与预览',
       );
       b.onclick = () => open(cfg.postId, 'blocks');
       const h = el('button', { type: 'button', id: 'mbb-history' }, '历史版本 / 恢复');
@@ -762,7 +801,15 @@
         a,
         b,
         h,
-        el('span', {}, cfg.state?.source_managed ? '正文由源文件同步' : '两种格式统一保存'),
+        el(
+          'span',
+          {},
+          cfg.state?.source_managed
+            ? '正文由源文件同步，需预览后确认写回'
+            : nativeSave
+              ? '可直接使用编辑器保存／更新，两种格式同步保存'
+              : '请使用预览中的保存按钮',
+        ),
       );
       document.body.append(bar);
       // Keep the toolbar inside the visible editor canvas, never over its settings sidebar.

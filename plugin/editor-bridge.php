@@ -13,6 +13,28 @@ function mbb_id($id)
 }
 function mbb_token($p)
 {
+    $taxonomies = [];
+    foreach (get_object_taxonomies($p->post_type, 'objects') as $taxonomy) {
+        if (!$taxonomy->show_in_rest) {
+            continue;
+        }
+        $ids = wp_get_object_terms($p->ID, $taxonomy->name, ['fields' => 'ids']);
+        $ids = is_wp_error($ids) ? ['error' => $ids->get_error_code()] : array_map('intval', $ids);
+        sort($ids);
+        $taxonomies[$taxonomy->name] = $ids;
+    }
+    ksort($taxonomies);
+    $metadata = [];
+    $registered = array_merge(
+        get_registered_meta_keys('post'),
+        get_registered_meta_keys('post', $p->post_type),
+    );
+    ksort($registered);
+    foreach ($registered as $key => $args) {
+        if (!empty($args['show_in_rest'])) {
+            $metadata[$key] = get_post_meta($p->ID, $key, !empty($args['single']));
+        }
+    }
     return hash(
         'sha256',
         wp_json_encode([
@@ -21,8 +43,21 @@ function mbb_token($p)
             $p->post_title,
             $p->post_status,
             $p->post_author,
+            $p->post_excerpt,
+            $p->post_name,
+            $p->post_date,
+            $p->post_date_gmt,
+            $p->post_parent,
+            $p->menu_order,
+            $p->comment_status,
+            $p->ping_status,
+            $p->post_password,
             mbb_id($p->ID),
             get_post_thumbnail_id($p->ID),
+            get_page_template_slug($p->ID),
+            is_sticky($p->ID),
+            $taxonomies,
+            $metadata,
         ]),
     );
 }
@@ -206,7 +241,7 @@ function mbb_html_allowed($blocks)
 }
 function mbb_candidate($r)
 {
-    if (strlen($r->get_body()) > 2000000) {
+    if (strlen((string) $r->get_body()) > 2000000) {
         return mbb_error('size', '请求过大。', 413);
     }
     $id = absint($r['post_id']);
@@ -372,6 +407,9 @@ function mbb_restore_source_filters($saved)
 function mbb_save($r, $cli_source_path = null)
 {
     global $wpdb;
+    if (!empty($GLOBALS['mbb_native_pair'])) {
+        return mbb_error('nested_save', '原生保存事务中不能再次启动配对保存。', 409);
+    }
     $id = absint($r['post_id']);
     $cli_source_sync =
         defined('WP_CLI') && WP_CLI && is_string($cli_source_path) && $cli_source_path !== '';
@@ -751,24 +789,7 @@ add_filter(
     10,
     3,
 );
-// Native post updates and autosaves must not split the two representations.
-add_filter(
-    'rest_pre_dispatch',
-    function ($result, $server, $r) {
-        if (
-            $r->get_method() !== 'GET' &&
-            $r->get_method() !== 'DELETE' &&
-            preg_match('~^/wp/v2/(?:posts|pages)/(\d+)(?:/|$)~', $r->get_route(), $m) &&
-            mbb_managed((int) $m[1]) &&
-            current_user_can('edit_post', (int) $m[1])
-        ) {
-            return mbb_error('paired_save_required', '此文档请使用“预览差异 / 保存双格式”。', 403);
-        }
-        return $result;
-    },
-    10,
-    3,
-);
+require_once __DIR__ . '/native-rest-save.php';
 add_filter(
     'wp_insert_post_empty_content',
     function ($empty, $data) {
@@ -862,7 +883,7 @@ function mbb_enqueue_ui()
     wp_enqueue_script(
         'mbb-editor-ui',
         set_url_scheme(plugins_url(mbb_asset('editor-ui.js'), __FILE__), 'https'),
-        ['wp-data', 'wp-blocks', 'mbb-math'],
+        ['wp-data', 'wp-blocks', 'wp-api-fetch', 'mbb-math'],
         substr(hash_file('sha256', __DIR__ . '/editor-ui.js'), 0, 12),
         true,
     );
