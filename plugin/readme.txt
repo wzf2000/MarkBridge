@@ -3,7 +3,7 @@ Tags: markdown, blocks, editor, mathjax, revisions
 Requires at least: 7.1
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 1.1.1
+Stable tag: 1.2.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -20,6 +20,9 @@ This release requires Linux, Node.js 24 LTS, bubblewrap and a configured private
 3. Upload the built plugin, enable MarkBridge and verify isolated drafts before adopting existing content.
 
 == Changelog ==
+= 1.2.0 =
+Adds MathJax formula authoring, conservative inline dollar input, display-math shortcuts and explicit native math conversion. Fixes dynamic CHTML styles in the editor canvas. Rebuild the private conversion runtime when upgrading from 1.1.1.
+
 = 1.1.1 =
 Native block-editor saves keep Markdown and blocks paired, with conflict and conversion protection. Inline formulas render in place with focused TeX editing; sandboxed previews embed their trusted math fonts. Rebuild the private conversion runtime when upgrading from 1.1.0.
 

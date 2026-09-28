@@ -2,6 +2,9 @@ import MarkdownIt from 'markdown-it';
 import footnotePlugin from 'markdown-it-footnote';
 import { registerFootnotes } from './footnotes.js';
 import { InlineMathEdit, installInlineMathDecorations } from './inline-math-editor.js';
+export { typedMathRange } from './inline-math-editor.js';
+import { registerNativeMathConversion } from './native-math-ui.js';
+export { inspectNativeMath, verifyNativeMathML } from './native-math-conversion.js';
 export const VERSION = '0.2.0';
 export class ConversionError extends Error {
   constructor(code, message, location = '') {
@@ -922,6 +925,7 @@ export function exportDocument(document, serialized) {
 }
 function MathPreview({ tex, display = false }) {
   const el = wp.element.createElement;
+  const previewRef = wp.element.useRef(null);
   const [html, setHTML] = wp.element.useState('');
   const [error, setError] = wp.element.useState('');
   const [retry, setRetry] = wp.element.useState(0);
@@ -931,6 +935,7 @@ function MathPreview({ tex, display = false }) {
     setError('');
     const timer = setTimeout(() => {
       if (!globalThis.MBB_MATH) return;
+      MBB_MATH.registerDocument?.(previewRef.current?.ownerDocument);
       MBB_MATH.render(tex, display).then(
         (h) => {
           if (active) setHTML(h);
@@ -947,7 +952,7 @@ function MathPreview({ tex, display = false }) {
   }, [tex, display, retry]);
   return el(
     'div',
-    { className: 'mbb-math-preview', contentEditable: false },
+    { className: 'mbb-math-preview', contentEditable: false, ref: previewRef },
     el('small', {}, '公式预览（不写入正文）'),
     error
       ? el(
@@ -1117,7 +1122,7 @@ export function register() {
   }
   if (api().getBlockType('mbb/math')) return;
   for (const [name, field, label] of [
-    ['mbb/math', 'tex', '公式源码'],
+    ['mbb/math', 'tex', '行间公式'],
     ['mbb/code', 'code', '代码'],
   ]) {
     api().registerBlockType(name, {
@@ -1129,8 +1134,16 @@ export function register() {
         ...(field === 'code' ? { language: { type: 'string', default: '' } } : {}),
       },
       supports: { html: false },
-      edit: ({ attributes, setAttributes }) =>
-        el(
+      edit: ({ attributes, setAttributes, isSelected }) => {
+        const sourceRef = wp.element.useRef(null);
+        wp.element.useEffect(() => {
+          if (field !== 'tex' || !isSelected || attributes.tex || !sourceRef.current) return;
+          const owner = sourceRef.current.ownerDocument;
+          // Finish the Enter event that created this block before focusing its textarea.
+          const timer = owner.defaultView.setTimeout(() => sourceRef.current?.focus(), 0);
+          return () => owner.defaultView.clearTimeout(timer);
+        }, [isSelected]);
+        return el(
           'div',
           wp.blockEditor.useBlockProps(),
           field === 'code'
@@ -1140,13 +1153,17 @@ export function register() {
                 onChange: (language) => setAttributes({ language }),
               })
             : null,
-          el(wp.components.TextareaControl, {
-            label,
-            value: attributes[field],
-            onChange: (value) => setAttributes({ [field]: value }),
-          }),
+          field === 'code' || isSelected
+            ? el(wp.components.TextareaControl, {
+                label: field === 'tex' ? 'TeX 源码' : label,
+                value: attributes[field],
+                ref: sourceRef,
+                onChange: (value) => setAttributes({ [field]: value }),
+              })
+            : null,
           field === 'tex' ? el(MathPreview, { tex: attributes.tex, display: true }) : null,
-        ),
+        );
+      },
       save: ({ attributes }) =>
         el(
           'pre',
@@ -1170,5 +1187,6 @@ export function register() {
     edit: InlineMathEdit,
   });
   installInlineMathDecorations();
+  registerNativeMathConversion();
 }
 register();

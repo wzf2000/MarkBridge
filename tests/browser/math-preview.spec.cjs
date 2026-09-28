@@ -1,5 +1,57 @@
 const { test, expect } = require('@playwright/test');
 
+test('editor iframe receives new MathJax fraction rules and survives canvas replacement', async ({
+  page,
+}) => {
+  await page.goto('/editor');
+  const state = await page.evaluate(async () => {
+    const makeCanvas = () => {
+      const frame = document.createElement('iframe');
+      document.body.append(frame);
+      const owner = frame.contentDocument;
+      owner.body.innerHTML = '<div id="formula"></div>';
+      MBB_MATH.registerDocument(owner);
+      return { frame, owner };
+    };
+    const first = makeCanvas();
+    const simple = await MBB_MATH.render('x', true);
+    first.owner.querySelector('#formula').innerHTML = simple;
+    const before = first.owner.head.querySelector('style[data-mbb-editor-chtml]').textContent;
+    const fraction = await MBB_MATH.render('a+b+\\frac{a}{d}', true);
+    first.owner.querySelector('#formula').innerHTML = fraction;
+    await first.owner.fonts.ready;
+    const measure = (owner) => {
+      const denominator = owner.querySelector('mjx-den mjx-mi');
+      return {
+        height: denominator.getBoundingClientRect().height,
+        width: denominator.getBoundingClientRect().width,
+        fractionDisplay: owner.defaultView.getComputedStyle(owner.querySelector('mjx-mfrac'))
+          .display,
+      };
+    };
+    const updated = first.owner.head.querySelector('style[data-mbb-editor-chtml]').textContent;
+    const firstMeasure = measure(first.owner);
+    first.frame.remove();
+    const second = makeCanvas();
+    second.owner.querySelector('#formula').innerHTML = fraction;
+    await second.owner.fonts.ready;
+    return {
+      updated: before !== updated,
+      first: firstMeasure,
+      second: measure(second.owner),
+      styleRestored:
+        second.owner.head.querySelector('style[data-mbb-editor-chtml]').textContent === updated,
+    };
+  });
+  expect(state.updated).toBe(true);
+  expect(state.styleRestored).toBe(true);
+  for (const box of [state.first, state.second]) {
+    expect(box.height).toBeGreaterThan(1);
+    expect(box.width).toBeGreaterThan(1);
+    expect(box.fractionDisplay).not.toBe('inline');
+  }
+});
+
 test('scriptless review renders complete inline and display CHTML at readable dimensions', async ({
   page,
 }) => {

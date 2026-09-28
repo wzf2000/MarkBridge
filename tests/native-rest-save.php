@@ -590,6 +590,31 @@ try {
         get_post($ordinary_id)->post_title === 'Synthetic ordinary revised',
         'Ordinary post update failed.',
     );
+    $managed_allowed = apply_filters(
+        'allowed_block_types_all',
+        true,
+        (object) ['post' => get_post($fixture_id)],
+    );
+    native_assert(
+        is_array($managed_allowed) && !in_array('core/math', $managed_allowed, true),
+        'Managed inserter still offers native core math.',
+    );
+    native_assert(
+        apply_filters(
+            'allowed_block_types_all',
+            true,
+            (object) ['post' => get_post($ordinary_id)],
+        ) === true,
+        'Ordinary post block allowances changed.',
+    );
+    native_assert(
+        apply_filters(
+            'allowed_block_types_all',
+            ['core/math', 'core/paragraph'],
+            (object) ['post' => get_post($fixture_id)],
+        ) === ['core/paragraph'],
+        'Managed inserter did not preserve an existing allowlist.',
+    );
     echo "Native REST paired-save fixture passed.\n";
 } finally {
     wp_set_current_user((int) $admins[0]);
