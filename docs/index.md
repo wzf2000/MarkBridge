@@ -16,13 +16,15 @@ README 说明产品范围和最短开发入口；本页按用途区分持续有�
 
 ## ACTIVE
 
-- [1.2.0：可视化公式输入与原生数学兼容](plans/active/MATH-AUTHORING-1.2.0.md)：P1–P4及隔离功能回归完成；候选已部署，实际草稿保存通过；待公开发行授权。
+当前无进行中的实现计划。
 
 ## DEFERRED
 
 - 更多区块适配尚未启动。
 
 ## HISTORICAL
+
+- [可视化公式输入与原生数学兼容](plans/completed/MATH-AUTHORING-1.2.0.md)：已纳入 1.2.0，操作与验证边界见当前说明。
 
 - [脚注](plans/completed/FOOTNOTES.md)：命名引用、定义编辑与编号跳转已纳入 1.1.0，验证边界见当前说明。
 
