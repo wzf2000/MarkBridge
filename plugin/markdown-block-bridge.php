@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: MarkBridge
- * Version: 1.1.1
+ * Version: 1.2.0-rc.1
  * License: GPL-3.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  * Requires at least: 7.1
@@ -66,6 +66,21 @@ add_action('enqueue_block_editor_assets', function () {
         true,
     );
 });
+add_filter(
+    'allowed_block_types_all',
+    function ($allowed, $context) {
+        $id = absint($context->post->ID ?? 0);
+        if (!$id || !mbb_managed($id) || $allowed === false) {
+            return $allowed;
+        }
+        if ($allowed === true) {
+            $allowed = array_keys(WP_Block_Type_Registry::get_instance()->get_all_registered());
+        }
+        return array_values(array_diff($allowed, ['core/math']));
+    },
+    20,
+    2,
+);
 add_action('init', function () {
     register_block_type('mbb/list', [
         'api_version' => 3,

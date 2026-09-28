@@ -87,6 +87,8 @@ http
   .createServer((request, response) => {
     const pathname = new URL(request.url, 'http://localhost').pathname;
     if (pathname === '/health') return response.writeHead(200).end('ok');
+    if (pathname === '/wp/v2/types')
+      return response.writeHead(200, { 'Content-Type': 'application/json' }).end('{}');
     if (pathname === '/front')
       return response.writeHead(200, { 'Content-Type': 'text/html' }).end(front);
     if (pathname === '/native-editor') {
@@ -127,11 +129,16 @@ http
     }
     if (pathname === '/inline-math-editor') {
       let html = taskEditor('Before $x^2$ between $y_0$ after.\n\nSecond paragraph.\n');
-      if (html)
+      if (html) {
+        html = html.replace(
+          '<script src="/wp-content/plugins/markdown-block-bridge/kernel.js"></script>',
+          '<script src="/wp-includes/js/dist/format-library.min.js"></script><script src="/wp-content/plugins/markdown-block-bridge/kernel.js"></script>',
+        );
         html = html.replace(
           '</head>',
-          `<link rel="stylesheet" href="${mapped('math.css')}"><script>window.MBB_MATH_CONFIG={front:false}</script><script src="${mapped('math.js')}"></script></head>`,
+          `<link rel="stylesheet" href="${mapped('math.css')}"><script type="importmap">{"imports":{"@wordpress/latex-to-mathml":"/wp-includes/js/dist/script-modules/latex-to-mathml/index.js"}}</script><script>window.MBB_MATH_CONFIG={front:false}</script><script src="${mapped('math.js')}"></script></head>`,
         );
+      }
       return response
         .writeHead(html ? 200 : 404, { 'Content-Type': 'text/html' })
         .end(html || 'Core runtime required');
@@ -147,12 +154,28 @@ http
       (/^\/wp-includes\/(js|css|fonts)\//.test(pathname) ||
         pathname === '/wp-content/plugins/markdown-block-bridge/kernel.js')
     ) {
-      const file = pathname.endsWith('/plugins/markdown-block-bridge/kernel.js')
+      let file = pathname.endsWith('/plugins/markdown-block-bridge/kernel.js')
         ? path.join(plugin, 'kernel.js')
         : path.resolve(wpRuntime, 'site', '.' + pathname);
       if (
+        !fs.existsSync(file) &&
+        (/^\/wp-includes\/css\//.test(pathname) ||
+          [
+            '/wp-includes/js/dist/script-modules/latex-to-mathml/index.js',
+            '/wp-includes/js/dist/format-library.min.js',
+          ].includes(pathname)) &&
+        process.env.MARKBRIDGE_TEST_WORDPRESS_ROOT
+      )
+        file = path.resolve(process.env.MARKBRIDGE_TEST_WORDPRESS_ROOT, '.' + pathname);
+      if (
         /^\/wp-includes\/(js|css|fonts)\//.test(pathname) &&
-        !file.startsWith(path.resolve(wpRuntime, 'site/wp-includes') + path.sep)
+        !file.startsWith(path.resolve(wpRuntime, 'site/wp-includes') + path.sep) &&
+        !(
+          process.env.MARKBRIDGE_TEST_WORDPRESS_ROOT &&
+          file.startsWith(
+            path.resolve(process.env.MARKBRIDGE_TEST_WORDPRESS_ROOT, 'wp-includes') + path.sep,
+          )
+        )
       )
         return response.writeHead(403).end();
       if (!fs.existsSync(file)) return response.writeHead(404).end();

@@ -92,6 +92,47 @@ parser.window.wp = {
   },
 };
 parser.window.eval(fs.readFileSync(path.join(__dirname, '../plugin/kernel.js'), 'utf8'));
+const { inspectNativeMath, typedMathRange } = parser.window.MBB;
+const plainValue = (text) => ({
+  text,
+  start: text.length,
+  end: text.length,
+  formats: Array.from(text, () => []),
+  replacements: Array.from(text, () => null),
+});
+assert.deepEqual(JSON.parse(JSON.stringify(typedMathRange(plainValue('$a=b$')))), {
+  start: 0,
+  end: 5,
+  tex: 'a=b',
+});
+for (const text of ['$5 and $10', '\\$x$', 'open $x', '$a\nb$']) {
+  assert.equal(typedMathRange(plainValue(text)), null, `Must keep ${text} literal`);
+}
+const formatted = plainValue('$x$');
+formatted.formats[1] = [{ type: 'core/bold' }];
+assert.equal(typedMathRange(formatted), null);
+const adjacent = plainValue('\ufffc$b$');
+adjacent.replacements[0] = { type: 'mbb/math', attributes: { tex: 'a' } };
+assert.equal(
+  typedMathRange(adjacent),
+  null,
+  'Zero-gap formulas must leave the second source literal.',
+);
+const nativeMath = (tex, mathML, attributes = { latex: tex, mathML }) =>
+  inspectNativeMath({ tex, mathML, attributes }, parser.window.document);
+assert.equal(nativeMath('x^2', ''), null);
+assert.match(nativeMath('x^2', '<semantics><mi>x</mi></semantics>'), /语义结构|源码注释/);
+assert.match(
+  nativeMath(
+    'x^2',
+    '<semantics><mi>x</mi><annotation encoding="application/x-tex">y</annotation></semantics>',
+  ),
+  /不一致/,
+);
+assert.match(
+  nativeMath('x^2', '', { latex: 'x^2', style: { color: { text: '#f00' } } }),
+  /额外样式/,
+);
 function flatten(blocks, parents = []) {
   return blocks.flatMap((block) => [
     { ...block, parents },
