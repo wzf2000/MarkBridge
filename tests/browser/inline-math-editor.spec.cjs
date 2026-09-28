@@ -136,7 +136,7 @@ test('same-origin editor iframe uses its own styles; invalid TeX leaves source v
   expect(
     await page.evaluate(() => {
       const owner = document.querySelector('#math-canvas').contentDocument;
-      return owner.head.querySelector('style[data-mbb-inline-math-chtml]')?.textContent.length > 0;
+      return owner.head.querySelector('style[data-mbb-editor-chtml]')?.textContent.length > 0;
     }),
   ).toBe(true);
   await expect

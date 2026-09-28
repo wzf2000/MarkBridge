@@ -6,7 +6,7 @@ import {
 
 const FORMAT = 'mbb/math';
 const records = new WeakMap();
-const sheets = new WeakMap();
+const sheets = new Map();
 const observedDocuments = new WeakSet();
 const observedFrames = new WeakSet();
 let pendingHost = null;
@@ -14,6 +14,15 @@ let selectedHost = null;
 const baseCSS =
   ':host{display:inline-block;vertical-align:baseline;white-space:nowrap;cursor:pointer}' +
   'mjx-container{display:inline-block;margin:0!important;max-width:none}';
+function refreshShadowStyles(entry, css) {
+  if (entry.css === css) return;
+  entry.css = css;
+  if (entry.sheet) entry.sheet.replaceSync(css + baseCSS);
+  for (const style of entry.styles) {
+    if (style.isConnected) style.textContent = css + baseCSS;
+    else entry.styles.delete(style);
+  }
+}
 const escapeHTML = (text) =>
   String(text)
     .replace(/&/g, '&amp;')
@@ -96,19 +105,14 @@ function placeCaretAfterMath(root, value, position) {
 
 function shadowStyles(host, shadow) {
   const owner = host.ownerDocument;
+  globalThis.MBB_MATH?.registerDocument?.(owner);
   const mathCSS = document.querySelector('style[data-mbb-chtml]')?.textContent || '';
   let entry = sheets.get(owner);
   if (!entry) {
-    entry = { css: null, sheet: null, global: owner.createElement('style') };
-    entry.global.dataset.mbbInlineMathChtml = 'true';
-    owner.head.append(entry.global);
+    entry = { css: null, sheet: null, styles: new Set() };
     sheets.set(owner, entry);
   }
-  if (entry.css !== mathCSS) {
-    entry.global.textContent = mathCSS;
-    entry.css = mathCSS;
-    if (entry.sheet) entry.sheet.replaceSync(mathCSS + baseCSS);
-  }
+  refreshShadowStyles(entry, mathCSS);
   if ('adoptedStyleSheets' in shadow && owner.defaultView.CSSStyleSheet) {
     if (!entry.sheet) {
       entry.sheet = new owner.defaultView.CSSStyleSheet();
@@ -119,6 +123,7 @@ function shadowStyles(host, shadow) {
   }
   const style = owner.createElement('style');
   style.textContent = mathCSS + baseCSS;
+  entry.styles.add(style);
   return style;
 }
 function paint(host) {
@@ -239,6 +244,16 @@ function observeDocument(owner) {
   scan();
 }
 export function installInlineMathDecorations() {
+  globalThis.MBB_MATH?.subscribeStyles?.((css) => {
+    for (const [owner, entry] of sheets) {
+      const frame = owner.defaultView?.frameElement;
+      if (owner !== document && (!frame || !frame.isConnected || frame.contentDocument !== owner)) {
+        sheets.delete(owner);
+        continue;
+      }
+      refreshShadowStyles(entry, css);
+    }
+  });
   observeDocument(document);
   if (document.readyState === 'loading')
     document.addEventListener('DOMContentLoaded', () => observeDocument(document), { once: true });
@@ -577,6 +592,14 @@ export function InlineMathEdit({ contentRef, value, onChange, onFocus, isVisible
   };
   const coreObject = wp.richText.getActiveObject(value);
   const canConvertCore = coreObject?.type === 'core/math';
+  const corePositions = [];
+  if (canConvertCore)
+    value.replacements.forEach((item, index) => {
+      if (item?.type === 'core/math') corePositions.push(index);
+    });
+  const coreOrdinal = corePositions.indexOf(value.start);
+  const coreAnchor =
+    coreOrdinal >= 0 ? contentRef.current?.querySelectorAll('math[data-latex]')[coreOrdinal] : null;
   const convertCore = async () => {
     const current = valueRef.current;
     const object = wp.richText.getActiveObject(current);
@@ -722,6 +745,28 @@ export function InlineMathEdit({ contentRef, value, onChange, onFocus, isVisible
           onClick: convertCore,
           disabled: nativeBusy,
         })
+      : null,
+    canConvertCore && coreAnchor
+      ? el(
+          wp.components.Popover,
+          {
+            anchor: coreAnchor,
+            placement: 'bottom-end',
+            focusOnMount: false,
+            className: 'mbb-native-math-inline-action',
+          },
+          el(
+            wp.components.Button,
+            {
+              variant: 'secondary',
+              onClick: convertCore,
+              disabled: nativeBusy,
+              'aria-busy': nativeBusy,
+              className: 'mbb-native-math-convert',
+            },
+            nativeBusy ? '正在核对公式…' : '转换为行内公式（MathJax）',
+          ),
+        )
       : null,
     nativeError
       ? el(

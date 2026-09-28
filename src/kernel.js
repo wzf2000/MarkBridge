@@ -925,6 +925,7 @@ export function exportDocument(document, serialized) {
 }
 function MathPreview({ tex, display = false }) {
   const el = wp.element.createElement;
+  const previewRef = wp.element.useRef(null);
   const [html, setHTML] = wp.element.useState('');
   const [error, setError] = wp.element.useState('');
   const [retry, setRetry] = wp.element.useState(0);
@@ -934,6 +935,7 @@ function MathPreview({ tex, display = false }) {
     setError('');
     const timer = setTimeout(() => {
       if (!globalThis.MBB_MATH) return;
+      MBB_MATH.registerDocument?.(previewRef.current?.ownerDocument);
       MBB_MATH.render(tex, display).then(
         (h) => {
           if (active) setHTML(h);
@@ -950,7 +952,7 @@ function MathPreview({ tex, display = false }) {
   }, [tex, display, retry]);
   return el(
     'div',
-    { className: 'mbb-math-preview', contentEditable: false },
+    { className: 'mbb-math-preview', contentEditable: false, ref: previewRef },
     el('small', {}, '公式预览（不写入正文）'),
     error
       ? el(

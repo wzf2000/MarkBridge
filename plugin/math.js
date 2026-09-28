@@ -3,6 +3,35 @@
   const root = new URL('.', document.currentScript.src).href;
   let engine, ready, outputStyle;
   const cache = new Map();
+  const styleDocuments = new Map();
+  const styleSubscribers = new Set();
+  function liveDocument(owner) {
+    if (owner === document) return true;
+    const frame = owner.defaultView?.frameElement;
+    return !!frame && frame.isConnected && frame.contentDocument === owner;
+  }
+  function updateStyles(css) {
+    for (const [owner, style] of styleDocuments) {
+      if (!liveDocument(owner)) {
+        styleDocuments.delete(owner);
+        continue;
+      }
+      style.textContent = css;
+    }
+    for (const subscriber of styleSubscribers) subscriber(css);
+  }
+  function registerDocument(owner) {
+    if (!owner?.head || owner === document || !liveDocument(owner)) return;
+    let style = styleDocuments.get(owner);
+    if (!style) {
+      style = owner.createElement('style');
+      style.dataset.mbbEditorChtml = 'true';
+      owner.head.append(style);
+      styleDocuments.set(owner, style);
+    }
+    if (outputStyle && style.textContent !== outputStyle.textContent)
+      style.textContent = outputStyle.textContent;
+  }
   let reader, readerSource, readerRender, readerScale, readerStatus, readerOpener;
   let readerSession = 0;
   let readerPercent = 150;
@@ -214,7 +243,10 @@
                 outputStyle.dataset.mbbChtml = 'true';
                 document.head.append(outputStyle);
               }
-              outputStyle.textContent = m.css;
+              if (outputStyle.textContent !== m.css) {
+                outputStyle.textContent = m.css;
+                updateStyles(m.css);
+              }
             }
             p.resolve(m.html);
           }
@@ -344,7 +376,17 @@
   }
   const style =
     'mjx-container{display:inline-block;max-width:100%}mjx-container[display="true"]{display:block;overflow-x:auto;overflow-y:hidden;padding:8px 0}mjx-container svg{max-width:none}mjx-container[jax="CHTML"][display="true"]{display:flex;justify-content:safe center}mjx-container[jax="CHTML"][display="true"]>mjx-math{flex-shrink:0}mjx-container[display="true"]>svg{display:block;margin-inline:auto}.mbb-typeset{font-size:1em;display:inline;overflow:visible;vertical-align:baseline}pre.wp-block-mbb-math>.mbb-typeset{display:block;width:100%;font-size:1.15em}.mbb-math-preview{padding:8px;border:1px solid #ddd;overflow-x:auto}.mbb-math-preview small{display:block;color:#555}[data-mbb-math-error]{text-decoration:underline wavy #b32d2e}';
-  window.MBB_MATH = { render, typeset, preview, style };
+  window.MBB_MATH = {
+    render,
+    typeset,
+    preview,
+    style,
+    registerDocument,
+    subscribeStyles: (callback) => {
+      styleSubscribers.add(callback);
+      return () => styleSubscribers.delete(callback);
+    },
+  };
   if (window.MBB_MATH_CONFIG?.front) {
     const start = () => typeset(document);
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);

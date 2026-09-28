@@ -364,18 +364,9 @@ test('selected native inline math converts explicitly to a paired MathJax span',
     selection.addRange(range);
     document.dispatchEvent(new Event('selectionchange'));
   });
-  const button = page.getByRole('button', {
-    name: '转换原生数学为行内公式（MathJax）',
-    exact: true,
-  });
-  if (await button.isVisible()) await button.click();
-  else {
-    await page
-      .getByRole('button', { name: /More|更多/ })
-      .first()
-      .click();
-    await page.getByRole('menuitem', { name: '转换原生数学为行内公式（MathJax）' }).click();
-  }
+  const button = page.locator('.mbb-native-math-inline-action button');
+  await expect(button).toBeVisible();
+  await button.click();
   await expect(native).toHaveCount(0);
   await expect(formulas(page).last()).toHaveAttribute('data-mbb-tex', 'x^2');
   await page.locator('#export-tasks').click();
@@ -414,18 +405,9 @@ test('native inline conversion never overwrites content changed during asynchron
     selection.addRange(range);
     document.dispatchEvent(new Event('selectionchange'));
   });
-  const button = page.getByRole('button', {
-    name: '转换原生数学为行内公式（MathJax）',
-    exact: true,
-  });
-  if (await button.isVisible()) await button.click();
-  else {
-    await page
-      .getByRole('button', { name: /More|更多/ })
-      .first()
-      .click();
-    await page.getByRole('menuitem', { name: '转换原生数学为行内公式（MathJax）' }).click();
-  }
+  const button = page.locator('.mbb-native-math-inline-action button');
+  await expect(button).toBeVisible();
+  await button.click();
   await expect
     .poll(() => page.evaluate(() => typeof window.finishNativeValidation))
     .toBe('function');
@@ -456,7 +438,9 @@ test('selected native math block converts explicitly, while styled math stays un
     );
   });
   await expect(page.locator('#task-editor [data-type="core/math"]')).toHaveCount(1);
-  await page.getByRole('button', { name: '转换为行间公式（MathJax）' }).click();
+  const convert = page.locator('.mbb-native-math-block-action button');
+  await expect(convert).toBeVisible();
+  await convert.click();
   await expect(page.locator('#task-editor [data-type="mbb/math"]')).toHaveCount(1);
   await page.evaluate(() => {
     taskRegistry.dispatch('core/block-editor').insertBlocks(
@@ -467,7 +451,44 @@ test('selected native math block converts explicitly, while styled math stays un
       }),
     );
   });
-  await page.getByRole('button', { name: '转换为行间公式（MathJax）' }).click();
+  await expect(convert).toBeVisible();
+  await convert.click();
   await expect(page.getByRole('alert')).toContainText('额外样式');
   await expect(page.locator('#task-editor [data-type="core/math"]')).toHaveCount(1);
+});
+
+test('leaving and returning to native math invalidates an older conversion request', async ({
+  page,
+}) => {
+  await page.goto('/inline-math-editor');
+  await page.evaluate(() => {
+    taskRegistry
+      .dispatch('core/block-editor')
+      .insertBlocks(wp.blocks.createBlock('core/math', { latex: 'x^2', mathML: '' }));
+    const original = MBB_MATH.render;
+    MBB_MATH.render = (tex, display) =>
+      tex === 'x^2' && display
+        ? new Promise((resolve) => {
+            window.finishOldBlockValidation = () => resolve('<mjx-container></mjx-container>');
+          })
+        : original(tex, display);
+  });
+  const convert = page.locator('.mbb-native-math-block-action button');
+  await expect(convert).toBeVisible();
+  await convert.click();
+  await expect
+    .poll(() => page.evaluate(() => typeof window.finishOldBlockValidation))
+    .toBe('function');
+  await page.evaluate(() => {
+    taskRegistry.dispatch('core/block-editor').selectBlock(taskBlocks[1].clientId);
+  });
+  await expect(convert).toHaveCount(0);
+  await page.evaluate(() => {
+    const native = taskBlocks.find((block) => block.name === 'core/math');
+    taskRegistry.dispatch('core/block-editor').selectBlock(native.clientId);
+  });
+  await expect(convert).toBeVisible();
+  await page.evaluate(() => window.finishOldBlockValidation());
+  await expect(page.locator('#task-editor [data-type="core/math"]')).toHaveCount(1);
+  await expect(page.locator('#task-editor [data-type="mbb/math"]')).toHaveCount(0);
 });

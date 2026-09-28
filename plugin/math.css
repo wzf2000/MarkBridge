@@ -151,6 +151,13 @@
   display: block;
   color: #555;
 }
+.mbb-native-math-block-action {
+  /* Leave room for the selected block's floating WordPress toolbar. */
+  margin: 0.5rem 0 4.5rem;
+}
+.mbb-native-math-inline-action .components-popover__content {
+  padding: 0.5rem;
+}
 @media (max-width: 767px) {
   .mbb-reading .post-page .col-padding {
     padding: 16px !important;
