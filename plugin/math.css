@@ -156,20 +156,3 @@
     padding: 16px !important;
   }
 }
-
-.mbb-paragraph-preview p {
-  margin: 8px 0 0;
-  line-height: 1.8;
-  overflow-wrap: anywhere;
-}
-.mbb-paragraph-preview .mbb-typeset {
-  display: inline;
-  overflow: visible;
-  vertical-align: baseline;
-}
-.mbb-paragraph-preview mjx-container {
-  max-width: 100%;
-}
-.mbb-paragraph-preview button {
-  margin-left: 8px;
-}

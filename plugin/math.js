@@ -280,11 +280,67 @@
       }),
     );
   }
+  const previewFonts = new Map();
+  async function previewStyle() {
+    const css = outputStyle?.textContent || '';
+    const urls = [...new Set([...css.matchAll(/url\(["']?([^"')]+)["']?\)/g)].map((m) => m[1]))];
+    const fontRoot = new URL('vendor/mathjax-newcm-font/chtml/woff2/', root);
+    const replacements = await Promise.all(
+      urls.map(async (url) => {
+        const target = new URL(url, root);
+        if (
+          target.origin !== fontRoot.origin ||
+          !target.pathname.startsWith(fontRoot.pathname) ||
+          !/^mjx-[a-z0-9-]+\.woff2$/.test(target.pathname.slice(fontRoot.pathname.length)) ||
+          target.search ||
+          target.hash
+        )
+          throw Error('预览字体来源无效，未生成预览。');
+        if (!previewFonts.has(target.href)) {
+          const pending = (async () => {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 15000);
+            try {
+              const response = await fetch(target.href, {
+                credentials: 'omit',
+                redirect: 'error',
+                signal: controller.signal,
+              });
+              if (!response.ok) throw Error('预览数学字体加载失败，请重试。');
+              const bytes = new Uint8Array(await response.arrayBuffer());
+              if (bytes.length > 1000000) throw Error('预览数学字体超出大小限制。');
+              if (bytes.length < 48 || String.fromCharCode(...bytes.subarray(0, 4)) !== 'wOF2')
+                throw Error('预览数学字体文件无效，请重试。');
+              let binary = '';
+              for (let i = 0; i < bytes.length; i += 4096)
+                binary += String.fromCharCode(...bytes.subarray(i, i + 4096));
+              return 'data:font/woff2;base64,' + btoa(binary);
+            } finally {
+              clearTimeout(timer);
+            }
+          })();
+          previewFonts.set(target.href, pending);
+          pending.catch(() => previewFonts.delete(target.href));
+        }
+        return [url, await previewFonts.get(target.href)];
+      }),
+    );
+    const sources = new Map(replacements);
+    const style = document.createElement('style');
+    style.dataset.mbbChtml = 'true';
+    style.textContent = css.replace(
+      /url\(["']?([^"')]+)["']?\)/g,
+      (_, url) => 'url("' + sources.get(url) + '")',
+    );
+    return style.outerHTML;
+  }
   async function preview(html) {
     const doc = document.implementation.createHTMLDocument('');
     doc.body.innerHTML = html;
     await typeset(doc.body);
-    return (outputStyle?.outerHTML || '') + doc.body.innerHTML;
+    // An opaque, scriptless srcdoc cannot fetch same-site fonts without CORS.
+    // Embed only our trusted font assets instead of relaxing the iframe sandbox.
+    return (await previewStyle()) + doc.body.innerHTML;
   }
   const style =
     'mjx-container{display:inline-block;max-width:100%}mjx-container[display="true"]{display:block;overflow-x:auto;overflow-y:hidden;padding:8px 0}mjx-container svg{max-width:none}mjx-container[jax="CHTML"][display="true"]{display:flex;justify-content:safe center}mjx-container[jax="CHTML"][display="true"]>mjx-math{flex-shrink:0}mjx-container[display="true"]>svg{display:block;margin-inline:auto}.mbb-typeset{font-size:1em;display:inline;overflow:visible;vertical-align:baseline}pre.wp-block-mbb-math>.mbb-typeset{display:block;width:100%;font-size:1.15em}.mbb-math-preview{padding:8px;border:1px solid #ddd;overflow-x:auto}.mbb-math-preview small{display:block;color:#555}[data-mbb-math-error]{text-decoration:underline wavy #b32d2e}';

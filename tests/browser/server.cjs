@@ -111,6 +111,17 @@ http
         .writeHead(html ? 200 : 404, { 'Content-Type': 'text/html' })
         .end(html || 'Core runtime required');
     }
+    if (pathname === '/inline-math-editor') {
+      let html = taskEditor('Before $x^2$ between $y_0$ after.\n\nSecond paragraph.\n');
+      if (html)
+        html = html.replace(
+          '</head>',
+          `<link rel="stylesheet" href="${mapped('math.css')}"><script>window.MBB_MATH_CONFIG={front:false}</script><script src="${mapped('math.js')}"></script></head>`,
+        );
+      return response
+        .writeHead(html ? 200 : 404, { 'Content-Type': 'text/html' })
+        .end(html || 'Core runtime required');
+    }
     if (pathname === '/task-editor') {
       const html = taskEditor();
       return response
