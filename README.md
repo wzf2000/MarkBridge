@@ -89,7 +89,7 @@ npm run package
 
 Node.js 使用 **24 LTS（24.15.0+）**。格式规范、运行测试和目录说明见 [CONTRIBUTING.md](CONTRIBUTING.md)。PHP 使用 4 空格与 PER-CS 式括号；JS/CSS/JSON 使用 2 空格；目标 100 列。
 
-构建得到 `dist/markbridge-1.1.1.zip`。仓库保留可读源码，构建产物与第三方文件不参与手工格式化。完整运行测试需要按安装指南准备与目标 WordPress 匹配的私有运行环境。
+构建得到 `dist/markbridge-1.2.0.zip`。仓库保留可读源码，构建产物与第三方文件不参与手工格式化。完整运行测试需要按安装指南准备与目标 WordPress 匹配的私有运行环境。
 
 ## 许可证与致谢
 

@@ -20,6 +20,9 @@ This release requires Linux, Node.js 24 LTS, bubblewrap and a configured private
 3. Upload the built plugin, enable MarkBridge and verify isolated drafts before adopting existing content.
 
 == Changelog ==
+= 1.2.0 =
+Adds MathJax formula authoring, conservative inline dollar input, display-math shortcuts and explicit native math conversion. Fixes dynamic CHTML styles in the editor canvas. Rebuild the private conversion runtime when upgrading from 1.1.1.
+
 = 1.1.1 =
 Native block-editor saves keep Markdown and blocks paired, with conflict and conversion protection. Inline formulas render in place with focused TeX editing; sandboxed previews embed their trusted math fonts. Rebuild the private conversion runtime when upgrading from 1.1.0.
 
