@@ -44,6 +44,27 @@ function native_term_ids($id, $taxonomy)
     sort($ids);
     return $ids;
 }
+function native_changed_pair($id, $source)
+{
+    $base = mbb_document(get_post($id));
+    $converted = mbb_convert([
+        'mode' => 'markdown',
+        'source' => $source,
+        'serialized' => null,
+        'documentId' => mbb_id($id),
+        'base' => $base,
+    ]);
+    native_assert(!is_wp_error($converted), 'Could not prepare changed document blocks.');
+    $roundtripped = mbb_convert([
+        'mode' => 'blocks',
+        'source' => null,
+        'serialized' => $converted['serialized'],
+        'documentId' => mbb_id($id),
+        'base' => $base,
+    ]);
+    native_assert(!is_wp_error($roundtripped), 'Could not round-trip changed document blocks.');
+    return $roundtripped;
+}
 $admins = get_users(['role' => 'administrator', 'number' => 1, 'fields' => 'ID']);
 native_assert((bool) $admins, 'Lab administrator unavailable.');
 $previous_user = get_current_user_id();
@@ -57,6 +78,10 @@ register_post_meta('post', '_mbb_native_probe', [
 $suffix = substr(hash('sha256', uniqid('', true)), 0, 10);
 $fixture_id = 0;
 $ordinary_id = 0;
+$page_id = 0;
+$restore_id = 0;
+$attachment_id = 0;
+$upload_path = null;
 $term_ids = [];
 $user_id = 0;
 $other_user_id = 0;
@@ -344,6 +369,214 @@ try {
     native_assert(native_status($others) === 403, 'Author edited another author managed draft.');
     wp_set_current_user((int) $admins[0]);
 
+    $png = base64_decode(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL/nwAAAABJRU5ErkJggg==',
+        true,
+    );
+    native_assert($png !== false, 'Could not decode synthetic cover image.');
+    $upload = wp_upload_bits('mbb-native-' . $suffix . '.png', null, $png);
+    native_assert(empty($upload['error']), 'Could not upload synthetic cover image.');
+    $upload_path = $upload['file'];
+    $attachment_id = wp_insert_attachment(
+        [
+            'post_mime_type' => 'image/png',
+            'post_title' => 'Synthetic cover ' . $suffix,
+            'post_status' => 'inherit',
+        ],
+        $upload_path,
+        0,
+        true,
+    );
+    native_assert(!is_wp_error($attachment_id), 'Could not create synthetic cover attachment.');
+    $published = native_request($fixture_id, [
+        'mbb_expected' => mbb_token(get_post($fixture_id)),
+        'status' => 'publish',
+        'featured_media' => $attachment_id,
+    ]);
+    native_assert(
+        native_status($published) === 200,
+        'Covered native publication failed: ' . wp_json_encode($published->get_data()),
+    );
+    native_assert(get_post($fixture_id)->post_status === 'publish', 'Publication status missing.');
+    native_assert(
+        (int) get_post_thumbnail_id($fixture_id) === $attachment_id,
+        'Publication cover missing.',
+    );
+    $published_source = get_post($fixture_id)->post_content_filtered;
+    $published_pair = native_changed_pair($fixture_id, "Published update paragraph\n");
+    $published_update = native_request($fixture_id, [
+        'mbb_expected' => $published->get_data()['mbb_expected'],
+        'content' => $published_pair['serialized'],
+        'title' => 'Synthetic published native revision',
+    ]);
+    native_assert(native_status($published_update) === 200, 'Published native update failed.');
+    native_assert(
+        get_post($fixture_id)->post_status === 'publish',
+        'Published update changed status.',
+    );
+    native_assert(
+        get_post($fixture_id)->post_content === $published_pair['serialized'] &&
+            get_post($fixture_id)->post_content_filtered === $published_pair['source'] &&
+            get_post($fixture_id)->post_content_filtered !== $published_source &&
+            (int) get_post_thumbnail_id($fixture_id) === $attachment_id,
+        'Published update broke paired source or cover.',
+    );
+
+    $page_id = wp_insert_post(
+        [
+            'post_type' => 'page',
+            'post_status' => 'draft',
+            'post_title' => 'Synthetic managed page baseline',
+        ],
+        true,
+    );
+    native_assert(!is_wp_error($page_id), 'Could not create synthetic page.');
+    update_post_meta($page_id, '_mbb_origin', 'markdown_import');
+    update_post_meta($page_id, '_mbb_document_id', 'NativePage' . $suffix);
+    $page_seed = new WP_REST_Request('POST', '/mbb/v1/save');
+    foreach (
+        [
+            'post_id' => $page_id,
+            'expected' => mbb_token(get_post($page_id)),
+            'mode' => 'markdown',
+            'source' => "Initial page paragraph\n",
+            'title' => 'Synthetic managed page baseline',
+            'post_status' => 'draft',
+            'featured_media' => 0,
+        ]
+        as $key => $value
+    ) {
+        $page_seed->set_param($key, $value);
+    }
+    $page_created = mbb_save($page_seed);
+    native_assert(!is_wp_error($page_created), 'Could not seed paired page.');
+    $page_blocks = mbb_convert([
+        'mode' => 'markdown',
+        'source' => "Revised page paragraph\n",
+        'serialized' => null,
+        'documentId' => mbb_id($page_id),
+        'base' => mbb_document(get_post($page_id)),
+    ]);
+    native_assert(!is_wp_error($page_blocks), 'Could not prepare page blocks.');
+    $page_expected = mbb_convert([
+        'mode' => 'blocks',
+        'source' => null,
+        'serialized' => $page_blocks['serialized'],
+        'documentId' => mbb_id($page_id),
+        'base' => mbb_document(get_post($page_id)),
+    ]);
+    native_assert(!is_wp_error($page_expected), 'Could not round-trip page blocks.');
+    $page_saved = native_request(
+        $page_id,
+        [
+            'mbb_expected' => mbb_token(get_post($page_id)),
+            'content' => $page_blocks['serialized'],
+            'title' => 'Synthetic managed page revised',
+            'menu_order' => 3,
+        ],
+        '/wp/v2/pages/' . $page_id,
+    );
+    native_assert(native_status($page_saved) === 200, 'Managed page native save failed.');
+    native_assert(get_post($page_id)->post_type === 'page', 'Managed page changed type.');
+    native_assert(
+        get_post($page_id)->post_title === 'Synthetic managed page revised',
+        'Page title missing.',
+    );
+    native_assert((int) get_post($page_id)->menu_order === 3, 'Page menu order missing.');
+    native_assert(
+        get_post($page_id)->post_content === $page_blocks['serialized'] &&
+            get_post($page_id)->post_content_filtered === $page_expected['source'],
+        'Managed page source and blocks are not paired.',
+    );
+    native_assert(
+        $page_saved->get_data()['mbb_expected'] === mbb_token(get_post($page_id)),
+        'Managed page updated token missing.',
+    );
+
+    $restore_seed = new WP_REST_Request('POST', '/mbb/v1/save');
+    foreach (
+        [
+            'post_id' => 0,
+            'documentId' => 'NativeRestore' . $suffix,
+            'title' => 'Synthetic restore baseline',
+            'mode' => 'markdown',
+            'source' => "Restore baseline paragraph\n",
+            'post_status' => 'draft',
+            'featured_media' => 0,
+        ]
+        as $key => $value
+    ) {
+        $restore_seed->set_param($key, $value);
+    }
+    $restore_created = mbb_save($restore_seed);
+    native_assert(!is_wp_error($restore_created), 'Could not create restore fixture.');
+    $restore_id = (int) $restore_created['post_id'];
+    $baseline_revision_id = (int) $restore_created['saved_revision'];
+    $baseline_revision = wp_get_post_revision($baseline_revision_id);
+    native_assert((bool) $baseline_revision, 'Restore baseline revision missing.');
+    $restore_blocks = mbb_convert([
+        'mode' => 'markdown',
+        'source' => "Restore middle paragraph\n",
+        'serialized' => null,
+        'documentId' => mbb_id($restore_id),
+        'base' => mbb_document(get_post($restore_id)),
+    ]);
+    native_assert(!is_wp_error($restore_blocks), 'Could not prepare restore middle blocks.');
+    $middle = native_request($restore_id, [
+        'mbb_expected' => mbb_token(get_post($restore_id)),
+        'content' => $restore_blocks['serialized'],
+        'title' => 'Synthetic restore middle',
+    ]);
+    native_assert(native_status($middle) === 200, 'Initial native save before restore failed.');
+    $restore_request = new WP_REST_Request('POST', '/mbb/v1/save');
+    foreach (
+        [
+            'post_id' => $restore_id,
+            'expected' => mbb_token(get_post($restore_id)),
+            'mode' => 'restore',
+            'revision_id' => $baseline_revision->ID,
+            'expected_revision' => mbb_revision_token($baseline_revision),
+            'post_status' => 'draft',
+            'featured_media' => 0,
+        ]
+        as $key => $value
+    ) {
+        $restore_request->set_param($key, $value);
+    }
+    $restored = rest_do_request($restore_request);
+    native_assert(native_status($restored) === 200, 'Paired history restore failed.');
+    native_assert(
+        get_post($restore_id)->post_content === $baseline_revision->post_content &&
+            get_post($restore_id)->post_content_filtered ===
+                $baseline_revision->post_content_filtered &&
+            get_post($restore_id)->post_title === $baseline_revision->post_title,
+        'History restore did not preserve the exact pair.',
+    );
+    native_assert(
+        (int) get_metadata(
+            'post',
+            $restored->get_data()['saved_revision'],
+            '_mbb_restored_from',
+            true,
+        ) === $baseline_revision->ID,
+        'Restored revision ancestry missing.',
+    );
+    $after_restore_pair = native_changed_pair($restore_id, "Native after restore paragraph\n");
+    $after_restore = native_request($restore_id, [
+        'mbb_expected' => mbb_token(get_post($restore_id)),
+        'content' => $after_restore_pair['serialized'],
+        'title' => 'Synthetic native after restore',
+    ]);
+    native_assert(native_status($after_restore) === 200, 'Native save after restore failed.');
+    native_assert(
+        get_post($restore_id)->post_title === 'Synthetic native after restore' &&
+            get_post($restore_id)->post_content === $after_restore_pair['serialized'] &&
+            get_post($restore_id)->post_content_filtered === $after_restore_pair['source'] &&
+            get_post($restore_id)->post_content_filtered !==
+                $baseline_revision->post_content_filtered,
+        'Native save after restore did not update the source and blocks together.',
+    );
+
     $ordinary_id = wp_insert_post([
         'post_type' => 'post',
         'post_status' => 'draft',
@@ -365,6 +598,17 @@ try {
     }
     if ($ordinary_id) {
         wp_delete_post($ordinary_id, true);
+    }
+    if ($page_id) {
+        wp_delete_post($page_id, true);
+    }
+    if ($restore_id) {
+        wp_delete_post($restore_id, true);
+    }
+    if ($attachment_id && !is_wp_error($attachment_id)) {
+        wp_delete_attachment($attachment_id, true);
+    } elseif ($upload_path && file_exists($upload_path)) {
+        unlink($upload_path);
     }
     foreach ($term_ids as $term) {
         wp_delete_term($term['id'], $term['taxonomy']);
