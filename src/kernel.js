@@ -1,6 +1,7 @@
 import MarkdownIt from 'markdown-it';
 import footnotePlugin from 'markdown-it-footnote';
 import { registerFootnotes } from './footnotes.js';
+import { InlineMathEdit, installInlineMathDecorations } from './inline-math-editor.js';
 export const VERSION = '0.2.0';
 export class ConversionError extends Error {
   constructor(code, message, location = '') {
@@ -960,59 +961,6 @@ function MathPreview({ tex, display = false }) {
         : el('code', {}, tex),
   );
 }
-function ParagraphPreview({ content }) {
-  const el = wp.element.createElement;
-  const [html, setHTML] = wp.element.useState('');
-  const [error, setError] = wp.element.useState('');
-  const [retry, setRetry] = wp.element.useState(0);
-  wp.element.useEffect(() => {
-    let active = true;
-    setHTML('');
-    setError('');
-    const timer = setTimeout(async () => {
-      try {
-        safeHTML(content, true);
-        if (!globalThis.MBB_MATH) throw Error('公式预览尚未就绪，请重试。');
-        const rendered = await MBB_MATH.preview('<p>' + content + '</p>');
-        const fragment = document.createElement('template');
-        fragment.innerHTML = rendered;
-        if (active) {
-          setHTML(rendered);
-          if (fragment.content.querySelector('[data-mbb-math-error]'))
-            setError('部分公式暂未排版，请重试。');
-        }
-      } catch (e) {
-        if (active) setError(e.message);
-      }
-    }, 250);
-    return () => {
-      active = false;
-      clearTimeout(timer);
-    };
-  }, [content, retry]);
-  return el(
-    'div',
-    { className: 'mbb-math-preview mbb-paragraph-preview', contentEditable: false },
-    el('small', {}, '段落预览'),
-    html
-      ? el('div', {
-          className: 'mbb-paragraph-preview-content',
-          onClick: (e) => {
-            if (e.target.closest('a')) e.preventDefault();
-          },
-          dangerouslySetInnerHTML: { __html: html },
-        })
-      : el('div', {}, '正在生成段落预览……'),
-    error
-      ? el(
-          'div',
-          { role: 'status' },
-          error,
-          el('button', { type: 'button', onClick: () => setRetry((v) => v + 1) }, '重试段落预览'),
-        )
-      : null,
-  );
-}
 export function register() {
   registerFootnotes();
   const el = wp.element.createElement;
@@ -1213,31 +1161,14 @@ export function register() {
         ),
     });
   }
-  if (wp.hooks)
-    wp.hooks.addFilter('editor.BlockEdit', 'mbb/inline-preview', (Original) => (props) => {
-      const values = [];
-      const collect = (v) => {
-        if (v && typeof v.toHTMLString === 'function') v = v.toHTMLString();
-        if (typeof v === 'string' && v.includes('mbb-math')) {
-          const t = document.createElement('template');
-          t.innerHTML = v;
-          if (t.content.querySelector('span.mbb-math')) values.push(v);
-        } else if (v && typeof v === 'object') Object.values(v).forEach(collect);
-      };
-      if (props.isSelected) collect(props.attributes);
-      return el(
-        wp.element.Fragment,
-        {},
-        el(Original, props),
-        ...values.map((content, i) => el(ParagraphPreview, { key: i, content })),
-      );
-    });
   wp.richText.registerFormatType('mbb/math', {
     title: '行内公式源码',
     tagName: 'span',
     className: 'mbb-math',
     attributes: { tex: 'data-mbb-tex' },
-    edit: () => null,
+    contentEditable: false,
+    edit: InlineMathEdit,
   });
+  installInlineMathDecorations();
 }
 register();

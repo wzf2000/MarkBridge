@@ -77,9 +77,32 @@ $post = (object) [
     'post_content_filtered' => 'before',
     'post_date' => '2026-01-01 00:00:00',
     'post_date_gmt' => '2026-01-01 00:00:00',
+    'post_excerpt' => '',
+    'post_name' => 'existing',
+    'post_parent' => 0,
+    'menu_order' => 0,
+    'comment_status' => 'open',
+    'ping_status' => 'closed',
+    'post_password' => '',
 ];
 $cached_post = null;
 $worker_hook = null;
+function get_object_taxonomies($post_type, $output = 'names')
+{
+    return [];
+}
+function get_registered_meta_keys($type, $subtype = '')
+{
+    return [];
+}
+function get_page_template_slug($id)
+{
+    return '';
+}
+function is_sticky($id)
+{
+    return false;
+}
 function get_post($id)
 {
     global $post, $cached_post;
