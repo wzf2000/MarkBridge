@@ -131,6 +131,9 @@ jobs:
       - name: Check release sources and PHP syntax
         run: python3 scripts/check_release.py
 
+      - name: Test curated Wiki synchronization
+        run: python3 -m unittest discover -s tests -p 'test_wiki_sync.py'
+
       - name: Test manual release guards
         run: python3 -m unittest discover -s tests -p 'test_release_workflow.py'
 

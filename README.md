@@ -8,7 +8,7 @@
 </p>
 
 <p align="center"><strong>用 Markdown 写作，用区块调整。保存时，让两种格式保持一致。</strong></p>
-<p align="center"><a href="#开始使用">开始使用</a> · <a href="docs/index.md">文档</a> · <a href="docs/INSTALL.md">安装</a> · <a href="CONTRIBUTING.md">参与开发</a> · <a href="CHANGELOG.md">更新记录</a></p>
+<p align="center"><a href="#开始使用">开始使用</a> · <a href="https://github.com/wzf2000/MarkBridge/wiki">使用文档 Wiki</a> · <a href="docs/INSTALL.md">安装</a> · <a href="CONTRIBUTING.md">参与开发</a> · <a href="CHANGELOG.md">更新记录</a></p>
 
 ## 为什么是 MarkBridge？
 
@@ -68,6 +68,8 @@ flowchart LR
 “可往返”指受支持表示之间保持内容及语义；不承诺任意 Markdown 扩展、所有 HTML 或第三方区块都能无损转换。
 
 ## 文档
+
+[使用文档 Wiki](https://github.com/wzf2000/MarkBridge/wiki) 提供 `main` 的当前安装与编辑指南；已发布版本请使用 Release 对应源码中的文档。Wiki 页面由仓库自动同步，修改以仓库为准。
 
 - [内容编辑指南](docs/USAGE.md)：任务列表、脚注的用法与限制。
 - [更新记录](CHANGELOG.md)：各版本新增功能与修复。
