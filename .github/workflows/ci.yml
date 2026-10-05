@@ -3,6 +3,14 @@ name: MarkBridge CI
 on:
   push:
   pull_request:
+  workflow_call:
+    inputs:
+      source_sha:
+        type: string
+        required: true
+      release_version:
+        type: string
+        required: true
 
 permissions:
   contents: read
@@ -19,6 +27,9 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_sha || github.sha }}
+          persist-credentials: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -49,12 +60,12 @@ jobs:
 
       - name: Prepare public conversion test runtime
         run: |
-          rm -rf .ci-runtime
-          mkdir -p .ci-runtime/node/bin .ci-runtime/run .ci-runtime/site/wp-content/plugins/markdown-block-bridge
-          cp "$(command -v node)" .ci-runtime/node/bin/node
-          cp plugin/worker.cjs .ci-runtime/worker.cjs
-          cp plugin/kernel.js .ci-runtime/site/wp-content/plugins/markdown-block-bridge/kernel.js
-          cat > .ci-runtime/run/worker-bootstrap.html <<'HTML'
+          rm -rf .runtime/ci
+          mkdir -p .runtime/ci/node/bin .runtime/ci/run .runtime/ci/site/wp-content/plugins/markdown-block-bridge
+          cp "$(command -v node)" .runtime/ci/node/bin/node
+          cp plugin/worker.cjs .runtime/ci/worker.cjs
+          cp plugin/kernel.js .runtime/ci/site/wp-content/plugins/markdown-block-bridge/kernel.js
+          cat > .runtime/ci/run/worker-bootstrap.html <<'HTML'
           <!doctype html><html><head><meta charset="utf-8"></head><body>
           <script>
           const blockTypes = {};
@@ -82,8 +93,8 @@ jobs:
           <script src="http://markbridge.invalid/wp-content/plugins/markdown-block-bridge/kernel.js"></script>
           </body></html>
           HTML
-          cp runtime/package.json runtime/package-lock.json .ci-runtime/
-          PATH="$PWD/.ci-runtime/node/bin:$PATH" npm ci --prefix .ci-runtime --omit=dev --ignore-scripts
+          cp runtime/package.json runtime/package-lock.json .runtime/ci/
+          PATH="$PWD/.runtime/ci/node/bin:$PATH" npm ci --prefix .runtime/ci --omit=dev --ignore-scripts
 
       - name: Check formatting
         env:
@@ -92,7 +103,7 @@ jobs:
 
       - name: Run conversion and editor tests
         env:
-          MARKBRIDGE_TEST_RUNTIME: ${{ github.workspace }}/.ci-runtime
+          MARKBRIDGE_TEST_RUNTIME: ${{ github.workspace }}/.runtime/ci
         run: npm test
 
       - name: Install pinned Chromium for browser regressions
@@ -120,12 +131,10 @@ jobs:
       - name: Check release sources and PHP syntax
         run: python3 scripts/check_release.py
 
-      - name: Re-check generated release sources
-        run: python3 scripts/check_release.py
+      - name: Test manual release guards
+        run: python3 -m unittest discover -s tests -p 'test_release_workflow.py'
 
       - name: Build and verify release package
-        env:
-          MARKBRIDGE_ALLOW_DIRTY_BUILD: '1'
         run: |
           python3 scripts/package.py
           rm -rf /tmp/markbridge-package-check
@@ -133,7 +142,7 @@ jobs:
           unzip -q "dist/markbridge-$(node -p "require('./package.json').version").zip" -d /tmp/markbridge-package-check
           python3 scripts/verify_package.py \
             /tmp/markbridge-package-check/markbridge \
-            --manifest /tmp/markbridge-package-check/markbridge/release-manifest.json
+            --manifest "dist/markbridge-$(node -p "require('./package.json').version").manifest.json"
 
       - name: Upload verification artifacts
         uses: actions/upload-artifact@v4
@@ -143,4 +152,25 @@ jobs:
             plugin/assets.json
             plugin/runtime-contract.json
             plugin/vendor-manifest.json
+          if-no-files-found: error
+
+      - name: Validate immutable release bundle and prepare notes
+        env:
+          RELEASE_VERSION: ${{ inputs.release_version }}
+          SOURCE_SHA: ${{ inputs.source_sha || github.sha }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          version="${RELEASE_VERSION:-$(node -p "require('./package.json').version")}"
+          python3 scripts/release_workflow.py --version "$version" --sha "$SOURCE_SHA" --repository "$REPOSITORY" --bundle dist
+
+      - name: Upload installation ZIP, checksum, external manifest and notes
+        uses: actions/upload-artifact@v4
+        with:
+          name: markbridge-release-${{ inputs.source_sha || github.sha }}
+          path: |
+            dist/markbridge-*.zip
+            dist/markbridge-*.zip.sha256
+            dist/markbridge-*.manifest.json
+            dist/release-notes.md
+            dist/release-validation.json
           if-no-files-found: error

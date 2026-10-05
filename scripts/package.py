@@ -2,7 +2,6 @@
 
 import hashlib
 import json
-import os
 from pathlib import Path
 import subprocess
 import zipfile
@@ -13,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def main():
     subprocess.run(["python3", str(ROOT / "scripts/check_release.py")], check=True)
     dirty = subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT, text=True).strip()
-    if dirty and not os.environ.get("MARKBRIDGE_ALLOW_DIRTY_BUILD"):
+    if dirty:
         raise RuntimeError("Package only from a clean source commit")
     commit = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     version = json.loads((ROOT / "package.json").read_text())["version"]
@@ -24,7 +23,13 @@ def main():
     assets = json.loads((ROOT / "plugin/assets.json").read_text())
     vendor = json.loads((ROOT / "plugin/vendor-manifest.json").read_text())
     generated = (
-        {"assets.json", "runtime-contract.json", "vendor-manifest.json", "kernel.js", "emoji.js"}
+        {
+            "assets.json",
+            "runtime-contract.json",
+            "vendor-manifest.json",
+            "kernel.js",
+            "emoji.js",
+        }
         | set(assets.values())
         | set(vendor)
     )
