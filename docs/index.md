@@ -4,6 +4,9 @@ README 说明产品范围和最短开发入口；本页按用途区分持续有�
 
 ## CURRENT
 
+- [使用文档 Wiki](https://github.com/wzf2000/MarkBridge/wiki)：由本仓库精选用户文档自动生成，跟随 `main`；已发布版本文档见对应 Release 的源码。
+- [Wiki 维护](WIKI.md)：同步范围、预览、初始化与冲突处理。
+
 - [安装与升级](INSTALL.md)：环境、构建、私有运行环境和升级边界。
 - [内容编辑指南](USAGE.md)：任务列表、脚注的操作方法与转换边界。
 - [工作原理](ARCHITECTURE.md)：双格式存储、转换沙箱、公式和文件来源契约。
