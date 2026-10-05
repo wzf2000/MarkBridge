@@ -19,15 +19,17 @@ on:
         default: false
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: markbridge-user-docs-wiki
   cancel-in-progress: false
 
 jobs:
-  sync:
+  preview:
     runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.generate.outputs.sha }}
     steps:
       - name: Check out current main for queued publishing runs
         uses: actions/checkout@v4
@@ -41,12 +43,13 @@ jobs:
           python-version: '3.x'
 
       - name: Test and generate a reviewable Wiki artifact
+        id: generate
         env:
           REPOSITORY: ${{ github.repository }}
         run: |
           python3 -m unittest discover -s tests -p 'test_wiki_sync.py'
           sha="$(git rev-parse HEAD)"
-          echo "WIKI_SOURCE_SHA=$sha" >> "$GITHUB_ENV"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
           python3 scripts/wiki_sync.py generate --output "$RUNNER_TEMP/wiki-staging" --repository "$REPOSITORY" --sha "$sha"
 
       - uses: actions/upload-artifact@v4
@@ -56,9 +59,25 @@ jobs:
           include-hidden-files: true
           if-no-files-found: error
 
+  publish:
+    needs: preview
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || inputs.publish)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.preview.outputs.sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: user-docs-wiki-${{ github.run_id }}
+          path: ${{ runner.temp }}/wiki-staging/
+
       - name: Publish verified pages to Wiki
-        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || inputs.publish)
         env:
+          WIKI_SOURCE_SHA: ${{ needs.preview.outputs.sha }}
           WIKI_AUTH_TOKEN: ${{ secrets.WIKI_TOKEN || github.token }}
           REPOSITORY: ${{ github.repository }}
           GH_TERMINAL_PROMPT: '0'
