@@ -85,10 +85,23 @@ def rewrite_markdown(text, source, repository, sha):
             output.append(line)
             continue
         # Code spans are literals, even when they contain Markdown-looking links.
-        parts = re.split(r"(`+[^`]*`+)", line)
-        output.append(
-            "".join(part if i % 2 else rewrite_line(part) for i, part in enumerate(parts))
-        )
+        runs = list(re.finditer(r"`+", line))
+        cursor = 0
+        index = 0
+        while index < len(runs):
+            opening = runs[index]
+            closing = next(
+                (j for j in range(index + 1, len(runs)) if runs[j][0] == opening[0]),
+                None,
+            )
+            if closing is None:
+                index += 1
+                continue
+            output.append(rewrite_line(line[cursor : opening.start()]))
+            cursor = runs[closing].end()
+            output.append(line[opening.start() : cursor])
+            index = closing + 1
+        output.append(rewrite_line(line[cursor:]))
     return "".join(output)
 
 

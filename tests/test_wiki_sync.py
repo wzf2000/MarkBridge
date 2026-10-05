@@ -47,6 +47,12 @@ class WikiSyncTests(unittest.TestCase):
         ):
             self.assertIn(literal, result)
 
+    def test_code_span_with_embedded_backtick_is_literal(self):
+        text = "``code ` [guide](USAGE.md)`` and [real](USAGE.md)"
+        result = wiki.rewrite_markdown(text, "docs/USAGE.md", REPO, SHA)
+        self.assertTrue(result.startswith("``code ` [guide](USAGE.md)``"))
+        self.assertIn("[real](https://github.com/example/markbridge/wiki/Usage)", result)
+
     def test_indented_code_is_literal(self):
         text = "    [example](USAGE.md)\n\t[example](INSTALL.md)\n"
         self.assertEqual(wiki.rewrite_markdown(text, "docs/USAGE.md", REPO, SHA), text)
