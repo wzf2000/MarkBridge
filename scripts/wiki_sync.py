@@ -81,6 +81,9 @@ def rewrite_markdown(text, source, repository, sha):
             fence = marker[1]
             output.append(line)
             continue
+        if line.startswith(("    ", "\t")):
+            output.append(line)
+            continue
         # Code spans are literals, even when they contain Markdown-looking links.
         parts = re.split(r"(`+[^`]*`+)", line)
         output.append(

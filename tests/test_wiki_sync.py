@@ -47,6 +47,10 @@ class WikiSyncTests(unittest.TestCase):
         ):
             self.assertIn(literal, result)
 
+    def test_indented_code_is_literal(self):
+        text = "    [example](USAGE.md)\n\t[example](INSTALL.md)\n"
+        self.assertEqual(wiki.rewrite_markdown(text, "docs/USAGE.md", REPO, SHA), text)
+
     def test_reject_escaping_link(self):
         with self.assertRaises(ValueError):
             wiki.rewrite_markdown("[x](../../private.md)", "docs/USAGE.md", REPO, SHA)
