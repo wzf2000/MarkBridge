@@ -1,0 +1,112 @@
+[
+  {
+    "id": "basic",
+    "category": "基础格式",
+    "source": "# Heading\n\n中文 **bold** and *emphasis*.\n"
+  },
+  {
+    "id": "cjk-emphasis",
+    "category": "中文标点",
+    "source": "所以**不存在一般性的“词表越大，模型越省算力”**这一结论。\n"
+  },
+  {
+    "id": "code",
+    "category": "代码字面量",
+    "source": "```python\nprint(\"$literal$\", \"[^note]\", \"[x]\")\n```\n"
+  },
+  {
+    "id": "quote",
+    "category": "引用",
+    "source": "> Quoted **text**.\n>\n> Another paragraph.\n"
+  },
+  {
+    "id": "list",
+    "category": "普通列表",
+    "source": "- one\n- two\n\n3. third\n4. fourth\n"
+  },
+  {
+    "id": "link",
+    "category": "链接",
+    "source": "A [reference](https://example.com/path \"Title\") and `code`.\n"
+  },
+  {
+    "id": "inline-math",
+    "category": "行内公式",
+    "source": "Before $a^2 + b^2 = c^2$ after.\n"
+  },
+  {
+    "id": "quoted-math",
+    "category": "引用行间公式",
+    "source": "> $$\n> \\operatorname{KL}(P\\|Q) = \\sum_x p(x) \\log \\frac{p(x)}{q(x)}\n> $$\n"
+  },
+  {
+    "id": "tasks",
+    "category": "任务列表",
+    "source": "- [x] done\n- [ ] pending\n"
+  },
+  {
+    "id": "footnotes",
+    "category": "命名脚注",
+    "source": "Text[^note], again[^note].\n\n[^note]: Explanation **here**.\n"
+  },
+  {
+    "id": "nested-tasks",
+    "category": "嵌套任务",
+    "source": "- [ ] outer\n  - [x] inner\n"
+  },
+  {
+    "id": "table",
+    "category": "表格",
+    "source": "| left | right |\n| :--- | ---: |\n| text | `code` |\n"
+  },
+  {
+    "id": "image",
+    "category": "图片",
+    "source": "![alt](https://example.com/image.png \"Caption\")\n"
+  },
+  {
+    "id": "html",
+    "category": "HTML策略",
+    "source": "<script>alert(1)</script>\n"
+  },
+  {
+    "id": "unsafe-link",
+    "category": "危险链接",
+    "source": "[bad](javascript:alert%281%29)\n"
+  },
+  {
+    "id": "duplicate-footnote",
+    "category": "重复脚注",
+    "source": "Text[^n].\n\n[^n]: one\n\n[^n]: two\n"
+  },
+  {
+    "id": "orphan-footnote",
+    "category": "未定义脚注",
+    "source": "Text[^missing].\n"
+  },
+  {
+    "id": "escaped-task",
+    "category": "转义任务标记",
+    "source": "- \\[x] literal\n"
+  },
+  {
+    "id": "entity-task",
+    "category": "实体任务标记",
+    "source": "- &#91;x&#93; literal\n"
+  },
+  {
+    "id": "task-continuation",
+    "category": "换行任务内容",
+    "source": "- [x]\n  done\n"
+  },
+  {
+    "id": "soft-line-break",
+    "category": "正文软换行",
+    "source": "First line\nSecond line\n"
+  },
+  {
+    "id": "hard-line-break",
+    "category": "正文硬换行",
+    "source": "First line  \nSecond line\n"
+  }
+]
