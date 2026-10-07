@@ -137,7 +137,7 @@ def generate(root, output, repository, sha):
         "# MarkBridge 使用手册\n\n"
         "用 Markdown 写作，也能在 WordPress 可视化编辑器中继续修改。"
         "保存时，MarkBridge 会一起保存 Markdown 原文和对应区块。\n\n"
-        + f"**适用版本：MarkBridge {version}。** 本手册默认介绍当前功能，不在每个功能标题重复版本号。"
+        + f"**适用版本：MarkBridge {version}。** 本手册介绍该版本的安装、写作和维护方法。"
         "历史变化见更新记录；手册随 main 更新，若安装较旧版本，请阅读该 Release 对应的文档。\n\n"
         + "## 从哪里开始\n\n"
         + "| 你想做什么 | 从这里开始 |\n| --- | --- |\n"
