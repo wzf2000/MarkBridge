@@ -9,8 +9,10 @@ from pathlib import Path
 from urllib.parse import quote, unquote, urlsplit
 
 PAGES = {
+    "docs/GETTING-STARTED.md": ("Getting-Started", "第一次使用：上传 Markdown 新建文章"),
     "docs/INSTALL.md": ("Installation", "安装与升级"),
     "docs/USAGE.md": ("Usage", "内容编辑指南"),
+    "docs/TROUBLESHOOTING.md": ("Troubleshooting", "导入与保存常见问题"),
     "docs/EMOJI-PACKS.md": ("Emoji-Packs", "图片表情数据包"),
     "CHANGELOG.md": ("Changelog", "更新记录"),
 }
@@ -123,6 +125,8 @@ def generate(root, output, repository, sha):
         "# MarkBridge 使用文档\n\n"
         "本 Wiki 由仓库文档自动生成，介绍 `main` 的当前行为，可能包含尚未发布的变更。"
         "安装已发布版本时，请以该版本 Release 中固定源码提交的文档为准。\n\n"
+        + f"**[开始第一篇文章：上传 Markdown]({wiki}/Getting-Started)**\n\n"
+        + "已经完成安装的作者可从入门指南开始；管理员先阅读安装与升级。\n\n"
         + links
         + f"\n[下载与版本说明](https://github.com/{repository}/releases) · "
         + f"[本次源码 `{sha[:12]}`](https://github.com/{repository}/tree/{sha}) · "

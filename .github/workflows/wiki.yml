@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
     paths:
+      - docs/GETTING-STARTED.md
+      - docs/TROUBLESHOOTING.md
+      - docs/assets/user-guide/**
       - docs/INSTALL.md
       - docs/USAGE.md
       - docs/EMOJI-PACKS.md
