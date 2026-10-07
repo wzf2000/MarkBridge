@@ -1,0 +1,44 @@
+[
+  {
+    "id": "current",
+    "source": "Current **bold**.\n",
+    "serialized": "<!-- wp:paragraph -->\n<p>Current <strong>bold</strong>.</p>\n<!-- /wp:paragraph -->",
+    "documentId": "probe-current"
+  },
+  {
+    "id": "legacy-footnote-literal",
+    "source": "Old literal [^missing].\n",
+    "serialized": "<!-- wp:paragraph -->\n<p>Old literal [^missing].</p>\n<!-- /wp:paragraph -->",
+    "documentId": "probe-legacy-footnote-literal"
+  },
+  {
+    "id": "legacy-complex-task",
+    "source": "- [x] Old task\n\n  Another paragraph.\n",
+    "serialized": "<!-- wp:mbb/list -->\n<ul class=\"wp-block-mbb-list\"><!-- wp:mbb/list-item -->\n<li class=\"wp-block-mbb-list-item\"><!-- wp:paragraph -->\n<p>[x] Old task</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:paragraph -->\n<p>Another paragraph.</p>\n<!-- /wp:paragraph --></li>\n<!-- /wp:mbb/list-item --></ul>\n<!-- /wp:mbb/list -->",
+    "documentId": "probe-legacy-complex-task"
+  },
+  {
+    "id": "legacy-current-task",
+    "source": "- [x] Old literal [^missing].\n",
+    "serialized": "<!-- wp:mbb/list -->\n<ul class=\"wp-block-mbb-list\"><!-- wp:mbb/task-item {\"content\":\"Old literal [^missing].\",\"checked\":true} -->\n<li class=\"wp-block-mbb-task-item\"><p>[x] <span>Old literal [^missing].</span></p></li>\n<!-- /wp:mbb/task-item --></ul>\n<!-- /wp:mbb/list -->",
+    "documentId": "probe-legacy-current-task"
+  },
+  {
+    "id": "legacy-softbreak",
+    "source": "Old line\nnext line\n",
+    "serialized": "<!-- wp:paragraph -->\n<p>Old line<br>next line</p>\n<!-- /wp:paragraph -->",
+    "documentId": "probe-legacy-softbreak"
+  },
+  {
+    "id": "legacy-code",
+    "source": "```text\n[^missing]\n```\n",
+    "serialized": "<!-- wp:mbb/code {\"code\":\"[^missing]\\n\",\"language\":\"text\"} -->\n<pre class=\"wp-block-mbb-code\"><code class=\"language-text\">[^missing]\n</code></pre>\n<!-- /wp:mbb/code -->",
+    "documentId": "probe-legacy-code"
+  },
+  {
+    "id": "historical-noneditable-table",
+    "source": "| code | text |\n| --- | --- |\n| `a\\|b` | ok |\n",
+    "serialized": "<!-- wp:table -->\n<figure class=\"wp-block-table\"><table class=\"has-fixed-layout\"><thead><tr><th>code</th><th>text</th></tr></thead><tbody><tr><td><code>a|b</code></td><td>ok</td></tr></tbody></table></figure>\n<!-- /wp:table -->",
+    "documentId": "probe-historical-noneditable-table"
+  }
+]

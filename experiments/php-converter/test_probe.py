@@ -16,6 +16,10 @@ PHP = [
 
 def convert(mode, value):
     request = {"mode": mode, "source" if mode == "markdown" else "serialized": value}
+    return request_php(request)
+
+
+def request_php(request):
     process = subprocess.run(
         PHP, input=json.dumps(request), text=True, capture_output=True, timeout=10
     )
@@ -33,6 +37,34 @@ class ProbeTests(unittest.TestCase):
         self.assertNotIn("Original", reverse["source"])
         self.assertEqual(convert("markdown", reverse["source"])["serialized"], modified)
 
+    def test_reverse_ignores_untrusted_cached_source(self):
+        initial = convert("markdown", "Actual **content**.\n")
+        self.assertTrue(initial["ok"], initial)
+        result = request_php(
+            {
+                "mode": "blocks",
+                "serialized": initial["serialized"],
+                "source": "FORGED CACHED SOURCE",
+                "base": {"source": "FORGED CACHED SOURCE"},
+            }
+        )
+        self.assertTrue(result["ok"], result)
+        self.assertIn("Actual", result["source"])
+        self.assertNotIn("FORGED", result["source"])
+
+    def test_invalid_requests(self):
+        for request in [
+            None,
+            [],
+            {},
+            {"mode": "unknown"},
+            {"mode": "markdown", "source": []},
+            {"mode": "blocks", "serialized": 1},
+            {"mode": "paired_restore", "source": "x", "serialized": "x"},
+        ]:
+            with self.subTest(request=request):
+                self.assertFalse(request_php(request)["ok"])
+
     def test_unknown_attributes_and_malformed_structure(self):
         cases = [
             "<!-- wp:third-party/widget --><div>Keep me</div><!-- /wp:third-party/widget -->",
@@ -40,6 +72,8 @@ class ProbeTests(unittest.TestCase):
             '<!-- wp:paragraph --><p style="color:red">Text</p><!-- /wp:paragraph -->',
             '<!-- wp:paragraph --><p onclick="alert(1)">Text</p><!-- /wp:paragraph -->',
             "<!-- wp:paragraph --><p>Text</p><!-- /wp:heading -->",
+            '<!-- wp:heading {"level":2,"level":3} --><h3 class="wp-block-heading">Text</h3><!-- /wp:heading -->',
+            '<!-- wp:heading {"level":"2"} --><h2 class="wp-block-heading">Text</h2><!-- /wp:heading -->',
             "<!-- wp:paragraph --><p>Text</p>",
             "<!-- wp:paragraph --><p>Text</p><!-- /wp:paragraph -->UNTRACKED",
             '<!-- wp:paragraph --><p><a href="https://example.com" href="javascript:bad">link</a></p><!-- /wp:paragraph -->',
@@ -51,7 +85,7 @@ class ProbeTests(unittest.TestCase):
     def test_no_silent_html_or_script_link_acceptance(self):
         for value in [
             "<script>alert(1)</script>",
-            '<span style="color:red">Text</span>',
+            '<span style="position:absolute">Text</span>',
             "[bad](javascript:alert%281%29)",
         ]:
             with self.subTest(value=value):
@@ -62,14 +96,96 @@ class ProbeTests(unittest.TestCase):
             with self.subTest(length=len(value)):
                 self.assertFalse(convert("markdown", value)["ok"])
 
-    def test_unimplemented_features_are_explicit(self):
-        for value in [
-            "Text[^note].\n\n[^note]: note",
-            "![alt](https://example.com/a.png)",
-            "|a|b|\n|-|-|\n|c|d|",
+    def test_required_source_contract(self):
+        for item in json.loads((ROOT / "fixtures.json").read_text()):
+            with self.subTest(id=item["id"]):
+                result = convert("markdown", item["source"])
+                self.assertEqual(result["ok"], item["expected_php"], result)
+                if result["ok"]:
+                    self.assertEqual(result["source"], item["source"])
+
+    def test_new_block_edits_are_really_exported(self):
+        cases = [
+            ("![Original](https://example.com/image.png)\n", "Original", "Changed"),
+            ("| Name | Value |\n| --- | --- |\n| Original | 1 |\n", "Original", "Changed"),
+            ("Text[^n].\n\n[^n]: Original note.\n", "Original", "Changed"),
+        ]
+        for source, old, new in cases:
+            with self.subTest(source=source):
+                original = convert("markdown", source)
+                self.assertTrue(original["ok"], original)
+                edited = original["serialized"].replace(old, new)
+                exported = convert("blocks", edited)
+                self.assertTrue(exported["ok"], exported)
+                self.assertIn(new, exported["source"])
+                self.assertNotIn(old, exported["source"])
+                self.assertEqual(convert("markdown", exported["source"])["serialized"], edited)
+
+    def test_new_block_attributes_and_reference_integrity(self):
+        cases = [
+            ("![alt](https://example.com/a.png)\n", 'alt="alt"', 'alt="alt" onerror="bad()"'),
+            ("| a | b |\n| --- | --- |\n| c | d |\n", "<td>", '<td colspan="2">'),
+            ("Text[^n].\n\n[^n]: Note.\n", 'data-mbb-footnote="n"', 'data-mbb-footnote="missing"'),
+            ("Text[^n].\n\n[^n]: Note.\n", "[^n]", "[^other]"),
+        ]
+        for source, old, new in cases:
+            with self.subTest(source=source, attribute=new):
+                result = convert("markdown", source)
+                self.assertTrue(result["ok"], result)
+                self.assertIn(old, result["serialized"])
+                self.assertFalse(convert("blocks", result["serialized"].replace(old, new))["ok"])
+
+    def test_exact_historical_pairs_and_tamper_rejection(self):
+        for item in json.loads((ROOT / "paired-fixtures.json").read_text()):
+            with self.subTest(id=item["id"]):
+                request = {"mode": "paired_restore", **item}
+                restored = request_php(request)
+                self.assertTrue(restored["ok"], restored)
+                self.assertEqual(restored["source"], item["source"])
+                self.assertEqual(restored["serialized"], item["serialized"])
+                self.assertFalse(
+                    request_php({**request, "serialized": item["serialized"] + "tamper"})["ok"]
+                )
+                self.assertFalse(
+                    request_php({**request, "source": item["source"] + "\nChanged."})["ok"]
+                )
+                self.assertFalse(request_php({**request, "documentId": ""})["ok"])
+                self.assertFalse(request_php({**request, "documentId": " \t"})["ok"])
+                equivalent = request_php({**request, "source": item["source"] + "\n"})
+                self.assertTrue(equivalent["ok"], equivalent)
+                self.assertEqual(equivalent["source"], item["source"] + "\n")
+                self.assertFalse(
+                    request_php({**request, "serialized": item["serialized"] + "\n"})["ok"]
+                )
+
+    def test_paired_restore_is_not_an_html_bypass(self):
+        for source, html in [
+            ("<script>bad()</script>\n", "<script>bad()</script>"),
+            ('<p onclick="bad()">Text</p>\n', '<p onclick="bad()">Text</p>'),
         ]:
-            with self.subTest(value=value):
-                self.assertFalse(convert("markdown", value)["ok"])
+            with self.subTest(source=source):
+                result = request_php(
+                    {
+                        "mode": "paired_restore",
+                        "source": source,
+                        "serialized": "<!-- wp:html -->\n" + html + "\n<!-- /wp:html -->",
+                        "documentId": "unsafe-snapshot",
+                    }
+                )
+                self.assertFalse(result["ok"])
+
+    def test_footnote_container_integrity(self):
+        result = convert("markdown", "Text[^a] and [^b].\n\n[^a]: A.\n\n[^b]: B.\n")
+        self.assertTrue(result["ok"], result)
+        first, marker, notes = result["serialized"].partition("<!-- wp:mbb/footnotes -->")
+        self.assertTrue(marker)
+        for altered in [
+            marker + notes,
+            marker + notes + "\n\n" + first.rstrip(),
+            result["serialized"].replace('"label":"b"', '"label":"a"'),
+        ]:
+            with self.subTest(altered=altered[:80]):
+                self.assertFalse(convert("blocks", altered)["ok"])
 
     def test_escaped_and_entity_task_markers_not_checked(self):
         for value in [

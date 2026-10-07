@@ -8,8 +8,11 @@ use MarkBridge\Probe\Converter;
 require_once __DIR__ . '/Converter.php';
 
 try {
-    $raw = stream_get_contents(STDIN, Converter::MAX_BYTES * 6 + 1024);
-    if ($raw === false || strlen($raw) >= Converter::MAX_BYTES * 6 + 1024) {
+    // Paired restore carries two bounded strings; JSON can encode each byte as
+    // six ASCII bytes. Source and serialized limits are checked independently.
+    $jsonLimit = Converter::MAX_BYTES * 12 + 4096;
+    $raw = stream_get_contents(STDIN, $jsonLimit);
+    if ($raw === false || strlen($raw) >= $jsonLimit) {
         throw new ConversionError('INPUT_LIMIT', 'JSON input is too large');
     }
     $request = json_decode($raw, true, 32, JSON_THROW_ON_ERROR);
@@ -27,6 +30,23 @@ try {
         'blocks' => isset($request['serialized']) && is_string($request['serialized'])
             ? $converter->fromBlocks($request['serialized'])
             : throw new ConversionError('REQUEST', 'Blocks mode requires a string serialized'),
+        'paired_restore' => isset(
+            $request['source'],
+            $request['serialized'],
+            $request['documentId'],
+        ) &&
+        is_string($request['source']) &&
+        is_string($request['serialized']) &&
+        is_string($request['documentId'])
+            ? $converter->restorePair(
+                $request['source'],
+                $request['serialized'],
+                $request['documentId'],
+            )
+            : throw new ConversionError(
+                'REQUEST',
+                'Paired restore requires string source, serialized and documentId',
+            ),
         default => throw new ConversionError('REQUEST', 'Unknown conversion mode'),
     };
 } catch (ConversionError $error) {
