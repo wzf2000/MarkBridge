@@ -9,11 +9,12 @@ from pathlib import Path
 from urllib.parse import quote, unquote, urlsplit
 
 PAGES = {
-    "docs/GETTING-STARTED.md": ("Getting-Started", "第一次使用：上传 Markdown 新建文章"),
+    "docs/GETTING-STARTED.md": ("Getting-Started", "快速开始"),
     "docs/INSTALL.md": ("Installation", "安装与升级"),
-    "docs/USAGE.md": ("Usage", "内容编辑指南"),
-    "docs/TROUBLESHOOTING.md": ("Troubleshooting", "导入与保存常见问题"),
-    "docs/EMOJI-PACKS.md": ("Emoji-Packs", "图片表情数据包"),
+    "docs/USAGE.md": ("Usage", "编辑与发布"),
+    "docs/TROUBLESHOOTING.md": ("Troubleshooting", "常见问题"),
+    "docs/EMOJI-PACKS.md": ("Emoji-Packs", "图片表情"),
+    "docs/RUNTIME.md": ("Runtime", "服务器配置"),
     "CHANGELOG.md": ("Changelog", "更新记录"),
 }
 MANIFEST = ".markbridge-wiki.json"
@@ -114,25 +115,45 @@ def generate(root, output, repository, sha):
         raise ValueError("Expected full 40-character source commit SHA")
     if output.exists():
         raise ValueError("Output must be a fresh staging directory")
+    version = json.loads((root / "package.json").read_text(encoding="utf-8"))["version"]
     pages = {}
     for source, (page, _) in PAGES.items():
         text = (root / source).read_text(encoding="utf-8")
-        banner = f"> 自动同步自 [源码 `{sha[:12]}`](https://github.com/{repository}/blob/{sha}/{source})；请在仓库修改本文。\n\n"
-        pages[f"{page}.md"] = banner + rewrite_markdown(text, source, repository, sha)
+        footer = f"\n\n---\n[使用手册首页](https://github.com/{repository}/wiki) · [编辑本文](https://github.com/{repository}/blob/{sha}/{source})\n"
+        pages[f"{page}.md"] = rewrite_markdown(text, source, repository, sha) + footer
     wiki = f"https://github.com/{repository}/wiki"
-    links = "".join(f"- [{title}]({wiki}/{page})\n" for page, title in PAGES.values())
-    pages["Home.md"] = (
-        "# MarkBridge 使用文档\n\n"
-        "本 Wiki 由仓库文档自动生成，介绍 `main` 的当前行为，可能包含尚未发布的变更。"
-        "安装已发布版本时，请以该版本 Release 中固定源码提交的文档为准。\n\n"
-        + f"**[开始第一篇文章：上传 Markdown]({wiki}/Getting-Started)**\n\n"
-        + "已经完成安装的作者可从入门指南开始；管理员先阅读安装与升级。\n\n"
-        + links
-        + f"\n[下载与版本说明](https://github.com/{repository}/releases) · "
-        + f"[本次源码 `{sha[:12]}`](https://github.com/{repository}/tree/{sha}) · "
-        + f"[验证范围](https://github.com/{repository}/blob/{sha}/docs/VALIDATION.md)\n"
+    groups = (
+        ("开始使用", ("Getting-Started", "Usage")),
+        ("遇到问题", ("Troubleshooting",)),
+        ("管理站点", ("Installation", "Runtime", "Emoji-Packs")),
+        ("版本信息", ("Changelog",)),
     )
-    pages["_Sidebar.md"] = f"[使用文档首页]({wiki}/Home)\n\n" + links
+    titles = {page: title for page, title in PAGES.values()}
+    navigation = "\n".join(
+        f"### {heading}\n\n" + "".join(f"- [{titles[page]}]({wiki}/{page})\n" for page in names)
+        for heading, names in groups
+    )
+    pages["Home.md"] = (
+        "# MarkBridge 使用手册\n\n"
+        "用 Markdown 写作，也能在 WordPress 可视化编辑器中继续修改。"
+        "保存时，MarkBridge 会一起保存 Markdown 原文和对应区块。\n\n"
+        + f"**适用版本：MarkBridge {version}。** 本手册介绍该版本的安装、写作和维护方法。"
+        "历史变化见更新记录；手册随 main 更新，若安装较旧版本，请阅读该 Release 对应的文档。\n\n"
+        + "## 从哪里开始\n\n"
+        + "| 你想做什么 | 从这里开始 |\n| --- | --- |\n"
+        + f"| 站点已安装好，开始第一篇文章 | [快速开始：上传 Markdown]({wiki}/Getting-Started) |\n"
+        + f"| 修改已有文章，添加公式、任务列表或脚注 | [编辑与发布]({wiki}/Usage) |\n"
+        + f"| 找不到按钮、无法保存或遇到冲突 | [常见问题]({wiki}/Troubleshooting) |\n"
+        + f"| 在自己的站点安装或升级 | [安装与升级]({wiki}/Installation) |\n\n"
+        + "作者无需构建插件或管理服务器。管理员可上传正式发行 ZIP 安装插件，"
+        "但当前版本还需要单独配置 Linux 转换运行环境；尚不是仅上传 ZIP 就完成的安装。\n\n"
+        + "## 手册目录\n\n"
+        + navigation
+        + f"\n[下载插件](https://github.com/{repository}/releases) · "
+        + f"[验证范围](https://github.com/{repository}/blob/{sha}/docs/VALIDATION.md)\n\n"
+        + f"文档由仓库同步；[对应源码 `{sha[:12]}`](https://github.com/{repository}/tree/{sha})。\n"
+    )
+    pages["_Sidebar.md"] = f"[使用手册首页]({wiki}/Home)\n\n" + navigation
     output.mkdir(parents=True)
     hashes = {}
     for name, text in pages.items():

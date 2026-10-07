@@ -38,7 +38,7 @@ flowchart LR
 
 **本源码版本为 `1.2.0`，面向能管理服务器的 WordPress 站点。** 它需要一个私有 Node.js 转换运行环境和 Linux 沙箱，不能只上传 ZIP 就完成配置。当前未提交 WordPress.org 插件目录。
 
-管理员先按照[安装指南](docs/INSTALL.md)完成配置。已经能使用插件的作者，可按带截图的[入门指南：上传 Markdown 新建文章](docs/GETTING-STARTED.md)完成第一篇文章：
+管理员先按照[安装与升级](docs/INSTALL.md)完成配置。已经能使用插件的作者，可按带截图的[快速开始](docs/GETTING-STARTED.md)完成第一篇文章：
 
 1. 进入 **文章 → 新建文章**，点击顶部 **导入 Markdown**；或进入 **工具 → Markdown 编辑桥 → 上传新文档**。
 2. 在 **上传 Markdown 文件** 中选择电脑上的 `.md` 文件，填写 **标题** 和 **稳定文档 ID**，**保存为** 选择 **草稿**。
@@ -72,10 +72,10 @@ flowchart LR
 
 ## 文档
 
-[使用文档 Wiki](https://github.com/wzf2000/MarkBridge/wiki) 提供 `main` 的当前安装与编辑指南；已发布版本请使用 Release 对应源码中的文档。Wiki 页面由仓库自动同步，修改以仓库为准。
+[使用文档 Wiki](https://github.com/wzf2000/MarkBridge/wiki) 提供 `main` 的当前使用手册；已发布版本请使用 Release 对应源码中的文档。Wiki 页面由仓库自动同步，修改以仓库为准。
 
-- [入门指南](docs/GETTING-STARTED.md)：用截图完成首次文件导入、草稿保存和发布。
-- [内容编辑指南](docs/USAGE.md)：已有文章编辑、公式、任务列表、脚注和历史恢复。
+- [快速开始](docs/GETTING-STARTED.md)：用截图完成首次文件导入、草稿保存和发布。
+- [编辑与发布](docs/USAGE.md)：已有文章编辑、公式、任务列表、脚注和历史恢复。
 - [常见问题](docs/TROUBLESHOOTING.md)：文件、ID、封面、权限和保存冲突的处理。
 - [更新记录](CHANGELOG.md)：各版本新增功能与修复。
 - [文档索引](docs/index.md)：安装、架构、验证范围与计划归档。
@@ -96,7 +96,7 @@ npm run package
 
 Node.js 使用 **24 LTS（24.15.0+）**。格式规范、运行测试和目录说明见 [CONTRIBUTING.md](CONTRIBUTING.md)。PHP 使用 4 空格与 PER-CS 式括号；JS/CSS/JSON 使用 2 空格；目标 100 列。
 
-构建得到 `dist/markbridge-1.2.0.zip`。仓库保留可读源码，构建产物与第三方文件不参与手工格式化。完整运行测试需要按安装指南准备与目标 WordPress 匹配的私有运行环境。
+构建得到 `dist/markbridge-1.2.0.zip`。仓库保留可读源码，构建产物与第三方文件不参与手工格式化。完整运行测试需要按[服务器配置](docs/RUNTIME.md)准备与目标 WordPress 匹配的私有运行环境。
 
 ## 许可证与致谢
 

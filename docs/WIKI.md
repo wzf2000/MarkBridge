@@ -4,7 +4,21 @@
 
 ## 同步范围
 
-`scripts/wiki_sync.py` 明确选择 `docs/GETTING-STARTED.md`、`docs/INSTALL.md`、`docs/USAGE.md`、`docs/TROUBLESHOOTING.md`、`docs/EMOJI-PACKS.md` 和根目录 `CHANGELOG.md`，生成 `Getting-Started`、`Installation`、`Usage`、`Troubleshooting`、`Emoji-Packs`、`Changelog` 六页，以及 `Home`、`_Sidebar`。页面名保持 ASCII，正文沿用中文标题。
+`scripts/wiki_sync.py` 明确选择下列页面，生成首页和分组侧栏。Wiki URL 保持原有 ASCII 页面名，以免既有链接失效；读者看到的中文标题统一为任务名称。
+
+| 仓库源文件                | Wiki 页面         | 标题       |
+| ------------------------- | ----------------- | ---------- |
+| `docs/GETTING-STARTED.md` | `Getting-Started` | 快速开始   |
+| `docs/USAGE.md`           | `Usage`           | 编辑与发布 |
+| `docs/TROUBLESHOOTING.md` | `Troubleshooting` | 常见问题   |
+| `docs/INSTALL.md`         | `Installation`    | 安装与升级 |
+| `docs/RUNTIME.md`         | `Runtime`         | 服务器配置 |
+| `docs/EMOJI-PACKS.md`     | `Emoji-Packs`     | 图片表情   |
+| `CHANGELOG.md`            | `Changelog`       | 更新记录   |
+
+首页按开始使用、遇到问题、管理站点、版本信息分组，并从 `package.json` 读取适用版本。使用页开头标明适用版本，历史差异保留在更新记录和管理员升级说明中，不在功能标题重复标注版本。`package.json` 变化也会触发同步；更新版本时须协调修改手册中的适用版本。
+
+截图放在 `docs/assets/user-guide/`，图片链接固定到同步源码提交；源码编辑入口移到每页底部，让读者先看到操作内容。
 
 架构、开发与发行手册、计划、历史记录不复制；验证范围仅从 Home 链接到固定源码。源码中的相对文档链接指向对应 Wiki 页，其他仓库文件指向同一源码提交，图片使用 raw 地址；外部链接、页内锚点、代码块与行内代码保持原样。新增页面必须修改明确清单并验证链接，不能遍历整个 `docs` 发布。
 

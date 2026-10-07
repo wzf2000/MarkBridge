@@ -69,6 +69,7 @@ class WikiSyncTests(unittest.TestCase):
             file.write_text("# 用户指南\n", encoding="utf-8")
         # Never selected just because it exists in docs.
         (source / "docs/private.md").write_text("private", encoding="utf-8")
+        (source / "package.json").write_text(json.dumps({"version": "1.2.0"}))
         staging = root / "staging"
         wiki.generate(source, staging, REPO, SHA)
         target = root / "wiki"
@@ -93,7 +94,12 @@ class WikiSyncTests(unittest.TestCase):
         )
         with tempfile.TemporaryDirectory() as tmp:
             staging, _ = self.prepare(Path(tmp))
-            self.assertIn("开始第一篇文章", (staging / "Home.md").read_text())
+            home = (staging / "Home.md").read_text()
+            self.assertIn("开始第一篇文章", home)
+            self.assertIn("适用版本：MarkBridge 1.2.0", home)
+            self.assertIn("### 管理站点", home)
+            self.assertIn("/wiki/Runtime", home)
+            self.assertIn("### 开始使用", (staging / "_Sidebar.md").read_text())
 
     def test_apply_idempotence_and_unrelated_pages(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -106,6 +112,7 @@ class WikiSyncTests(unittest.TestCase):
                     "Installation.md",
                     "Usage.md",
                     "Emoji-Packs.md",
+                    "Runtime.md",
                     "Changelog.md",
                     "Home.md",
                     "_Sidebar.md",
@@ -144,7 +151,7 @@ class WikiSyncTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 wiki.apply(staging, target)
             wiki.apply(staging, target, True)
-            self.assertIn("使用文档", home.read_text())
+            self.assertIn("使用手册", home.read_text())
 
     def test_remove_only_previously_managed_obsolete_page(self):
         with tempfile.TemporaryDirectory() as tmp:
