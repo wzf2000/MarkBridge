@@ -7,6 +7,8 @@ on:
       - docs/GETTING-STARTED.md
       - docs/TROUBLESHOOTING.md
       - docs/assets/user-guide/**
+      - package.json
+      - docs/RUNTIME.md
       - docs/INSTALL.md
       - docs/USAGE.md
       - docs/EMOJI-PACKS.md
