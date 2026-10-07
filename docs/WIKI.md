@@ -4,7 +4,7 @@
 
 ## 同步范围
 
-`scripts/wiki_sync.py` 明确选择 `docs/INSTALL.md`、`docs/USAGE.md`、`docs/EMOJI-PACKS.md` 和根目录 `CHANGELOG.md`，生成 `Installation`、`Usage`、`Emoji-Packs`、`Changelog` 四页，以及 `Home`、`_Sidebar`。页面名保持 ASCII，正文沿用中文标题。
+`scripts/wiki_sync.py` 明确选择 `docs/GETTING-STARTED.md`、`docs/INSTALL.md`、`docs/USAGE.md`、`docs/TROUBLESHOOTING.md`、`docs/EMOJI-PACKS.md` 和根目录 `CHANGELOG.md`，生成 `Getting-Started`、`Installation`、`Usage`、`Troubleshooting`、`Emoji-Packs`、`Changelog` 六页，以及 `Home`、`_Sidebar`。页面名保持 ASCII，正文沿用中文标题。
 
 架构、开发与发行手册、计划、历史记录不复制；验证范围仅从 Home 链接到固定源码。源码中的相对文档链接指向对应 Wiki 页，其他仓库文件指向同一源码提交，图片使用 raw 地址；外部链接、页内锚点、代码块与行内代码保持原样。新增页面必须修改明确清单并验证链接，不能遍历整个 `docs` 发布。
 

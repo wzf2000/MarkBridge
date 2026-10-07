@@ -77,12 +77,32 @@ class WikiSyncTests(unittest.TestCase):
         (target / "Other.md").write_text("Human page\n")
         return staging, target
 
+    def test_quickstart_and_screenshot_links(self):
+        result = wiki.rewrite_markdown(
+            "[start](GETTING-STARTED.md) [help](TROUBLESHOOTING.md) "
+            "![import](assets/user-guide/02-import-dialog.png)",
+            "docs/USAGE.md",
+            REPO,
+            SHA,
+        )
+        self.assertIn("/wiki/Getting-Started", result)
+        self.assertIn("/wiki/Troubleshooting", result)
+        self.assertIn(
+            f"https://raw.githubusercontent.com/{REPO}/{SHA}/docs/assets/user-guide/02-import-dialog.png",
+            result,
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            staging, _ = self.prepare(Path(tmp))
+            self.assertIn("开始第一篇文章", (staging / "Home.md").read_text())
+
     def test_apply_idempotence_and_unrelated_pages(self):
         with tempfile.TemporaryDirectory() as tmp:
             staging, target = self.prepare(Path(tmp))
             self.assertEqual(
                 set(p.name for p in staging.iterdir()),
                 {
+                    "Getting-Started.md",
+                    "Troubleshooting.md",
                     "Installation.md",
                     "Usage.md",
                     "Emoji-Packs.md",
