@@ -40,6 +40,7 @@ def main():
     )
     for command in [
         ["npm", "ci", "--ignore-scripts"],
+        ["npm", "run", "build:php"],
         ["npm", "run", "check"],
         ["npm", "test"],
         ["npm", "run", "package"],

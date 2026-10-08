@@ -1,5 +1,6 @@
 <?php
 // Paired document storage, validation and capability-checked editing endpoints.
+require_once __DIR__ . '/includes/conversion-backends.php';
 function mbb_managed($id)
 {
     return get_post_meta($id, '_mbb_origin', true) === 'markdown_import' &&
@@ -163,7 +164,7 @@ function mbb_convert($input)
             503,
         );
     }
-    $result = mbb_run_worker($input);
+    $result = mbb_converter_dispatch($input);
     if (is_wp_error($result)) {
         return $result;
     }

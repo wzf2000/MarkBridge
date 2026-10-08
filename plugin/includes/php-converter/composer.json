@@ -1,6 +1,6 @@
 {
-  "name": "markbridge/php-converter-probe",
-  "description": "Isolated PHP conversion feasibility experiment; not shipped or loaded by the plugin.",
+  "name": "markbridge/php-converter",
+  "description": "Explicitly selected PHP conversion candidate for MarkBridge.",
   "type": "project",
   "license": "GPL-3.0-or-later",
   "require": {

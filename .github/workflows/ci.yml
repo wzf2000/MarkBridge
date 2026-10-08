@@ -42,7 +42,8 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
           coverage: none
-          extensions: dom, libxml
+          extensions: dom, libxml, mbstring
+          tools: composer:v2
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -54,6 +55,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Install locked PHP conversion dependencies
+        run: npm run build:php
 
       - name: Build browser assets for the test runtime
         run: npm run build
@@ -127,6 +131,9 @@ jobs:
 
       - name: Run bound-file CLI synchronization tests
         run: php tests/cli-source-sync.php
+
+      - name: Run PHP worker document contract checks
+        run: python3 tests/test_php_backend.py
 
       - name: Check release sources and PHP syntax
         run: python3 scripts/check_release.py

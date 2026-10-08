@@ -81,3 +81,11 @@ MathJax CHTML 会按已使用的结构和字形动态补充样式。渲染服务
 ## 后续架构研究：内置 PHP 转换
 
 免额外运行环境版本已启动独立可行性研究，原型在 `experiments/php-converter/`；计划见 [PHP 转换架构改进](plans/active/PORTABLE-CONVERTER.md)。该目录不被插件加载，不属于当前转换链。研究将以合成样例、当前引擎差分和明确拒绝边界验证可行性；在完整适配及安装验收前，当前版本仍需要上述私有运行环境。
+
+## PHP 转换候选（未发行）
+
+默认转换后端仍为 Node。架构改进分支允许以服务器常量 `MARKBRIDGE_CONVERTER_BACKEND='php'` 显式选择 PHP；`mbb_convert()` 统一分派，原有权限、来源绑定、指纹、修订与事务层不变。后端错误不自动重试另一引擎。
+
+PHP 的单一实现位于 `plugin/includes/php-converter/`，Worker 适配 Markdown 导入、区块反转、精确配对恢复及批处理协议。未编辑的已验证历史配对保留原文和快照，编辑后的区块需真实反转再验证。依赖在构建阶段按 Composer 锁文件安装，随包携带；摘要和同名类冲突检查失败即拒绝转换。当前准入限定 PHP 8.2+、DOM/mbstring 和 WordPress 7.1 模板，仍有 256 KiB 文档边界及明确语法拒绝差异。
+
+本地保存链验收已经通过；这不代表 PHP 已作为正式安装默认项。干净安装、依赖隔离、版本矩阵、编辑器与升级灰度见[架构计划](plans/active/PORTABLE-CONVERTER.md)。

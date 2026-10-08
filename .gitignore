@@ -14,5 +14,7 @@ plugin/*-[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f
 plugin/vendor/mathjax*/
 plugin/runtime-contract.json
 plugin/vendor-manifest.json
+plugin/includes/php-converter/vendor/
+plugin/php-converter-manifest.json
 test-results/
 playwright-report/

@@ -1,13 +1,13 @@
 # PHP 转换隔离实验
 
-这是“免额外运行环境”架构计划的独立原型，不是可安装插件，不被现有插件加载，也不在发行源码白名单中。当前保存链与正式版本不变。完整阶段见[架构改进计划](../../docs/plans/active/PORTABLE-CONVERTER.md)。
+这是“免额外运行环境”架构计划的实验与对照入口。转换实现现统一位于 `plugin/includes/php-converter/`，本目录 PHP 文件仅作兼容加载入口，样例和实验 CLI 不进入发行包。候选插件可通过服务器常量 `MARKBRIDGE_CONVERTER_BACKEND='php'` 显式启用；默认 Node、正式版本与生产配置不变。完整阶段见[架构改进计划](../../docs/plans/active/PORTABLE-CONVERTER.md)。
 
 ## 复现
 
 需要 PHP 8.2+、DOM、mbstring。Composer 仅用于开发时安装锁定依赖；未来若采用此架构，生产依赖应随发行包附带，安装者不运行 Composer。
 
 ```sh
-composer install --working-dir=experiments/php-converter --no-interaction --no-plugins --no-scripts
+npm run build:php
 printf '%s' '{"mode":"markdown","source":"# Hello\n\nText **here**.\n"}' \
   | php -d disable_functions=exec,shell_exec,system,passthru,proc_open,popen,pcntl_exec \
     experiments/php-converter/cli.php
@@ -38,7 +38,7 @@ python3 experiments/php-converter/compare.py --runtime /path/to/matching-test-ru
 
 未知区块、额外样式、事件属性和不匹配区块结构拒绝，不静默删改。危险 Markdown 链接主动拒绝；现有 Node 引擎可能将相同输入保留为字面文字，属于尚未统一的策略差异。
 
-原始 Markdown 与规范化 Markdown 不是同一承诺：未使用的链接定义、排版空白等可只保留在原始 `source`；从修改后的区块重建时不能恢复全部原文拼写。精确历史配对恢复已有独立接口，不能用它替代真实编辑反转；最小改写及保存层接入尚未实现。
+原始 Markdown 与规范化 Markdown 不是同一承诺：未使用的链接定义、排版空白等可只保留在原始 `source`；从修改后的区块重建时不能恢复全部原文拼写。精确历史配对恢复已有独立接口，不能用它替代真实编辑反转；保存层已接入显式 PHP 候选；最小文本改写仍未实现。
 
 任务标记必须按原始语法识别。转义/实体编码的 `[x]` 是普通列表；标记后直接软换行的行为以现有引擎为基准，不能把另一解析库的默认行为视为插件契约。正文软换行需要与现有引擎的 `breaks` 策略一致。
 
@@ -107,3 +107,9 @@ PHP 拒绝而 Node 接受的 4 个源样例分别为脚注、表格、图片和�
 - [安全与资源限制](https://commonmark.thephpleague.com/2.x/security/)
 
 锁文件包含全部传递依赖；不提交 vendor。初次安装时的 Composer audit 无已知公告或 abandoned 包；这不是对未来公告或原型自身安全性的保证。
+
+## 保存链候选验证
+
+`tests/test_php_backend.py` 检查统一 Worker 的文档模型、真实编辑反转、历史配对、批处理和拒绝边界。`tests/native-rest-save.php` 与 `tests/php-backend-save.php` 需在显式 PHP 后端的隔离 WordPress 中通过 WP-CLI 执行；要求匹配 `MARKBRIDGE_TEST_HOME`、`MARKBRIDGE_TEST_WORDPRESS_ROOT` 及 local 环境，创建并清理合成夹具。测试包括双格式保存、角色权限、双端冲突、修订、失败回退及命令行同步，不应在生产运行。
+
+候选依赖按 Composer 锁文件安装并生成摘要清单。源码或依赖修改后须重新构建清单；缺依赖、摘要不符或其他插件已加载同名依赖类时拒绝启用。当前模板限 WordPress 7.1，支持范围扩展与干净安装验收留在下一阶段。

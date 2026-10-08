@@ -22,16 +22,22 @@ def main():
     tracked = set(subprocess.check_output(["git", "ls-files"], cwd=ROOT, text=True).splitlines())
     assets = json.loads((ROOT / "plugin/assets.json").read_text())
     vendor = json.loads((ROOT / "plugin/vendor-manifest.json").read_text())
+    php_manifest = json.loads((ROOT / "plugin/php-converter-manifest.json").read_text())
+    if php_manifest.get("schema") != 1 or not php_manifest.get("files"):
+        raise RuntimeError("PHP conversion build manifest is missing")
+    php_files = php_manifest["files"]
     generated = (
         {
             "assets.json",
             "runtime-contract.json",
             "vendor-manifest.json",
+            "php-converter-manifest.json",
             "kernel.js",
             "emoji.js",
         }
         | set(assets.values())
         | set(vendor)
+        | set(php_files)
     )
     for name in generated:
         path = Path(name)
@@ -48,6 +54,12 @@ def main():
             or hashlib.sha256((ROOT / "plugin" / name).read_bytes()).hexdigest() != digest
         ):
             raise RuntimeError("Vendor build manifest mismatch: " + name)
+    for name, digest in php_files.items():
+        if (
+            not name.startswith("includes/php-converter/")
+            or hashlib.sha256((ROOT / "plugin" / name).read_bytes()).hexdigest() != digest
+        ):
+            raise RuntimeError("PHP conversion build manifest mismatch: " + name)
     allowed = {name for name in tracked if name.startswith(("plugin/", "docs/"))}
     allowed |= {"plugin/" + name for name in generated}
     allowed |= {"LICENSE", "NOTICE.md", "README.md", "CHANGELOG.md", "CONTRIBUTING.md"}

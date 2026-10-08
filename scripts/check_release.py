@@ -75,6 +75,21 @@ def main():
     }
     if contract != expected_contract:
         raise RuntimeError("Generated runtime dependency contract is missing or stale")
+    php_manifest = json.loads((ROOT / "plugin/php-converter-manifest.json").read_text())
+    if php_manifest.get("schema") != 1 or not php_manifest.get("files"):
+        raise RuntimeError("Missing PHP conversion dependency manifest")
+    for name, digest in php_manifest["files"].items():
+        path = Path(name)
+        target = ROOT / "plugin" / path
+        if (
+            not name.startswith("includes/php-converter/")
+            or path.is_absolute()
+            or ".." in path.parts
+            or target.is_symlink()
+            or not target.is_file()
+            or hashlib.sha256(target.read_bytes()).hexdigest() != digest
+        ):
+            raise RuntimeError("Stale PHP conversion dependency manifest: " + name)
     assets = json.loads((ROOT / "plugin/assets.json").read_text())
     for target in assets.values():
         if not (ROOT / "plugin" / target).is_file():

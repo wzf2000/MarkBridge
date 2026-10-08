@@ -63,10 +63,18 @@ def main():
             outputs.extend(reply["document"])
         return outputs
 
-    tracked = sorted(ROOT.glob("*.php")) + [ROOT / "fixtures.json", ROOT / "paired-fixtures.json"]
+    library = ROOT.parent.parent / "plugin/includes/php-converter"
+    tracked = (
+        sorted(ROOT.glob("*.php"))
+        + sorted(library.glob("*.php"))
+        + [library / "composer.lock", ROOT / "fixtures.json", ROOT / "paired-fixtures.json"]
+    )
 
     def fingerprints():
-        return {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in tracked}
+        return {
+            str(p.relative_to(ROOT.parent.parent)): hashlib.sha256(p.read_bytes()).hexdigest()
+            for p in tracked
+        }
 
     initial_fingerprints = fingerprints()
     fixtures = json.loads((ROOT / "fixtures.json").read_text())
