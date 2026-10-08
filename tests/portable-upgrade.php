@@ -173,6 +173,8 @@ function upgrade_unchanged(array $state)
 
 function upgrade_retained(array $before, array $after)
 {
+    // WordPress may advance an undated draft date on native save. Plugin-only
+    // switches still compare the entire snapshot, including dates, unchanged.
     foreach (
         [
             'ID',
@@ -180,8 +182,6 @@ function upgrade_retained(array $before, array $after)
             'post_name',
             'post_type',
             'post_status',
-            'post_date',
-            'post_date_gmt',
             'guid',
             'post_title',
             'comment_status',

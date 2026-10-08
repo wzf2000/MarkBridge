@@ -113,3 +113,15 @@ PHP 拒绝而 Node 接受的 4 个源样例分别为脚注、表格、图片和�
 `tests/test_php_backend.py` 检查统一 Worker 的文档模型、真实编辑反转、历史配对、批处理和拒绝边界。`tests/native-rest-save.php` 与 `tests/php-backend-save.php` 需在显式 PHP 后端的隔离 WordPress 中通过 WP-CLI 执行；要求匹配 `MARKBRIDGE_TEST_HOME`、`MARKBRIDGE_TEST_WORDPRESS_ROOT` 及 local 环境，创建并清理合成夹具。测试包括双格式保存、角色权限、双端冲突、修订、失败回退及命令行同步，不应在生产运行。
 
 候选依赖按 Composer 锁文件安装并生成摘要清单。源码或依赖修改后须重新构建清单；缺依赖或摘要不符时拒绝启用。第三方库以 PHP-Scoper 构建到私有命名空间，并使用独立类加载表；其他插件的公共依赖可以共存，冒占本插件私有命名空间仍拒绝。当前模板限 WordPress 7.1，支持范围扩展与干净安装验收见架构计划。
+
+## 隔离升级与回退复现
+
+`tests/portable-upgrade.php` 仅允许匹配的 local WordPress 和回环站点地址。提供 `MARKBRIDGE_TEST_WORDPRESS_ROOT`、`MARKBRIDGE_TEST_HOME`、Web 根之外的 `MARKBRIDGE_UPGRADE_STATE`，按 `MARKBRIDGE_UPGRADE_PHASE` 依次执行：
+
+1. 旧正式包与已验证 Node 配置：`seed` 建立带评论、保留元数据及配对修订的合成草稿。
+2. 安装候选包：`check-unchanged` 检查配置仍选 Node、完整内容快照未变化。
+3. 仅本次测试进程显式选择 PHP，并禁用进程执行：`php-edit` 通过原生保存真正修改配对内容。
+4. 回装旧正式包：`check-unchanged` 验证 PHP 保存结果保留；`node-edit` 验证旧后端能够继续编辑。
+5. `cleanup` 只清理带本轮标记的合成夹具及私有状态，不触及其他草稿。
+
+状态文件权限为 0600，只包含合成数据；不得把此测试指向生产。失败后先检查状态与实际插件阶段，不跳过断言或把旧数据库整库覆盖回来。插件升级前已有非空运行目录时保留 Node；显式 PHP 测试不意味着生产默认切换。

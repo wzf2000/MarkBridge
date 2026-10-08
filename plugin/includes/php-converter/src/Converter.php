@@ -9,6 +9,8 @@ use DOMElement;
 use DOMNode;
 use League\CommonMark\Environment\Environment;
 use League\CommonMark\Extension\CommonMark\CommonMarkCoreExtension;
+use League\CommonMark\Extension\CommonMark\Parser\Block\FencedCodeStartParser;
+use League\CommonMark\Extension\CommonMark\Parser\Block\IndentedCodeStartParser;
 use League\CommonMark\Extension\CommonMark\Node\Block\BlockQuote;
 use League\CommonMark\Extension\CommonMark\Node\Block\FencedCode;
 use League\CommonMark\Extension\CommonMark\Node\Block\Heading;
@@ -40,6 +42,7 @@ require_once __DIR__ . '/../autoload.php';
 require_once __DIR__ . '/MathExtension.php';
 require_once __DIR__ . '/Footnotes.php';
 require_once __DIR__ . '/DisplayBoundaries.php';
+require_once __DIR__ . '/CodeWhitespace.php';
 
 final class ConversionError extends \RuntimeException
 {
@@ -58,7 +61,7 @@ final class Converter
     private int $nodes = 0;
     private bool $legacyTasks = false;
     private bool $legacyFootnotes = false;
-    private bool $tableInline = false;
+    private bool $markdownInline = false;
 
     public function fromMarkdown(string $source): array
     {
@@ -146,7 +149,7 @@ final class Converter
         } finally {
             $this->legacyTasks = false;
             $this->legacyFootnotes = false;
-            $this->tableInline = false;
+            $this->markdownInline = false;
         }
         throw new ConversionError(
             'SNAPSHOT_MISMATCH',
@@ -173,11 +176,19 @@ final class Converter
 
     private function markdownBlocks(string $source): array
     {
-        $this->tableInline = false;
+        $this->markdownInline = false;
         $source = DisplayBoundaries::normalize($source);
         $this->input($source);
         $environment = new Environment(['max_nesting_level' => self::MAX_DEPTH + 1]);
         $environment->addExtension(new CommonMarkCoreExtension());
+        $environment->addBlockStartParser(
+            new CodeWhitespaceStartParser(new FencedCodeStartParser()),
+            51,
+        );
+        $environment->addBlockStartParser(
+            new CodeWhitespaceStartParser(new IndentedCodeStartParser()),
+            -99,
+        );
         $environment->addExtension(new TableExtension());
         $environment->addExtension(new StrikethroughExtension());
         $environment->addBlockStartParser(new MathStartParser(), 100);
@@ -357,8 +368,8 @@ final class Converter
             return $this->block('core/html', [], [], $raw);
         }
         if ($node instanceof Table) {
-            $previousTable = $this->tableInline;
-            $this->tableInline = true;
+            $previousTable = $this->markdownInline;
+            $this->markdownInline = true;
             $html = '<table class="has-fixed-layout">';
             foreach ($node->children() as $section) {
                 $this->tick($depth + 1);
@@ -391,7 +402,7 @@ final class Converter
                 }
                 $html .= '</' . $tag . '>';
             }
-            $this->tableInline = $previousTable;
+            $this->markdownInline = $previousTable;
             return $this->block('core/table', [], [], $html . '</table>');
         }
         if ($node instanceof BlockQuote) {
@@ -440,7 +451,13 @@ final class Converter
                 if ($complex) {
                     $childBlocks = [];
                     if ($task !== null) {
-                        $taskContent = $this->astInline($body[0], $depth + 2, $task['prefix']);
+                        $previousInline = $this->markdownInline;
+                        $this->markdownInline = true;
+                        try {
+                            $taskContent = $this->astInline($body[0], $depth + 2, $task['prefix']);
+                        } finally {
+                            $this->markdownInline = $previousInline;
+                        }
                         $taskAttrs = $taskContent === '' ? [] : ['content' => $taskContent];
                         if ($task['checked']) {
                             $taskAttrs['checked'] = true;
@@ -505,11 +522,11 @@ final class Converter
             if ($node instanceof Text) {
                 $text = substr($node->getLiteral(), $skip);
                 $skip = 0;
-                $html .= self::esc($text);
+                $html .= $this->inlineText($text);
             } elseif ($node instanceof FootnoteReference) {
                 $label = $node->getLiteral();
                 $html .=
-                    ($this->tableInline
+                    ($this->markdownInline
                         ? '<span class="mbb-footnote-ref" data-mbb-footnote="' .
                             self::attribute($label) .
                             '"'
@@ -527,7 +544,7 @@ final class Converter
                         $literal,
                     )
                 ) {
-                    $html .= str_replace('<', '&lt;', $literal);
+                    $html .= $this->inlineText($literal);
                 } else {
                     $html .= $literal;
                 }
@@ -539,14 +556,16 @@ final class Converter
             } elseif ($node instanceof InlineMath) {
                 $tex = $node->getLiteral();
                 $html .=
-                    ($this->tableInline
+                    ($this->markdownInline
                         ? '<span class="mbb-math" data-mbb-tex="' . self::attribute($tex) . '"'
                         : '<span data-mbb-tex="' . self::attribute($tex) . '" class="mbb-math"') .
                     '>' .
-                    self::esc('$' . $tex . '$') .
+                    ($this->markdownInline
+                        ? self::attribute('$' . $tex . '$')
+                        : str_replace('>', '&gt;', self::esc('$' . $tex . '$'))) .
                     '</span>';
             } elseif ($node instanceof Code) {
-                $html .= '<code>' . self::esc($node->getLiteral()) . '</code>';
+                $html .= '<code>' . $this->inlineText($node->getLiteral()) . '</code>';
             } elseif ($node instanceof Image) {
                 $html .= $this->imageHtml($node);
             } elseif (
@@ -639,14 +658,33 @@ final class Converter
                 : '>');
     }
 
+    // RichText content is DOM-normalized by WordPress, while table/task HTML
+    // keeps markdown-it's renderer spelling. Preserve that distinction exactly.
+    private function inlineText(string $text): string
+    {
+        return $this->markdownInline ? self::attribute($text) : self::esc($text);
+    }
+
     private static function esc(string $text): string
     {
         return str_replace(['&', '<'], ['&amp;', '&lt;'], $text);
     }
 
+    // wp.element uses escapeHTML, which preserves entity-shaped sequences.
+    // This is distinct from Markdown/RichText escaping and remains local to
+    // the literal text children of the registered code and display-math blocks.
+    private static function elementText(string $text): string
+    {
+        return str_replace(
+            '<',
+            '&lt;',
+            preg_replace('/&(?!([a-z0-9]+|#[0-9]+|#x[a-f0-9]+);)/i', '&amp;', $text),
+        );
+    }
+
     private static function attribute(string $text): string
     {
-        return str_replace('"', '&quot;', self::esc($text));
+        return str_replace(['>', '"'], ['&gt;', '&quot;'], self::esc($text));
     }
 
     private static function safeUrl(string $url): void
@@ -761,13 +799,13 @@ final class Converter
                         ? ''
                         : ' class="language-' . self::attribute($language) . '"') .
                     '>' .
-                    self::esc($attrs['code'] ?? '') .
+                    self::elementText($attrs['code'] ?? '') .
                     '</code></pre>';
                 break;
             case 'mbb/math':
                 $html =
                     '<pre class="wp-block-mbb-math"><code class="mbb-tex">' .
-                    self::esc($attrs['tex'] ?? '') .
+                    self::elementText($attrs['tex'] ?? '') .
                     '</code></pre>';
                 break;
             default:
@@ -1043,7 +1081,7 @@ final class Converter
                     return '<span class="mbb-math" data-mbb-tex="' .
                         self::attribute($tex) .
                         '">' .
-                        self::esc($match[0]) .
+                        self::attribute($match[0]) .
                         '</span>';
                 },
                 $token,
@@ -1051,6 +1089,53 @@ final class Converter
         }
         $this->safeHtml($out);
         return $out;
+    }
+
+    private function htmlSource(string $html): string
+    {
+        $body = $this->safeHtml($html);
+        $spans = iterator_to_array($body->getElementsByTagName('span'));
+        if ($spans === []) {
+            return $html;
+        }
+        // DOM validation authorizes the spans and their exact literal TeX.
+        // Replace only their original lexical ranges. Serializing the whole
+        // DOM would also rewrite protected code text and attribute entities.
+        $tokens = preg_split(
+            '/(<(?:[^>"\']|"[^"]*"|\'[^\']*\')*>)/',
+            $html,
+            -1,
+            PREG_SPLIT_DELIM_CAPTURE,
+        );
+        $index = 0;
+        $inMath = false;
+        $source = '';
+        foreach ($tokens as $token) {
+            if ($inMath) {
+                if (preg_match('/^<\/span\s*>$/iD', $token)) {
+                    $inMath = false;
+                } elseif (str_starts_with($token, '<')) {
+                    throw new ConversionError('HTML_STRUCTURE', 'Math span must contain only text');
+                }
+                continue;
+            }
+            if (preg_match('/^<span(?:\s|>)/i', $token)) {
+                $span = $spans[$index++] ?? null;
+                if ($span === null) {
+                    throw new ConversionError('HTML_STRUCTURE', 'HTML span positions disagree');
+                }
+                if ($span->hasAttribute('data-mbb-tex')) {
+                    $source .= '$' . $span->getAttribute('data-mbb-tex') . '$';
+                    $inMath = true;
+                    continue;
+                }
+            }
+            $source .= $token;
+        }
+        if ($inMath || $index !== count($spans)) {
+            throw new ConversionError('HTML_STRUCTURE', 'HTML span positions disagree');
+        }
+        return $source;
     }
 
     private function safeHtml(string $html): DOMElement
@@ -1280,30 +1365,7 @@ final class Converter
                         'HTML blocks cannot contain child blocks',
                     );
                 }
-                $body = $this->safeHtml($raw);
-                if ($body->getElementsByTagName('span')->length === 0) {
-                    return $raw;
-                }
-                $hasMath = false;
-                foreach (iterator_to_array($body->getElementsByTagName('span')) as $span) {
-                    if ($span->hasAttribute('data-mbb-tex')) {
-                        $hasMath = true;
-                        $span->parentNode->replaceChild(
-                            $span->ownerDocument->createTextNode(
-                                '$' . $span->getAttribute('data-mbb-tex') . '$',
-                            ),
-                            $span,
-                        );
-                    }
-                }
-                if (!$hasMath) {
-                    return $raw;
-                }
-                $source = '';
-                foreach ($body->childNodes as $node) {
-                    $source .= $body->ownerDocument->saveHTML($node);
-                }
-                return $source;
+                return $this->htmlSource($raw);
             case 'core/more':
                 if ($children !== [] || $raw !== '<!--more-->') {
                     throw new ConversionError(
@@ -1596,8 +1658,12 @@ final class Converter
                         );
                     }
                 }
-                $literal = $code->textContent;
-                if ($literal !== ($attrs[$name === 'mbb/code' ? 'code' : 'tex'] ?? '')) {
+                $literal = $attrs[$name === 'mbb/code' ? 'code' : 'tex'] ?? '';
+                // The block attribute is the literal content model, not a
+                // cached document source. Require the rendered HTML to agree
+                // with that model through the same wp.element text renderer.
+                $expectedText = $this->dom(self::elementText($literal))->textContent;
+                if ($code->textContent !== $expectedText) {
                     throw new ConversionError(
                         'CONTENT_MISMATCH',
                         'Code or math HTML disagrees with block attributes',
@@ -1768,6 +1834,15 @@ final class Converter
         return $markdown;
     }
 
+    private static function terminalBreak(DOMNode $node): bool
+    {
+        $tail = $node->nextSibling;
+        return $tail === null ||
+            ($tail->nodeType === XML_TEXT_NODE &&
+                $tail->textContent === "\n" &&
+                $tail->nextSibling === null);
+    }
+
     private function inlineNode(DOMNode $node, int $depth, bool $table = false): string
     {
         $this->tick($depth);
@@ -1821,9 +1896,12 @@ final class Converter
                             'More than two adjacent inline breaks cannot be represented',
                         );
                     }
-                    return "  \n";
+                    return self::terminalBreak($node->nextSibling) ? '<br><br>' : "  \n";
                 }
-                return "\n";
+                // A terminal newline is removed by Markdown block parsing.
+                // Keep an authorized literal break at the end of its inline
+                // container instead, so paragraph/strong endings roundtrip.
+                return self::terminalBreak($node) ? '<br>' : "\n";
             case 'code':
                 $this->attrs($node, []);
                 foreach ($node->childNodes as $child) {

@@ -49,6 +49,7 @@ function mbb_php_converter_diagnostics($smoke = false)
         'MathExtension.php',
         'Footnotes.php',
         'DisplayBoundaries.php',
+        'CodeWhitespace.php',
         'composer.json',
         'composer.lock',
         'scoped/autoload.php',
@@ -57,6 +58,7 @@ function mbb_php_converter_diagnostics($smoke = false)
         'scoped/src/MathExtension.php',
         'scoped/src/Footnotes.php',
         'scoped/src/DisplayBoundaries.php',
+        'scoped/src/CodeWhitespace.php',
         'scoped/vendor/composer/installed.json',
     ];
     foreach ($required as $name) {

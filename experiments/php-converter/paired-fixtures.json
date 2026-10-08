@@ -64,5 +64,305 @@
     "source": "$$\n中文 B C\n$$\n",
     "serialized": "<!-- wp:mbb/math {\"tex\":\"中文 B C\"} -->\n<pre class=\"wp-block-mbb-math\"><code class=\"mbb-tex\">中文 B C</code></pre>\n<!-- /wp:mbb/math -->",
     "documentId": "probe-json-math-line-separators"
+  },
+  {
+    "id": "html-escaping-plain",
+    "source": "Plain \"word\" 'single' > & < 3.\n",
+    "serialized": "<!-- wp:paragraph -->\n<p>Plain \"word\" 'single' > &amp; &lt; 3.</p>\n<!-- /wp:paragraph -->",
+    "documentId": "synthetic-plain"
+  },
+  {
+    "id": "html-escaping-inline-math-gt",
+    "source": "Compare $x>y$.\n",
+    "serialized": "<!-- wp:paragraph -->\n<p>Compare <span data-mbb-tex=\"x&gt;y\" class=\"mbb-math\">$x&gt;y$</span>.</p>\n<!-- /wp:paragraph -->",
+    "documentId": "synthetic-inline-math-gt"
+  },
+  {
+    "id": "html-escaping-inline-math-quote",
+    "source": "Text $\\text{\"word\"}$.\n",
+    "serialized": "<!-- wp:paragraph -->\n<p>Text <span data-mbb-tex=\"\\text{&quot;word&quot;}\" class=\"mbb-math\">$\\text{\"word\"}$</span>.</p>\n<!-- /wp:paragraph -->",
+    "documentId": "synthetic-inline-math-quote"
+  },
+  {
+    "id": "html-escaping-inline-code",
+    "source": "`\"double\" 'single' > & <`\n",
+    "serialized": "<!-- wp:paragraph -->\n<p><code>\"double\" 'single' > &amp; &lt;</code></p>\n<!-- /wp:paragraph -->",
+    "documentId": "synthetic-inline-code"
+  },
+  {
+    "id": "html-escaping-fenced-code",
+    "source": "```text\n\"double\" 'single' > & <\n```\n",
+    "serialized": "<!-- wp:mbb/code {\"code\":\"\\u0022double\\u0022 'single' \\u003e \\u0026 \\u003c\\n\",\"language\":\"text\"} -->\n<pre class=\"wp-block-mbb-code\"><code class=\"language-text\">\"double\" 'single' > &amp; &lt;\n</code></pre>\n<!-- /wp:mbb/code -->",
+    "documentId": "synthetic-fenced-code"
+  },
+  {
+    "id": "html-escaping-display-math",
+    "source": "$$\n\\text{\"word\"} > 0\n$$\n",
+    "serialized": "<!-- wp:mbb/math {\"tex\":\"\\u005ctext{\\u0022word\\u0022} \\u003e 0\"} -->\n<pre class=\"wp-block-mbb-math\"><code class=\"mbb-tex\">\\text{\"word\"} > 0</code></pre>\n<!-- /wp:mbb/math -->",
+    "documentId": "synthetic-display-math"
+  },
+  {
+    "id": "html-escaping-table",
+    "source": "| quoted | math |\n| --- | --- |\n| \"double\" 'single' > | $x>y$ |\n",
+    "serialized": "<!-- wp:table -->\n<figure class=\"wp-block-table\"><table class=\"has-fixed-layout\"><thead><tr><th>quoted</th><th>math</th></tr></thead><tbody><tr><td>&quot;double&quot; 'single' &gt;</td><td><span class=\"mbb-math\" data-mbb-tex=\"x&gt;y\">$x&gt;y$</span></td></tr></tbody></table></figure>\n<!-- /wp:table -->",
+    "documentId": "synthetic-table"
+  },
+  {
+    "id": "html-escaping-table-code",
+    "source": "| code | math |\n| --- | --- |\n| `\"double\" 'single' > & <` | $\\text{\"word\"}$ |\n",
+    "serialized": "<!-- wp:table -->\n<figure class=\"wp-block-table\"><table class=\"has-fixed-layout\"><thead><tr><th>code</th><th>math</th></tr></thead><tbody><tr><td><code>&quot;double&quot; 'single' &gt; &amp; &lt;</code></td><td><span class=\"mbb-math\" data-mbb-tex=\"\\text{&quot;word&quot;}\">$\\text{&quot;word&quot;}$</span></td></tr></tbody></table></figure>\n<!-- /wp:table -->",
+    "documentId": "synthetic-table-code"
+  },
+  {
+    "id": "html-escaping-task",
+    "source": "- [x] \"double\" 'single' > & < 3\n",
+    "serialized": "<!-- wp:mbb/list -->\n<ul class=\"wp-block-mbb-list\"><!-- wp:mbb/task-item {\"content\":\"\\u0026quot;double\\u0026quot; 'single' \\u0026gt; \\u0026amp; \\u0026lt; 3\",\"checked\":true} -->\n<li class=\"wp-block-mbb-task-item\"><p>[x] <span>&quot;double&quot; 'single' &gt; &amp; &lt; 3</span></p></li>\n<!-- /wp:mbb/task-item --></ul>\n<!-- /wp:mbb/list -->",
+    "documentId": "synthetic-task"
+  },
+  {
+    "id": "html-escaping-image",
+    "source": "![\"word\" > 'single'](https://example.com/a.png)\n",
+    "serialized": "<!-- wp:image -->\n<figure class=\"wp-block-image\"><img src=\"https://example.com/a.png\" alt=\"&quot;word&quot; &gt; 'single'\"/></figure>\n<!-- /wp:image -->",
+    "documentId": "synthetic-image"
+  },
+  {
+    "id": "html-escaping-html-math",
+    "source": "<p>Compare $x>y$ and $\\text{\"word\"}$.</p>\n",
+    "serialized": "<!-- wp:html -->\n<p>Compare <span class=\"mbb-math\" data-mbb-tex=\"x&gt;y\">$x&gt;y$</span> and <span class=\"mbb-math\" data-mbb-tex=\"\\text{&quot;word&quot;}\">$\\text{&quot;word&quot;}$</span>.</p>\n<!-- /wp:html -->",
+    "documentId": "synthetic-html-math"
+  },
+  {
+    "id": "html-escaping-task-math",
+    "source": "- [x] Compare $x>y$ and $\\text{\"word\"}$.\n",
+    "serialized": "<!-- wp:mbb/list -->\n<ul class=\"wp-block-mbb-list\"><!-- wp:mbb/task-item {\"content\":\"Compare \\u003cspan class=\\u0022mbb-math\\u0022 data-mbb-tex=\\u0022x\\u0026gt;y\\u0022\\u003e$x\\u0026gt;y$\\u003c/span\\u003e and \\u003cspan class=\\u0022mbb-math\\u0022 data-mbb-tex=\\u0022\\u005ctext{\\u0026quot;word\\u0026quot;}\\u0022\\u003e$\\u005ctext{\\u0026quot;word\\u0026quot;}$\\u003c/span\\u003e.\",\"checked\":true} -->\n<li class=\"wp-block-mbb-task-item\"><p>[x] <span>Compare <span class=\"mbb-math\" data-mbb-tex=\"x&gt;y\">$x&gt;y$</span> and <span class=\"mbb-math\" data-mbb-tex=\"\\text{&quot;word&quot;}\">$\\text{&quot;word&quot;}$</span>.</span></p></li>\n<!-- /wp:mbb/task-item --></ul>\n<!-- /wp:mbb/list -->",
+    "documentId": "synthetic-task-math"
+  },
+  {
+    "id": "compat-code-amp-0",
+    "source": "```text\na & b\n```\n",
+    "serialized": "<!-- wp:mbb/code {\"code\":\"a \\u0026 b\\n\",\"language\":\"text\"} -->\n<pre class=\"wp-block-mbb-code\"><code class=\"language-text\">a &amp; b\n</code></pre>\n<!-- /wp:mbb/code -->",
+    "documentId": "synthetic-0"
+  },
+  {
+    "id": "compat-code-amp-1",
+    "source": "```text\n&&\n```\n",
+    "serialized": "<!-- wp:mbb/code {\"code\":\"\\u0026\\u0026\\n\",\"language\":\"text\"} -->\n<pre class=\"wp-block-mbb-code\"><code class=\"language-text\">&amp;&amp;\n</code></pre>\n<!-- /wp:mbb/code -->",
+    "documentId": "synthetic-1"
+  },
+  {
+    "id": "compat-code-amp-2",
+    "source": "```text\n&name\n```\n",
+    "serialized": "<!-- wp:mbb/code {\"code\":\"\\u0026name\\n\",\"language\":\"text\"} -->\n<pre class=\"wp-block-mbb-code\"><code class=\"language-text\">&amp;name\n</code></pre>\n<!-- /wp:mbb/code -->",
+    "documentId": "synthetic-2"
+  },
+  {
+    "id": "compat-code-amp-3",
+    "source": "```text\n&amp;\n```\n",
+    "serialized": "<!-- wp:mbb/code {\"code\":\"\\u0026amp;\\n\",\"language\":\"text\"} -->\n<pre class=\"wp-block-mbb-code\"><code class=\"language-text\">&amp;\n</code></pre>\n<!-- /wp:mbb/code -->",
+    "documentId": "synthetic-3"
+  },
+  {
+    "id": "compat-code-amp-4",
+    "source": "```text\n&copy;\n```\n",
+    "serialized": "<!-- wp:mbb/code {\"code\":\"\\u0026copy;\\n\",\"language\":\"text\"} -->\n<pre class=\"wp-block-mbb-code\"><code class=\"language-text\">&copy;\n</code></pre>\n<!-- /wp:mbb/code -->",
+    "documentId": "synthetic-4"
+  },
+  {
+    "id": "compat-code-amp-5",
+    "source": "```text\n&#x3C;\n```\n",
+    "serialized": "<!-- wp:mbb/code {\"code\":\"\\u0026#x3C;\\n\",\"language\":\"text\"} -->\n<pre class=\"wp-block-mbb-code\"><code class=\"language-text\">&#x3C;\n</code></pre>\n<!-- /wp:mbb/code -->",
+    "documentId": "synthetic-5"
+  },
+  {
+    "id": "compat-code-amp-6",
+    "source": "```text\n&unknown;\n```\n",
+    "serialized": "<!-- wp:mbb/code {\"code\":\"\\u0026unknown;\\n\",\"language\":\"text\"} -->\n<pre class=\"wp-block-mbb-code\"><code class=\"language-text\">&unknown;\n</code></pre>\n<!-- /wp:mbb/code -->",
+    "documentId": "synthetic-6"
+  },
+  {
+    "id": "compat-code-amp-7",
+    "source": "```text\n&AMP;\n```\n",
+    "serialized": "<!-- wp:mbb/code {\"code\":\"\\u0026AMP;\\n\",\"language\":\"text\"} -->\n<pre class=\"wp-block-mbb-code\"><code class=\"language-text\">&AMP;\n</code></pre>\n<!-- /wp:mbb/code -->",
+    "documentId": "synthetic-7"
+  },
+  {
+    "id": "compat-footnote-space-definition",
+    "source": "[^a b]: Note.\n",
+    "serialized": "",
+    "documentId": "synthetic-footnote-space-definition"
+  },
+  {
+    "id": "compat-footnote-space-link-definition",
+    "source": "[^a b]: https://example.com\n",
+    "serialized": "",
+    "documentId": "synthetic-footnote-space-link-definition"
+  },
+  {
+    "id": "compat-footnote-space-literal",
+    "source": "Literal [^a b].\n",
+    "serialized": "<!-- wp:paragraph -->\n<p>Literal [^a b].</p>\n<!-- /wp:paragraph -->",
+    "documentId": "synthetic-footnote-space-literal"
+  },
+  {
+    "id": "compat-html-code-gt-math",
+    "source": "<p><code>$x>y$</code> $z>0$</p>\n",
+    "serialized": "<!-- wp:html -->\n<p><code>$x>y$</code> <span class=\"mbb-math\" data-mbb-tex=\"z&gt;0\">$z&gt;0$</span></p>\n<!-- /wp:html -->",
+    "documentId": "synthetic-html-code-gt-math"
+  },
+  {
+    "id": "compat-html-title-entity-math",
+    "source": "<p><a href=\"https://example.com\" title=\"quote &quot; ok\">Link</a> $x>y$</p>\n",
+    "serialized": "<!-- wp:html -->\n<p><a href=\"https://example.com\" title=\"quote &quot; ok\">Link</a> <span class=\"mbb-math\" data-mbb-tex=\"x&gt;y\">$x&gt;y$</span></p>\n<!-- /wp:html -->",
+    "documentId": "synthetic-html-title-entity-math"
+  },
+  {
+    "id": "compat-display-math-amp-entity",
+    "source": "$$\nx &amp; y\n$$\n",
+    "serialized": "<!-- wp:mbb/math {\"tex\":\"x \\u0026amp; y\"} -->\n<pre class=\"wp-block-mbb-math\"><code class=\"mbb-tex\">x &amp; y</code></pre>\n<!-- /wp:mbb/math -->",
+    "documentId": "synthetic-display-math-amp-entity"
+  },
+  {
+    "id": "compat-code-blank-1",
+    "source": "- item\n  ```text\n  before\n    \n  after\n  ```\n",
+    "serialized": "<!-- wp:mbb/list -->\n<ul class=\"wp-block-mbb-list\"><!-- wp:mbb/list-item -->\n<li class=\"wp-block-mbb-list-item\"><!-- wp:paragraph -->\n<p>item</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:mbb/code {\"code\":\"before\\n  \\nafter\\n\",\"language\":\"text\"} -->\n<pre class=\"wp-block-mbb-code\"><code class=\"language-text\">before\n  \nafter\n</code></pre>\n<!-- /wp:mbb/code --></li>\n<!-- /wp:mbb/list-item --></ul>\n<!-- /wp:mbb/list -->",
+    "documentId": "synthetic-compat-code-blank-1"
+  },
+  {
+    "id": "compat-code-blank-2",
+    "source": "- item\n  ```text\n  before\n        \n  after\n  ```\n",
+    "serialized": "<!-- wp:mbb/list -->\n<ul class=\"wp-block-mbb-list\"><!-- wp:mbb/list-item -->\n<li class=\"wp-block-mbb-list-item\"><!-- wp:paragraph -->\n<p>item</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:mbb/code {\"code\":\"before\\n      \\nafter\\n\",\"language\":\"text\"} -->\n<pre class=\"wp-block-mbb-code\"><code class=\"language-text\">before\n      \nafter\n</code></pre>\n<!-- /wp:mbb/code --></li>\n<!-- /wp:mbb/list-item --></ul>\n<!-- /wp:mbb/list -->",
+    "documentId": "synthetic-compat-code-blank-2"
+  },
+  {
+    "id": "compat-code-blank-3",
+    "source": "- item\n  ```text\n  before\n            \n  after\n  ```\n",
+    "serialized": "<!-- wp:mbb/list -->\n<ul class=\"wp-block-mbb-list\"><!-- wp:mbb/list-item -->\n<li class=\"wp-block-mbb-list-item\"><!-- wp:paragraph -->\n<p>item</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:mbb/code {\"code\":\"before\\n          \\nafter\\n\",\"language\":\"text\"} -->\n<pre class=\"wp-block-mbb-code\"><code class=\"language-text\">before\n          \nafter\n</code></pre>\n<!-- /wp:mbb/code --></li>\n<!-- /wp:mbb/list-item --></ul>\n<!-- /wp:mbb/list -->",
+    "documentId": "synthetic-compat-code-blank-3"
+  },
+  {
+    "id": "compat-code-blank-4",
+    "source": "- item\n  ```text\n  before\n\t\n  after\n  ```\n",
+    "serialized": "<!-- wp:mbb/list -->\n<ul class=\"wp-block-mbb-list\"><!-- wp:mbb/list-item -->\n<li class=\"wp-block-mbb-list-item\"><!-- wp:paragraph -->\n<p>item</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:mbb/code {\"code\":\"before\\n  \\nafter\\n\",\"language\":\"text\"} -->\n<pre class=\"wp-block-mbb-code\"><code class=\"language-text\">before\n  \nafter\n</code></pre>\n<!-- /wp:mbb/code --></li>\n<!-- /wp:mbb/list-item --></ul>\n<!-- /wp:mbb/list -->",
+    "documentId": "synthetic-compat-code-blank-4"
+  },
+  {
+    "id": "compat-code-blank-5",
+    "source": "- item\n  ```text\n  before\n  \t\n  after\n  ```\n",
+    "serialized": "<!-- wp:mbb/list -->\n<ul class=\"wp-block-mbb-list\"><!-- wp:mbb/list-item -->\n<li class=\"wp-block-mbb-list-item\"><!-- wp:paragraph -->\n<p>item</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:mbb/code {\"code\":\"before\\n\\t\\nafter\\n\",\"language\":\"text\"} -->\n<pre class=\"wp-block-mbb-code\"><code class=\"language-text\">before\n\t\nafter\n</code></pre>\n<!-- /wp:mbb/code --></li>\n<!-- /wp:mbb/list-item --></ul>\n<!-- /wp:mbb/list -->",
+    "documentId": "synthetic-compat-code-blank-5"
+  },
+  {
+    "id": "compat-code-blank-6",
+    "source": "- item\n\n      before\n        \n      after\n",
+    "serialized": "<!-- wp:mbb/list -->\n<ul class=\"wp-block-mbb-list\"><!-- wp:mbb/list-item -->\n<li class=\"wp-block-mbb-list-item\"><!-- wp:paragraph -->\n<p>item</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:mbb/code {\"code\":\"before\\n  \\nafter\\n\"} -->\n<pre class=\"wp-block-mbb-code\"><code>before\n  \nafter\n</code></pre>\n<!-- /wp:mbb/code --></li>\n<!-- /wp:mbb/list-item --></ul>\n<!-- /wp:mbb/list -->",
+    "documentId": "synthetic-compat-code-blank-6"
+  },
+  {
+    "id": "compat-code-blank-7",
+    "source": "- item\n\n      before\n            \n      after\n",
+    "serialized": "<!-- wp:mbb/list -->\n<ul class=\"wp-block-mbb-list\"><!-- wp:mbb/list-item -->\n<li class=\"wp-block-mbb-list-item\"><!-- wp:paragraph -->\n<p>item</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:mbb/code {\"code\":\"before\\n      \\nafter\\n\"} -->\n<pre class=\"wp-block-mbb-code\"><code>before\n      \nafter\n</code></pre>\n<!-- /wp:mbb/code --></li>\n<!-- /wp:mbb/list-item --></ul>\n<!-- /wp:mbb/list -->",
+    "documentId": "synthetic-compat-code-blank-7"
+  },
+  {
+    "id": "compat-code-blank-8",
+    "source": "- item\n  - item\n    - item\n      ```text\n      before\n        \n      after\n      ```\n",
+    "serialized": "<!-- wp:mbb/list -->\n<ul class=\"wp-block-mbb-list\"><!-- wp:mbb/list-item -->\n<li class=\"wp-block-mbb-list-item\"><!-- wp:paragraph -->\n<p>item</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:mbb/list -->\n<ul class=\"wp-block-mbb-list\"><!-- wp:mbb/list-item -->\n<li class=\"wp-block-mbb-list-item\"><!-- wp:paragraph -->\n<p>item</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:mbb/list -->\n<ul class=\"wp-block-mbb-list\"><!-- wp:mbb/list-item -->\n<li class=\"wp-block-mbb-list-item\"><!-- wp:paragraph -->\n<p>item</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:mbb/code {\"code\":\"before\\n  \\nafter\\n\",\"language\":\"text\"} -->\n<pre class=\"wp-block-mbb-code\"><code class=\"language-text\">before\n  \nafter\n</code></pre>\n<!-- /wp:mbb/code --></li>\n<!-- /wp:mbb/list-item --></ul>\n<!-- /wp:mbb/list --></li>\n<!-- /wp:mbb/list-item --></ul>\n<!-- /wp:mbb/list --></li>\n<!-- /wp:mbb/list-item --></ul>\n<!-- /wp:mbb/list -->",
+    "documentId": "synthetic-compat-code-blank-8"
+  },
+  {
+    "id": "compat-code-blank-9",
+    "source": "- item\n  - item\n    - item\n      ```text\n      before\n            \n      after\n      ```\n",
+    "serialized": "<!-- wp:mbb/list -->\n<ul class=\"wp-block-mbb-list\"><!-- wp:mbb/list-item -->\n<li class=\"wp-block-mbb-list-item\"><!-- wp:paragraph -->\n<p>item</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:mbb/list -->\n<ul class=\"wp-block-mbb-list\"><!-- wp:mbb/list-item -->\n<li class=\"wp-block-mbb-list-item\"><!-- wp:paragraph -->\n<p>item</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:mbb/list -->\n<ul class=\"wp-block-mbb-list\"><!-- wp:mbb/list-item -->\n<li class=\"wp-block-mbb-list-item\"><!-- wp:paragraph -->\n<p>item</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:mbb/code {\"code\":\"before\\n      \\nafter\\n\",\"language\":\"text\"} -->\n<pre class=\"wp-block-mbb-code\"><code class=\"language-text\">before\n      \nafter\n</code></pre>\n<!-- /wp:mbb/code --></li>\n<!-- /wp:mbb/list-item --></ul>\n<!-- /wp:mbb/list --></li>\n<!-- /wp:mbb/list-item --></ul>\n<!-- /wp:mbb/list --></li>\n<!-- /wp:mbb/list-item --></ul>\n<!-- /wp:mbb/list -->",
+    "documentId": "synthetic-compat-code-blank-9"
+  },
+  {
+    "id": "compat-code-blank-10",
+    "source": "- item\n  - item\n    - item\n\n          before\n            \n          after\n",
+    "serialized": "<!-- wp:mbb/list -->\n<ul class=\"wp-block-mbb-list\"><!-- wp:mbb/list-item -->\n<li class=\"wp-block-mbb-list-item\"><!-- wp:paragraph -->\n<p>item</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:mbb/list -->\n<ul class=\"wp-block-mbb-list\"><!-- wp:mbb/list-item -->\n<li class=\"wp-block-mbb-list-item\"><!-- wp:paragraph -->\n<p>item</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:mbb/list -->\n<ul class=\"wp-block-mbb-list\"><!-- wp:mbb/list-item -->\n<li class=\"wp-block-mbb-list-item\"><!-- wp:paragraph -->\n<p>item</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:mbb/code {\"code\":\"before\\n  \\nafter\\n\"} -->\n<pre class=\"wp-block-mbb-code\"><code>before\n  \nafter\n</code></pre>\n<!-- /wp:mbb/code --></li>\n<!-- /wp:mbb/list-item --></ul>\n<!-- /wp:mbb/list --></li>\n<!-- /wp:mbb/list-item --></ul>\n<!-- /wp:mbb/list --></li>\n<!-- /wp:mbb/list-item --></ul>\n<!-- /wp:mbb/list -->",
+    "documentId": "synthetic-compat-code-blank-10"
+  },
+  {
+    "id": "compat-code-blank-11",
+    "source": "> - ```text\n>   before\n  >      \n>   after\n>   ```\n",
+    "serialized": "<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\"><!-- wp:mbb/list -->\n<ul class=\"wp-block-mbb-list\"><!-- wp:mbb/list-item -->\n<li class=\"wp-block-mbb-list-item\"><!-- wp:mbb/code {\"code\":\"before\\n   \\nafter\\n\",\"language\":\"text\"} -->\n<pre class=\"wp-block-mbb-code\"><code class=\"language-text\">before\n   \nafter\n</code></pre>\n<!-- /wp:mbb/code --></li>\n<!-- /wp:mbb/list-item --></ul>\n<!-- /wp:mbb/list --></blockquote>\n<!-- /wp:quote -->",
+    "documentId": "synthetic-compat-code-blank-11"
+  },
+  {
+    "id": "compat-code-blank-12",
+    "source": "> - ```text\n>   before\n>\t\t \n>   after\n>   ```\n",
+    "serialized": "<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\"><!-- wp:mbb/list -->\n<ul class=\"wp-block-mbb-list\"><!-- wp:mbb/list-item -->\n<li class=\"wp-block-mbb-list-item\"><!-- wp:mbb/code {\"code\":\"before\\n\\t \\nafter\\n\",\"language\":\"text\"} -->\n<pre class=\"wp-block-mbb-code\"><code class=\"language-text\">before\n\t \nafter\n</code></pre>\n<!-- /wp:mbb/code --></li>\n<!-- /wp:mbb/list-item --></ul>\n<!-- /wp:mbb/list --></blockquote>\n<!-- /wp:quote -->",
+    "documentId": "synthetic-compat-code-blank-12"
+  },
+  {
+    "id": "compat-code-blank-13",
+    "source": "- item\n  > ```text\n  > before\n  >     \n  > after\n  > ```\n",
+    "serialized": "<!-- wp:mbb/list -->\n<ul class=\"wp-block-mbb-list\"><!-- wp:mbb/list-item -->\n<li class=\"wp-block-mbb-list-item\"><!-- wp:paragraph -->\n<p>item</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\"><!-- wp:mbb/code {\"code\":\"before\\n    \\nafter\\n\",\"language\":\"text\"} -->\n<pre class=\"wp-block-mbb-code\"><code class=\"language-text\">before\n    \nafter\n</code></pre>\n<!-- /wp:mbb/code --></blockquote>\n<!-- /wp:quote --></li>\n<!-- /wp:mbb/list-item --></ul>\n<!-- /wp:mbb/list -->",
+    "documentId": "synthetic-compat-code-blank-13"
+  },
+  {
+    "id": "compat-code-blank-14",
+    "source": "12. item\n    - item\n      ```text\n      before\n          \n      after\n      ```\n",
+    "serialized": "<!-- wp:mbb/list {\"ordered\":true,\"start\":12} -->\n<ol start=\"12\" class=\"wp-block-mbb-list\"><!-- wp:mbb/list-item -->\n<li class=\"wp-block-mbb-list-item\"><!-- wp:paragraph -->\n<p>item</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:mbb/list -->\n<ul class=\"wp-block-mbb-list\"><!-- wp:mbb/list-item -->\n<li class=\"wp-block-mbb-list-item\"><!-- wp:paragraph -->\n<p>item</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:mbb/code {\"code\":\"before\\n    \\nafter\\n\",\"language\":\"text\"} -->\n<pre class=\"wp-block-mbb-code\"><code class=\"language-text\">before\n    \nafter\n</code></pre>\n<!-- /wp:mbb/code --></li>\n<!-- /wp:mbb/list-item --></ul>\n<!-- /wp:mbb/list --></li>\n<!-- /wp:mbb/list-item --></ol>\n<!-- /wp:mbb/list -->",
+    "documentId": "synthetic-compat-code-blank-14"
+  },
+  {
+    "id": "compat-code-blank-15",
+    "source": "- item\n  ```text\n  before\n\n  after\n  ```\n",
+    "serialized": "<!-- wp:mbb/list -->\n<ul class=\"wp-block-mbb-list\"><!-- wp:mbb/list-item -->\n<li class=\"wp-block-mbb-list-item\"><!-- wp:paragraph -->\n<p>item</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:mbb/code {\"code\":\"before\\n\\nafter\\n\",\"language\":\"text\"} -->\n<pre class=\"wp-block-mbb-code\"><code class=\"language-text\">before\n\nafter\n</code></pre>\n<!-- /wp:mbb/code --></li>\n<!-- /wp:mbb/list-item --></ul>\n<!-- /wp:mbb/list -->",
+    "documentId": "synthetic-compat-code-blank-15"
+  },
+  {
+    "id": "compat-code-blank-16",
+    "source": "> - ```text\n>   before\n\nAfter quote.\n",
+    "serialized": "<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\"><!-- wp:mbb/list -->\n<ul class=\"wp-block-mbb-list\"><!-- wp:mbb/list-item -->\n<li class=\"wp-block-mbb-list-item\"><!-- wp:mbb/code {\"code\":\"before\\n\",\"language\":\"text\"} -->\n<pre class=\"wp-block-mbb-code\"><code class=\"language-text\">before\n</code></pre>\n<!-- /wp:mbb/code --></li>\n<!-- /wp:mbb/list-item --></ul>\n<!-- /wp:mbb/list --></blockquote>\n<!-- /wp:quote -->\n\n<!-- wp:paragraph -->\n<p>After quote.</p>\n<!-- /wp:paragraph -->",
+    "documentId": "synthetic-compat-code-blank-16"
+  },
+  {
+    "id": "compat-code-blank-17",
+    "source": "- item\n  ```text\n  before\n      \n  ```\n\nAfter list.\n",
+    "serialized": "<!-- wp:mbb/list -->\n<ul class=\"wp-block-mbb-list\"><!-- wp:mbb/list-item -->\n<li class=\"wp-block-mbb-list-item\"><!-- wp:paragraph -->\n<p>item</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:mbb/code {\"code\":\"before\\n    \\n\",\"language\":\"text\"} -->\n<pre class=\"wp-block-mbb-code\"><code class=\"language-text\">before\n    \n</code></pre>\n<!-- /wp:mbb/code --></li>\n<!-- /wp:mbb/list-item --></ul>\n<!-- /wp:mbb/list -->\n\n<!-- wp:paragraph -->\n<p>After list.</p>\n<!-- /wp:paragraph -->",
+    "documentId": "synthetic-compat-code-blank-17"
+  },
+  {
+    "id": "compat-code-blank-18",
+    "source": "- item\n\n      before\n        \n      after\n\nAfter list.\n",
+    "serialized": "<!-- wp:mbb/list -->\n<ul class=\"wp-block-mbb-list\"><!-- wp:mbb/list-item -->\n<li class=\"wp-block-mbb-list-item\"><!-- wp:paragraph -->\n<p>item</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:mbb/code {\"code\":\"before\\n  \\nafter\\n\"} -->\n<pre class=\"wp-block-mbb-code\"><code>before\n  \nafter\n</code></pre>\n<!-- /wp:mbb/code --></li>\n<!-- /wp:mbb/list-item --></ul>\n<!-- /wp:mbb/list -->\n\n<!-- wp:paragraph -->\n<p>After list.</p>\n<!-- /wp:paragraph -->",
+    "documentId": "synthetic-compat-code-blank-18"
+  },
+  {
+    "id": "compat-code-blank-19",
+    "source": "- first\n    \n- second\n",
+    "serialized": "<!-- wp:list -->\n<ul class=\"wp-block-list\"><!-- wp:list-item -->\n<li>first</li>\n<!-- /wp:list-item -->\n\n<!-- wp:list-item -->\n<li>second</li>\n<!-- /wp:list-item --></ul>\n<!-- /wp:list -->",
+    "documentId": "synthetic-compat-code-blank-19"
+  },
+  {
+    "id": "compat-final-partial-tab",
+    "source": "- item\n  > ```text\n  > before\n \t>\t\t\n  > after\n  > ```\n",
+    "serialized": "<!-- wp:mbb/list -->\n<ul class=\"wp-block-mbb-list\"><!-- wp:mbb/list-item -->\n<li class=\"wp-block-mbb-list-item\"><!-- wp:paragraph -->\n<p>item</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\"><!-- wp:mbb/code {\"code\":\"before\\n\\t\\t\\nafter\\n\",\"language\":\"text\"} -->\n<pre class=\"wp-block-mbb-code\"><code class=\"language-text\">before\n\t\t\nafter\n</code></pre>\n<!-- /wp:mbb/code --></blockquote>\n<!-- /wp:quote --></li>\n<!-- /wp:mbb/list-item --></ul>\n<!-- /wp:mbb/list -->",
+    "documentId": "synthetic-compat-final-partial-tab"
+  },
+  {
+    "id": "compat-final-tail-break-0",
+    "source": "before $x$<br>\n",
+    "serialized": "<!-- wp:paragraph -->\n<p>before <span data-mbb-tex=\"x\" class=\"mbb-math\">$x$</span><br></p>\n<!-- /wp:paragraph -->",
+    "documentId": "synthetic-compat-final-tail-break-0"
+  },
+  {
+    "id": "compat-final-tail-break-1",
+    "source": "before $x$<br><br>\n",
+    "serialized": "<!-- wp:paragraph -->\n<p>before <span data-mbb-tex=\"x\" class=\"mbb-math\">$x$</span><br><br></p>\n<!-- /wp:paragraph -->",
+    "documentId": "synthetic-compat-final-tail-break-1"
+  },
+  {
+    "id": "compat-final-tail-break-3",
+    "source": "**before $x$<br>**\n",
+    "serialized": "<!-- wp:paragraph -->\n<p><strong>before <span data-mbb-tex=\"x\" class=\"mbb-math\">$x$</span><br></strong></p>\n<!-- /wp:paragraph -->",
+    "documentId": "synthetic-compat-final-tail-break-3"
+  },
+  {
+    "id": "compat-final-tail-break-4",
+    "source": "before $x$<br>after\n",
+    "serialized": "<!-- wp:paragraph -->\n<p>before <span data-mbb-tex=\"x\" class=\"mbb-math\">$x$</span><br>after</p>\n<!-- /wp:paragraph -->",
+    "documentId": "synthetic-compat-final-tail-break-4"
   }
 ]

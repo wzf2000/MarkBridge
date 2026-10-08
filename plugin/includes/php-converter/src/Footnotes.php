@@ -44,7 +44,7 @@ final class NamedFootnoteStartParser implements BlockStartParserInterface
     {
         if (
             $cursor->isIndented() ||
-            !preg_match('/^\s*\[\^([^\]\n]+)\]:[ \t]*/', $cursor->getRemainder(), $match)
+            !preg_match('/^\s*\[\^([^\] \n]+)\]:[ \t]*/', $cursor->getRemainder(), $match)
         ) {
             return BlockStart::none();
         }
@@ -80,7 +80,10 @@ final class NamedFootnoteInlineParser implements InlineParserInterface
     public function parse(InlineParserContext $inlineContext): bool
     {
         $cursor = $inlineContext->getCursor();
-        if (!preg_match('/^\[\^([^\]\n]+)\]/', $cursor->getRemainder(), $match)) {
+        // markdown-it-footnote declines ASCII-space labels before validation.
+        // They remain ordinary Markdown/link definitions; valid footnote labels
+        // still pass the unchanged strict FootnoteRegistry policy.
+        if (!preg_match('/^\[\^([^\] \n]+)\]/', $cursor->getRemainder(), $match)) {
             if (str_starts_with($cursor->getRemainder(), '^[')) {
                 throw new ConversionError(
                     'FOOTNOTE_ANONYMOUS',

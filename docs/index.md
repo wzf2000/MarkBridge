@@ -26,7 +26,7 @@ README 说明产品范围和最短开发入口；本页按用途区分持续有�
 
 ## ACTIVE
 
-- [免额外运行环境：PHP 转换架构改进](plans/active/PORTABLE-CONVERTER.md)：独立架构版本，PHP 内容契约、保存链与干净候选安装已完成隔离验证；生产后端未切换，升级与灰度待推进。
+- [免额外运行环境：PHP 转换架构改进](plans/active/PORTABLE-CONVERTER.md)：独立架构版本，PHP 内容契约、保存链与干净候选安装已完成隔离验证；隔离升级与回退已验证，历史兼容调查进行中，生产后端未切换。
 
 ## DEFERRED
 

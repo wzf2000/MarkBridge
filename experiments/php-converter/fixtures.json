@@ -653,5 +653,362 @@
     "source": "$$\n中文 B C\n$$\n",
     "expected_php": true,
     "expected_node": true
+  },
+  {
+    "id": "html-escaping-plain",
+    "category": "上下文HTML转义",
+    "source": "Plain \"word\" 'single' > & < 3.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html-escaping-inline-math-gt",
+    "category": "上下文HTML转义",
+    "source": "Compare $x>y$.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html-escaping-inline-math-quote",
+    "category": "上下文HTML转义",
+    "source": "Text $\\text{\"word\"}$.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html-escaping-inline-code",
+    "category": "上下文HTML转义",
+    "source": "`\"double\" 'single' > & <`\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html-escaping-fenced-code",
+    "category": "上下文HTML转义",
+    "source": "```text\n\"double\" 'single' > & <\n```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html-escaping-display-math",
+    "category": "上下文HTML转义",
+    "source": "$$\n\\text{\"word\"} > 0\n$$\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html-escaping-table",
+    "category": "上下文HTML转义",
+    "source": "| quoted | math |\n| --- | --- |\n| \"double\" 'single' > | $x>y$ |\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html-escaping-table-code",
+    "category": "上下文HTML转义",
+    "source": "| code | math |\n| --- | --- |\n| `\"double\" 'single' > & <` | $\\text{\"word\"}$ |\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html-escaping-task",
+    "category": "上下文HTML转义",
+    "source": "- [x] \"double\" 'single' > & < 3\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html-escaping-image",
+    "category": "上下文HTML转义",
+    "source": "![\"word\" > 'single'](https://example.com/a.png)\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html-escaping-html-math",
+    "category": "上下文HTML转义",
+    "source": "<p>Compare $x>y$ and $\\text{\"word\"}$.</p>\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html-escaping-task-math",
+    "category": "上下文HTML转义",
+    "source": "- [x] Compare $x>y$ and $\\text{\"word\"}$.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-amp-0",
+    "category": "合成历史兼容",
+    "source": "```text\na & b\n```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-amp-1",
+    "category": "合成历史兼容",
+    "source": "```text\n&&\n```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-amp-2",
+    "category": "合成历史兼容",
+    "source": "```text\n&name\n```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-amp-3",
+    "category": "合成历史兼容",
+    "source": "```text\n&amp;\n```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-amp-4",
+    "category": "合成历史兼容",
+    "source": "```text\n&copy;\n```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-amp-5",
+    "category": "合成历史兼容",
+    "source": "```text\n&#x3C;\n```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-amp-6",
+    "category": "合成历史兼容",
+    "source": "```text\n&unknown;\n```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-amp-7",
+    "category": "合成历史兼容",
+    "source": "```text\n&AMP;\n```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-footnote-space-definition",
+    "category": "合成历史兼容",
+    "source": "[^a b]: Note.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-footnote-space-link-definition",
+    "category": "合成历史兼容",
+    "source": "[^a b]: https://example.com\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-footnote-space-literal",
+    "category": "合成历史兼容",
+    "source": "Literal [^a b].\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-footnote-tab-definition",
+    "category": "合成历史兼容",
+    "source": "[^a\tb]: Note.\n",
+    "expected_php": false,
+    "expected_node": false
+  },
+  {
+    "id": "compat-html-code-gt-math",
+    "category": "合成历史兼容",
+    "source": "<p><code>$x>y$</code> $z>0$</p>\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-html-title-entity-math",
+    "category": "合成历史兼容",
+    "source": "<p><a href=\"https://example.com\" title=\"quote &quot; ok\">Link</a> $x>y$</p>\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-display-math-amp-entity",
+    "category": "合成历史兼容",
+    "source": "$$\nx &amp; y\n$$\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-1",
+    "category": "代码空白行/容器边界",
+    "source": "- item\n  ```text\n  before\n    \n  after\n  ```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-2",
+    "category": "代码空白行/容器边界",
+    "source": "- item\n  ```text\n  before\n        \n  after\n  ```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-3",
+    "category": "代码空白行/容器边界",
+    "source": "- item\n  ```text\n  before\n            \n  after\n  ```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-4",
+    "category": "代码空白行/容器边界",
+    "source": "- item\n  ```text\n  before\n\t\n  after\n  ```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-5",
+    "category": "代码空白行/容器边界",
+    "source": "- item\n  ```text\n  before\n  \t\n  after\n  ```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-6",
+    "category": "代码空白行/容器边界",
+    "source": "- item\n\n      before\n        \n      after\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-7",
+    "category": "代码空白行/容器边界",
+    "source": "- item\n\n      before\n            \n      after\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-8",
+    "category": "代码空白行/容器边界",
+    "source": "- item\n  - item\n    - item\n      ```text\n      before\n        \n      after\n      ```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-9",
+    "category": "代码空白行/容器边界",
+    "source": "- item\n  - item\n    - item\n      ```text\n      before\n            \n      after\n      ```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-10",
+    "category": "代码空白行/容器边界",
+    "source": "- item\n  - item\n    - item\n\n          before\n            \n          after\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-11",
+    "category": "代码空白行/容器边界",
+    "source": "> - ```text\n>   before\n  >      \n>   after\n>   ```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-12",
+    "category": "代码空白行/容器边界",
+    "source": "> - ```text\n>   before\n>\t\t \n>   after\n>   ```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-13",
+    "category": "代码空白行/容器边界",
+    "source": "- item\n  > ```text\n  > before\n  >     \n  > after\n  > ```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-14",
+    "category": "代码空白行/容器边界",
+    "source": "12. item\n    - item\n      ```text\n      before\n          \n      after\n      ```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-15",
+    "category": "代码空白行/容器边界",
+    "source": "- item\n  ```text\n  before\n\n  after\n  ```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-16",
+    "category": "代码空白行/容器边界",
+    "source": "> - ```text\n>   before\n\nAfter quote.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-17",
+    "category": "代码空白行/容器边界",
+    "source": "- item\n  ```text\n  before\n      \n  ```\n\nAfter list.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-18",
+    "category": "代码空白行/容器边界",
+    "source": "- item\n\n      before\n        \n      after\n\nAfter list.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-19",
+    "category": "代码空白行/容器边界",
+    "source": "- first\n    \n- second\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-final-partial-tab",
+    "category": "代码Tab/段尾换行",
+    "source": "- item\n  > ```text\n  > before\n \t>\t\t\n  > after\n  > ```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-final-tail-break-0",
+    "category": "代码Tab/段尾换行",
+    "source": "before $x$<br>\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-final-tail-break-1",
+    "category": "代码Tab/段尾换行",
+    "source": "before $x$<br><br>\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-final-tail-break-3",
+    "category": "代码Tab/段尾换行",
+    "source": "**before $x$<br>**\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-final-tail-break-4",
+    "category": "代码Tab/段尾换行",
+    "source": "before $x$<br>after\n",
+    "expected_php": true,
+    "expected_node": true
   }
 ]

@@ -28,6 +28,138 @@ def request_php(request):
 
 
 class ProbeTests(unittest.TestCase):
+    def test_terminal_inline_breaks_survive_real_reverse(self):
+        for source in [
+            "before $x$<br>\n",
+            "before $x$<br><br>\n",
+            "**before $x$<br>**\n",
+            "before $x$<br>after\n",
+        ]:
+            with self.subTest(source=source):
+                result = convert("markdown", source)
+                self.assertTrue(result["ok"], result)
+                reverse = convert("blocks", result["serialized"])
+                self.assertTrue(reverse["ok"], reverse)
+                self.assertEqual(
+                    convert("markdown", reverse["source"])["serialized"], result["serialized"]
+                )
+                unsafe = result["serialized"].replace("<br>", '<br onclick="alert(1)">', 1)
+                self.assertFalse(convert("blocks", unsafe)["ok"])
+        # An extra terminal HTML text LF cannot be represented exactly.
+        # Both engines keep the edited-block gate closed for that addition.
+        result = convert("markdown", "before $x$<br>\n")
+        reverse = convert("blocks", result["serialized"].replace("<br></p>", "<br>\n</p>"))
+        self.assertFalse(reverse["ok"], reverse)
+        self.assertEqual(reverse["code"], "ROUNDTRIP")
+
+    def test_nested_code_preserves_blank_line_whitespace(self):
+        cases = [
+            ("- item\n  ```text\n  before\n    \n  after\n  ```\n", "before\n  \nafter\n"),
+            ("- item\n  ```text\n  before\n  \t\n  after\n  ```\n", "before\n\t\nafter\n"),
+            ("- item\n\n      before\n        \n      after\n", "before\n  \nafter\n"),
+            (
+                "- item\n  > ```text\n  > before\n \t>\t\t\n  > after\n  > ```\n",
+                "before\n\t\t\nafter\n",
+            ),
+            ("> - ```text\n>   before\n  >      \n>   after\n>   ```\n", "before\n   \nafter\n"),
+        ]
+        for source, literal in cases:
+            with self.subTest(source=source):
+                result = convert("markdown", source)
+                self.assertTrue(result["ok"], result)
+                reverse = convert("blocks", result["serialized"])
+                self.assertTrue(reverse["ok"], reverse)
+                self.assertEqual(self._nested_code_literal(result["serialized"]), literal)
+                self.assertEqual(
+                    convert("markdown", reverse["source"])["serialized"], result["serialized"]
+                )
+
+    @staticmethod
+    def _nested_code_literal(serialized):
+        # These are complete known generated block comments, not a parser for
+        # accepting arbitrary block input. The converter itself uses WP parsing.
+        import re
+
+        comment = re.search(r"<!-- wp:mbb/code (.+?) -->", serialized)
+        return json.loads(comment[1])["code"]
+
+    def test_element_text_entities_preserve_the_block_content_model(self):
+        for value in ["a & b", "&&", "&name", "&amp;", "&copy;", "&#x3C;", "&unknown;", "&AMP;"]:
+            source = "```text\n" + value + "\n```\n"
+            with self.subTest(value=value):
+                result = convert("markdown", source)
+                self.assertTrue(result["ok"], result)
+                reverse = convert("blocks", result["serialized"])
+                self.assertTrue(reverse["ok"], reverse)
+                self.assertIn(value + "\n", reverse["source"])
+                self.assertEqual(
+                    convert("markdown", reverse["source"])["serialized"], result["serialized"]
+                )
+                # Only the content attribute and its matching rendered HTML
+                # can authorize literal entity spelling; unrelated text cannot.
+                forged = result["serialized"].replace("</code>", "tampered</code>")
+                refusal = convert("blocks", forged)
+                self.assertFalse(refusal["ok"], refusal)
+                self.assertEqual(refusal["code"], "CONTENT_MISMATCH")
+
+    def test_raw_html_math_keeps_protected_markup_lexical_spelling(self):
+        cases = [
+            "<p><code>$x>y$</code> $z>0$</p>\n",
+            '<p><a href="https://example.com" title="quote &quot; ok">Link</a> $x>y$</p>\n',
+            '<p><span style="color:red">ordinary</span> $x>y$</p>\n',
+            '<p><span style="color:red">$x>y$</span> $z>0$</p>\n',
+        ]
+        for source in cases:
+            with self.subTest(source=source):
+                result = convert("markdown", source)
+                self.assertTrue(result["ok"], result)
+                reverse = convert("blocks", result["serialized"])
+                self.assertTrue(reverse["ok"], reverse)
+                self.assertEqual(reverse["source"], source)
+        # Prefix-shaped ordinary text never participates in placeholder search.
+        source = "<p>MBBHTMLMATH" + "X" * 240000 + " $x>y$</p>\n"
+        result = convert("markdown", source)
+        self.assertTrue(result["ok"], result)
+        self.assertEqual(convert("blocks", result["serialized"])["source"], source)
+
+    def test_html_escaping_matches_the_serialization_context(self):
+        cases = [
+            ("Plain \"word\" 'single' > & < 3.\n", "\"word\" 'single' > &amp; &lt; 3."),
+            ("Compare $x>y$.\n", 'data-mbb-tex="x&gt;y" class="mbb-math">$x&gt;y$'),
+            (
+                'Text $\\text{"word"}$.\n',
+                'data-mbb-tex="\\text{&quot;word&quot;}" class="mbb-math">$\\text{"word"}$',
+            ),
+            (
+                "```text\n\"double\" 'single' > & <\n```\n",
+                '<code class="language-text">"double" \'single\' > &amp; &lt;',
+            ),
+            ('- [x] "word" > 3\n', "<span>&quot;word&quot; &gt; 3</span>"),
+            ('| cell |\n| --- |\n| `"word" > 3` |\n', "<code>&quot;word&quot; &gt; 3</code>"),
+            ('<p>$\\text{"word"}$ and $x>y$.</p>\n', "$\\text{&quot;word&quot;}$"),
+        ]
+        for source, expected in cases:
+            with self.subTest(source=source):
+                result = convert("markdown", source)
+                self.assertTrue(result["ok"], result)
+                self.assertIn(expected, result["serialized"])
+                reverse = convert("blocks", result["serialized"])
+                self.assertTrue(reverse["ok"], reverse)
+                self.assertEqual(
+                    convert("markdown", reverse["source"])["serialized"], result["serialized"]
+                )
+                # Source admission remains an exact complete snapshot check.
+                forged = request_php(
+                    {
+                        "mode": "paired_restore",
+                        "documentId": "escaping-test",
+                        "source": "Different source.\n",
+                        "serialized": result["serialized"],
+                    }
+                )
+                self.assertFalse(forged["ok"], forged)
+                self.assertEqual(forged["code"], "SNAPSHOT_MISMATCH")
+
     def test_block_comment_json_preserves_slashes_quotes_and_unicode(self):
         # Reflection exercises values at JSON string boundaries directly. The
         # source fixtures separately exercise complete Markdown/block paths.
