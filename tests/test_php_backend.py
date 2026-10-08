@@ -48,6 +48,62 @@ class WorkerTests(unittest.TestCase):
         self.assertTrue(r["ok"], r)
         self.assertEqual(r["document"], base)
 
+    def test_historical_text_profile_preserves_base_but_not_edits(self):
+        source = "Before $x>y$.\n\n[unused]: https://example.com\n"
+        current = self.document(source)
+        old = {**current, "serialized": current["serialized"].replace("$x&gt;y$", "$x>y$")}
+        restored = convert(
+            {
+                "mode": "paired_restore",
+                "source": source,
+                "serialized": old["serialized"],
+                "documentId": old["documentId"],
+            }
+        )
+        self.assertTrue(restored["ok"], restored)
+        self.assertEqual(restored["document"], old)
+        request = {
+            "mode": "blocks",
+            "base": old,
+            "serialized": old["serialized"],
+            "documentId": old["documentId"],
+        }
+        unchanged = convert(request)
+        self.assertTrue(unchanged["ok"], unchanged)
+        self.assertEqual(unchanged["document"], old)
+        edited = convert(
+            {
+                **request,
+                "serialized": old["serialized"].replace("Before", "After"),
+                "source": "UNTRUSTED CACHE",
+            }
+        )
+        self.assertTrue(edited["ok"], edited)
+        self.assertIn("After", edited["document"]["source"])
+        self.assertNotIn("Before", edited["document"]["source"])
+        self.assertNotIn("UNTRUSTED", edited["document"]["source"])
+        self.assertIn("$x&gt;y$", edited["document"]["serialized"])
+        current_edit = self.document(edited["document"]["source"])
+        self.assertEqual(current_edit["serialized"], edited["document"]["serialized"])
+        for altered in [
+            old["serialized"].replace("wp:paragraph", "wp:unknown"),
+            old["serialized"].replace("<p>", '<p onclick="alert(1)">'),
+        ]:
+            result = convert({**request, "serialized": altered})
+            self.assertFalse(result["ok"], result)
+        for base in [
+            {**old, "source": "FORGED SOURCE"},
+            {
+                **old,
+                "serialized": old["serialized"].replace(
+                    'data-mbb-tex="x&gt;y"', 'data-mbb-tex="x>y"'
+                ),
+            },
+        ]:
+            result = convert({**request, "base": base})
+            self.assertFalse(result["ok"], result)
+            self.assertEqual(result["code"], "SNAPSHOT_MISMATCH")
+
     def test_edit_uses_blocks_not_cached_source(self):
         base = self.document()
         r = convert(

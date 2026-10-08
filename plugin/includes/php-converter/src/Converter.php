@@ -133,13 +133,24 @@ final class Converter
                     // Snapshot admission intentionally does not call the editing
                     // reverse path: historical pairs may be non-editable today.
                     $candidate = $this->serializeAll($this->markdownBlocks($source));
-                    if ($candidate === $serialized) {
+                    $this->input($candidate);
+                    $snapshotKind = $legacyFootnotes ? 'legacy' : 'current';
+                    $matches = $candidate === $serialized;
+                    if (!$matches) {
+                        // A fixed historical renderer operates only on our
+                        // complete authorized output, never on client bytes.
+                        $historical = self::htmlTextGtV1($candidate);
+                        $this->input($historical);
+                        $matches = $historical === $serialized;
+                        $snapshotKind .= ':html-text-gt-v1';
+                    }
+                    if ($matches) {
                         return [
                             'ok' => true,
                             'source' => $source,
                             'serialized' => $serialized,
                             'documentId' => $documentId,
-                            'snapshot_kind' => $legacyFootnotes ? 'legacy' : 'current',
+                            'snapshot_kind' => $snapshotKind,
                         ];
                     }
                 } catch (ConversionError $error) {
@@ -155,6 +166,22 @@ final class Converter
             'SNAPSHOT_MISMATCH',
             'Source and serialized snapshot do not match',
         );
+    }
+
+    /** Historical HTML text spelling only; tags/attributes/comments are opaque. */
+    private static function htmlTextGtV1(string $generated): string
+    {
+        $tokens = preg_split(
+            '/(<!--[\s\S]*?-->|<(?:[^>"\']|"[^"]*"|\'[^\']*\')*>)/',
+            $generated,
+            -1,
+            PREG_SPLIT_DELIM_CAPTURE,
+        );
+        $out = '';
+        foreach ($tokens as $index => $token) {
+            $out .= $index % 2 === 0 ? str_replace('&gt;', '>', $token) : $token;
+        }
+        return $out;
     }
 
     private function input(string $value): void
@@ -514,9 +541,15 @@ final class Converter
         return $this->legacyTasks ? null : $paragraph->data->get('probe_task', null);
     }
 
-    private function astInline(Node $parent, int $depth, int $skip = 0): string
-    {
+    private function astInline(
+        Node $parent,
+        int $depth,
+        int $skip = 0,
+        ?string $insideMath = null,
+    ): string {
         $html = '';
+        $spanStack = [];
+        $mathTags = $insideMath === null ? [] : [$insideMath];
         foreach ($parent->children() as $node) {
             $this->tick($depth);
             if ($node instanceof Text) {
@@ -538,6 +571,17 @@ final class Converter
                     ']</span>';
             } elseif ($node instanceof HtmlInline) {
                 $literal = $node->getLiteral();
+                if (preg_match('/^<span(?:\s|>)/i', $literal)) {
+                    $math = $this->mathOpening($literal);
+                    $spanStack[] = $math;
+                    if ($math) {
+                        $mathTags[] = $literal;
+                    }
+                } elseif (preg_match('/^<\/span\s*>$/iD', $literal)) {
+                    if (array_pop($spanStack) === true) {
+                        array_pop($mathTags);
+                    }
+                }
                 if (
                     preg_match(
                         '/^<(?:class\s+[^<>]+|sstream|stdexcept|vector|functional|optional|iostream|memory|simplecounter|int|float|t|string|typename)>$/iD',
@@ -554,16 +598,16 @@ final class Converter
                 // becomes two <br> elements.
                 $html .= $node->getType() === Newline::HARDBREAK ? '<br><br>' : '<br>';
             } elseif ($node instanceof InlineMath) {
-                $tex = $node->getLiteral();
-                $html .=
-                    ($this->markdownInline
-                        ? '<span class="mbb-math" data-mbb-tex="' . self::attribute($tex) . '"'
-                        : '<span data-mbb-tex="' . self::attribute($tex) . '" class="mbb-math"') .
-                    '>' .
-                    ($this->markdownInline
-                        ? self::attribute('$' . $tex . '$')
-                        : str_replace('>', '&gt;', self::esc('$' . $tex . '$'))) .
-                    '</span>';
+                if ($mathTags !== []) {
+                    // The parser can consume actual HTML tags inside a dollar
+                    // token. Validate that original HTML entity layer before
+                    // escaping it, so genuine child elements cannot be flattened
+                    // into an authorized sole-text math span.
+                    $this->safeHtml(end($mathTags) . '$' . $node->getLiteral() . '$</span>');
+                    $html .= self::elementText('$' . $node->getLiteral() . '$');
+                } else {
+                    $html .= $this->inlineMathHtml($node->getLiteral());
+                }
             } elseif ($node instanceof Code) {
                 $html .= '<code>' . $this->inlineText($node->getLiteral()) . '</code>';
             } elseif ($node instanceof Image) {
@@ -574,12 +618,32 @@ final class Converter
                 $node instanceof Strikethrough
             ) {
                 if ($node instanceof Strikethrough && $node->getOpeningDelimiter() === '~') {
-                    $html .= '~' . $this->astInline($node, $depth + 1) . '~';
+                    $html .=
+                        '~' .
+                        $this->astInline(
+                            $node,
+                            $depth + 1,
+                            0,
+                            $mathTags === [] ? null : end($mathTags),
+                        ) .
+                        '~';
                     continue;
                 }
                 $tag =
                     $node instanceof Strong ? 'strong' : ($node instanceof Emphasis ? 'em' : 's');
-                $html .= '<' . $tag . '>' . $this->astInline($node, $depth + 1) . '</' . $tag . '>';
+                $html .=
+                    '<' .
+                    $tag .
+                    '>' .
+                    $this->astInline(
+                        $node,
+                        $depth + 1,
+                        0,
+                        $mathTags === [] ? null : end($mathTags),
+                    ) .
+                    '</' .
+                    $tag .
+                    '>';
             } elseif ($node instanceof Link) {
                 self::safeUrl($node->getUrl());
                 $html .=
@@ -590,7 +654,12 @@ final class Converter
                         ? ''
                         : ' title="' . self::attribute($node->getTitle()) . '"') .
                     '>' .
-                    $this->astInline($node, $depth + 1) .
+                    $this->astInline(
+                        $node,
+                        $depth + 1,
+                        0,
+                        $mathTags === [] ? null : end($mathTags),
+                    ) .
                     '</a>';
             } else {
                 throw new ConversionError(
@@ -604,9 +673,43 @@ final class Converter
             $parent instanceof Heading ||
             $parent instanceof TableCell
         ) {
-            $this->safeHtml($html);
+            $body = $this->safeHtml($html);
+            $html = $this->replaceHtmlMath(
+                $html,
+                $body,
+                fn(string $tex): string => $this->inlineMathHtml($tex),
+            );
         }
         return $html;
+    }
+
+    private function mathOpening(string $tag): bool
+    {
+        // This checks only whether the original opening tag names math.
+        // The complete rendered span must still pass safeHtml below, including
+        // the sole-text-child and exact text/TeX checks before normalization.
+        $body = $this->dom($tag . '</span>');
+        $span = $body->firstChild;
+        if (!($span instanceof DOMElement) || !$span->hasAttribute('data-mbb-tex')) {
+            return false;
+        }
+        $this->attrs($span, [
+            'class' => 'mbb-math',
+            'data-mbb-tex' => $span->getAttribute('data-mbb-tex'),
+        ]);
+        return true;
+    }
+
+    private function inlineMathHtml(string $tex): string
+    {
+        return ($this->markdownInline
+            ? '<span class="mbb-math" data-mbb-tex="' . self::attribute($tex) . '"'
+            : '<span data-mbb-tex="' . self::attribute($tex) . '" class="mbb-math"') .
+            '>' .
+            ($this->markdownInline
+                ? self::attribute('$' . $tex . '$')
+                : str_replace('>', '&gt;', self::esc('$' . $tex . '$'))) .
+            '</span>';
     }
 
     private function imageHtml(Image $image): string
@@ -1087,13 +1190,29 @@ final class Converter
                 $token,
             );
         }
-        $this->safeHtml($out);
-        return $out;
+        $body = $this->safeHtml($out);
+        return $this->replaceHtmlMath(
+            $out,
+            $body,
+            fn(string $tex): string => '<span class="mbb-math" data-mbb-tex="' .
+                self::attribute($tex) .
+                '">' .
+                self::attribute('$' . $tex . '$') .
+                '</span>',
+        );
     }
 
     private function htmlSource(string $html): string
     {
-        $body = $this->safeHtml($html);
+        return $this->replaceHtmlMath(
+            $html,
+            $this->safeHtml($html),
+            fn(string $tex): string => '$' . $tex . '$',
+        );
+    }
+
+    private function replaceHtmlMath(string $html, DOMElement $body, callable $replacement): string
+    {
         $spans = iterator_to_array($body->getElementsByTagName('span'));
         if ($spans === []) {
             return $html;
@@ -1125,7 +1244,7 @@ final class Converter
                     throw new ConversionError('HTML_STRUCTURE', 'HTML span positions disagree');
                 }
                 if ($span->hasAttribute('data-mbb-tex')) {
-                    $source .= '$' . $span->getAttribute('data-mbb-tex') . '$';
+                    $source .= $replacement($span->getAttribute('data-mbb-tex'));
                     $inMath = true;
                     continue;
                 }

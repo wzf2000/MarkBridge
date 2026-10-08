@@ -28,6 +28,231 @@ def request_php(request):
 
 
 class ProbeTests(unittest.TestCase):
+    def test_historical_html_text_profile_requires_a_complete_snapshot(self):
+        source = "Before $x>y$ and $z>0$; literal &amp;gt;.\n"
+        current = convert("markdown", source)
+        self.assertTrue(current["ok"], current)
+        historical = current["serialized"].replace("$x&gt;y$", "$x>y$").replace("$z&gt;0$", "$z>0$")
+        restored = request_php(
+            {
+                "mode": "paired_restore",
+                "source": source,
+                "serialized": historical,
+                "documentId": "historical-gt",
+            }
+        )
+        self.assertTrue(restored["ok"], restored)
+        self.assertEqual(restored["source"], source)
+        self.assertEqual(restored["serialized"], historical)
+        self.assertEqual(restored["snapshot_kind"], "current:html-text-gt-v1")
+        self.assertIn('data-mbb-tex="x&gt;y"', historical)
+        self.assertIn("literal &amp;gt;", historical)
+        for tampered in [
+            historical.replace('data-mbb-tex="x&gt;y"', 'data-mbb-tex="x>y"'),
+            current["serialized"].replace("$x&gt;y$", "$x>y$"),
+            historical + "\n",
+            historical.replace("Before", "Forged"),
+            historical.replace("wp:paragraph", 'wp:paragraph {"extra":"&gt;"}', 1),
+        ]:
+            with self.subTest(tampered=tampered[:80]):
+                result = request_php(
+                    {
+                        "mode": "paired_restore",
+                        "source": source,
+                        "serialized": tampered,
+                        "documentId": "historical-gt",
+                    }
+                )
+                self.assertFalse(result["ok"], result)
+                self.assertEqual(result["code"], "SNAPSHOT_MISMATCH")
+        # Literal entity code uses its content attribute as its model. The
+        # profile changes its rendered text only, never the comment JSON.
+        code_source = "```\n&gt;\n```\n"
+        code = convert("markdown", code_source)
+        self.assertTrue(code["ok"], code)
+        old_code = code["serialized"].replace("<code>&gt;", "<code>>")
+        result = request_php(
+            {
+                "mode": "paired_restore",
+                "source": code_source,
+                "serialized": old_code,
+                "documentId": "historical-code",
+            }
+        )
+        self.assertTrue(result["ok"], result)
+        self.assertEqual(result["source"], code_source)
+        self.assertIn('"code":"\\u0026gt;\\n"', result["serialized"])
+        bad_comment = old_code.replace('"code":"\\u0026gt;\\n"', '"code":">\\n"')
+        self.assertFalse(
+            request_php(
+                {
+                    "mode": "paired_restore",
+                    "source": code_source,
+                    "serialized": bad_comment,
+                    "documentId": "historical-code",
+                }
+            )["ok"]
+        )
+        unsafe = (
+            '<p><span class="mbb-math" data-mbb-tex="x&gt;y" onclick="alert(1)">$x>y$</span></p>\n'
+        )
+        result = request_php(
+            {
+                "mode": "paired_restore",
+                "source": unsafe,
+                "serialized": "<!-- wp:html -->\n" + unsafe.rstrip() + "\n<!-- /wp:html -->",
+                "documentId": "unsafe-profile",
+            }
+        )
+        self.assertFalse(result["ok"], result)
+
+    def test_historical_profile_keeps_tags_quotes_comments_and_capacity(self):
+        library = os.environ.get(
+            "MARKBRIDGE_TEST_CONVERTER_LIBRARY",
+            str(ROOT.parent.parent / "plugin/includes/php-converter/Converter.php"),
+        )
+        code = (
+            "require $argv[1]; $c=new \\MarkBridge\\Probe\\Converter(); "
+            "$profile=new ReflectionMethod($c,'htmlTextGtV1'); "
+            "$blocks=new ReflectionMethod($c,'markdownBlocks'); "
+            "$serialize=new ReflectionMethod($c,'serializeAll'); "
+            "$q=json_decode(stream_get_contents(STDIN),true); "
+            "$candidate=$serialize->invoke($c,$blocks->invoke($c,$q['source'])); "
+            "echo json_encode(['tokens'=>$profile->invoke(null,$q['tokens']), "
+            "'bytes'=>strlen($candidate),'historical'=>$profile->invoke(null,$candidate)]);"
+        )
+        tokens = '<!-- wp:test {"literal":"&gt;","quoted":"x>y"} -->\n<a title="quoted > and &gt;" href="https://example.com/?a=&gt;">&gt; &amp;gt; &#62;</a>\n<!-- /wp:test -->'
+        source = "$" + ">" * 45000 + "$\n"
+        process = subprocess.run(
+            [PHP[0], PHP[1], PHP[2], "-r", code, library],
+            input=json.dumps({"tokens": tokens, "source": source}),
+            text=True,
+            capture_output=True,
+            timeout=10,
+        )
+        self.assertEqual(process.returncode, 0, process.stderr)
+        result = json.loads(process.stdout)
+        self.assertEqual(
+            result["tokens"], tokens.replace(">&gt; &amp;gt; &#62;<", ">> &amp;gt; &#62;<")
+        )
+        self.assertLess(len(source.encode()), 262144)
+        self.assertGreater(result["bytes"], 262144)
+        self.assertLess(len(result["historical"].encode()), 262144)
+        refusal = request_php(
+            {
+                "mode": "paired_restore",
+                "source": source,
+                "serialized": result["historical"],
+                "documentId": "profile-capacity",
+            }
+        )
+        self.assertFalse(refusal["ok"], refusal)
+
+    def test_existing_math_span_is_idempotent_without_authorizing_children(self):
+        marker = '<span class="mbb-math" data-mbb-tex="a*b*c">$a*b*c$</span>'
+        entity = '<span data-mbb-tex="x&gt;y" class="mbb-math">$x&gt;y$</span>'
+        valid = [
+            "Before " + marker + ".\n",
+            "**Before " + entity + " after.**\n",
+            "<strong>" + marker + "</strong>\n",
+            "- [x] " + entity + "\n",
+            "| math |\n| --- |\n| " + entity + " |\n",
+            "<p>" + entity + "</p>\n",
+            'Before <span class="mbb-math" data-mbb-tex="x&amp;amp;y">$x&amp;amp;y$</span>.\n',
+            'Before <span class="mbb-math" data-mbb-tex="a\\$b">$a\\$b$</span>.\n',
+            'Before <span class="mbb-math" data-mbb-tex="x&#62;y">$x&#x3e;y$</span>.\n',
+            'Before <span class="mbb-math" data-mbb-tex="x&lt;3">$x&lt;3$</span>.\n',
+        ]
+        for source in valid:
+            with self.subTest(source=source):
+                result = convert("markdown", source)
+                self.assertTrue(result["ok"], result)
+                self.assertEqual(result["serialized"].count('class="mbb-math"'), 1)
+                reverse = convert("blocks", result["serialized"])
+                self.assertTrue(reverse["ok"], reverse)
+                self.assertEqual(
+                    convert("markdown", reverse["source"])["serialized"], result["serialized"]
+                )
+                self.assertTrue(
+                    request_php(
+                        {
+                            "mode": "paired_restore",
+                            "source": source,
+                            "serialized": result["serialized"],
+                            "documentId": "prewrapped-math",
+                        }
+                    )["ok"]
+                )
+        plain_comparison = convert("markdown", "Before $x<3$.\n")
+        self.assertTrue(plain_comparison["ok"], plain_comparison)
+        self.assertFalse(
+            convert(
+                "markdown", 'Before <span class="mbb-math" data-mbb-tex="x&lt;3">$x<3$</span>.\n'
+            )["ok"]
+        )
+        original = convert("markdown", "Before " + entity + ".\n")
+        edited_html = (
+            original["serialized"]
+            .replace('data-mbb-tex="x&gt;y"', 'data-mbb-tex="z&gt;0"')
+            .replace("$x&gt;y$", "$z&gt;0$")
+        )
+        edited = convert("blocks", edited_html)
+        self.assertTrue(edited["ok"], edited)
+        self.assertIn("$z>0$", edited["source"])
+        self.assertNotIn("$x>y$", edited["source"])
+        self.assertEqual(convert("markdown", edited["source"])["serialized"], edited_html)
+        for partial in [
+            original["serialized"].replace('data-mbb-tex="x&gt;y"', 'data-mbb-tex="z&gt;0"'),
+            original["serialized"].replace("$x&gt;y$", "$z&gt;0$"),
+        ]:
+            self.assertFalse(convert("blocks", partial)["ok"])
+        for child in [
+            "<strong>$x$</strong>",
+            "<code>$x$</code>",
+            '<span class="mbb-math" data-mbb-tex="x">$x$</span>',
+        ]:
+            self.assertFalse(
+                convert(
+                    "markdown",
+                    'Before <span class="mbb-math" data-mbb-tex="x">' + child + "</span>.\n",
+                )["ok"]
+            )
+        for tex, literal in [
+            ("&lt;strong&gt;x&lt;/strong&gt;", "$<strong>x</strong>$"),
+            ("&lt;script&gt;x&lt;/script&gt;", "$<script>x</script>$"),
+            ("&lt;img src=x onerror=alert(1)&gt;", "$<img src=x onerror=alert(1)>$"),
+            ("x&gt;y", "$x&amp;gt;y$"),
+            ("x&amp;gt;y", "$x&gt;y$"),
+        ]:
+            result = convert(
+                "markdown",
+                'Before <span class="mbb-math" data-mbb-tex="'
+                + tex
+                + '">'
+                + literal
+                + "</span>.\n",
+            )
+            self.assertFalse(result["ok"], result)
+        for tag in [
+            '<span class="mbb-math" data-mbb-tex="x" onclick="alert(1)">',
+            '<span class="wzf-exercise-hint" data-mbb-tex="x">',
+            '<span class="mbb-math" data-mbb-tex="x" data-mbb-tex="x">',
+        ]:
+            self.assertFalse(convert("markdown", "Before " + tag + "$x$</span>.\n")["ok"])
+        self.assertFalse(convert("markdown", "<b>" + entity + "</b>\n")["ok"])
+        code = convert("markdown", "`" + marker + "`\n")
+        self.assertTrue(code["ok"], code)
+        self.assertNotIn("<span ", code["serialized"])
+        # Existing PHP core/html reverse limitation: it reconstructs bare <3
+        # inside HTML text, which the strict HTML parser refuses on reimport.
+        # Node accepts this source; ordinary inline encoded math above works.
+        raw_html = convert(
+            "markdown",
+            '<p><span class="mbb-math" data-mbb-tex="x&lt;3">$x&lt;3$</span></p>\n',
+        )
+        self.assertFalse(raw_html["ok"], raw_html)
+        self.assertEqual(raw_html["code"], "HTML_PARSE")
+
     def test_terminal_inline_breaks_survive_real_reverse(self):
         for source in [
             "before $x$<br>\n",
