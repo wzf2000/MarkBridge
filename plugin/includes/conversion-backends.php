@@ -1,9 +1,16 @@
 <?php
-// Explicit backend selection. Node remains the default; there is no fallback.
+// Configuration chooses the backend; readiness never triggers a fallback.
 
 function mbb_converter_backend()
 {
-    return defined('MARKBRIDGE_CONVERTER_BACKEND') ? MARKBRIDGE_CONVERTER_BACKEND : 'node';
+    if (defined('MARKBRIDGE_CONVERTER_BACKEND')) {
+        return MARKBRIDGE_CONVERTER_BACKEND;
+    }
+    // Preserve the configured engine on upgrade. New installations need no runtime directory.
+    $configured = defined('MARKBRIDGE_RUNTIME')
+        ? MARKBRIDGE_RUNTIME
+        : get_option('mbb_runtime_path', '');
+    return is_string($configured) && trim($configured) !== '' ? 'node' : 'php';
 }
 
 function mbb_php_converter_diagnostics($smoke = false)
@@ -32,7 +39,8 @@ function mbb_php_converter_diagnostics($smoke = false)
     $manifest = json_decode(@file_get_contents(__DIR__ . '/../php-converter-manifest.json'), true);
     $manifestOk =
         is_array($manifest) &&
-        ($manifest['schema'] ?? null) === 1 &&
+        ($manifest['schema'] ?? null) === 2 &&
+        ($manifest['prefix'] ?? null) === 'MarkBridge\\Vendor\\ConverterV1' &&
         is_array($manifest['files'] ?? null) &&
         !empty($manifest['files']);
     $required = [
@@ -43,8 +51,13 @@ function mbb_php_converter_diagnostics($smoke = false)
         'DisplayBoundaries.php',
         'composer.json',
         'composer.lock',
-        'vendor/autoload.php',
-        'vendor/composer/installed.json',
+        'scoped/autoload.php',
+        'scoped/src/Converter.php',
+        'scoped/src/Worker.php',
+        'scoped/src/MathExtension.php',
+        'scoped/src/Footnotes.php',
+        'scoped/src/DisplayBoundaries.php',
+        'scoped/vendor/composer/installed.json',
     ];
     foreach ($required as $name) {
         $manifestOk = $manifestOk && isset($manifest['files']['includes/php-converter/' . $name]);
@@ -97,7 +110,7 @@ function mbb_php_converter_diagnostics($smoke = false)
     }
     $compatible = true;
     try {
-        $prefixes = array_keys(require $directory . '/vendor/composer/autoload_psr4.php');
+        $prefixes = ['MarkBridge\\Vendor\\ConverterV1\\'];
         foreach (
             array_merge(get_declared_classes(), get_declared_interfaces(), get_declared_traits())
             as $class
@@ -106,7 +119,7 @@ function mbb_php_converter_diagnostics($smoke = false)
                 $path = (new ReflectionClass($class))->getFileName();
                 if (
                     !is_string($path) ||
-                    dirname((string) realpath($path)) !== realpath($directory)
+                    dirname((string) realpath($path)) !== realpath($directory . '/scoped/src')
                 ) {
                     $compatible = false;
                 }
@@ -119,7 +132,7 @@ function mbb_php_converter_diagnostics($smoke = false)
                         !is_string($path) ||
                         !str_starts_with(
                             (string) realpath($path),
-                            realpath($directory . '/vendor') . DIRECTORY_SEPARATOR,
+                            realpath($directory . '/scoped/vendor') . DIRECTORY_SEPARATOR,
                         )
                     ) {
                         $compatible = false;
@@ -131,14 +144,15 @@ function mbb_php_converter_diagnostics($smoke = false)
         if ($compatible) {
             require_once $directory . '/Worker.php';
             $parser = (new ReflectionClass(
-                \League\CommonMark\Parser\MarkdownParser::class,
+                \MarkBridge\Vendor\ConverterV1\League\CommonMark\Parser\MarkdownParser::class,
             ))->getFileName();
             $worker = (new ReflectionClass(\MarkBridge\Probe\Worker::class))->getFileName();
             $compatible =
                 realpath($parser) ===
                     realpath(
-                        $directory . '/vendor/league/commonmark/src/Parser/MarkdownParser.php',
-                    ) && realpath($worker) === realpath($directory . '/Worker.php');
+                        $directory .
+                            '/scoped/vendor/league/commonmark/src/Parser/MarkdownParser.php',
+                    ) && realpath($worker) === realpath($directory . '/scoped/src/Worker.php');
         }
     } catch (Throwable $error) {
         $compatible = false;
@@ -148,7 +162,7 @@ function mbb_php_converter_diagnostics($smoke = false)
         '依赖加载',
         $compatible,
         $compatible
-            ? '已加载匹配的独立依赖目录。'
+            ? '已加载命名空间隔离后的依赖与独立加载表。'
             : 'PHP 依赖无法加载或存在同名依赖冲突；未改用 Node。',
     );
     if ($compatible && $smoke) {

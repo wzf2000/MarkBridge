@@ -1,6 +1,7 @@
 """Bounded synthetic resource probes, not a production throughput benchmark."""
 
 import json
+import os
 from pathlib import Path
 import subprocess
 import time
@@ -8,7 +9,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parent
 COMMAND = [
-    "php",
+    os.environ.get("MARKBRIDGE_TEST_PHP", "php"),
     "-d",
     "memory_limit=128M",
     "-d",

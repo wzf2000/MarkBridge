@@ -15,6 +15,9 @@ plugin/vendor/mathjax*/
 plugin/runtime-contract.json
 plugin/vendor-manifest.json
 plugin/includes/php-converter/vendor/
+plugin/includes/php-converter/scoped/
+tools/php-scoper/vendor/
+.php-build/
 plugin/php-converter-manifest.json
 test-results/
 playwright-report/

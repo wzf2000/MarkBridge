@@ -133,7 +133,7 @@ jobs:
         run: php tests/cli-source-sync.php
 
       - name: Run PHP worker document contract checks
-        run: python3 tests/test_php_backend.py
+        run: python3 -m unittest discover -s tests -p 'test_*backend*.py'
 
       - name: Check release sources and PHP syntax
         run: python3 scripts/check_release.py

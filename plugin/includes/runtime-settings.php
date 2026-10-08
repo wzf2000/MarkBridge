@@ -594,7 +594,7 @@ function mbb_runtime_settings_page()
         );
         echo '</form>';
     } else {
-        echo '<p>后端由 MARKBRIDGE_CONVERTER_BACKEND 常量显式选择；PHP 不需要 Node 私有目录，失败不会回退其他后端。</p>';
+        echo '<p>新安装默认使用内置 PHP；服务器可通过 MARKBRIDGE_CONVERTER_BACKEND 显式选择。PHP 不需要 Node 私有目录，失败不会回退其他后端。</p>';
     }
     echo '<h2>诊断</h2><table class="widefat striped"><tbody>';
     foreach ($diagnostics['checks'] as $check) {

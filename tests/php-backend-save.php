@@ -12,7 +12,7 @@ if (
 ) {
     throw new RuntimeException('An explicitly configured isolated WordPress is required.');
 }
-if (!defined('MARKBRIDGE_CONVERTER_BACKEND') || MARKBRIDGE_CONVERTER_BACKEND !== 'php') {
+if (!function_exists('mbb_converter_backend') || mbb_converter_backend() !== 'php') {
     throw new RuntimeException('This integration suite requires the PHP candidate backend.');
 }
 function portable_assert($ok, $message)

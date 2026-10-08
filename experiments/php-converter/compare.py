@@ -67,6 +67,8 @@ def main():
     tracked = (
         sorted(ROOT.glob("*.php"))
         + sorted(library.glob("*.php"))
+        + sorted((library / "src").glob("*.php"))
+        + [library.parent.parent / "php-converter-manifest.json"]
         + [library / "composer.lock", ROOT / "fixtures.json", ROOT / "paired-fixtures.json"]
     )
 

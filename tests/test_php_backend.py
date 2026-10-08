@@ -1,13 +1,14 @@
 """Worker document contract checks, with PHP process execution disabled."""
 
 import json
+import os
 from pathlib import Path
 import subprocess
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 PHP = [
-    "php",
+    os.environ.get("MARKBRIDGE_TEST_PHP", "php"),
     "-d",
     "disable_functions=exec,shell_exec,system,passthru,proc_open,popen,pcntl_exec",
     "-r",

@@ -10,6 +10,8 @@ const ignored = new Set([
   '.venv',
   'node_modules',
   'vendor',
+  'scoped',
+  '.php-build',
   'licenses',
   'dist',
   '.runtime',

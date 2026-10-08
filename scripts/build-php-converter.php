@@ -12,7 +12,7 @@ $lock = json_decode(
     JSON_THROW_ON_ERROR,
 );
 $installed = json_decode(
-    file_get_contents($directory . '/vendor/composer/installed.json'),
+    file_get_contents($directory . '/scoped/vendor/composer/installed.json'),
     true,
     512,
     JSON_THROW_ON_ERROR,
@@ -44,13 +44,13 @@ $licenses = [
     'symfony/polyfill-php80/LICENSE',
 ];
 foreach ($licenses as $license) {
-    if (!is_file($directory . '/vendor/' . $license)) {
+    if (!is_file($directory . '/scoped/vendor/' . $license)) {
         throw new RuntimeException('Missing PHP dependency license: ' . $license);
     }
 }
 $files = [];
 $iterator = new RecursiveIteratorIterator(
-    new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS),
+    new RecursiveDirectoryIterator($directory . '/scoped', FilesystemIterator::SKIP_DOTS),
 );
 foreach ($iterator as $file) {
     if ($file->isLink() || !$file->isFile()) {
@@ -60,7 +60,43 @@ foreach ($iterator as $file) {
     $files[$name] = hash_file('sha256', $file->getPathname());
 }
 ksort($files);
-$manifest = ['schema' => 1, 'files' => $files];
+$inputs = json_decode(
+    file_get_contents($directory . '/scoped/build-inputs.json'),
+    true,
+    512,
+    JSON_THROW_ON_ERROR,
+);
+if (!is_array($inputs) || count($inputs) !== 12) {
+    throw new RuntimeException('Missing PHP isolation input stamp; run npm run build:php');
+}
+foreach ($inputs as $name => $digest) {
+    if (!hash_equals($digest, hash_file('sha256', $root . '/' . $name))) {
+        throw new RuntimeException('Stale PHP isolation output; run npm run build:php');
+    }
+}
+foreach (
+    [
+        'Converter.php',
+        'Worker.php',
+        'MathExtension.php',
+        'Footnotes.php',
+        'DisplayBoundaries.php',
+        'composer.json',
+        'composer.lock',
+    ]
+    as $name
+) {
+    $files['includes/php-converter/' . $name] = hash_file('sha256', $directory . '/' . $name);
+}
+ksort($files);
+ksort($inputs);
+$manifest = [
+    'schema' => 2,
+    'prefix' => 'MarkBridge\\Vendor\\ConverterV1',
+    'scoper' => '0.18.19',
+    'files' => $files,
+    'build_inputs' => $inputs,
+];
 file_put_contents(
     $root . '/plugin/php-converter-manifest.json',
     json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n",
