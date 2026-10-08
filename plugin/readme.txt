@@ -3,7 +3,7 @@ Tags: markdown, blocks, editor, mathjax, revisions
 Requires at least: 7.1
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 1.2.0
+Stable tag: 1.3.0-rc.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -12,14 +12,17 @@ Markdown and WordPress blocks, saved and restored together.
 == Description ==
 MarkBridge provides paired Markdown/block editing, previews, revisions, local MathJax rendering and Markdown comments.
 
-This release requires Linux, Node.js 24 LTS, bubblewrap and a configured private conversion runtime. Uploading this ZIP alone does not complete installation. See the repository installation guide.
+New installations use the bundled PHP converter with PHP 8.2+, DOM and mbstring on WordPress 7.1.x. No Node.js runtime or subprocess is required for supported content. Existing non-empty runtime settings retain Node until an administrator explicitly switches; unsupported environments or content are rejected without fallback. This is a pre-release.
 
 == Installation ==
-1. Build a private, site-matched runtime using scripts/prepare_runtime.py from the source repository.
-2. Validate the private runtime in Settings, or define the overriding MARKBRIDGE_RUNTIME server constant.
-3. Upload the built plugin, enable MarkBridge and verify isolated drafts before adopting existing content.
+1. Confirm WordPress 7.1.x, PHP 8.2+, DOM and mbstring.
+2. Upload the Release plugin ZIP, activate MarkBridge and open Settings > MarkBridge to inspect diagnostics.
+3. Import a test Markdown draft, preview, save and reopen. Existing Node installations should review the upgrade guide before changing their backend.
 
 == Changelog ==
+= 1.3.0-rc.1 =
+Adds a bundled, namespaced PHP converter for new installations; retains configured Node on upgrade. Covers paired saves, historical snapshots, source writeback and explicit rejection without fallback. Pre-release validation and limits are documented.
+
 = 1.2.0 =
 Adds MathJax formula authoring, conservative inline dollar input, display-math shortcuts and explicit native math conversion. Fixes dynamic CHTML styles in the editor canvas. Rebuild the private conversion runtime when upgrading from 1.1.1.
 

@@ -66,6 +66,11 @@ class ReleaseGuards(unittest.TestCase):
         self.assertIn("https://github.com/owner/repository/blob/v1.2.0/docs/USAGE.md", notes)
         self.assertIn("CI 未运行完整 WordPress", notes)
         self.assertNotIn("Old change", notes)
+        self.assertIn("请配置匹配的私有转换运行环境", notes)
+        portable = release.release_notes("- PHP candidate", "1.3.0-rc.1", "owner/repository")
+        self.assertIn("新安装使用随 ZIP 附带的 PHP 转换依赖", portable)
+        self.assertIn("已有 Node 配置升级后保留原后端", portable)
+        self.assertNotIn("请配置匹配的私有转换运行环境", portable)
         for version, changelog in [
             ("1.2", text),
             ("1.1.0", text),
