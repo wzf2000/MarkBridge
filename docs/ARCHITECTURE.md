@@ -84,8 +84,8 @@ MathJax CHTML 会按已使用的结构和字形动态补充样式。渲染服务
 
 ## PHP 转换候选（未发行）
 
-默认转换后端仍为 Node。架构改进分支允许以服务器常量 `MARKBRIDGE_CONVERTER_BACKEND='php'` 显式选择 PHP；`mbb_convert()` 统一分派，原有权限、来源绑定、指纹、修订与事务层不变。后端错误不自动重试另一引擎。
+架构候选的新安装默认 PHP，已有非空 Node 目录配置保持 Node，依据配置选择而非转换失败后回退。可用服务器常量 `MARKBRIDGE_CONVERTER_BACKEND='php'` 显式选择 PHP；`mbb_convert()` 统一分派，原有权限、来源绑定、指纹、修订与事务层不变。后端错误不自动重试另一引擎。
 
-PHP 的单一实现位于 `plugin/includes/php-converter/`，Worker 适配 Markdown 导入、区块反转、精确配对恢复及批处理协议。未编辑的已验证历史配对保留原文和快照，编辑后的区块需真实反转再验证。依赖在构建阶段按 Composer 锁文件安装，随包携带；摘要和同名类冲突检查失败即拒绝转换。当前准入限定 PHP 8.2+、DOM/mbstring 和 WordPress 7.1 模板，仍有 256 KiB 文档边界及明确语法拒绝差异。
+PHP 的单一实现位于 `plugin/includes/php-converter/`，Worker 适配 Markdown 导入、区块反转、精确配对恢复及批处理协议。未编辑的已验证历史配对保留原文和快照，编辑后的区块需真实反转再验证。依赖在构建阶段按 Composer 锁文件安装并通过固定 PHP-Scoper 隔离命名空间，随包携带；不与其他插件共享 Composer 加载器。摘要或私有命名空间冲突检查失败即拒绝转换。当前准入限定 PHP 8.2+、DOM/mbstring 和 WordPress 7.1 模板，仍有 256 KiB 文档边界及明确语法拒绝差异。
 
 本地保存链验收已经通过；这不代表 PHP 已作为正式安装默认项。干净安装、依赖隔离、版本矩阵、编辑器与升级灰度见[架构计划](plans/active/PORTABLE-CONVERTER.md)。

@@ -883,14 +883,14 @@ function mbb_enqueue_ui()
     }
     wp_enqueue_script(
         'mbb-editor-ui',
-        set_url_scheme(plugins_url(mbb_asset('editor-ui.js'), __FILE__), 'https'),
+        plugins_url(mbb_asset('editor-ui.js'), __FILE__),
         ['wp-data', 'wp-blocks', 'wp-api-fetch', 'mbb-math'],
         substr(hash_file('sha256', __DIR__ . '/editor-ui.js'), 0, 12),
         true,
     );
     wp_enqueue_script(
         'mbb-revisions-ui',
-        set_url_scheme(plugins_url('revisions-ui.js', __FILE__), 'https'),
+        plugins_url('revisions-ui.js', __FILE__),
         ['mbb-editor-ui'],
         substr(hash_file('sha256', __DIR__ . '/revisions-ui.js'), 0, 12),
         true,

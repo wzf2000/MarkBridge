@@ -1,6 +1,6 @@
 # PHP 转换隔离实验
 
-这是“免额外运行环境”架构计划的实验与对照入口。转换实现现统一位于 `plugin/includes/php-converter/`，本目录 PHP 文件仅作兼容加载入口，样例和实验 CLI 不进入发行包。候选插件可通过服务器常量 `MARKBRIDGE_CONVERTER_BACKEND='php'` 显式启用；默认 Node、正式版本与生产配置不变。完整阶段见[架构改进计划](../../docs/plans/active/PORTABLE-CONVERTER.md)。
+这是“免额外运行环境”架构计划的实验与对照入口。转换实现现统一位于 `plugin/includes/php-converter/`，本目录 PHP 文件仅作兼容加载入口，样例和实验 CLI 不进入发行包。候选插件的新安装默认 PHP，已有非空 Node 运行目录配置保持 Node；服务器常量 `MARKBRIDGE_CONVERTER_BACKEND` 可显式覆盖。正式版本与生产配置不变。完整阶段见[架构改进计划](../../docs/plans/active/PORTABLE-CONVERTER.md)。
 
 ## 复现
 
@@ -112,4 +112,4 @@ PHP 拒绝而 Node 接受的 4 个源样例分别为脚注、表格、图片和�
 
 `tests/test_php_backend.py` 检查统一 Worker 的文档模型、真实编辑反转、历史配对、批处理和拒绝边界。`tests/native-rest-save.php` 与 `tests/php-backend-save.php` 需在显式 PHP 后端的隔离 WordPress 中通过 WP-CLI 执行；要求匹配 `MARKBRIDGE_TEST_HOME`、`MARKBRIDGE_TEST_WORDPRESS_ROOT` 及 local 环境，创建并清理合成夹具。测试包括双格式保存、角色权限、双端冲突、修订、失败回退及命令行同步，不应在生产运行。
 
-候选依赖按 Composer 锁文件安装并生成摘要清单。源码或依赖修改后须重新构建清单；缺依赖、摘要不符或其他插件已加载同名依赖类时拒绝启用。当前模板限 WordPress 7.1，支持范围扩展与干净安装验收留在下一阶段。
+候选依赖按 Composer 锁文件安装并生成摘要清单。源码或依赖修改后须重新构建清单；缺依赖或摘要不符时拒绝启用。第三方库以 PHP-Scoper 构建到私有命名空间，并使用独立类加载表；其他插件的公共依赖可以共存，冒占本插件私有命名空间仍拒绝。当前模板限 WordPress 7.1，支持范围扩展与干净安装验收见架构计划。
