@@ -40,5 +40,29 @@
     "source": "| code | text |\n| --- | --- |\n| `a\\|b` | ok |\n",
     "serialized": "<!-- wp:table -->\n<figure class=\"wp-block-table\"><table class=\"has-fixed-layout\"><thead><tr><th>code</th><th>text</th></tr></thead><tbody><tr><td><code>a|b</code></td><td>ok</td></tr></tbody></table></figure>\n<!-- /wp:table -->",
     "documentId": "probe-historical-noneditable-table"
+  },
+  {
+    "id": "json-math-terminal-backslash",
+    "source": "$$\nx\\\\\n$$\n",
+    "serialized": "<!-- wp:mbb/math {\"tex\":\"x\\u005c\\u005c\"} -->\n<pre class=\"wp-block-mbb-math\"><code class=\"mbb-tex\">x\\\\</code></pre>\n<!-- /wp:mbb/math -->",
+    "documentId": "probe-json-math-terminal-backslash"
+  },
+  {
+    "id": "json-task-terminal-backslash",
+    "source": "- [x] path C:\\\\\n",
+    "serialized": "<!-- wp:mbb/list -->\n<ul class=\"wp-block-mbb-list\"><!-- wp:mbb/task-item {\"content\":\"path C:\\u005c\",\"checked\":true} -->\n<li class=\"wp-block-mbb-task-item\"><p>[x] <span>path C:\\</span></p></li>\n<!-- /wp:mbb/task-item --></ul>\n<!-- /wp:mbb/list -->",
+    "documentId": "probe-json-task-terminal-backslash"
+  },
+  {
+    "id": "json-math-escaped-quote",
+    "source": "$$\n中文 \\\" -- < > &\n$$\n",
+    "serialized": "<!-- wp:mbb/math {\"tex\":\"中文 \\u005c\\u0022 \\u002d\\u002d \\u003c \\u003e \\u0026\"} -->\n<pre class=\"wp-block-mbb-math\"><code class=\"mbb-tex\">中文 \\\" -- &lt; > &amp;</code></pre>\n<!-- /wp:mbb/math -->",
+    "documentId": "probe-json-math-escaped-quote"
+  },
+  {
+    "id": "json-math-line-separators",
+    "source": "$$\n中文 B C\n$$\n",
+    "serialized": "<!-- wp:mbb/math {\"tex\":\"中文 B C\"} -->\n<pre class=\"wp-block-mbb-math\"><code class=\"mbb-tex\">中文 B C</code></pre>\n<!-- /wp:mbb/math -->",
+    "documentId": "probe-json-math-line-separators"
   }
 ]

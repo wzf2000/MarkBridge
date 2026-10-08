@@ -28,6 +28,49 @@ def request_php(request):
 
 
 class ProbeTests(unittest.TestCase):
+    def test_block_comment_json_preserves_slashes_quotes_and_unicode(self):
+        # Reflection exercises values at JSON string boundaries directly. The
+        # source fixtures separately exercise complete Markdown/block paths.
+        values = [
+            "\\",
+            "中文\\",
+            "x\\\\",
+            'x\\"',
+            "\\u4e2d",
+            '" -- < > &',
+            "中文\u2028B\u2029C",
+        ]
+        library = ROOT.parent.parent / "plugin/includes/php-converter/Converter.php"
+        code = (
+            "require $argv[1]; "
+            "$method=new ReflectionMethod(\\MarkBridge\\Probe\\Converter::class, 'commentJson'); "
+            "$out=[]; foreach(json_decode(stream_get_contents(STDIN),true) as $value) "
+            "$out[]=$method->invoke(null,['code'=>$value]); echo json_encode($out);"
+        )
+        process = subprocess.run(
+            [PHP[0], PHP[1], PHP[2], "-r", code, str(library)],
+            input=json.dumps(values),
+            text=True,
+            capture_output=True,
+            timeout=10,
+        )
+        self.assertEqual(process.returncode, 0, process.stderr)
+        for value, actual in zip(values, json.loads(process.stdout)):
+            with self.subTest(value=value):
+                expected = json.dumps({"code": value}, ensure_ascii=False, separators=(",", ":"))
+                # WordPress 7.1 serializeAttributes replacement order.
+                for before, after in [
+                    ("\\\\", "\\u005c"),
+                    ("--", "\\u002d\\u002d"),
+                    ("<", "\\u003c"),
+                    (">", "\\u003e"),
+                    ("&", "\\u0026"),
+                    ('\\"', "\\u0022"),
+                ]:
+                    expected = expected.replace(before, after)
+                self.assertEqual(actual, expected)
+                self.assertEqual(json.loads(actual), {"code": value})
+
     def test_actual_block_edit_is_exported(self):
         original = convert("markdown", "# Title\n\nOriginal **bold**.\n")
         self.assertTrue(original["ok"], original)

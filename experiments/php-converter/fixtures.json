@@ -625,5 +625,33 @@
     "source": "[`[^fake]`](https://example.com) real[^a].\n\n[^a]: Note.\n",
     "expected_php": true,
     "expected_node": true
+  },
+  {
+    "id": "json-math-terminal-backslash",
+    "category": "区块JSON转义",
+    "source": "$$\nx\\\\\n$$\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "json-task-terminal-backslash",
+    "category": "区块JSON转义",
+    "source": "- [x] path C:\\\\\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "json-math-escaped-quote",
+    "category": "区块JSON转义",
+    "source": "$$\n中文 \\\" -- < > &\n$$\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "json-math-line-separators",
+    "category": "区块JSON转义",
+    "source": "$$\n中文 B C\n$$\n",
+    "expected_php": true,
+    "expected_node": true
   }
 ]

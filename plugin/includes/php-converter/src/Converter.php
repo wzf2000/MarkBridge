@@ -782,11 +782,17 @@ final class Converter
     {
         $json = json_encode(
             $attrs,
-            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR,
+            JSON_UNESCAPED_UNICODE |
+                JSON_UNESCAPED_SLASHES |
+                JSON_UNESCAPED_LINE_TERMINATORS |
+                JSON_THROW_ON_ERROR,
         );
+        // Match WordPress serializeAttributes: first protect literal backslashes.
+        // Otherwise the final slash of an escaped backslash consumes the JSON
+        // string's closing quote when the escaped-quote replacement runs first.
         return str_replace(
-            ['--', '<', '>', '&', '\\"', '\\\\'],
-            ['\\u002d\\u002d', '\\u003c', '\\u003e', '\\u0026', '\\u0022', '\\u005c'],
+            ['\\\\', '--', '<', '>', '&', '\\"'],
+            ['\\u005c', '\\u002d\\u002d', '\\u003c', '\\u003e', '\\u0026', '\\u0022'],
             $json,
         );
     }
