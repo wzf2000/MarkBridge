@@ -10,6 +10,8 @@ const ignored = new Set([
   '.venv',
   'node_modules',
   'vendor',
+  'scoped',
+  '.php-build',
   'licenses',
   'dist',
   '.runtime',
@@ -25,7 +27,7 @@ function files(dir) {
     if (entry.isDirectory()) return files(file);
     const relative = path.relative(root, file).replaceAll(path.sep, '/');
     if (
-      /^plugin\/(kernel\.js|emoji\.js|assets\.json|runtime-contract\.json|vendor-manifest\.json|.*-[a-f0-9]{12}\.)/.test(
+      /^plugin\/(kernel\.js|emoji\.js|assets\.json|runtime-contract\.json|vendor-manifest\.json|php-converter-manifest\.json|.*-[a-f0-9]{12}\.)/.test(
         relative,
       )
     )

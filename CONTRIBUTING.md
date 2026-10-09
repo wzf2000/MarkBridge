@@ -16,12 +16,16 @@
 所有语言目标 100 列。长 URL、不可拆分正则或语义敏感字符串可以超过该目标；这不是逐行硬截断。Prettier PHP 参考 PER/PSR，但不宣称完全符合 PER-CS。第三方源码、许可证和生成的资源不格式化。
 
 ```sh
+npm ci
+npm run build:php
 npm run format
 npm run format:check
 npm run build
 npm run check
 MARKBRIDGE_TEST_RUNTIME=/srv/markbridge-runtime-v1 npm test
 ```
+
+当前架构候选的 PHP 依赖与隔离构建需要 Composer；`build:php` 按两份锁文件安装运行库与构建工具，并用固定 PHP-Scoper 生成私有命名空间。运行包携带生成物，安装者不运行 Composer。修改 `plugin/includes/php-converter/src/` 或构建配置后必须重跑 `build:php`；普通 `build` 会拒绝过期隔离产物。原始 vendor、src 和构建工具不进入安装 ZIP。
 
 Black 默认位于 `.venv`；可用 `MARKBRIDGE_PYTHON` 指定另一个已安装 Black 的 Python。运行环境准备见安装指南。
 

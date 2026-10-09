@@ -44,6 +44,15 @@ require $root . '/wp-includes/class-wp-block-parser-block.php';
 require $root . '/wp-includes/class-wp-block-parser-frame.php';
 require $root . '/wp-includes/class-wp-block-parser.php';
 require __DIR__ . '/../plugin/editor-bridge.php';
+function mbb_display_preferences()
+{
+    return [
+        'source_font_size' => 14,
+        'math_reader' => true,
+        'code_line_numbers' => true,
+        'code_copy' => true,
+    ];
+}
 require __DIR__ . '/../plugin/presentation.php';
 $fixtures = json_decode(stream_get_contents(STDIN), true, 512, JSON_THROW_ON_ERROR);
 foreach ($fixtures as $markup) {

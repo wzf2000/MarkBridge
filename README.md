@@ -4,7 +4,7 @@
   <a href="LICENSE"><img alt="License: GPL-3.0-or-later" src="https://img.shields.io/badge/license-GPL--3.0--or--later-818cf8"></a>
   <img alt="WordPress 7.1" src="https://img.shields.io/badge/WordPress-7.1-21759b">
   <img alt="PHP 8.2+" src="https://img.shields.io/badge/PHP-8.2%2B-777bb4">
-  <img alt="Stable release" src="https://img.shields.io/badge/status-stable-22c55e">
+  <img alt="Pre-release" src="https://img.shields.io/badge/status-pre--release-f59e0b">
 </p>
 
 <p align="center"><strong>用 Markdown 写作，用区块调整。保存时，让两种格式保持一致。</strong></p>
@@ -36,7 +36,7 @@ flowchart LR
 
 ## 开始使用
 
-**本源码版本为 `1.2.0`，面向能管理服务器的 WordPress 站点。** 它需要一个私有 Node.js 转换运行环境和 Linux 沙箱，不能只上传 ZIP 就完成配置。当前未提交 WordPress.org 插件目录。
+**本源码候选版本为 `1.3.0-rc.4`。** 新安装在 WordPress 7.1.x、PHP 8.2+ 且具备 DOM／mbstring 扩展时使用包内 PHP 转换器，基础编辑不要求额外 Node 运行环境。已有 Node 配置升级后继续使用 Node，须显式选择才切换。当前为预发布候选，尚未提交 WordPress.org 插件目录。
 
 管理员先按照[安装与升级](docs/INSTALL.md)完成配置。已经能使用插件的作者，可按带截图的[快速开始](docs/GETTING-STARTED.md)完成第一篇文章：
 
@@ -96,7 +96,7 @@ npm run package
 
 Node.js 使用 **24 LTS（24.15.0+）**。格式规范、运行测试和目录说明见 [CONTRIBUTING.md](CONTRIBUTING.md)。PHP 使用 4 空格与 PER-CS 式括号；JS/CSS/JSON 使用 2 空格；目标 100 列。
 
-构建得到 `dist/markbridge-1.2.0.zip`。仓库保留可读源码，构建产物与第三方文件不参与手工格式化。完整运行测试需要按[服务器配置](docs/RUNTIME.md)准备与目标 WordPress 匹配的私有运行环境。
+构建得到 `dist/markbridge-1.3.0-rc.4.zip`。仓库保留可读源码，构建产物与第三方文件不参与手工格式化。PHP 合成测试不需要 Node 转换环境；Node 对照及真实核心编辑器测试仍需匹配的隔离运行环境，见[服务器配置](docs/RUNTIME.md)。
 
 ## 许可证与致谢
 

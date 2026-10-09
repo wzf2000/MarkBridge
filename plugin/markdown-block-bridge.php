@@ -1,7 +1,10 @@
 <?php
 /**
  * Plugin Name: MarkBridge
- * Version: 1.2.0
+ * Plugin URI: https://github.com/wzf2000/MarkBridge
+ * Author: wzf2000
+ * Author URI: https://github.com/wzf2000
+ * Version: 1.3.0-rc.4
  * License: GPL-3.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  * Requires at least: 7.1
@@ -13,6 +16,7 @@ if (!defined('ABSPATH')) {
     exit();
 }
 require_once __DIR__ . '/includes/runtime-settings.php';
+require_once __DIR__ . '/includes/admin-settings.php';
 
 function mbb_is_lab()
 {
@@ -29,12 +33,16 @@ function mbb_asset($file)
 add_action('init', function () {
     wp_register_script(
         'mbb-math',
-        set_url_scheme(plugins_url(mbb_asset('math.js'), __FILE__), 'https'),
+        plugins_url(mbb_asset('math.js'), __FILE__),
         [],
         substr(hash_file('sha256', __DIR__ . '/math.js'), 0, 12),
         true,
     );
-    wp_localize_script('mbb-math', 'MBB_MATH_CONFIG', ['front' => !is_admin()]);
+    wp_add_inline_script(
+        'mbb-math',
+        'window.MBB_MATH_CONFIG = ' . mbb_math_configuration() . ';',
+        'before',
+    );
 });
 add_action('wp_enqueue_scripts', function () {
     if (

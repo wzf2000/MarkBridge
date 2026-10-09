@@ -1,0 +1,1014 @@
+[
+  {
+    "id": "basic",
+    "category": "基础格式",
+    "source": "# Heading\n\n中文 **bold** and *emphasis*.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "cjk-emphasis",
+    "category": "中文标点",
+    "source": "所以**不存在一般性的“词表越大，模型越省算力”**这一结论。\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "code",
+    "category": "代码字面量",
+    "source": "```python\nprint(\"$literal$\", \"[^note]\", \"[x]\")\n```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "quote",
+    "category": "引用",
+    "source": "> Quoted **text**.\n>\n> Another paragraph.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "list",
+    "category": "普通列表",
+    "source": "- one\n- two\n\n3. third\n4. fourth\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "link",
+    "category": "链接",
+    "source": "A [reference](https://example.com/path \"Title\") and `code`.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "inline-math",
+    "category": "行内公式",
+    "source": "Before $a^2 + b^2 = c^2$ after.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "quoted-math",
+    "category": "引用行间公式",
+    "source": "> $$\n> \\operatorname{KL}(P\\|Q) = \\sum_x p(x) \\log \\frac{p(x)}{q(x)}\n> $$\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "tasks",
+    "category": "任务列表",
+    "source": "- [x] done\n- [ ] pending\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "footnotes",
+    "category": "命名脚注",
+    "source": "Text[^note], again[^note].\n\n[^note]: Explanation **here**.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "nested-tasks",
+    "category": "嵌套任务",
+    "source": "- [ ] outer\n  - [x] inner\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "table",
+    "category": "表格",
+    "source": "| left | right |\n| :--- | ---: |\n| text | `code` |\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "image",
+    "category": "图片",
+    "source": "![alt](https://example.com/image.png \"Caption\")\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html",
+    "category": "HTML策略",
+    "source": "<script>alert(1)</script>\n",
+    "expected_php": false,
+    "expected_node": false
+  },
+  {
+    "id": "unsafe-link",
+    "category": "危险链接",
+    "source": "[bad](javascript:alert%281%29)\n",
+    "expected_php": false,
+    "expected_node": true,
+    "policy_difference": "PHP rejects unsafe URL rather than retaining it as literal text."
+  },
+  {
+    "id": "duplicate-footnote",
+    "category": "重复脚注",
+    "source": "Text[^n].\n\n[^n]: one\n\n[^n]: two\n",
+    "expected_php": false,
+    "expected_node": false
+  },
+  {
+    "id": "orphan-footnote",
+    "category": "未定义脚注",
+    "source": "Text[^missing].\n",
+    "expected_php": false,
+    "expected_node": false
+  },
+  {
+    "id": "escaped-task",
+    "category": "转义任务标记",
+    "source": "- \\[x] literal\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "entity-task",
+    "category": "实体任务标记",
+    "source": "- &#91;x&#93; literal\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "task-continuation",
+    "category": "换行任务内容",
+    "source": "- [x]\n  done\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "soft-line-break",
+    "category": "正文软换行",
+    "source": "First line\nSecond line\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "hard-line-break",
+    "category": "正文硬换行",
+    "source": "First line  \nSecond line\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "image-inline",
+    "category": "image",
+    "source": "Inline ![alt](https://example.com/a.png \"Title\") and text.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "image-reference",
+    "category": "image",
+    "source": "![diagram][img]\n\n[img]: https://example.com/a.png \"Diagram\"\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "image-escaped",
+    "category": "image",
+    "source": "![a \\] and **bold**](https://example.com/a.png)\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "table-inline",
+    "category": "table",
+    "source": "| Math | Style |\n| :---: | --- |\n| $x^2$ | **bold** and ~~gone~~ |\n| `x` | [link](https://example.com) |\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "table-escaped",
+    "category": "table",
+    "source": "| a | b |\n| --- | --- |\n| a\\|b | c |\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "footnote-order",
+    "category": "footnote",
+    "source": "First[^b], again[^b], second[^a].\n\n[^a]: Defined first.\n\n[^b]: Referenced first.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "footnote-adjacent",
+    "category": "footnote",
+    "source": "Adjacent[^a][^a] markers.\n\n[^a]: Shared note.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "footnote-multiple-paragraphs",
+    "category": "footnote",
+    "source": "A note[^long].\n\n[^long]: First **paragraph** and *emphasis*.\n\n    Second paragraph with [a link](https://example.com).\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "footnote-math",
+    "category": "footnote",
+    "source": "Math[^math].\n\n[^math]: Inline $x^2$ and `[^literal]`.\n\n    $$\n    x+y=z\n    $$\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "footnote-code",
+    "category": "footnote",
+    "source": "Source[^code].\n\n[^code]: Code follows.\n\n    ```js\n    const marker = \"[^not-a-note]\";\n    ```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "footnote-tasks",
+    "category": "footnote",
+    "source": "Checklist[^tasks].\n\n[^tasks]: Tasks\n\n    - [ ] one\n    - [x] two\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "footnote-quote",
+    "category": "footnote",
+    "source": "> Quoted ref[^q].\n\n[^q]: A quote.\n\n    > Nested body quote\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "footnote-table",
+    "category": "footnote",
+    "source": "# Heading[^h]\n\n| column | value |\n| --- | --- |\n| a | ref[^h] |\n\n[^h]: Heading and table note.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "footnote-unicode",
+    "category": "footnote",
+    "source": "中文[^说明] 和引用[^説明].\n\n[^说明]: 中文说明。\n\n[^説明]: 別の説明。\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "footnote-escaped",
+    "category": "footnote",
+    "source": "Escaped \\[^literal].\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "footnote-unused",
+    "category": "footnote",
+    "source": "No reference.\n\n[^unused]: Must not disappear.\n",
+    "expected_php": false,
+    "expected_node": false
+  },
+  {
+    "id": "footnote-nested",
+    "category": "footnote",
+    "source": "Text[^a].\n\n[^a]: Nested[^b].\n\n[^b]: Nested definition.\n",
+    "expected_php": false,
+    "expected_node": false
+  },
+  {
+    "id": "footnote-link",
+    "category": "footnote",
+    "source": "[Text[^a]](https://example.com)\n\n[^a]: Link note.\n",
+    "expected_php": false,
+    "expected_node": false
+  },
+  {
+    "id": "footnote-reference-link",
+    "category": "footnote",
+    "source": "[Text[^a]][link]\n\n[link]: https://example.com\n\n[^a]: Link note.\n",
+    "expected_php": false,
+    "expected_node": false
+  },
+  {
+    "id": "footnote-image",
+    "category": "footnote",
+    "source": "![Text[^a]](https://example.com/a.png)\n\n[^a]: Image note.\n",
+    "expected_php": false,
+    "expected_node": false
+  },
+  {
+    "id": "footnote-anonymous",
+    "category": "footnote",
+    "source": "Inline anonymous ^[unsupported note].\n",
+    "expected_php": false,
+    "expected_node": false
+  },
+  {
+    "id": "footnote-invalid-label",
+    "category": "footnote",
+    "source": "Text[^bad.name].\n\n[^bad.name]: Invalid label.\n",
+    "expected_php": false,
+    "expected_node": false
+  },
+  {
+    "id": "strike",
+    "category": "strike",
+    "source": "~~deleted~~ and **strong** *em*.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "more",
+    "category": "more",
+    "source": "Before\n\n<!--more-->\n\nAfter\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html-block",
+    "category": "html",
+    "source": "<p style=\"text-align:center;color:#abc;\">Styled <strong>text</strong>.</p>\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html-inline",
+    "category": "html",
+    "source": "Text <span style=\"color:red\">colored</span> and <del>old</del>.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html-anchor",
+    "category": "html",
+    "source": "<a id=\"section\"></a>\n\nContent.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html-code",
+    "category": "html",
+    "source": "<pre>[^literal]: definition</pre>\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "cpp-literal",
+    "category": "cpp",
+    "source": "Use <vector> and <int>.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html-event",
+    "category": "html",
+    "source": "<img src=\"https://example.com/a.png\" onerror=\"alert(1)\">\n",
+    "expected_php": false,
+    "expected_node": false
+  },
+  {
+    "id": "html-style-unsafe",
+    "category": "html",
+    "source": "<p style=\"position:absolute\">Text</p>\n",
+    "expected_php": false,
+    "expected_node": false
+  },
+  {
+    "id": "html-document",
+    "category": "html",
+    "source": "<!doctype html><html><body>Text</body></html>\n",
+    "expected_php": false,
+    "expected_node": false
+  },
+  {
+    "id": "list-complex",
+    "category": "list",
+    "source": "- first\n\n  another paragraph\n- second\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "list-task-complex",
+    "category": "list",
+    "source": "- [x] done\n\n  Extra paragraph.\n\n  > quoted\n\n- [ ] pending\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "list-ordered-task",
+    "category": "list",
+    "source": "3. [x] third\n4. [ ] fourth\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "math-nested-quote",
+    "category": "math",
+    "source": "> Outer\n>\n> > $$\n> > x > y\n> > $$\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "math-in-list",
+    "category": "math",
+    "source": "- Item\n\n  > $$\n  > a+b\n  > $$\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "math-legacy-display",
+    "category": "math",
+    "source": "\\[\nx+y=z\n\\]\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "math-escaped",
+    "category": "math",
+    "source": "Escaped \\$x\\$ and `$not-math$`.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "code-quoted",
+    "category": "code",
+    "source": "> ```text\n> $$\n> literal\n> $$\n> ```\n\n> `$$` is code.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "separator",
+    "category": "separator",
+    "source": "Before\n\n---\n\nAfter\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "heading-setext",
+    "category": "heading",
+    "source": "Heading\n=======\n\nSubheading\n----------\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "footnote-no-space",
+    "category": "边界",
+    "source": "Text[^n].\n\n[^n]:Note.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "single-tilde",
+    "category": "边界",
+    "source": "~literal~\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "same-line-display",
+    "category": "边界",
+    "source": "Before $$x+y$$ after.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "table-code-pipe",
+    "category": "边界",
+    "source": "| code | text |\n| --- | --- |\n| `a\\|b` | ok |\n",
+    "expected_php": false,
+    "expected_node": false
+  },
+  {
+    "id": "image-math-alt",
+    "category": "边界",
+    "source": "![$x$](https://example.com/a.png)\n",
+    "expected_php": false,
+    "expected_node": true,
+    "policy_difference": "PHP rejects a math-only alt that the existing renderer drops; do not reproduce loss."
+  },
+  {
+    "id": "empty-list-item",
+    "category": "边界",
+    "source": "-\n- text\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "zero-start-list",
+    "category": "边界",
+    "source": "0. zero\n1. one\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html-literal-footnote",
+    "category": "HTML边界",
+    "source": "<p>[^missing]</p>\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html-table",
+    "category": "HTML边界",
+    "source": "<table><tr><td>cell</td></tr></table>\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html-duplicate-attribute",
+    "category": "HTML边界",
+    "source": "<p style=\"color:red\" style=\"color:blue\">Text</p>\n",
+    "expected_php": false,
+    "expected_node": true,
+    "policy_difference": "PHP rejects duplicate HTML attributes rather than allowing DOM repair to hide one."
+  },
+  {
+    "id": "footnote-zero",
+    "category": "契约边界",
+    "source": "Text[^0].\n\n[^0]: Zero.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "footnote-case",
+    "category": "契约边界",
+    "source": "Text[^A] and [^a].\n\n[^a]: lower.\n\n[^A]: upper.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "footnote-label64",
+    "category": "契约边界",
+    "source": "Text[^aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa].\n\n[^aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa]: note.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "footnote-label65",
+    "category": "契约边界",
+    "source": "Text[^aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa].\n\n[^aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa]: note.\n",
+    "expected_php": false,
+    "expected_node": false
+  },
+  {
+    "id": "table-empty",
+    "category": "契约边界",
+    "source": "| a | b |\n| --- | --- |\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html-inline-anchor",
+    "category": "契约边界",
+    "source": "Text <a id=\"anchor\"></a> after.\n",
+    "expected_php": false,
+    "expected_node": false
+  },
+  {
+    "id": "html-sized-image",
+    "category": "契约边界",
+    "source": "Text <img src=\"https://example.com/a.png\" width=\"100\" height=\"50\" alt=\"a\"> after.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "literal-entity",
+    "category": "审查回归",
+    "source": "Literal &amp;copy;.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "link-literal-entity",
+    "category": "审查回归",
+    "source": "[literal &amp;copy;](https://example.com/)\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "image-literal-entity",
+    "category": "审查回归",
+    "source": "![literal &amp;copy;](https://example.com/a.png)\n",
+    "expected_php": false,
+    "expected_node": true,
+    "policy_difference": "PHP rejects image alt entity text that the existing renderer decodes a second time; do not reproduce loss."
+  },
+  {
+    "id": "html-math-code",
+    "category": "审查回归",
+    "source": "<p>$x$ <code>$literal$</code></p>\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "image-footnote-code",
+    "category": "审查回归",
+    "source": "![Text `[^n]`](https://example.com/a.png)\n",
+    "expected_php": false,
+    "expected_node": false
+  },
+  {
+    "id": "image-footnote-entity",
+    "category": "审查回归",
+    "source": "![Text &#91;^n&#93;](https://example.com/a.png)\n",
+    "expected_php": false,
+    "expected_node": false
+  },
+  {
+    "id": "link-html-code-footnote",
+    "category": "审查回归",
+    "source": "[<code>[^fake]</code>](https://example.com) real[^a].\n\n[^a]: Note.\n",
+    "expected_php": false,
+    "expected_node": false
+  },
+  {
+    "id": "link-markdown-code-literal",
+    "category": "审查回归",
+    "source": "[`[^fake]`](https://example.com) real[^a].\n\n[^a]: Note.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "json-math-terminal-backslash",
+    "category": "区块JSON转义",
+    "source": "$$\nx\\\\\n$$\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "json-task-terminal-backslash",
+    "category": "区块JSON转义",
+    "source": "- [x] path C:\\\\\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "json-math-escaped-quote",
+    "category": "区块JSON转义",
+    "source": "$$\n中文 \\\" -- < > &\n$$\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "json-math-line-separators",
+    "category": "区块JSON转义",
+    "source": "$$\n中文 B C\n$$\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html-escaping-plain",
+    "category": "上下文HTML转义",
+    "source": "Plain \"word\" 'single' > & < 3.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html-escaping-inline-math-gt",
+    "category": "上下文HTML转义",
+    "source": "Compare $x>y$.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html-escaping-inline-math-quote",
+    "category": "上下文HTML转义",
+    "source": "Text $\\text{\"word\"}$.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html-escaping-inline-code",
+    "category": "上下文HTML转义",
+    "source": "`\"double\" 'single' > & <`\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html-escaping-fenced-code",
+    "category": "上下文HTML转义",
+    "source": "```text\n\"double\" 'single' > & <\n```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html-escaping-display-math",
+    "category": "上下文HTML转义",
+    "source": "$$\n\\text{\"word\"} > 0\n$$\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html-escaping-table",
+    "category": "上下文HTML转义",
+    "source": "| quoted | math |\n| --- | --- |\n| \"double\" 'single' > | $x>y$ |\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html-escaping-table-code",
+    "category": "上下文HTML转义",
+    "source": "| code | math |\n| --- | --- |\n| `\"double\" 'single' > & <` | $\\text{\"word\"}$ |\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html-escaping-task",
+    "category": "上下文HTML转义",
+    "source": "- [x] \"double\" 'single' > & < 3\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html-escaping-image",
+    "category": "上下文HTML转义",
+    "source": "![\"word\" > 'single'](https://example.com/a.png)\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html-escaping-html-math",
+    "category": "上下文HTML转义",
+    "source": "<p>Compare $x>y$ and $\\text{\"word\"}$.</p>\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "html-escaping-task-math",
+    "category": "上下文HTML转义",
+    "source": "- [x] Compare $x>y$ and $\\text{\"word\"}$.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-amp-0",
+    "category": "合成历史兼容",
+    "source": "```text\na & b\n```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-amp-1",
+    "category": "合成历史兼容",
+    "source": "```text\n&&\n```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-amp-2",
+    "category": "合成历史兼容",
+    "source": "```text\n&name\n```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-amp-3",
+    "category": "合成历史兼容",
+    "source": "```text\n&amp;\n```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-amp-4",
+    "category": "合成历史兼容",
+    "source": "```text\n&copy;\n```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-amp-5",
+    "category": "合成历史兼容",
+    "source": "```text\n&#x3C;\n```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-amp-6",
+    "category": "合成历史兼容",
+    "source": "```text\n&unknown;\n```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-amp-7",
+    "category": "合成历史兼容",
+    "source": "```text\n&AMP;\n```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-footnote-space-definition",
+    "category": "合成历史兼容",
+    "source": "[^a b]: Note.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-footnote-space-link-definition",
+    "category": "合成历史兼容",
+    "source": "[^a b]: https://example.com\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-footnote-space-literal",
+    "category": "合成历史兼容",
+    "source": "Literal [^a b].\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-footnote-tab-definition",
+    "category": "合成历史兼容",
+    "source": "[^a\tb]: Note.\n",
+    "expected_php": false,
+    "expected_node": false
+  },
+  {
+    "id": "compat-html-code-gt-math",
+    "category": "合成历史兼容",
+    "source": "<p><code>$x>y$</code> $z>0$</p>\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-html-title-entity-math",
+    "category": "合成历史兼容",
+    "source": "<p><a href=\"https://example.com\" title=\"quote &quot; ok\">Link</a> $x>y$</p>\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-display-math-amp-entity",
+    "category": "合成历史兼容",
+    "source": "$$\nx &amp; y\n$$\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-1",
+    "category": "代码空白行/容器边界",
+    "source": "- item\n  ```text\n  before\n    \n  after\n  ```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-2",
+    "category": "代码空白行/容器边界",
+    "source": "- item\n  ```text\n  before\n        \n  after\n  ```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-3",
+    "category": "代码空白行/容器边界",
+    "source": "- item\n  ```text\n  before\n            \n  after\n  ```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-4",
+    "category": "代码空白行/容器边界",
+    "source": "- item\n  ```text\n  before\n\t\n  after\n  ```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-5",
+    "category": "代码空白行/容器边界",
+    "source": "- item\n  ```text\n  before\n  \t\n  after\n  ```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-6",
+    "category": "代码空白行/容器边界",
+    "source": "- item\n\n      before\n        \n      after\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-7",
+    "category": "代码空白行/容器边界",
+    "source": "- item\n\n      before\n            \n      after\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-8",
+    "category": "代码空白行/容器边界",
+    "source": "- item\n  - item\n    - item\n      ```text\n      before\n        \n      after\n      ```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-9",
+    "category": "代码空白行/容器边界",
+    "source": "- item\n  - item\n    - item\n      ```text\n      before\n            \n      after\n      ```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-10",
+    "category": "代码空白行/容器边界",
+    "source": "- item\n  - item\n    - item\n\n          before\n            \n          after\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-11",
+    "category": "代码空白行/容器边界",
+    "source": "> - ```text\n>   before\n  >      \n>   after\n>   ```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-12",
+    "category": "代码空白行/容器边界",
+    "source": "> - ```text\n>   before\n>\t\t \n>   after\n>   ```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-13",
+    "category": "代码空白行/容器边界",
+    "source": "- item\n  > ```text\n  > before\n  >     \n  > after\n  > ```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-14",
+    "category": "代码空白行/容器边界",
+    "source": "12. item\n    - item\n      ```text\n      before\n          \n      after\n      ```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-15",
+    "category": "代码空白行/容器边界",
+    "source": "- item\n  ```text\n  before\n\n  after\n  ```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-16",
+    "category": "代码空白行/容器边界",
+    "source": "> - ```text\n>   before\n\nAfter quote.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-17",
+    "category": "代码空白行/容器边界",
+    "source": "- item\n  ```text\n  before\n      \n  ```\n\nAfter list.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-18",
+    "category": "代码空白行/容器边界",
+    "source": "- item\n\n      before\n        \n      after\n\nAfter list.\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-code-blank-19",
+    "category": "代码空白行/容器边界",
+    "source": "- first\n    \n- second\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-final-partial-tab",
+    "category": "代码Tab/段尾换行",
+    "source": "- item\n  > ```text\n  > before\n \t>\t\t\n  > after\n  > ```\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-final-tail-break-0",
+    "category": "代码Tab/段尾换行",
+    "source": "before $x$<br>\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-final-tail-break-1",
+    "category": "代码Tab/段尾换行",
+    "source": "before $x$<br><br>\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-final-tail-break-3",
+    "category": "代码Tab/段尾换行",
+    "source": "**before $x$<br>**\n",
+    "expected_php": true,
+    "expected_node": true
+  },
+  {
+    "id": "compat-final-tail-break-4",
+    "category": "代码Tab/段尾换行",
+    "source": "before $x$<br>after\n",
+    "expected_php": true,
+    "expected_node": true
+  }
+]

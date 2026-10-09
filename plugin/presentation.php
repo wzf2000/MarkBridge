@@ -6,6 +6,7 @@ if (!defined('ABSPATH')) {
 add_action(
     'wp_enqueue_scripts',
     function () {
+        $preferences = mbb_display_preferences();
         $base = plugins_url('vendor/', __FILE__);
         wp_enqueue_style(
             'prism-theme-style',
@@ -29,6 +30,12 @@ add_action(
             ['toolbar', 'line-numbers', 'show-language', 'copy-to-clipboard', 'autoloader']
             as $part
         ) {
+            if (
+                ($part === 'line-numbers' && !$preferences['code_line_numbers']) ||
+                ($part === 'copy-to-clipboard' && !$preferences['code_copy'])
+            ) {
+                continue;
+            }
             $deps = ['prism-core-js'];
             if (in_array($part, ['show-language', 'copy-to-clipboard'])) {
                 $deps[] = 'prism-plugin-toolbar';
@@ -52,18 +59,22 @@ add_action(
                 );
             }
         }
-        wp_add_inline_style(
-            'prism-plugin-line-numbers',
-            '.mbb-reading .mbb-document pre.wp-block-mbb-code.line-numbers{padding-left:5em!important}' .
-                'pre.wp-block-mbb-code.line-numbers>code{display:block;font-size:inherit;line-height:inherit}',
-        );
-        wp_enqueue_script(
-            'copy-clipboard',
-            $base . 'clipboard/clipboard.min.js',
-            [],
-            '2.0.1',
-            true,
-        );
+        if ($preferences['code_line_numbers']) {
+            wp_add_inline_style(
+                'prism-plugin-line-numbers',
+                '.mbb-reading .mbb-document pre.wp-block-mbb-code.line-numbers{padding-left:5em!important}' .
+                    'pre.wp-block-mbb-code.line-numbers>code{display:block;font-size:inherit;line-height:inherit}',
+            );
+        }
+        if ($preferences['code_copy']) {
+            wp_enqueue_script(
+                'copy-clipboard',
+                $base . 'clipboard/clipboard.min.js',
+                [],
+                '2.0.1',
+                true,
+            );
+        }
         wp_add_inline_script(
             'prism-plugin-autoloader',
             'Prism.plugins.autoloader.languages_path=' .
@@ -83,7 +94,9 @@ add_action(
     9,
 );
 add_filter('body_class', static function ($classes) {
-    $classes[] = 'line-numbers';
+    if (mbb_display_preferences()['code_line_numbers']) {
+        $classes[] = 'line-numbers';
+    }
     return $classes;
 });
 // Managed task blocks carry their own state. Render only their retained marker.

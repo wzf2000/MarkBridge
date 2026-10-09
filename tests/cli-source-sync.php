@@ -1,6 +1,8 @@
 <?php
 // Isolated regression for the existing file-bound CLI save path.
 define('WP_CLI', true);
+// This fixture supplies a Node worker stub, not a PHP dependency installation.
+define('MARKBRIDGE_CONVERTER_BACKEND', 'node');
 define('ABSPATH', '/isolated-markbridge-test/');
 
 class WP_Error

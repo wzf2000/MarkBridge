@@ -1,5 +1,6 @@
 <?php
 // Paired document storage, validation and capability-checked editing endpoints.
+require_once __DIR__ . '/includes/conversion-backends.php';
 function mbb_managed($id)
 {
     return get_post_meta($id, '_mbb_origin', true) === 'markdown_import' &&
@@ -163,7 +164,7 @@ function mbb_convert($input)
             503,
         );
     }
-    $result = mbb_run_worker($input);
+    $result = mbb_converter_dispatch($input);
     if (is_wp_error($result)) {
         return $result;
     }
@@ -882,14 +883,14 @@ function mbb_enqueue_ui()
     }
     wp_enqueue_script(
         'mbb-editor-ui',
-        set_url_scheme(plugins_url(mbb_asset('editor-ui.js'), __FILE__), 'https'),
+        plugins_url(mbb_asset('editor-ui.js'), __FILE__),
         ['wp-data', 'wp-blocks', 'wp-api-fetch', 'mbb-math'],
         substr(hash_file('sha256', __DIR__ . '/editor-ui.js'), 0, 12),
         true,
     );
     wp_enqueue_script(
         'mbb-revisions-ui',
-        set_url_scheme(plugins_url('revisions-ui.js', __FILE__), 'https'),
+        plugins_url('revisions-ui.js', __FILE__),
         ['mbb-editor-ui'],
         substr(hash_file('sha256', __DIR__ . '/revisions-ui.js'), 0, 12),
         true,
@@ -903,6 +904,7 @@ function mbb_enqueue_ui()
         ),
         'state' => $tool || $new_post ? null : mbb_state($id),
         'footnoteStyle' => file_get_contents(__DIR__ . '/footnotes.css'),
+        'sourceFontSize' => mbb_display_preferences()['source_font_size'],
     ]);
     wp_enqueue_style(
         'mbb-editor-ui',

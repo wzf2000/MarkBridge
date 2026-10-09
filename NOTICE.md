@@ -10,20 +10,27 @@ Upstream release metadata: https://github.com/LuRenJiasWorld/WP-Editor.md/blob/m
 
 ## Dependencies and assets
 
-| Component                                   | License                                                | Distribution                                                                       |
-| ------------------------------------------- | ------------------------------------------------------ | ---------------------------------------------------------------------------------- |
-| markdown-it and its dependencies            | MIT / BSD / Python-2.0 as individually declared        | Bundled kernel; notices in `plugin/licenses`                                       |
-| markdown-it-footnote 4.0.0                  | MIT                                                    | Bundled kernel; full license in `plugin/licenses/markdown-it-footnote-LICENSE.txt` |
-| MathJax 4.1.3 and New Computer Modern fonts | Apache-2.0                                             | Copied from locked npm packages during build                                       |
-| Prism                                       | MIT                                                    | Original vendored files and LICENSE retained                                       |
-| clipboard.js                                | MIT                                                    | Original vendored file header retained; full license included                      |
-| emojilib 2.4.0                              | MIT                                                    | Unicode shortcode data bundled in `emoji.js`; full license included                |
-| jsdom and its dependencies                  | Their respective licenses                              | Private runtime installed from lockfile; not shipped in plugin ZIP                 |
-| WordPress / Gutenberg                       | GPL-2.0-or-later and notices in WordPress distribution | Core script snapshot rebuilt by each installer; not shipped in plugin ZIP          |
+| Component                                                             | License                                                     | Distribution                                                                                                |
+| --------------------------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| markdown-it and its dependencies                                      | MIT / BSD / Python-2.0 as individually declared             | Bundled kernel; notices in `plugin/licenses`                                                                |
+| markdown-it-footnote 4.0.0                                            | MIT                                                         | Bundled kernel; full license in `plugin/licenses/markdown-it-footnote-LICENSE.txt`                          |
+| MathJax 4.1.3 and New Computer Modern fonts                           | Apache-2.0                                                  | Copied from locked npm packages during build                                                                |
+| Prism                                                                 | MIT                                                         | Original vendored files and LICENSE retained                                                                |
+| clipboard.js                                                          | MIT                                                         | Original vendored file header retained; full license included                                               |
+| emojilib 2.4.0                                                        | MIT                                                         | Unicode shortcode data bundled in `emoji.js`; full license included                                         |
+| jsdom and its dependencies                                            | Their respective licenses                                   | Private runtime installed from lockfile; not shipped in plugin ZIP                                          |
+| WordPress / Gutenberg                                                 | GPL-2.0-or-later and notices in WordPress distribution      | Core script snapshot rebuilt by each installer; not shipped in plugin ZIP                                   |
+| league/commonmark 2.10.3 and league/config 1.2.0                      | BSD-3-Clause                                                | PHP conversion candidate; locked sources and full licenses in `plugin/includes/php-converter/vendor/league` |
+| dflydev/dot-access-data 3.0.3 and psr/event-dispatcher 1.0.0          | MIT                                                         | PHP conversion dependencies; original license files retained in the packaged vendor directories             |
+| nette/schema 1.3.6 and nette/utils 4.1.5                              | BSD-3-Clause (selected from the upstream licensing options) | PHP conversion dependencies; original `license.md` retained in each packaged vendor directory               |
+| symfony/deprecation-contracts 3.7.1 and symfony/polyfill-php80 1.43.0 | MIT                                                         | PHP conversion dependencies; original LICENSE retained in each packaged vendor directory                    |
+| Composer runtime autoloader                                           | MIT                                                         | Generated PHP autoloader; full license in `plugin/includes/php-converter/vendor/composer/LICENSE`           |
 
 The copied legacy Prism/clipboard assets keep their original bytes and notices; their provenance is the former WP Editor.md dependency bundle. New asset versions require a separate review.
 
 Emoji image packs are **not distributed**. Builds use Unicode characters rendered by the reader's fonts.
+
+PHP dependency versions and source references are pinned in `plugin/includes/php-converter/composer.lock`. The build includes their source and license files; users do not run Composer on the WordPress server. Selecting the PHP candidate is explicit, and does not replace the default Node backend.
 
 ## Development tools
 

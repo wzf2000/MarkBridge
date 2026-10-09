@@ -1,5 +1,6 @@
 <?php
 // Runtime configuration, compatibility checks and administrator-only diagnostics.
+require_once __DIR__ . '/conversion-backends.php';
 
 const MBB_RUNTIME_OPTION = 'mbb_runtime_path';
 const MBB_RUNTIME_MANIFEST_VERSION = 1;
@@ -107,6 +108,12 @@ function mbb_runtime_node_version($runtime)
 
 function mbb_runtime_quick_status()
 {
+    if (mbb_converter_backend() === 'php') {
+        return mbb_php_converter_diagnostics()['ok'];
+    }
+    if (mbb_converter_backend() !== 'node') {
+        return false;
+    }
     $runtime = mbb_runtime();
     if ($runtime === '' || !is_dir($runtime)) {
         return false;
@@ -125,6 +132,23 @@ function mbb_runtime_quick_status()
 
 function mbb_runtime_diagnostics($candidate = null, $smoke = false)
 {
+    if ($candidate === null && mbb_converter_backend() === 'php') {
+        return mbb_php_converter_diagnostics($smoke);
+    }
+    if ($candidate === null && mbb_converter_backend() !== 'node') {
+        return [
+            'ok' => false,
+            'path' => '',
+            'checks' => [
+                mbb_runtime_check(
+                    'backend',
+                    '转换后端',
+                    false,
+                    '转换后端设置无效，不会回退其他后端。',
+                ),
+            ],
+        ];
+    }
     $runtime = mbb_runtime_normalize_path($candidate === null ? mbb_runtime() : $candidate);
     $checks = [];
     $add = static function ($code, $label, $ok, $message) use (&$checks) {
@@ -493,7 +517,7 @@ function mbb_runtime_settings_save()
         wp_die('无权修改 MarkBridge 设置。', '', ['response' => 403]);
     }
     check_admin_referer('mbb_runtime_save');
-    if (defined('MARKBRIDGE_RUNTIME')) {
+    if (defined('MARKBRIDGE_RUNTIME') || mbb_converter_backend() !== 'node') {
         wp_safe_redirect(admin_url('options-general.php?page=markbridge&mbb-runtime=managed'));
         exit();
     }
@@ -524,13 +548,19 @@ function mbb_runtime_settings_page()
         wp_die('无权查看 MarkBridge 设置。', '', ['response' => 403]);
     }
     $configuration = mbb_runtime_configuration();
-    $diagnostics = get_transient('mbb_runtime_diagnostics_' . get_current_user_id());
+    $backend = mbb_converter_backend();
+    $diagnostics =
+        $backend === 'node'
+            ? get_transient('mbb_runtime_diagnostics_' . get_current_user_id())
+            : false;
     if (!is_array($diagnostics)) {
         $diagnostics = mbb_runtime_diagnostics(null, true);
     } else {
         delete_transient('mbb_runtime_diagnostics_' . get_current_user_id());
     }
     echo '<div class="wrap"><h1>MarkBridge</h1>';
+    mbb_admin_settings_overview($backend, $diagnostics);
+    mbb_admin_settings_preferences();
     if (($_GET['mbb-runtime'] ?? '') === 'updated') {
         echo '<div class="notice notice-success"><p>运行环境已经验证并启用。</p></div>';
     } elseif (($_GET['mbb-runtime'] ?? '') === 'save-failed') {
@@ -540,27 +570,36 @@ function mbb_runtime_settings_page()
     } elseif (($_GET['mbb-runtime'] ?? '') === 'managed') {
         echo '<div class="notice notice-info"><p>运行环境由服务器常量管理，数据库设置未更改。</p></div>';
     }
-    echo '<h2>转换运行环境</h2><p>有效配置来源：' . esc_html($configuration['source']) . '</p>';
-    echo '<form action="' . esc_url(admin_url('admin-post.php')) . '" method="post">';
-    echo '<input type="hidden" name="action" value="mbb_runtime_save">';
-    wp_nonce_field('mbb_runtime_save');
-    echo '<label for="mbb-runtime-path">服务器私有目录</label> ';
-    echo '<input id="mbb-runtime-path" class="regular-text code" name="runtime_path" value="' .
-        esc_attr($configuration['path']) .
-        '"' .
-        ($configuration['managed'] ? ' disabled' : '') .
-        '>';
-    if ($configuration['managed']) {
-        echo '<p class="description">MARKBRIDGE_RUNTIME 已定义；常量无效时不会回退数据库设置。</p>';
+    echo '<details><summary>兼容与高级：转换运行环境</summary><p>当前后端：' .
+        esc_html(is_string($backend) ? $backend : 'invalid') .
+        '</p>';
+    if ($backend === 'node') {
+        echo '<p>有效配置来源：' . esc_html($configuration['source']) . '</p>';
+        echo '<form action="' . esc_url(admin_url('admin-post.php')) . '" method="post">';
+        echo '<input type="hidden" name="action" value="mbb_runtime_save">';
+        wp_nonce_field('mbb_runtime_save');
+        echo '<label for="mbb-runtime-path">服务器私有目录</label> ';
+        echo '<input id="mbb-runtime-path" class="regular-text code" name="runtime_path" value="' .
+            esc_attr($configuration['path']) .
+            '"' .
+            ($configuration['managed'] ? ' disabled' : '') .
+            '>';
+        if ($configuration['managed']) {
+            echo '<p class="description">MARKBRIDGE_RUNTIME 已定义；常量无效时不会回退数据库设置。</p>';
+        }
+        submit_button(
+            '验证并保存',
+            'primary',
+            'submit',
+            true,
+            $configuration['managed'] ? ['disabled' => true] : [],
+        );
+        echo '</form>';
+    } else {
+        echo '<p>新安装默认使用内置 PHP；服务器可通过 MARKBRIDGE_CONVERTER_BACKEND 显式选择。PHP 不需要 Node 私有目录，失败不会回退其他后端。</p>';
     }
-    submit_button(
-        '验证并保存',
-        'primary',
-        'submit',
-        true,
-        $configuration['managed'] ? ['disabled' => true] : [],
-    );
-    echo '</form><h2>诊断</h2><table class="widefat striped"><tbody>';
+    echo '</details>';
+    echo '<h2>诊断</h2><table class="widefat striped"><tbody>';
     foreach ($diagnostics['checks'] as $check) {
         echo '<tr><th>' . esc_html($check['label']) . '</th><td>';
         echo $check['ok'] ? '通过' : '失败';

@@ -76,6 +76,9 @@ test('keyboard activation, cancel, and ordinary paragraph editing preserve formu
   await paragraph.click();
   await paragraph.press('End');
   await paragraph.press('!');
+  await expect
+    .poll(() => page.evaluate(() => wp.blocks.serialize(taskBlocks)))
+    .toContain('after.!');
   expect(await exportMarkdown(page)).toContain('Before $x^2$ between $y_0$ after\\.\\!');
 });
 

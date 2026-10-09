@@ -56,6 +56,14 @@ def release_notes(section, version, repository):
         raise ValueError("Invalid GitHub repository")
     base = f"https://github.com/{repository}/blob/v{version}"
     section = section.replace("{docs_base}", base)
+    portable = tuple(int(part) for part in version.split("-")[0].split(".")) >= (1, 3, 0)
+    install = (
+        "新安装使用随 ZIP 附带的 PHP 转换依赖，请确认 PHP 扩展与 WordPress 支持范围。"
+        "已有 Node 配置升级后保留原后端，仅选择 Node 的兼容安装需要匹配的私有转换环境；"
+        "显式切换前请先验证草稿与历史配对。"
+        if portable
+        else "请配置匹配的私有转换运行环境；升级时核对运行依赖契约，必要时重建环境并协调切换。"
+    )
     return f"""MarkBridge 将 Markdown 写作与 WordPress 区块编辑连接起来，保存时同步两种格式。
 
 ## ✨ 主要功能
@@ -75,7 +83,7 @@ def release_notes(section, version, repository):
 
 ## 📦 安装说明
 
-请下载附件中的 `markbridge-{version}.zip`，核对 SHA-256，并按[安装说明]({base}/docs/INSTALL.md)配置匹配的私有转换运行环境。升级时核对运行依赖契约，必要时重建环境并协调切换；已打开的编辑器请刷新后继续使用。
+请下载附件中的 `markbridge-{version}.zip`，核对 SHA-256，并按[安装说明]({base}/docs/INSTALL.md)上传启用。{install} 已打开的编辑器请刷新后继续使用。
 
 GitHub 自动生成的 Source code 压缩包是源码归档，不能直接作为完整插件安装包。发行不会自动部署或修改已有文章。
 
