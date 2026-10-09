@@ -1,6 +1,6 @@
 # PHP 转换隔离实验
 
-这是“免额外运行环境”架构计划的实验与对照入口。转换实现现统一位于 `plugin/includes/php-converter/`，本目录 PHP 文件仅作兼容加载入口，样例和实验 CLI 不进入发行包。候选插件的新安装默认 PHP，已有非空 Node 运行目录配置保持 Node；服务器常量 `MARKBRIDGE_CONVERTER_BACKEND` 可显式覆盖。正式版本与生产配置不变。完整阶段见[架构改进计划](../../docs/plans/active/PORTABLE-CONVERTER.md)。
+这是“免额外运行环境”架构计划的实验与对照入口。转换实现现统一位于 `plugin/includes/php-converter/`，本目录 PHP 文件仅作兼容加载入口，样例和实验 CLI 不进入发行包。1.3.0 插件的新安装默认 PHP，已有非空 Node 运行目录配置保持 Node；服务器常量 `MARKBRIDGE_CONVERTER_BACKEND` 可显式覆盖。当前安装与双引擎选择契约见[服务器配置](../../docs/RUNTIME.md)；完整阶段记录见[归档架构计划](../../docs/plans/completed/PORTABLE-CONVERTER.md)。
 
 ## 复现
 

@@ -26,13 +26,15 @@ README 说明产品范围和最短开发入口；本页按用途区分持续有�
 
 ## ACTIVE
 
-- [免额外运行环境：PHP 转换架构改进](plans/active/PORTABLE-CONVERTER.md)：独立架构版本，内容契约、保存链、干净安装及限定灰度／回退已验收；后台配置与宿主升级回归已验收；候选源码已合并；1.3.0 管理员 PHP／Node 选择器、干净包及实际切换／保存已完成限定本地准入，四版本公开 CI、发行试跑、全局切换与独立发行待推进。
+当前没有 ACTIVE 计划。
 
 ## DEFERRED
 
 - 更多区块适配尚未启动。
 
 ## HISTORICAL
+
+- [免额外运行环境：PHP 转换架构改进](plans/completed/PORTABLE-CONVERTER.md)：已纳入 1.3.0，保留 PHP 架构、后台配置与双引擎选择的阶段记录；当前契约和验证边界见开发与维护文档。
 
 - [可视化公式输入与原生数学兼容](plans/completed/MATH-AUTHORING-1.2.0.md)：已纳入 1.2.0，操作与验证边界见当前说明。
 
