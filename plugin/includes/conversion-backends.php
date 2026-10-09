@@ -1,10 +1,15 @@
 <?php
 // Configuration chooses the backend; readiness never triggers a fallback.
+require_once __DIR__ . '/converter-settings.php';
 
 function mbb_converter_backend()
 {
     if (defined('MARKBRIDGE_CONVERTER_BACKEND')) {
         return MARKBRIDGE_CONVERTER_BACKEND;
+    }
+    $settings = mbb_converter_settings();
+    if ($settings !== null) {
+        return $settings === false ? 'invalid' : $settings['backend'];
     }
     // Preserve the configured engine on upgrade. New installations need no runtime directory.
     $configured = defined('MARKBRIDGE_RUNTIME')

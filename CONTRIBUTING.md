@@ -25,9 +25,17 @@ npm run check
 MARKBRIDGE_TEST_RUNTIME=/srv/markbridge-runtime-v1 npm test
 ```
 
-当前架构候选的 PHP 依赖与隔离构建需要 Composer；`build:php` 按两份锁文件安装运行库与构建工具，并用固定 PHP-Scoper 生成私有命名空间。运行包携带生成物，安装者不运行 Composer。修改 `plugin/includes/php-converter/src/` 或构建配置后必须重跑 `build:php`；普通 `build` 会拒绝过期隔离产物。原始 vendor、src 和构建工具不进入安装 ZIP。
+PHP 转换器的依赖与隔离构建需要 Composer；`build:php` 按两份锁文件安装运行库与构建工具，并用固定 PHP-Scoper 生成私有命名空间。运行包携带生成物，安装者不运行 Composer。修改 `plugin/includes/php-converter/src/` 或构建配置后必须重跑 `build:php`；普通 `build` 会拒绝过期隔离产物。原始 vendor、src 和构建工具不进入安装 ZIP。
 
 Black 默认位于 `.venv`；可用 `MARKBRIDGE_PYTHON` 指定另一个已安装 Black 的 Python。运行环境准备见安装指南。
+
+## 双引擎维护契约
+
+后续转换规则和涉及转换的新功能必须同时维护 PHP 与 Node。共同支持的合成样例应检查两引擎的 Markdown 导入、区块反转、严格配对恢复、真实编辑与修订保存链，以及明确拒绝的安全边界。为双方补充可复用回归；已有明确列出的拒绝差异可以保留，但应更新实验与用户支持范围，不把单引擎通过称为完整兼容。
+
+后端由显式配置决定，环境不可用、内容不兼容或资源超限均明确拒绝，不能通过静默切换引擎解决。选择器、诊断和持久化测试与转换回归一起维护；模拟诊断只用于后台保存控制，不能代替实际 WordPress／PHP 进程的 Node 隔离转换验收。
+
+CI 使用固定 Node 24.15.0 基线及 PHP 8.2／8.3／8.4／8.5 矩阵，分别覆盖转换、Worker／后端选择及管理员设置契约。公共最小核心适配器和浏览器模拟不能代替匹配核心资源、实际保存、权限及修订检查；验证记录必须区分这些范围。
 
 ## 浏览器回归
 

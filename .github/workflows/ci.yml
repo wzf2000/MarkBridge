@@ -135,6 +135,11 @@ jobs:
       - name: Run PHP worker document contract checks
         run: python3 -m unittest discover -s tests -p 'test_*backend*.py'
 
+      - name: Run converter settings and atomic selection contracts
+        run: |
+          php tests/converter-settings.php
+          php tests/converter-settings.php backend-constant
+          php tests/converter-settings.php runtime-constant
       - name: Run display settings and presentation contracts
         run: php tests/admin-settings.php
 
@@ -226,5 +231,10 @@ jobs:
         run: python3 -m unittest discover -s experiments/php-converter -p 'test_*.py'
       - name: Run worker and backend selection contracts
         run: python3 -m unittest discover -s tests -p 'test_*backend*.py'
+      - name: Run converter settings and atomic selection contracts
+        run: |
+          php tests/converter-settings.php
+          php tests/converter-settings.php backend-constant
+          php tests/converter-settings.php runtime-constant
       - name: Run display settings and presentation contracts
         run: php tests/admin-settings.php
