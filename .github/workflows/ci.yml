@@ -135,6 +135,9 @@ jobs:
       - name: Run PHP worker document contract checks
         run: python3 -m unittest discover -s tests -p 'test_*backend*.py'
 
+      - name: Run display settings and presentation contracts
+        run: php tests/admin-settings.php
+
       - name: Check release sources and PHP syntax
         run: python3 scripts/check_release.py
 
@@ -223,3 +226,5 @@ jobs:
         run: python3 -m unittest discover -s experiments/php-converter -p 'test_*.py'
       - name: Run worker and backend selection contracts
         run: python3 -m unittest discover -s tests -p 'test_*backend*.py'
+      - name: Run display settings and presentation contracts
+        run: php tests/admin-settings.php

@@ -8,23 +8,37 @@ const assets = JSON.parse(fs.readFileSync(path.join(plugin, 'assets.json'), 'utf
 const presentation = JSON.parse(
   execFileSync('php', [path.join(__dirname, 'presentation-assets.php')], { encoding: 'utf8' }),
 );
+const disabledPresentation = JSON.parse(
+  execFileSync('php', [path.join(__dirname, 'presentation-assets.php'), 'disabled'], {
+    encoding: 'utf8',
+  }),
+);
 const mapped = (name) => '/plugin/' + assets[name];
-const front = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+const frontScripts = (settings) =>
+  settings.scripts
+    .map(
+      ({ handle, url, inline }) =>
+        `${(inline.before || []).map((script) => `<script>${script}</script>`).join('\n')}
+<script defer src="${url}"></script>
+${(inline.after || []).map((script) => `<script defer src="/fixture-inline/${handle}"></script>`).join('\n')}`,
+    )
+    .join('\n');
+const fixtureInlineScripts = new Map(
+  presentation.scripts.map(({ handle, inline }) => [handle, (inline.after || []).join('\n')]),
+);
+const front = (
+  settings = presentation,
+) => `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="stylesheet" href="${mapped('math.css')}">
-${presentation.styles.map((url) => `<link rel="stylesheet" href="${url}">`).join('\n')}
+${settings.styles.map((url) => `<link rel="stylesheet" href="${url}">`).join('\n')}
 <style>
 body{margin:0;font:16px/1.7 Arial,sans-serif}.mbb-reading{padding:20px;max-width:800px;margin:auto}
 .mbb-reading .mbb-document pre.wp-block-mbb-code{font:16px/1.7 Arial,sans-serif}
 </style>
-<style>${presentation.inline.join('\n')}</style>
+<style>${settings.inline.join('\n')}</style>
 <script>window.MBB_MATH_CONFIG={front:true}</script>
 <script defer src="${mapped('math.js')}"></script>
-<script defer src="/plugin/vendor/prism/components/prism-core.min.js"></script>
-<script defer src="/plugin/vendor/prism/components/prism-clike.min.js"></script>
-<script defer src="/plugin/vendor/prism/components/prism-javascript.min.js"></script>
-<script defer src="/plugin/vendor/prism/plugins/toolbar/prism-toolbar.min.js"></script>
-<script defer src="/plugin/vendor/prism/plugins/line-numbers/prism-line-numbers.min.js"></script>
-<script defer src="/plugin/vendor/prism/plugins/show-language/prism-show-language.min.js"></script>
+${frontScripts(settings)}
 </head><body><main class="mbb-reading"><article class="mbb-document">
 <p id="inline-line">文字在前 <span class="mbb-math" data-mbb-tex="x^2+y^2=z^2">x^2+y^2=z^2</span> 文字在后</p>
 <pre class="wp-block-mbb-math"><code>\\sum_{n=1}^{100}\\frac{1}{n^2}</code></pre>
@@ -89,8 +103,23 @@ http
     if (pathname === '/health') return response.writeHead(200).end('ok');
     if (pathname === '/wp/v2/types')
       return response.writeHead(200, { 'Content-Type': 'application/json' }).end('{}');
-    if (pathname === '/front')
-      return response.writeHead(200, { 'Content-Type': 'text/html' }).end(front);
+    if (pathname === '/front') {
+      const query = new URL(request.url, 'http://localhost').searchParams;
+      const markup = front(query.get('code') === 'off' ? disabledPresentation : presentation);
+      return response
+        .writeHead(200, { 'Content-Type': 'text/html' })
+        .end(
+          query.get('reader') === 'off'
+            ? markup.replace('front:true', 'front:true,reader:false')
+            : markup,
+        );
+    }
+    if (pathname.startsWith('/fixture-inline/')) {
+      const script = fixtureInlineScripts.get(pathname.slice('/fixture-inline/'.length));
+      return script === undefined
+        ? response.writeHead(404).end()
+        : response.writeHead(200, { 'Content-Type': 'application/javascript' }).end(script);
+    }
     if (pathname === '/native-editor') {
       const sourceManaged = new URL(request.url, 'http://localhost').searchParams.has('source');
       const setup = `<script>
@@ -105,8 +134,18 @@ http
         .writeHead(200, { 'Content-Type': 'text/html' })
         .end(editor.replace('</head>', setup + '</head>'));
     }
-    if (pathname === '/editor')
-      return response.writeHead(200, { 'Content-Type': 'text/html' }).end(editor);
+    if (pathname === '/editor') {
+      const size = Number(
+        new URL(request.url, 'http://localhost').searchParams.get('sourceFontSize'),
+      );
+      return response
+        .writeHead(200, { 'Content-Type': 'text/html' })
+        .end(
+          [14, 16, 18].includes(size)
+            ? editor.replace("nonce:'fixture'", `sourceFontSize:${size},nonce:'fixture'`)
+            : editor,
+        );
+    }
     if (pathname === '/footnotes-front') {
       const body = execFileSync('php', [path.join(__dirname, 'footnotes-render.php')], {
         encoding: 'utf8',

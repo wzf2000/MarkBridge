@@ -141,6 +141,7 @@
   function enableReader(node) {
     if (
       !window.MBB_MATH_CONFIG?.front ||
+      window.MBB_MATH_CONFIG?.reader === false ||
       node.ownerDocument !== document ||
       !node.isConnected ||
       node.isContentEditable ||

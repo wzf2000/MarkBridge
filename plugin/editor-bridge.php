@@ -904,6 +904,7 @@ function mbb_enqueue_ui()
         ),
         'state' => $tool || $new_post ? null : mbb_state($id),
         'footnoteStyle' => file_get_contents(__DIR__ . '/footnotes.css'),
+        'sourceFontSize' => mbb_display_preferences()['source_font_size'],
     ]);
     wp_enqueue_style(
         'mbb-editor-ui',

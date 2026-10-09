@@ -559,6 +559,8 @@ function mbb_runtime_settings_page()
         delete_transient('mbb_runtime_diagnostics_' . get_current_user_id());
     }
     echo '<div class="wrap"><h1>MarkBridge</h1>';
+    mbb_admin_settings_overview($backend, $diagnostics);
+    mbb_admin_settings_preferences();
     if (($_GET['mbb-runtime'] ?? '') === 'updated') {
         echo '<div class="notice notice-success"><p>运行环境已经验证并启用。</p></div>';
     } elseif (($_GET['mbb-runtime'] ?? '') === 'save-failed') {
@@ -568,7 +570,7 @@ function mbb_runtime_settings_page()
     } elseif (($_GET['mbb-runtime'] ?? '') === 'managed') {
         echo '<div class="notice notice-info"><p>运行环境由服务器常量管理，数据库设置未更改。</p></div>';
     }
-    echo '<h2>转换运行环境</h2><p>当前后端：' .
+    echo '<details><summary>兼容与高级：转换运行环境</summary><p>当前后端：' .
         esc_html(is_string($backend) ? $backend : 'invalid') .
         '</p>';
     if ($backend === 'node') {
@@ -596,6 +598,7 @@ function mbb_runtime_settings_page()
     } else {
         echo '<p>新安装默认使用内置 PHP；服务器可通过 MARKBRIDGE_CONVERTER_BACKEND 显式选择。PHP 不需要 Node 私有目录，失败不会回退其他后端。</p>';
     }
+    echo '</details>';
     echo '<h2>诊断</h2><table class="widefat striped"><tbody>';
     foreach ($diagnostics['checks'] as $check) {
         echo '<tr><th>' . esc_html($check['label']) . '</th><td>';

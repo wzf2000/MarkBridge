@@ -85,3 +85,9 @@ MathJax CHTML 会按已使用的结构和字形动态补充样式。渲染服务
 PHP 的单一实现位于 `plugin/includes/php-converter/`，Worker 适配 Markdown 导入、区块反转、精确配对恢复及批处理协议。未编辑的已验证历史配对保留原文和快照，编辑后的区块需真实反转再验证。依赖在构建阶段按 Composer 锁文件安装并通过固定 PHP-Scoper 隔离命名空间，随包携带；不与其他插件共享 Composer 加载器。摘要或私有命名空间冲突检查失败即拒绝转换。当前准入限定 PHP 8.2+、DOM/mbstring 和 WordPress 7.1.x 模板，仍有 256 KiB 文档边界及明确语法拒绝差异。
 
 本地保存链、依赖隔离与干净候选安装已经通过；这不代表 PHP 已作为正式发行默认项。已验版本、容量限制与下一阶段升级灰度见[架构计划](plans/active/PORTABLE-CONVERTER.md)。
+
+## 管理员显示设置
+
+`plugin/includes/admin-settings.php` 通过 WordPress Options API 保存单一 `markbridge_display_preferences` 选项。只有具备 `manage_options` 的账号通过专用 nonce 才能提交，四个字段按固定枚举／布尔值校验；未知字段、缺失字段或错误类型拒绝，读取损坏值按字段回到默认但不自动回写数据库。
+
+源码字号只传给 Markdown 输入框；公式阅读开关只控制前台阅读交互；代码行号／复制开关控制对应 Prism 资源及展示，保留高亮和语言标签。设置不参与转换、文章保存、修订或来源协议。旧运行目录及图片包选项保持独立，现有后端常量优先级和升级／回退选择不变。

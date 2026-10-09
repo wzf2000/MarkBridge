@@ -541,6 +541,8 @@
       'aria-label': 'Markdown 原文',
       spellcheck: 'false',
     });
+    if ([14, 16, 18].includes(cfg.sourceFontSize))
+      source.style.fontSize = cfg.sourceFontSize + 'px';
     source.oninput = () => {
       mode = 'markdown';
       invalidate();

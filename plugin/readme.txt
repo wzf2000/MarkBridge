@@ -3,7 +3,7 @@ Tags: markdown, blocks, editor, mathjax, revisions
 Requires at least: 7.1
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 1.3.0-rc.1
+Stable tag: 1.3.0-rc.2
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -20,6 +20,9 @@ New installations use the bundled PHP converter with PHP 8.2+, DOM and mbstring 
 3. Import a test Markdown draft, preview, save and reopen. Existing Node installations should review the upgrade guide before changing their backend.
 
 == Changelog ==
+= 1.3.0-rc.2 =
+Adds administrator display preferences, setup/help links and plugin metadata. Preserves default rendering and configured conversion backends; validates HTML before DOM parsing consistently across libxml versions. Remains a pre-release.
+
 = 1.3.0-rc.1 =
 Adds a bundled, namespaced PHP converter for new installations; retains configured Node on upgrade. Covers paired saves, historical snapshots, source writeback and explicit rejection without fallback. Pre-release validation and limits are documented.
 

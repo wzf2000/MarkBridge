@@ -1100,6 +1100,52 @@ final class Converter
         }
     }
 
+    private function validateHtmlLexemes(string $html): void
+    {
+        // libxml versions disagree about bare '<' in text. Validate actual HTML
+        // before parsing, without inspecting Markdown or decoded entities.
+        $length = strlen($html);
+        $position = 0;
+        while (($position = strpos($html, '<', $position)) !== false) {
+            if (substr_compare($html, '<!--', $position, 4) === 0) {
+                $end = strpos($html, '-->', $position + 4);
+                if ($end !== false) {
+                    $position = $end + 3;
+                    continue;
+                }
+            } elseif (
+                preg_match(
+                    '/\G<\/?[A-Za-z][A-Za-z0-9:-]*(?=[\x20\t\r\n\f\/>])/',
+                    $html,
+                    $match,
+                    0,
+                    $position,
+                )
+            ) {
+                $position += strlen($match[0]);
+                while ($position < $length) {
+                    $char = $html[$position++];
+                    if ($char === '>') {
+                        continue 2;
+                    }
+                    if ($char === '"' || $char === "'") {
+                        $end = strpos($html, $char, $position);
+                        if ($end === false) {
+                            break;
+                        }
+                        $position = $end + 1;
+                    } elseif ($char === '<') {
+                        break;
+                    }
+                }
+            }
+            throw new ConversionError(
+                'HTML_PARSE',
+                'HTML contains a bare less-than sign or incomplete markup',
+            );
+        }
+    }
+
     private function dom(string $html): DOMElement
     {
         if (preg_match('/<!|<\/?(?:html|head|body)\b/i', $html)) {
@@ -1108,6 +1154,7 @@ final class Converter
                 'Document containers and declarations are unsupported',
             );
         }
+        $this->validateHtmlLexemes($html);
         $doc = new DOMDocument();
         $previous = libxml_use_internal_errors(true);
         libxml_clear_errors();
@@ -2175,6 +2222,7 @@ final class Converter
 
     private function canonical(string $html): string
     {
+        $this->validateHtmlLexemes($html);
         $doc = new DOMDocument();
         $previous = libxml_use_internal_errors(true);
         libxml_clear_errors();

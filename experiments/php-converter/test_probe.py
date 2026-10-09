@@ -253,6 +253,34 @@ class ProbeTests(unittest.TestCase):
         self.assertFalse(raw_html["ok"], raw_html)
         self.assertEqual(raw_html["code"], "HTML_PARSE")
 
+    def test_html_text_less_than_requires_encoding_before_dom(self):
+        for literal in ["x<3", "x< 3", "x<", "x<<strong>y</strong>"]:
+            with self.subTest(literal=literal):
+                result = convert("markdown", "<p>" + literal + "</p>\n")
+                self.assertFalse(result["ok"], result)
+                self.assertEqual(result["code"], "HTML_PARSE")
+                blocks = convert(
+                    "blocks",
+                    "<!-- wp:paragraph --><p>" + literal + "</p><!-- /wp:paragraph -->",
+                )
+                self.assertFalse(blocks["ok"], blocks)
+                self.assertEqual(blocks["code"], "HTML_PARSE")
+        for source in [
+            '<p><a href="https://example.com/" title="x<3 > 0">link</a></p>\n',
+            "<p><a href='https://example.com/' title='x<3 > 0'>link</a></p>\n",
+            "<p>x&lt;3 and x&#60;3</p>\n",
+            "Before $x<3$ and `x<3`.\n",
+            "```html\n<p>x<3</p>\n```\n",
+        ]:
+            with self.subTest(source=source):
+                result = convert("markdown", source)
+                self.assertTrue(result["ok"], result)
+                reverse = convert("blocks", result["serialized"])
+                self.assertTrue(reverse["ok"], reverse)
+                self.assertEqual(
+                    convert("markdown", reverse["source"])["serialized"], result["serialized"]
+                )
+
     def test_terminal_inline_breaks_survive_real_reverse(self):
         for source in [
             "before $x$<br>\n",
