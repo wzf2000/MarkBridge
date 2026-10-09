@@ -27,6 +27,15 @@ function mbb_runtime_configuration()
             'managed' => true,
         ];
     }
+    $settings = mbb_converter_settings();
+    if ($settings !== null) {
+        return [
+            'source' => $settings === false ? 'invalid' : 'database',
+            'path' =>
+                $settings === false ? '' : mbb_runtime_normalize_path($settings['runtime_path']),
+            'managed' => false,
+        ];
+    }
     $path = mbb_runtime_normalize_path(get_option(MBB_RUNTIME_OPTION, ''));
     return [
         'source' => $path === '' ? 'unconfigured' : 'database',
@@ -446,6 +455,9 @@ function mbb_runtime_lock()
 
 function mbb_run_worker($input, $runtime = null)
 {
+    if (!is_callable('proc_open')) {
+        return mbb_error('worker', 'PHP 进程执行不可用，Node 转换未执行，原内容未写入。', 503);
+    }
     $runtime = $runtime ?? mbb_runtime();
     $lock = mbb_runtime_lock();
     if (!$lock) {
@@ -517,18 +529,32 @@ function mbb_runtime_settings_save()
         wp_die('无权修改 MarkBridge 设置。', '', ['response' => 403]);
     }
     check_admin_referer('mbb_runtime_save');
-    if (defined('MARKBRIDGE_RUNTIME') || mbb_converter_backend() !== 'node') {
+    if (
+        defined('MARKBRIDGE_RUNTIME') ||
+        mbb_converter_backend() !== 'node' ||
+        mbb_converter_settings() === false ||
+        (is_array(mbb_converter_settings()) && mbb_converter_settings()['backend'] !== 'node')
+    ) {
         wp_safe_redirect(admin_url('options-general.php?page=markbridge&mbb-runtime=managed'));
         exit();
     }
     $candidate = mbb_runtime_normalize_path(wp_unslash($_POST['runtime_path'] ?? ''));
     $diagnostics = mbb_runtime_diagnostics($candidate, true);
     if ($diagnostics['ok']) {
-        $result =
-            get_option(MBB_RUNTIME_OPTION, '') === $diagnostics['path'] ||
-            update_option(MBB_RUNTIME_OPTION, $diagnostics['path'], false)
-                ? 'updated'
-                : 'save-failed';
+        $settings = mbb_converter_settings();
+        if (is_array($settings)) {
+            $settings['runtime_path'] = $diagnostics['path'];
+            if (mbb_converter_settings() !== $settings) {
+                update_option(MBB_CONVERTER_OPTION, $settings, false);
+            }
+            $result = mbb_converter_settings() === $settings ? 'updated' : 'save-failed';
+        } else {
+            $result =
+                get_option(MBB_RUNTIME_OPTION, '') === $diagnostics['path'] ||
+                update_option(MBB_RUNTIME_OPTION, $diagnostics['path'], false)
+                    ? 'updated'
+                    : 'save-failed';
+        }
     } else {
         set_transient(
             'mbb_runtime_diagnostics_' . get_current_user_id(),
@@ -549,17 +575,15 @@ function mbb_runtime_settings_page()
     }
     $configuration = mbb_runtime_configuration();
     $backend = mbb_converter_backend();
-    $diagnostics =
-        $backend === 'node'
-            ? get_transient('mbb_runtime_diagnostics_' . get_current_user_id())
-            : false;
-    if (!is_array($diagnostics)) {
-        $diagnostics = mbb_runtime_diagnostics(null, true);
-    } else {
-        delete_transient('mbb_runtime_diagnostics_' . get_current_user_id());
-    }
+    // The overview always describes the active engine, never a rejected candidate.
+    $diagnostics = mbb_runtime_diagnostics(null, true);
+    $candidate = get_transient('mbb_converter_diagnostics_' . get_current_user_id());
+    delete_transient('mbb_converter_diagnostics_' . get_current_user_id());
+    $legacy_candidate = get_transient('mbb_runtime_diagnostics_' . get_current_user_id());
+    delete_transient('mbb_runtime_diagnostics_' . get_current_user_id());
     echo '<div class="wrap"><h1>MarkBridge</h1>';
     mbb_admin_settings_overview($backend, $diagnostics);
+    mbb_converter_settings_form();
     mbb_admin_settings_preferences();
     if (($_GET['mbb-runtime'] ?? '') === 'updated') {
         echo '<div class="notice notice-success"><p>运行环境已经验证并启用。</p></div>';
@@ -568,7 +592,7 @@ function mbb_runtime_settings_page()
     } elseif (($_GET['mbb-runtime'] ?? '') === 'rejected') {
         echo '<div class="notice notice-error"><p>候选运行环境未通过验证，原设置保持不变。</p></div>';
     } elseif (($_GET['mbb-runtime'] ?? '') === 'managed') {
-        echo '<div class="notice notice-info"><p>运行环境由服务器常量管理，数据库设置未更改。</p></div>';
+        echo '<div class="notice notice-info"><p>此运行目录接口当前不可修改配置，请刷新页面并使用转换方案；服务器常量管理的目录不能覆盖。</p></div>';
     }
     echo '<details><summary>兼容与高级：转换运行环境</summary><p>当前后端：' .
         esc_html(is_string($backend) ? $backend : 'invalid') .
@@ -596,7 +620,7 @@ function mbb_runtime_settings_page()
         );
         echo '</form>';
     } else {
-        echo '<p>新安装默认使用内置 PHP；服务器可通过 MARKBRIDGE_CONVERTER_BACKEND 显式选择。PHP 不需要 Node 私有目录，失败不会回退其他后端。</p>';
+        echo '<p>请在上方转换方案选择引擎。PHP 不需要 Node 私有目录，失败不会回退其他后端。</p>';
     }
     echo '</details>';
     echo '<h2>诊断</h2><table class="widefat striped"><tbody>';
@@ -606,6 +630,12 @@ function mbb_runtime_settings_page()
         echo '</td><td>' . esc_html($check['message']) . '</td></tr>';
     }
     echo '</tbody></table>';
+    if (is_array($candidate) && is_array($candidate['diagnostics'] ?? null)) {
+        mbb_converter_candidate_diagnostics($candidate['backend'], $candidate['diagnostics']);
+    }
+    if (is_array($legacy_candidate)) {
+        mbb_converter_candidate_diagnostics('node', $legacy_candidate);
+    }
     do_action('mbb_settings_page', $configuration, $diagnostics);
     echo '</div>';
 }

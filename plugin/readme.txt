@@ -3,7 +3,7 @@ Tags: markdown, blocks, editor, mathjax, revisions
 Requires at least: 7.1
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 1.3.0-rc.4
+Stable tag: 1.3.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -12,7 +12,7 @@ Markdown and WordPress blocks, saved and restored together.
 == Description ==
 MarkBridge provides paired Markdown/block editing, previews, revisions, local MathJax rendering and Markdown comments.
 
-New installations use the bundled PHP converter with PHP 8.2+, DOM and mbstring on WordPress 7.1.x. No Node.js runtime or subprocess is required for supported content. Existing non-empty runtime settings retain Node until an administrator explicitly switches; unsupported environments or content are rejected without fallback. This is a pre-release.
+New installations use the bundled PHP converter with PHP 8.2+, DOM and mbstring on WordPress 7.1.x. No Node.js runtime or subprocess is required for supported content. Existing non-empty runtime settings retain Node until an administrator explicitly switches; unsupported environments or content are rejected without fallback. Version 1.3.0 is being prepared for release and has not yet been published.
 
 == Installation ==
 1. Confirm WordPress 7.1.x, PHP 8.2+, DOM and mbstring.
@@ -20,6 +20,9 @@ New installations use the bundled PHP converter with PHP 8.2+, DOM and mbstring 
 3. Import a test Markdown draft, preview, save and reopen. Existing Node installations should review the upgrade guide before changing their backend.
 
 == Changelog ==
+= 1.3.0 =
+Bundled PHP conversion for new installations, retained Node configuration on upgrade, verified PHP/Node administrator selection, display preferences and consistent HTML validation. Preserves paired saves, revisions, permissions and conflict protection. Release preparation; not yet published. See the validation and upgrade guides for tested environments and content limits.
+
 = 1.3.0-rc.4 =
 Preserves boolean math configuration through inline JSON so the administrator reader switch works in real WordPress pages. Typesetting remains enabled. Remains a pre-release.
 

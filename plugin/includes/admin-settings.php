@@ -108,7 +108,7 @@ function mbb_admin_settings_overview($backend, $diagnostics)
         ' · ' .
         ($diagnostics['ok'] ? '转换环境就绪' : '转换环境需要检查，请查看下方诊断') .
         '</p>';
-    echo '<p>基础安装使用内置 PHP，无需填写服务器路径。已有 Node 配置升级后继续沿用；更换后端由服务器管理员显式配置。</p>';
+    echo '<p>基础安装使用内置 PHP，无需填写服务器路径。已有 Node 配置升级后继续沿用；管理员可在下方验证并选择转换方案。</p>';
     echo '<p>';
     if (current_user_can('edit_posts')) {
         echo '<a class="button button-primary" href="' .
