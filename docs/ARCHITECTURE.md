@@ -84,7 +84,7 @@ MathJax CHTML 会按已使用的结构和字形动态补充样式。渲染服务
 
 PHP 的单一实现位于 `plugin/includes/php-converter/`，Worker 适配 Markdown 导入、区块反转、精确配对恢复及批处理协议。未编辑的已验证历史配对保留原文和快照，编辑后的区块需真实反转再验证。依赖在构建阶段按 Composer 锁文件安装并通过固定 PHP-Scoper 隔离命名空间，随包携带；不与其他插件共享 Composer 加载器。摘要或私有命名空间冲突检查失败即拒绝转换。当前准入限定 PHP 8.2+、DOM/mbstring 和 WordPress 7.1.x 模板，仍有 256 KiB 文档边界及明确语法拒绝差异。
 
-保存链、依赖隔离、干净安装、升级／回退及管理员双引擎选择已通过限定本地验收。实际环境、安装包检查与未覆盖范围见[验证说明](VALIDATION.md)，后续准入见[架构计划](plans/active/PORTABLE-CONVERTER.md)。
+保存链、依赖隔离、干净安装、升级／回退及管理员双引擎选择已通过限定本地验收。实际环境、安装包检查与未覆盖范围见[验证说明](VALIDATION.md)，已完成的阶段记录见[归档架构计划](plans/completed/PORTABLE-CONVERTER.md)。
 
 ## 管理员显示设置
 
