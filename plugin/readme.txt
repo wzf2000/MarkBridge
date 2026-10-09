@@ -3,7 +3,7 @@ Tags: markdown, blocks, editor, mathjax, revisions
 Requires at least: 7.1
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 1.3.0-rc.3
+Stable tag: 1.3.0-rc.4
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -20,6 +20,9 @@ New installations use the bundled PHP converter with PHP 8.2+, DOM and mbstring 
 3. Import a test Markdown draft, preview, save and reopen. Existing Node installations should review the upgrade guide before changing their backend.
 
 == Changelog ==
+= 1.3.0-rc.4 =
+Preserves boolean math configuration through inline JSON so the administrator reader switch works in real WordPress pages. Typesetting remains enabled. Remains a pre-release.
+
 = 1.3.0-rc.3 =
 Fixes saved Markdown font preferences in real WordPress pages, whose localized scalar values arrive as strings. Remains a pre-release.
 

@@ -112,6 +112,10 @@ function wp_json_encode($value)
 {
     return json_encode($value);
 }
+function is_admin()
+{
+    return $GLOBALS['admin_context'] ?? false;
+}
 function mbb_asset($name)
 {
     return $name;
@@ -189,6 +193,15 @@ mbb_settings_assert(
     array_diff_key($options, [MBB_DISPLAY_OPTION => true]) === $baseline,
     'Legacy options changed',
 );
+foreach ([true, false] as $admin_context) {
+    mbb_settings_assert(
+        json_decode(mbb_math_configuration(), true) === [
+            'front' => !$admin_context,
+            'reader' => false,
+        ],
+        'Math configuration lost its boolean values',
+    );
+}
 mbb_settings_assert(
     str_contains(mbb_settings_submit($valid), 'updated'),
     'Unchanged settings reported failure',

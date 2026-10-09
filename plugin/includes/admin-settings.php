@@ -28,6 +28,15 @@ function mbb_display_preferences()
     return $preferences;
 }
 
+function mbb_math_configuration()
+{
+    // Generic script configuration must retain booleans, unlike localized strings.
+    return wp_json_encode([
+        'front' => !is_admin(),
+        'reader' => mbb_display_preferences()['math_reader'],
+    ]);
+}
+
 function mbb_display_parse_submission($input)
 {
     $defaults = mbb_display_defaults();

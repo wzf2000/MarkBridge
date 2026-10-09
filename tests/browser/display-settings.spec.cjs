@@ -4,6 +4,10 @@ test('disabled formula reader keeps front-end typesetting and source intact', as
   page,
 }, testInfo) => {
   await page.goto('/front?reader=off');
+  expect(await page.evaluate(() => window.MBB_MATH_CONFIG)).toEqual({
+    front: true,
+    reader: false,
+  });
   const formula = page.locator('#inline-line .mbb-math');
   await expect(formula.locator('mjx-container')).toBeVisible();
   await expect(formula).not.toHaveClass(/mbb-math-readable/);

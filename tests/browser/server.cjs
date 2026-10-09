@@ -13,6 +13,11 @@ const disabledPresentation = JSON.parse(
     encoding: 'utf8',
   }),
 );
+const readerDisabledPresentation = JSON.parse(
+  execFileSync('php', [path.join(__dirname, 'presentation-assets.php'), 'reader-disabled'], {
+    encoding: 'utf8',
+  }),
+);
 const mapped = (name) => '/plugin/' + assets[name];
 const frontScripts = (settings) =>
   settings.scripts
@@ -36,7 +41,7 @@ body{margin:0;font:16px/1.7 Arial,sans-serif}.mbb-reading{padding:20px;max-width
 .mbb-reading .mbb-document pre.wp-block-mbb-code{font:16px/1.7 Arial,sans-serif}
 </style>
 <style>${settings.inline.join('\n')}</style>
-<script>window.MBB_MATH_CONFIG={front:true}</script>
+<script>window.MBB_MATH_CONFIG=${settings.math_config}</script>
 <script defer src="${mapped('math.js')}"></script>
 ${frontScripts(settings)}
 </head><body><main class="mbb-reading"><article class="mbb-document">
@@ -105,14 +110,13 @@ http
       return response.writeHead(200, { 'Content-Type': 'application/json' }).end('{}');
     if (pathname === '/front') {
       const query = new URL(request.url, 'http://localhost').searchParams;
-      const markup = front(query.get('code') === 'off' ? disabledPresentation : presentation);
-      return response
-        .writeHead(200, { 'Content-Type': 'text/html' })
-        .end(
-          query.get('reader') === 'off'
-            ? markup.replace('front:true', 'front:true,reader:false')
-            : markup,
-        );
+      const settings =
+        query.get('code') === 'off'
+          ? disabledPresentation
+          : query.get('reader') === 'off'
+            ? readerDisabledPresentation
+            : presentation;
+      return response.writeHead(200, { 'Content-Type': 'text/html' }).end(front(settings));
     }
     if (pathname.startsWith('/fixture-inline/')) {
       const script = fixtureInlineScripts.get(pathname.slice('/fixture-inline/'.length));

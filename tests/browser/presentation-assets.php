@@ -34,7 +34,17 @@ function wp_add_inline_script($handle, $script, $position = 'after')
 }
 function wp_localize_script($handle, $name, $value)
 {
+    foreach ($value as &$item) {
+        if (is_scalar($item)) {
+            $item = (string) $item;
+        }
+    }
+    unset($item);
     wp_add_inline_script($handle, 'window.' . $name . '=' . json_encode($value) . ';', 'before');
+}
+function is_admin()
+{
+    return false;
 }
 function wp_json_encode($value)
 {
@@ -46,12 +56,14 @@ function plugin_basename($file)
 }
 function get_option($name, $default = false)
 {
-    return $name === 'markbridge_display_preferences' && ($GLOBALS['argv'][1] ?? '') === 'disabled'
+    $mode = $GLOBALS['argv'][1] ?? '';
+    return $name === 'markbridge_display_preferences' &&
+        in_array($mode, ['disabled', 'reader-disabled'], true)
         ? [
             'source_font_size' => 18,
             'math_reader' => false,
-            'code_line_numbers' => false,
-            'code_copy' => false,
+            'code_line_numbers' => $mode !== 'disabled',
+            'code_copy' => $mode !== 'disabled',
         ]
         : $default;
 }
@@ -81,4 +93,9 @@ $emit = function ($handle) use (&$emit, &$ordered, $scripts, $script_inline) {
 foreach (array_keys($scripts) as $handle) {
     $emit($handle);
 }
-echo json_encode(['styles' => $styles, 'inline' => $inline, 'scripts' => array_values($ordered)]);
+echo json_encode([
+    'styles' => $styles,
+    'inline' => $inline,
+    'scripts' => array_values($ordered),
+    'math_config' => mbb_math_configuration(),
+]);
