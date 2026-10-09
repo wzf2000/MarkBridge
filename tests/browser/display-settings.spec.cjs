@@ -50,9 +50,11 @@ test('source font setting changes only the Markdown input, preserving preview an
     }),
   );
   await page.goto('/editor');
+  expect(await page.evaluate(() => window.MBB_EDITOR.sourceFontSize)).toBe('14');
   await page.locator('#mbb-new').click();
   await expect(page.locator('#mbb-source')).toHaveCSS('font-size', '14px');
   await page.goto('/editor?sourceFontSize=18');
+  expect(await page.evaluate(() => window.MBB_EDITOR.sourceFontSize)).toBe('18');
   await page.locator('#mbb-new').click();
   const source = page.locator('#mbb-source');
   await expect(source).toHaveCSS('font-size', '18px');

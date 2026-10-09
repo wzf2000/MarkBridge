@@ -541,8 +541,12 @@
       'aria-label': 'Markdown 原文',
       spellcheck: 'false',
     });
-    if ([14, 16, 18].includes(cfg.sourceFontSize))
-      source.style.fontSize = cfg.sourceFontSize + 'px';
+    // WordPress localizes top-level scalar preferences as strings.
+    const sourceFontSize =
+      typeof cfg.sourceFontSize === 'string' || typeof cfg.sourceFontSize === 'number'
+        ? Number(cfg.sourceFontSize)
+        : NaN;
+    if ([14, 16, 18].includes(sourceFontSize)) source.style.fontSize = sourceFontSize + 'px';
     source.oninput = () => {
       mode = 'markdown';
       invalidate();

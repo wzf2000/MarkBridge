@@ -49,7 +49,7 @@ document.getElementById('long-code').textContent=Array.from({length:120},(_,i)=>
 
 const editor = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="stylesheet" href="${mapped('editor-ui.css')}">
-<script>window.MBB_MATH_CONFIG={front:false};window.MBB_EDITOR={root:location.origin+'/wp-json/mbb/v1/',nonce:'fixture',postId:0,canPublish:true,state:null,footnoteStyle:${JSON.stringify(fs.readFileSync(path.join(plugin, 'footnotes.css'), 'utf8'))}};
+<script>window.MBB_MATH_CONFIG={front:false};window.MBB_EDITOR={root:location.origin+'/wp-json/mbb/v1/',nonce:'fixture',postId:0,canPublish:true,sourceFontSize:'14',state:null,footnoteStyle:${JSON.stringify(fs.readFileSync(path.join(plugin, 'footnotes.css'), 'utf8'))}};
 window.wp={blocks:{serialize:()=>''},data:{select:()=>({getEditedPostAttribute:()=>0,getEditedPostContent:()=>'',getBlocks:()=>[]})}};
 window.MBB_REVISIONS={open(){}};</script>
 <script defer src="${mapped('math.js')}"></script><script defer src="${mapped('editor-ui.js')}"></script>
@@ -142,7 +142,10 @@ http
         .writeHead(200, { 'Content-Type': 'text/html' })
         .end(
           [14, 16, 18].includes(size)
-            ? editor.replace("nonce:'fixture'", `sourceFontSize:${size},nonce:'fixture'`)
+            ? editor.replace(
+                "sourceFontSize:'14'",
+                `sourceFontSize:${JSON.stringify(String(size))}`,
+              )
             : editor,
         );
     }
