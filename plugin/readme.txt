@@ -3,7 +3,7 @@ Tags: markdown, blocks, editor, mathjax, revisions
 Requires at least: 7.1
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 1.4.0
+Stable tag: 1.5.0-dev.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -12,7 +12,7 @@ Markdown and WordPress blocks, saved and restored together.
 == Description ==
 MarkBridge provides paired Markdown/block editing, previews, revisions, local MathJax rendering and Markdown comments.
 
-New installations use the bundled PHP converter with PHP 8.2+, DOM and mbstring on WordPress 7.1.x. No Node.js runtime or subprocess is required for supported content. Existing non-empty runtime settings retain Node until an administrator explicitly switches; unsupported environments or content are rejected without fallback. This readme applies to version 1.4.0. For installation packages, see GitHub Releases.
+New installations use the bundled PHP converter with PHP 8.2+, DOM and mbstring on WordPress 7.1.x. No Node.js runtime or subprocess is required for supported content. Existing non-empty runtime settings retain Node until an administrator explicitly switches; unsupported environments or content are rejected without fallback. This readme applies to version 1.5.0-dev.1. For installation packages, see GitHub Releases.
 
 == Installation ==
 1. Confirm WordPress 7.1.x, PHP 8.2+, DOM and mbstring.

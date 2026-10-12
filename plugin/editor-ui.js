@@ -400,6 +400,7 @@
         '<!doctype html><html><head><meta charset="utf-8"><style>' +
         MBB_MATH.style +
         (MBB_EDITOR.footnoteStyle || '') +
+        (MBB_EDITOR.teachingStyle || '') +
         'body{font:16px/1.7 system-ui;padding:16px;overflow-wrap:anywhere}pre{overflow:auto}table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:4px}img{max-width:100%}</style></head><body>' +
         previewContent.innerHTML +
         '</body></html>';

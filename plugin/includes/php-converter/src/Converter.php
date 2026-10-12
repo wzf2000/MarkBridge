@@ -43,6 +43,7 @@ require_once __DIR__ . '/MathExtension.php';
 require_once __DIR__ . '/Footnotes.php';
 require_once __DIR__ . '/DisplayBoundaries.php';
 require_once __DIR__ . '/CodeWhitespace.php';
+require_once __DIR__ . '/Teaching.php';
 
 final class ConversionError extends \RuntimeException
 {
@@ -61,6 +62,7 @@ final class Converter
     public const MAX_BYTES = 262144;
     public const MAX_NODES = 10000;
     public const MAX_DEPTH = 32;
+    private string $teachingNonce = '';
     private int $nodes = 0;
     private bool $legacyTasks = false;
     private bool $legacyFootnotes = false;
@@ -221,6 +223,9 @@ final class Converter
         // generated line numbers as positions in the author's source.
         $this->sourceLocations = $reportSource && $source === $original;
         $this->input($source);
+        $teachingNonce = '';
+        $source = Teaching::source($source, $teachingNonce);
+        $this->teachingNonce = $teachingNonce;
         $environment = new Environment(['max_nesting_level' => self::MAX_DEPTH + 1]);
         $environment->addExtension(new CommonMarkCoreExtension());
         $environment->addBlockStartParser(
@@ -332,7 +337,7 @@ final class Converter
             }
             $blocks[] = $this->block('mbb/footnotes', [], $notes);
         }
-        return $blocks;
+        return Teaching::assemble($blocks);
     }
 
     private function block(
@@ -419,6 +424,9 @@ final class Converter
         }
         if ($node instanceof HtmlBlock) {
             $raw = trim($node->getLiteral());
+            if (($marker = Teaching::marker($raw, $this->teachingNonce)) !== null) {
+                return ['marker' => $marker];
+            }
             if (preg_match('/^<!--\s*more\s*-->$/D', $raw)) {
                 return $this->block('core/more');
             }
@@ -852,6 +860,44 @@ final class Converter
         $attrs = $block['attrs'];
         $children = $this->serializeAll($block['children']);
         $content = $block['content'];
+        if (($kind = Teaching::kind($name)) !== null) {
+            $html =
+                '<div id="' .
+                self::attribute($attrs['id']) .
+                '" class="wp-block-mbb-' .
+                $kind .
+                '">';
+            if ($kind === 'code-compare') {
+                foreach (['Left', 'Right'] as $side) {
+                    $lang = $attrs['language' . $side];
+                    $html .=
+                        '<div class="mbb-compare-' .
+                        strtolower($side) .
+                        '"><p data-mbb-generated="">' .
+                        self::elementText($attrs[strtolower($side) . 'Title']) .
+                        '</p><pre><code' .
+                        ($lang === '' ? '' : ' class="language-' . self::attribute($lang) . '"') .
+                        '>' .
+                        self::elementText($attrs['code' . $side]) .
+                        '</code></pre></div>';
+                }
+            } else {
+                $html .=
+                    '<p class="mbb-teaching-title" data-mbb-generated="">' .
+                    self::elementText($attrs['title']) .
+                    '</p>';
+            }
+            $html .= '<div class="mbb-teaching-body">' . $children . '</div></div>';
+            return '<!-- wp:' .
+                $name .
+                ' ' .
+                self::commentJson($attrs) .
+                " -->\n" .
+                $html .
+                "\n<!-- /wp:" .
+                $name .
+                ' -->';
+        }
         switch ($name) {
             case 'core/paragraph':
                 $html = '<p>' . $content . '</p>';
@@ -1062,6 +1108,9 @@ final class Converter
         $attrs = isset($match[2]) ? json_decode($match[2], true, 32, JSON_THROW_ON_ERROR) : [];
         if (!is_array($attrs) || (array_is_list($attrs) && $attrs !== [])) {
             throw new ConversionError('BLOCK_ATTRIBUTES', 'Block attributes must be an object');
+        }
+        if (Teaching::kind($name) !== null && isset($match[2])) {
+            $attrs = Teaching::json($match[2]);
         }
         $this->validateAttrs($name, $attrs);
         $position += strlen($match[0]);
@@ -1521,6 +1570,9 @@ final class Converter
     private function decodeAll(array $blocks, int $depth = 0): string
     {
         if ($depth === 0) {
+            Teaching::validate($blocks);
+        }
+        if ($depth === 0) {
             $notes = array_keys(
                 array_filter($blocks, fn(array $block): bool => $block['name'] === 'mbb/footnotes'),
             );
@@ -1585,6 +1637,9 @@ final class Converter
         $attrs = $block['attrs'];
         $children = $block['children'];
         $raw = $block['raw'];
+        if (Teaching::kind($name) !== null) {
+            return Teaching::markdown($block, $this->decodeAll($children, $depth + 1));
+        }
         switch ($name) {
             case 'core/html':
                 if ($children !== []) {
@@ -2086,7 +2141,12 @@ final class Converter
                 $text = substr($text, 1);
             }
             $text = str_replace(['&', '<'], ['&amp;', '&lt;'], $text);
-            return preg_replace('/([\\\\`*{}_\[\]()#+.!>~|$-])/', '\\\\$1', $text);
+            $text = preg_replace('/([\\\\`*{}_\[\]()#+.!>~|$-])/', '\\\\$1', $text);
+            return preg_replace_callback(
+                '/(^|\n)(:::mbb:)/',
+                fn(array $match): string => $match[1] . chr(92) . $match[2],
+                $text,
+            );
         }
         if (!($node instanceof DOMElement)) {
             throw new ConversionError(

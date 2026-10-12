@@ -193,6 +193,8 @@ add_action(
                     'emoji' => plugins_url(mbb_asset('emoji.js'), __FILE__),
                     'images' => mbb_emoji_config(),
                     'footnotes' => plugins_url(mbb_asset('footnotes.css'), __FILE__),
+                    'teachingScript' => plugins_url(mbb_asset('teaching.js'), __FILE__),
+                    'teachingStyle' => plugins_url(mbb_asset('teaching.css'), __FILE__),
                 ]) .
                 ';',
             'before',
@@ -217,6 +219,7 @@ add_action(
             'prism-plugin-toolbar',
             'prism-plugin-line-numbers',
             'mbb-footnotes',
+            'mbb-teaching',
         ]);
     },
     5,

@@ -1,3 +1,13 @@
+import {
+  validateTeachingSerialized,
+  teachingSource,
+  teachingMarker,
+  assembleTeaching,
+  validateTeaching,
+  teachingKind,
+  teachingMarkdown,
+  registerTeaching,
+} from './teaching.js';
 import blockCapabilities from '../plugin/includes/php-converter/block-capabilities.json';
 import MarkdownIt from 'markdown-it';
 import footnotePlugin from 'markdown-it-footnote';
@@ -377,7 +387,7 @@ function taskParagraph(node) {
   const content = inline({ ...token, children });
   return { checked: marker[1].toLowerCase() === 'x', content };
 }
-function convert(nodes, legacyTasks = false) {
+function convert(nodes, legacyTasks = false, teachingNonce = '') {
   return nodes.map((node) =>
     atLocation(loc(node), () => {
       const t = node.token;
@@ -410,6 +420,8 @@ function convert(nodes, legacyTasks = false) {
         case 'mbb_math':
           return make('mbb/math', { tex: t.content });
         case 'html_block': {
+          const marker = teachingMarker(t.content, teachingNonce);
+          if (marker) return { teachingMarker: marker };
           if (/^<!--\s*more\s*-->\s*$/.test(t.content)) return make('core/more');
           const protectedHTML = htmlMath(t.content),
             root = safeHTML(protectedHTML, true);
@@ -421,7 +433,7 @@ function convert(nodes, legacyTasks = false) {
           );
         }
         case 'blockquote_open':
-          return make('core/quote', {}, convert(node.children, legacyTasks));
+          return make('core/quote', {}, convert(node.children, legacyTasks, teachingNonce));
         case 'footnote_block_open':
           return make(
             'mbb/footnotes',
@@ -430,7 +442,11 @@ function convert(nodes, legacyTasks = false) {
               if (note.token.type !== 'footnote_open')
                 fail('FOOTNOTE_STRUCTURE', '脚注定义结构不受支持', loc(note));
               const label = validFootnoteLabel(note.token.meta?.label);
-              return make('mbb/footnote', { label }, convert(note.children, legacyTasks));
+              return make(
+                'mbb/footnote',
+                { label },
+                convert(note.children, legacyTasks, teachingNonce),
+              );
             }),
           );
         case 'bullet_list_open':
@@ -464,8 +480,12 @@ function convert(nodes, legacyTasks = false) {
               node.children.map((item) => {
                 const task = !legacyTasks && taskParagraph(item.children[0]);
                 return task
-                  ? make('mbb/task-item', task, convert(item.children.slice(1), legacyTasks))
-                  : make('mbb/list-item', {}, convert(item.children, legacyTasks));
+                  ? make(
+                      'mbb/task-item',
+                      task,
+                      convert(item.children.slice(1), legacyTasks, teachingNonce),
+                    )
+                  : make('mbb/list-item', {}, convert(item.children, legacyTasks, teachingNonce));
               }),
             );
           const items = node.children.map((item) => {
@@ -478,7 +498,7 @@ function convert(nodes, legacyTasks = false) {
               fail('TASK_LIST', '任务列表暂不支持', loc(item));
             const content = paragraph(item.children[0]);
             const nested = item.children.slice(1);
-            return make('core/list-item', { content }, convert(nested, legacyTasks));
+            return make('core/list-item', { content }, convert(nested, legacyTasks, teachingNonce));
           });
           return make(
             'core/list',
@@ -513,8 +533,9 @@ function convert(nodes, legacyTasks = false) {
   );
 }
 function checkSource(source) {
-  if (typeof source !== 'string' || source.length > 500000)
-    fail('INPUT_LIMIT', '原文必须是字符串且不超过500000字符');
+  if (typeof source !== 'string' || new Blob([source]).size > 262144)
+    fail('INPUT_LIMIT', '原文必须是字符串且不超过256 KiB');
+  if (/[\uD800-\uDFFF]/u.test(source)) fail('INPUT_ENCODING', '原文必须为有效 Unicode');
   if (source.includes('\0')) fail('INVALID_INPUT', '原文包含NUL');
 }
 // Normalize legacy display delimiters without scanning fenced or inline code.
@@ -629,6 +650,14 @@ function parseSource(
       }
     }
   }
+  const ignoredTeaching = new Set();
+  for (const token of boundaryMD.parse(normalized, {}))
+    if (['fence', 'code_block'].includes(token.type) && token.map)
+      for (let line = token.map[0]; line < token.map[1]; line++) ignoredTeaching.add(line);
+  const teachingNonce = [...crypto.getRandomValues(new Uint8Array(16))]
+    .map((value) => value.toString(16).padStart(2, '0'))
+    .join('');
+  normalized = teachingSource(normalized, fail, ignoredTeaching, teachingNonce);
   const env = {};
   const tokens = (legacyFootnotes ? legacyMD : md).parse(normalized, env);
   if (legacyFootnotes && Object.keys(env.references || {}).some((x) => x.startsWith('^')))
@@ -640,7 +669,7 @@ function parseSource(
       root.children.sort(
         (a, b) => order.indexOf(a.token.meta?.label) - order.indexOf(b.token.meta?.label),
       );
-  return convert(roots, legacyTasks);
+  return assembleTeaching(convert(roots, legacyTasks, teachingNonce), make, fail);
 }
 function blocksFromSource(
   source,
@@ -671,7 +700,8 @@ function textMD(text) {
   return text
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
-    .replace(/[\\`*{}\[\]()#+\-.!_$|>]/g, '\\$&');
+    .replace(/[\\`*{}\[\]()#+\-.!_$|>]/g, '\\$&')
+    .replace(/(^|\n)(:::mbb:)/g, '$1\\$2');
 }
 function codeMD(code) {
   const n = Math.max(0, ...(code.match(/`+/g) || []).map((s) => s.length)) + 1;
@@ -774,6 +804,7 @@ function rawMarkdown(blocks, path = 'blocks') {
           if (!Object.hasOwn(blockCapabilities, b.name))
             fail('UNSUPPORTED_BLOCK', '此区块尚不能转换为 Markdown', at);
           const inner = b.innerBlocks || [];
+          if (teachingKind(b.name)) return teachingMarkdown(b, rawMarkdown(inner, at), fail);
           switch (b.name) {
             case 'mbb/footnotes':
               if (
@@ -911,9 +942,12 @@ function rawMarkdown(blocks, path = 'blocks') {
 export function toMarkdown(blocks, context) {
   if (context?.origin !== 'markdown_import')
     fail('ORIGIN_REQUIRED', '只有明确Markdown来源文档允许反向转换');
+  validateTeaching(blocks, fail);
   const result = rawMarkdown(blocks);
+  checkSource(result);
   // Fail closed if formatting, attributes, nesting, or inline constructs would be lost.
   const original = api().serialize(blocks);
+  checkSource(original);
   const regenerated = api().serialize(blocksFromSource(result, false, false, false));
   if (canonical(original) !== canonical(regenerated)) {
     // Identify the first real differing block, including its nested path.
@@ -956,6 +990,7 @@ export function importDocument(source, documentId) {
   if (typeof documentId !== 'string' || !documentId.trim())
     fail('DOCUMENT_ID', '需要稳定document_id');
   const blocks = toBlocks(source);
+  checkSource(api().serialize(blocks));
   toMarkdown(blocks, { origin: 'markdown_import' });
   toMarkdown(api().parse(api().serialize(blocks)), { origin: 'markdown_import' });
   return {
@@ -983,6 +1018,8 @@ function snapshotKind(source, serialized) {
   return null;
 }
 export function importPairedDocument(source, serialized, documentId) {
+  checkSource(source);
+  checkSource(serialized);
   if (typeof documentId !== 'string' || !documentId.trim())
     fail('DOCUMENT_ID', '需要稳定document_id');
   if (typeof serialized !== 'string' || !snapshotKind(source, serialized))
@@ -997,6 +1034,9 @@ export function importPairedDocument(source, serialized, documentId) {
   };
 }
 export function exportDocument(document, serialized) {
+  checkSource(serialized);
+  checkSource(document?.serialized);
+  checkSource(document?.source);
   if (
     document?.schema !== 1 ||
     !['0.1.2', VERSION].includes(document.converter) ||
@@ -1007,6 +1047,7 @@ export function exportDocument(document, serialized) {
   if (!kind) fail('SNAPSHOT_MISMATCH', '源快照与区块快照不匹配');
   if (kind === 'legacy' && canonical(serialized) === canonical(document.serialized))
     return document.source;
+  validateTeachingSerialized(serialized, fail);
   const blocks = api().parse(serialized);
   const normalized = toMarkdown(blocks, document);
   return canonical(serialized) === canonical(document.serialized) ? document.source : normalized;
@@ -1055,6 +1096,7 @@ function MathPreview({ tex, display = false }) {
   );
 }
 export function register() {
+  registerTeaching();
   registerFootnotes();
   const el = wp.element.createElement;
   const convertPlainList = (block) => {

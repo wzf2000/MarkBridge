@@ -216,6 +216,10 @@ function mbb_html_allowed($blocks)
             'mbb/footnote',
             'mbb/math',
             'mbb/code',
+            'mbb/collapse',
+            'mbb/steps',
+            'mbb/step',
+            'mbb/code-compare',
         ];
         foreach ($blocks as $b) {
             if ($b['blockName'] === null && trim($b['innerHTML']) === '') {
@@ -330,15 +334,26 @@ function mbb_kses_plain_block_sources($text, $allowed = 'post', $protocols = [])
     }
     $walk = function ($blocks) use (&$walk, $allowed, $protocols) {
         foreach ($blocks as &$b) {
-            $field = ['mbb/code' => 'code', 'mbb/math' => 'tex'][$b['blockName']] ?? null;
-            $plain = $field ? $b['attrs'][$field] ?? null : null;
+            $fields =
+                [
+                    'mbb/code' => ['code'],
+                    'mbb/math' => ['tex'],
+                    'mbb/code-compare' => ['codeLeft', 'codeRight', 'leftTitle', 'rightTitle'],
+                    'mbb/collapse' => ['title'],
+                    'mbb/steps' => ['title'],
+                    'mbb/step' => ['title'],
+                ][$b['blockName']] ?? [];
+            $plain = [];
             $attrs = $b['attrs'];
-            if ($field && is_string($plain)) {
-                $attrs[$field] = '';
+            foreach ($fields as $field) {
+                if (isset($attrs[$field]) && is_string($attrs[$field])) {
+                    $plain[$field] = $attrs[$field];
+                    $attrs[$field] = '';
+                }
             }
             $b['attrs'] = filter_block_kses_value($attrs, $allowed, $protocols, $b);
-            if ($field && is_string($plain)) {
-                $b['attrs'][$field] = $plain;
+            foreach ($plain as $field => $value) {
+                $b['attrs'][$field] = $value;
             }
             $b['innerBlocks'] = $walk($b['innerBlocks']);
         }
@@ -901,6 +916,7 @@ function mbb_enqueue_ui()
         ),
         'state' => $tool || $new_post ? null : mbb_state($id),
         'footnoteStyle' => file_get_contents(__DIR__ . '/footnotes.css'),
+        'teachingStyle' => file_get_contents(__DIR__ . '/teaching.css'),
         'supportedBlocks' => array_keys(
             json_decode(
                 file_get_contents(__DIR__ . '/includes/php-converter/block-capabilities.json'),

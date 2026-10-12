@@ -31,4 +31,6 @@ asset('editor-ui.js');
 asset('editor-ui.css');
 asset('math.css');
 asset('footnotes.css');
+asset('teaching.js');
+asset('teaching.css');
 fs.writeFileSync(path.join(root, 'assets.json'), JSON.stringify(map, null, 2) + '\n');

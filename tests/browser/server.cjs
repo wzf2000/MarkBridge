@@ -70,7 +70,9 @@ const taskEditor = (source = '- [ ] Browser task\n- ordinary\n') => {
   html = html.replaceAll('http://markbridge.invalid', '');
   html = html.replace(
     '</head>',
-    '<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/wp-includes/css/dashicons.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/components/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-editor/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-library/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-library/editor.min.css"><style>#task-editor{padding:90px 24px 24px;max-width:850px;margin:auto}</style></head>',
+    '<link rel="stylesheet" href="' +
+      mapped('teaching.css') +
+      '"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/wp-includes/css/dashicons.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/components/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-editor/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-library/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-library/editor.min.css"><style>#task-editor{padding:90px 24px 24px;max-width:850px;margin:auto}</style></head>',
   );
   return html.replace(
     '</body>',
@@ -164,6 +166,14 @@ http
         .end(
           `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="${mapped('footnotes.css')}"><style>body{font:18px/1.7 sans-serif;margin:20px}article{max-width:800px;margin:auto}</style></head><body>${body}</body></html>`,
         );
+    }
+    if (pathname === '/teaching-editor') {
+      const source =
+        ':::mbb:v1 collapse {"id":"edit-fold","title":"可编辑折叠","open":false}\n\nExisting teaching body.\n\n:::mbb:end\n\n:::mbb:v1 code-compare {"id":"edit-compare","leftTitle":"左代码","rightTitle":"右代码","leftHighlights":"","rightHighlights":""}\n\n```js\nleft();\n```\n\n```python\nright()\n```\n\nExplanation.\n\n:::mbb:end\n';
+      const html = taskEditor(source);
+      return response
+        .writeHead(html ? 200 : 404, { 'Content-Type': 'text/html' })
+        .end(html || 'Core runtime required');
     }
     if (pathname === '/footnotes-editor' || pathname === '/footnotes-adjacent-editor') {
       const html = taskEditor(

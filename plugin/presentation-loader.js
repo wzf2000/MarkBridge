@@ -43,7 +43,7 @@
   const highlight = async (root) => {
     const blocks = within(root, 'pre code').filter(
       (node) =>
-        !node.closest('.wp-block-mbb-math,[contenteditable]') &&
+        !node.closest('.wp-block-mbb-math,.wp-block-mbb-code-compare,[contenteditable]') &&
         !node.classList.contains('mbb-tex'),
     );
     if (!blocks.length) return;
@@ -87,6 +87,10 @@
   const scan = (root) => {
     if (!root.isConnected) return;
     highlight(root).catch(() => {});
+    if (config.teachingScript && within(root, '[data-mbb-teaching]').length) {
+      load(config.teachingStyle, true).catch(() => {});
+      load(config.teachingScript).catch(() => {});
+    }
     if (within(root, '.mbb-footnote-ref,.mbb-footnotes').length)
       load(config.footnotes, true).catch(() => {});
     const nodes = root.nodeType === Node.TEXT_NODE ? [root] : [];

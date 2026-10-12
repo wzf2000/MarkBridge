@@ -66,7 +66,7 @@ $inputs = json_decode(
     512,
     JSON_THROW_ON_ERROR,
 );
-if (!is_array($inputs) || count($inputs) !== 14) {
+if (!is_array($inputs) || count($inputs) !== 15) {
     throw new RuntimeException('Missing PHP isolation input stamp; run npm run build:php');
 }
 foreach ($inputs as $name => $digest) {
@@ -82,6 +82,7 @@ foreach (
         'Footnotes.php',
         'DisplayBoundaries.php',
         'CodeWhitespace.php',
+        'Teaching.php',
         'composer.json',
         'composer.lock',
         'block-capabilities.json',

@@ -33,5 +33,37 @@
   },
   "mbb/math": {
     "tex": "string"
+  },
+  "mbb/collapse": {
+    "id": "string",
+    "title": "string",
+    "open": "boolean",
+    "version": "integer"
+  },
+  "mbb/steps": {
+    "id": "string",
+    "title": "string",
+    "mode": "string",
+    "previous": "boolean",
+    "next": "boolean",
+    "full": "boolean",
+    "version": "integer"
+  },
+  "mbb/step": {
+    "id": "string",
+    "title": "string",
+    "version": "integer"
+  },
+  "mbb/code-compare": {
+    "id": "string",
+    "leftTitle": "string",
+    "rightTitle": "string",
+    "leftHighlights": "string",
+    "rightHighlights": "string",
+    "version": "integer",
+    "codeLeft": "string",
+    "languageLeft": "string",
+    "codeRight": "string",
+    "languageRight": "string"
   }
 }
