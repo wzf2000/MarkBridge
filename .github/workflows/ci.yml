@@ -34,12 +34,8 @@ jobs:
       MARKBRIDGE_CI_DB_HOST: 127.0.0.1:3306
       MARKBRIDGE_CI_DB_NAME: markbridge_ci_verify
       MARKBRIDGE_CI_DB_PASSWORD: synthetic-ci-only-password
-      MARKBRIDGE_TEST_WORDPRESS_ROOT: ${{ runner.temp }}/markbridge-wordpress
-      MARKBRIDGE_WORDPRESS_SOURCE: ${{ runner.temp }}/markbridge-wordpress
       MARKBRIDGE_TEST_HOME: http://127.0.0.1:18764
-      MARKBRIDGE_TEST_WPCLI: ${{ runner.temp }}/markbridge-wp
       MARKBRIDGE_TEST_RUNTIME: ${{ github.workspace }}/.runtime/ci
-      MARKBRIDGE_TEST_PLUGIN_ROOT: ${{ runner.temp }}/markbridge-wordpress/wp-content/plugins/markbridge
     strategy:
       fail-fast: false
       matrix:
@@ -51,6 +47,15 @@ jobs:
         with:
           ref: ${{ inputs.source_sha || github.sha }}
           persist-credentials: false
+
+      - name: Set synthetic installation paths on the runner
+        run: |
+          {
+            printf 'MARKBRIDGE_TEST_WORDPRESS_ROOT=%s/markbridge-wordpress\n' "$RUNNER_TEMP"
+            printf 'MARKBRIDGE_WORDPRESS_SOURCE=%s/markbridge-wordpress\n' "$RUNNER_TEMP"
+            printf 'MARKBRIDGE_TEST_WPCLI=%s/markbridge-wp\n' "$RUNNER_TEMP"
+            printf 'MARKBRIDGE_TEST_PLUGIN_ROOT=%s/markbridge-wordpress/wp-content/plugins/markbridge\n' "$RUNNER_TEMP"
+          } >> "$GITHUB_ENV"
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
