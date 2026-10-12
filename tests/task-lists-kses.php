@@ -53,6 +53,7 @@ function mbb_display_preferences()
         'code_copy' => true,
     ];
 }
+require __DIR__ . '/../plugin/components.php';
 require __DIR__ . '/../plugin/presentation.php';
 $fixtures = json_decode(stream_get_contents(STDIN), true, 512, JSON_THROW_ON_ERROR);
 foreach ($fixtures as $markup) {

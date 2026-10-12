@@ -10,10 +10,19 @@ const fixture = (mode = 'empty') =>
 async function openEmpty(page, mode = 'empty', image = null) {
   const settings = fixture(mode);
   if (image) {
-    settings.scripts[0].inline.before[0] = settings.scripts[0].inline.before[0].replace(
-      '"images":[]',
-      '"images":' + JSON.stringify({ custom_broken: image }),
-    );
+    const loader = settings.scripts.find(({ handle }) => handle === 'mbb-presentation-loader');
+    expect(loader, 'Presentation loader fixture must be registered').toBeDefined();
+    const prefix = 'window.MBB_PRESENTATION=';
+    const matches = (loader.inline.before || [])
+      .map((script, index) => ({ script, index }))
+      .filter(({ script }) => script.startsWith(prefix));
+    expect(matches, 'Fixture must contain exactly one presentation configuration').toHaveLength(1);
+    const { script, index } = matches[0];
+    const config = JSON.parse(script.slice(prefix.length, -1));
+    expect(config.images, 'Fixture must begin with an empty emoji image mapping').toEqual([]);
+    config.images = { custom_broken: image };
+    loader.inline.before[index] = prefix + JSON.stringify(config) + ';';
+    expect(loader.inline.before[index]).not.toBe(script);
   }
   const scripts = settings.scripts
     .map(

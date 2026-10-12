@@ -5,6 +5,12 @@ namespace MarkBridge\Probe;
 final class Teaching
 {
     public const SCHEMAS = [
+        'component' => [
+            'id' => 'string',
+            'component' => 'string',
+            'componentVersion' => 'string',
+            'params' => 'object',
+        ],
         'collapse' => ['id' => 'string', 'title' => 'string', 'open' => 'boolean'],
         'steps' => [
             'id' => 'string',
@@ -76,6 +82,15 @@ final class Teaching
                 self::fail('TEACHING_TITLE', 'Teaching title must be nonempty single-line text');
             }
         }
+        if ($kind === 'component') {
+            if (
+                !preg_match('/^[a-z][a-z0-9-]{0,63}$/D', $out['component']) ||
+                !preg_match('/^\d+\.\d+\.\d+$/D', $out['componentVersion'])
+            ) {
+                self::fail('COMPONENT_VERSION', 'Invalid component/version');
+            }
+            self::params($out['params']);
+        }
         if (
             $kind === 'steps' &&
             (!in_array($out['mode'], ['full', 'staged'], true) || $out['full'] !== true)
@@ -105,6 +120,111 @@ final class Teaching
         }
         return $out;
     }
+    public static function params(mixed $value): void
+    {
+        if (!($value instanceof \stdClass)) {
+            self::fail('COMPONENT_PARAMS', 'Parameters must be a JSON object');
+        }
+        $nodes = 0;
+        $walk = function ($v, $depth) use (&$walk, &$nodes) {
+            if (++$nodes > 1024 || $depth > 8) {
+                self::fail('COMPONENT_PARAMS', 'Parameter structure exceeds budget');
+            }
+            if (is_string($v) && !mb_check_encoding($v, 'UTF-8')) {
+                self::fail('COMPONENT_PARAMS', 'Invalid Unicode');
+            }
+            if (is_float($v) && !is_finite($v)) {
+                self::fail('COMPONENT_PARAMS', 'Numbers must be finite');
+            }
+            if (is_array($v) || $v instanceof \stdClass) {
+                foreach ($v as $key => $child) {
+                    if (in_array((string) $key, ['__proto__', 'prototype', 'constructor'], true)) {
+                        self::fail('COMPONENT_PARAMS', 'Unsafe property name');
+                    }
+                    $walk($child, $depth + 1);
+                }
+            }
+        };
+        $walk($value, 0);
+        if (strlen(self::encode($value)) > 16384) {
+            self::fail('COMPONENT_PARAMS', 'Parameters exceed 16 KiB');
+        }
+    }
+    /** JSON.stringify ordering and numeric spelling, including empty objects. */
+    public static function encode(mixed $value): string
+    {
+        $precision = ini_get('serialize_precision');
+        ini_set('serialize_precision', '-1');
+        try {
+            return self::encodeValue($value);
+        } finally {
+            ini_set('serialize_precision', (string) $precision);
+        }
+    }
+    private static function encodeValue(mixed $value): string
+    {
+        if (is_array($value) && array_is_list($value)) {
+            return '[' . implode(',', array_map([self::class, 'encodeValue'], $value)) . ']';
+        }
+        if (is_array($value) || $value instanceof \stdClass) {
+            $props = (array) $value;
+            $indices = [];
+            $ordinary = [];
+            foreach ($props as $key => $v) {
+                $k = (string) $key;
+                if (preg_match('/^(0|[1-9]\d*)$/D', $k) && (float) $k < 4294967295) {
+                    $indices[$k] = $v;
+                } else {
+                    $ordinary[$k] = $v;
+                }
+            }
+            uksort($indices, static fn($a, $b) => (float) $a <=> (float) $b);
+            $parts = [];
+            foreach ($indices + $ordinary as $key => $v) {
+                $parts[] = self::encodeValue((string) $key) . ':' . self::encodeValue($v);
+            }
+            return '{' . implode(',', $parts) . '}';
+        }
+        if (is_int($value) && abs($value) > 9007199254740991) {
+            $value = (float) $value;
+        }
+        $raw = json_encode(
+            $value,
+            JSON_UNESCAPED_UNICODE |
+                JSON_UNESCAPED_SLASHES |
+                JSON_UNESCAPED_LINE_TERMINATORS |
+                JSON_THROW_ON_ERROR,
+        );
+        if (is_int($value) || is_float($value)) {
+            if ($value == 0) {
+                return '0';
+            }
+            $raw = strtolower($raw);
+            if (str_contains($raw, 'e')) {
+                [$mantissa, $exponent] = explode('e', $raw);
+                $exp = (int) $exponent;
+                $mantissa = preg_replace('/\.0$/', '', $mantissa);
+                if ($exp >= -6 && $exp < 21) {
+                    $sign = str_starts_with($mantissa, '-') ? '-' : '';
+                    $mantissa = ltrim($mantissa, '-');
+                    $point = strpos($mantissa, '.');
+                    $point = $point === false ? strlen($mantissa) : $point;
+                    $digits = str_replace('.', '', $mantissa);
+                    $point += $exp;
+                    $raw =
+                        $sign .
+                        ($point <= 0
+                            ? '0.' . str_repeat('0', -$point) . $digits
+                            : ($point >= strlen($digits)
+                                ? $digits . str_repeat('0', $point - strlen($digits))
+                                : substr($digits, 0, $point) . '.' . substr($digits, $point)));
+                } else {
+                    $raw = $mantissa . 'e' . ($exp >= 0 ? '+' : '') . $exp;
+                }
+            }
+        }
+        return $raw;
+    }
     public static function json(string $raw): mixed
     {
         preg_match_all('/"(?:\\\\.|[^"\\\\])*"|[^\s]/', $raw, $matches);
@@ -130,7 +250,20 @@ final class Teaching
                 $stack[$index][$key] = true;
             }
         }
-        return json_decode($raw, true, 32, JSON_THROW_ON_ERROR);
+
+        $object = json_decode($raw, false, 32, JSON_THROW_ON_ERROR);
+        $attrs = json_decode($raw, true, 32, JSON_THROW_ON_ERROR);
+        if (
+            is_object($object) &&
+            isset($object->attrs) &&
+            property_exists($object->attrs, 'params')
+        ) {
+            $attrs['attrs']['params'] = $object->attrs->params;
+        }
+        if (is_object($object) && property_exists($object, 'params')) {
+            $attrs['params'] = $object->params;
+        }
+        return $attrs;
     }
     public static function source(string $source, string &$nonce): string
     {
@@ -197,7 +330,7 @@ final class Teaching
             } else {
                 if (
                     !preg_match(
-                        '/^:::mbb:v1 (collapse|steps|step|code-compare) (\{.*\})$/D',
+                        '/^:::mbb:v1 (collapse|steps|step|code-compare|component) (\{.*\})$/D',
                         $line,
                         $m,
                     )
@@ -229,7 +362,7 @@ final class Teaching
     {
         return preg_match('/^<!--mbb-teaching ([0-9a-f]{32}):([0-9a-f]+)-->\s*$/D', $raw, $m) &&
             $m[1] === $nonce
-            ? json_decode(hex2bin($m[2]), true, 32, JSON_THROW_ON_ERROR)
+            ? self::json(hex2bin($m[2]))
             : null;
     }
     public static function assemble(array $blocks): array
@@ -322,7 +455,7 @@ final class Teaching
                     if ($kind === 'step' && $parent !== 'steps') {
                         self::fail('TEACHING_STRUCTURE', 'Step must be a direct child of steps');
                     }
-                    if (in_array($kind, ['collapse', 'step'], true) && $inner === []) {
+                    if (in_array($kind, ['collapse', 'step', 'component'], true) && $inner === []) {
                         self::fail('TEACHING_STRUCTURE', 'Teaching body cannot be empty');
                     }
                     if ($kind === 'collapse' && $collapse >= 3) {
@@ -406,10 +539,7 @@ final class Teaching
         return ':::mbb:v1 ' .
             $kind .
             ' ' .
-            json_encode(
-                $attrs,
-                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR,
-            ) .
+            self::encode($attrs) .
             "\n\n" .
             $codes .
             rtrim($body) .

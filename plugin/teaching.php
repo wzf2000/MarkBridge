@@ -5,7 +5,7 @@ add_action('init', static function () {
         file_get_contents(__DIR__ . '/includes/php-converter/block-capabilities.json'),
         true,
     );
-    foreach (['collapse', 'steps', 'step', 'code-compare'] as $kind) {
+    foreach (['collapse', 'steps', 'step', 'code-compare', 'component'] as $kind) {
         $attrs = [];
         foreach ($schemas['mbb/' . $kind] as $key => $type) {
             $attrs[$key] = ['type' => $type === 'integer' ? 'number' : $type];
@@ -15,6 +15,27 @@ add_action('init', static function () {
 });
 function mbb_enqueue_teaching_assets()
 {
+    wp_enqueue_script(
+        'mbb-components',
+        plugins_url(mbb_asset('components.js'), __FILE__),
+        [],
+        substr(hash_file('sha256', __DIR__ . '/components.js'), 0, 12),
+        true,
+    );
+    static $registryAttached = false;
+    if (!$registryAttached) {
+        $registryAttached = true;
+        wp_add_inline_script(
+            'mbb-components',
+            'window.MBBComponents=' .
+                mbb_component_json(
+                    mbb_component_available(),
+                    JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT,
+                ) .
+                ';',
+            'before',
+        );
+    }
     wp_enqueue_script(
         'mbb-teaching',
         plugins_url(mbb_asset('teaching.js'), __FILE__),
@@ -37,7 +58,7 @@ add_filter(
             return $html;
         }
         $kind = substr($name, 4);
-        if (!in_array($kind, ['collapse', 'steps', 'step', 'code-compare'], true)) {
+        if (!in_array($kind, ['collapse', 'steps', 'step', 'code-compare', 'component'], true)) {
             return $html;
         }
         if (!is_admin()) {
@@ -57,6 +78,46 @@ add_filter(
                 'rightHighlights',
             ]),
         );
+        if ($kind === 'component') {
+            $paramsConsistent = true;
+            if (
+                preg_match(
+                    '/<p data-mbb-generated="" class="mbb-component-params">([A-Za-z0-9+\/=]*)<\/p>/',
+                    $html,
+                    $m,
+                )
+            ) {
+                $params = json_decode(base64_decode($m[1], true), false, 16);
+                $paramsConsistent =
+                    json_decode(base64_decode($m[1], true), true, 16) ===
+                    ($attrs['params'] ?? null);
+                if ($params instanceof stdClass) {
+                    $attrs['params'] = $params;
+                }
+            }
+            $p = mbb_component_registry()[$attrs['component'] ?? ''] ?? null;
+            $config = [
+                'component' => $attrs['component'] ?? '',
+                'componentVersion' => $attrs['componentVersion'] ?? '',
+                'params' => $attrs['params'] ?? (object) [],
+                'status' => !$p
+                    ? 'missing'
+                    : ($p['version'] !== ($attrs['componentVersion'] ?? '')
+                        ? 'incompatible'
+                        : $p['status']),
+            ];
+            if (
+                $config['status'] === 'available' &&
+                (!$paramsConsistent ||
+                    !mbb_component_pure_params($config['params']) ||
+                    !mbb_component_schema($config['params'], $p['schema']))
+            ) {
+                $config['status'] = 'invalid-params';
+            }
+            if ($config['status'] === 'available') {
+                $config['provider'] = mbb_component_public($p);
+            }
+        }
         if ($kind === 'steps') {
             $config['mode'] = apply_filters(
                 'markbridge_teaching_steps_mode',
@@ -65,11 +126,11 @@ add_filter(
             );
         }
         return preg_replace(
-            '/^<div\b/',
-            '<div data-mbb-teaching="' .
+            '/^(\s*)<div\b/',
+            '$1<div data-mbb-teaching="' .
                 esc_attr($kind) .
                 '" data-mbb-teaching-config="' .
-                esc_attr(wp_json_encode($config)) .
+                esc_attr(mbb_component_json($config)) .
                 '"',
             $html,
             1,
@@ -87,7 +148,7 @@ add_action(
             if (
                 is_object($post) &&
                 preg_match(
-                    '/<!-- wp:mbb\/(collapse|steps|step|code-compare)\b/',
+                    '/<!-- wp:mbb\/(collapse|steps|step|code-compare|component)\b/',
                     $post->post_content ?? '',
                 )
             ) {

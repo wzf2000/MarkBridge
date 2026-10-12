@@ -6,7 +6,7 @@ $options = [
     'markbridge_emoji_active' => 'synthetic-pack',
     'markbridge_emoji_packs' => ['synthetic-pack' => ['name' => 'Synthetic']],
 ];
-$actions = $filters = $scripts = $styles = $inline = [];
+$actions = $filters = $scripts = $styles = $inline = $script_inline = [];
 $can_manage = true;
 $nonce_ok = true;
 $database_ok = true;
@@ -106,7 +106,10 @@ function wp_enqueue_style($handle, $url, $deps = [], $version = null)
 {
     $GLOBALS['styles'][] = $handle;
 }
-function wp_add_inline_script($handle, $script, $position = 'after') {}
+function wp_add_inline_script($handle, $script, $position = 'after')
+{
+    $GLOBALS['script_inline'][$handle][$position][] = $script;
+}
 function wp_add_inline_style($handle, $css)
 {
     $GLOBALS['inline'][] = $handle;
@@ -130,7 +133,9 @@ function mbb_emoji_config()
 }
 
 require __DIR__ . '/../plugin/includes/admin-settings.php';
+require __DIR__ . '/../plugin/components.php';
 require __DIR__ . '/../plugin/presentation.php';
+require __DIR__ . '/../plugin/teaching.php';
 function mbb_settings_assert($condition, $message)
 {
     if (!$condition) {
@@ -362,4 +367,62 @@ mbb_settings_assert(
     array_diff_key($options, [MBB_DISPLAY_OPTION => true]) === $baseline,
     'Rendering wrote legacy options',
 );
+$special = "<!--<script></script>&'\"";
+$GLOBALS['mbb_components'] = [
+    'html-fixture' => [
+        'id' => 'html-fixture',
+        'title' => $special,
+        'version' => '0.1.0',
+        'status' => 'available',
+        'protocolVersion' => 1,
+        'minMarkBridge' => '1.9.0-dev.1',
+        'budgets' => mbb_component_budget_limits(),
+        'schema' => [
+            'type' => 'object',
+            'additionalProperties' => false,
+            'properties' => ['text' => ['type' => 'string', 'enum' => [$special]]],
+        ],
+        'defaults' => (object) ['text' => $special],
+        'resource' => ['url' => '/fixed-fixture.html', 'sha256' => str_repeat('a', 64)],
+    ],
+];
+foreach (
+    [
+        [$actions['enqueue_block_editor_assets'], ['mbb-components']],
+        [
+            array_merge($actions['wp_enqueue_scripts'], [
+                'mbb_enqueue_teaching_assets',
+                'mbb_enqueue_teaching_assets',
+            ]),
+            ['mbb-presentation-loader', 'mbb-components'],
+        ],
+    ]
+    as [$callbacks, $handles]
+) {
+    $scripts = $script_inline = [];
+    foreach ($callbacks as $callback) {
+        $callback();
+    }
+    foreach ($handles as $handle) {
+        $prefix = 'window.MBBComponents=';
+        $registries = array_values(
+            array_filter(
+                $script_inline[$handle]['before'] ?? [],
+                static fn($script) => str_starts_with($script, 'window.MBBComponents='),
+            ),
+        );
+        mbb_settings_assert(
+            count($registries) === 1,
+            'Actual enqueue omitted or duplicated its registry inline for ' . $handle,
+        );
+        $encoded = substr($registries[0], strlen($prefix), -1);
+        mbb_settings_assert(
+            !preg_match('/[<>&\']/', $encoded) &&
+                str_contains($encoded, '\\u0022') &&
+                json_decode($encoded, true, 16, JSON_THROW_ON_ERROR) ===
+                    json_decode(mbb_component_json(mbb_component_available()), true),
+            'Registry inline exposed HTML script syntax or changed its decoded provider data',
+        );
+    }
+}
 echo "Settings defaults, capability, nonce, strict input, persistence, failure, legacy options, links and real presentation effects passed.\n";

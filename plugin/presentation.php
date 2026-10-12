@@ -181,6 +181,16 @@ add_action(
         );
         wp_add_inline_script(
             'mbb-presentation-loader',
+            'window.MBBComponents=' .
+                mbb_component_json(
+                    mbb_component_available(),
+                    JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT,
+                ) .
+                ';',
+            'before',
+        );
+        wp_add_inline_script(
+            'mbb-presentation-loader',
             'window.MBB_PRESENTATION=' .
                 wp_json_encode([
                     'codeScripts' => $scripts,
@@ -193,6 +203,7 @@ add_action(
                     'emoji' => plugins_url(mbb_asset('emoji.js'), __FILE__),
                     'images' => mbb_emoji_config(),
                     'footnotes' => plugins_url(mbb_asset('footnotes.css'), __FILE__),
+                    'componentScript' => plugins_url(mbb_asset('components.js'), __FILE__),
                     'teachingScript' => plugins_url(mbb_asset('teaching.js'), __FILE__),
                     'teachingStyle' => plugins_url(mbb_asset('teaching.css'), __FILE__),
                 ]) .

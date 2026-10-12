@@ -150,3 +150,45 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+.mbb-component-controls {
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 12px;
+  margin-block: 16px;
+  color: #243447;
+}
+.mbb-component-controls > button {
+  font: inherit;
+  padding: 6px 12px;
+  margin-right: 8px;
+  background: white;
+  color: inherit;
+  border: 1px solid #9daec2;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.mbb-component-controls > button:focus-visible {
+  outline: 3px solid #1674c5;
+  outline-offset: 2px;
+}
+.mbb-component-frame {
+  display: block;
+  width: 100%;
+  border: 1px solid #d4dce8;
+  border-radius: 8px;
+  min-height: 280px;
+}
+.wp-block-mbb-component > .mbb-teaching-body {
+  padding: 12px;
+  border-left: 3px solid #93b8d4;
+}
+@media print {
+  .mbb-component-controls {
+    display: none !important;
+  }
+}
+
+.mbb-component-params {
+  display: none;
+}

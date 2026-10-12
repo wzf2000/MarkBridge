@@ -216,6 +216,7 @@ function mbb_html_allowed($blocks)
             'mbb/footnote',
             'mbb/math',
             'mbb/code',
+            'mbb/component',
             'mbb/collapse',
             'mbb/steps',
             'mbb/step',
@@ -303,6 +304,21 @@ function mbb_candidate($r)
     if (is_wp_error($doc)) {
         return $doc;
     }
+    if ($p && str_contains($p->post_content, '<!-- wp:mbb/component ')) {
+        $trusted = mbb_convert([
+            'mode' => 'paired_restore',
+            'source' => $p->post_content_filtered,
+            'serialized' => $p->post_content,
+            'documentId' => mbb_id($p->ID),
+        ]);
+        if (is_wp_error($trusted)) {
+            return mbb_error('component_base', '原组件配对已损坏，不能据此保留未登记配置。', 422);
+        }
+    }
+    $admission = mbb_component_admit($doc['serialized'], $p ? $p->post_content : '');
+    if (is_wp_error($admission)) {
+        return $admission;
+    }
     // Independent server HTML policy: never silently strip content accepted by the worker.
     if (!mbb_html_allowed(parse_blocks($doc['serialized']))) {
         return mbb_error('html_policy', '内容不符合服务器HTML白名单，未保存。', 422);
@@ -332,10 +348,19 @@ function mbb_kses_plain_block_sources($text, $allowed = 'post', $protocols = [])
     if (!str_contains($text, '<!--')) {
         return $text;
     }
+    $component_comments = [];
+    preg_match_all('/<!-- wp:mbb\/component (\{[\s\S]*?\}) -->/', $text, $matches);
+    foreach ($matches[0] as $i => $comment) {
+        $attrs = json_decode($matches[1][$i], false, 32);
+        if (is_object($attrs) && isset($attrs->id)) {
+            $component_comments[$attrs->id] = $comment;
+        }
+    }
     $walk = function ($blocks) use (&$walk, $allowed, $protocols) {
         foreach ($blocks as &$b) {
             $fields =
                 [
+                    'mbb/component' => ['params'],
                     'mbb/code' => ['code'],
                     'mbb/math' => ['tex'],
                     'mbb/code-compare' => ['codeLeft', 'codeRight', 'leftTitle', 'rightTitle'],
@@ -346,7 +371,11 @@ function mbb_kses_plain_block_sources($text, $allowed = 'post', $protocols = [])
             $plain = [];
             $attrs = $b['attrs'];
             foreach ($fields as $field) {
-                if (isset($attrs[$field]) && is_string($attrs[$field])) {
+                if (
+                    isset($attrs[$field]) &&
+                    (is_string($attrs[$field]) ||
+                        ($b['blockName'] === 'mbb/component' && $field === 'params'))
+                ) {
                     $plain[$field] = $attrs[$field];
                     $attrs[$field] = '';
                 }
@@ -359,7 +388,15 @@ function mbb_kses_plain_block_sources($text, $allowed = 'post', $protocols = [])
         }
         return $blocks;
     };
-    return serialize_blocks($walk(parse_blocks($text)));
+    $filtered = serialize_blocks($walk(parse_blocks($text)));
+    return preg_replace_callback(
+        '/<!-- wp:mbb\/component (\{[\s\S]*?\}) -->/',
+        static function ($m) use ($component_comments) {
+            $attrs = json_decode($m[1], false, 32);
+            return $component_comments[$attrs->id ?? ''] ?? $m[0];
+        },
+        $filtered,
+    );
 }
 // Preserve only DOM-equivalent entity and void-element spelling after normal KSES.
 function mbb_filter_paired_html($value)

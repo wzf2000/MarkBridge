@@ -10,6 +10,7 @@
 | ------------------------- | ----------------- | ---------- |
 | `docs/GETTING-STARTED.md` | `Getting-Started` | 快速开始   |
 | `docs/USAGE.md`           | `Usage`           | 编辑与发布 |
+| `docs/TEACHING.md`        | `Teaching`        | 教学内容   |
 | `docs/TROUBLESHOOTING.md` | `Troubleshooting` | 常见问题   |
 | `docs/INSTALL.md`         | `Installation`    | 安装与升级 |
 | `docs/RUNTIME.md`         | `Runtime`         | 服务器配置 |

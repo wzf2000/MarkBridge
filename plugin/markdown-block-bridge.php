@@ -4,7 +4,7 @@
  * Plugin URI: https://github.com/wzf2000/MarkBridge
  * Author: wzf2000
  * Author URI: https://github.com/wzf2000
- * Version: 1.5.0-dev.1
+ * Version: 1.9.0-rc.1
  * License: GPL-3.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  * Requires at least: 7.1
@@ -17,6 +17,7 @@ if (!defined('ABSPATH')) {
 }
 require_once __DIR__ . '/includes/runtime-settings.php';
 require_once __DIR__ . '/includes/admin-settings.php';
+require_once __DIR__ . '/components.php';
 require_once __DIR__ . '/teaching.php';
 
 function mbb_is_lab()
@@ -70,6 +71,7 @@ add_action('enqueue_block_editor_assets', function () {
             'wp-rich-text',
             'wp-hooks',
             'mbb-math',
+            'mbb-components',
         ],
         substr(hash_file('sha256', $file), 0, 12),
         true,

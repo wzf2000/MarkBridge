@@ -940,6 +940,8 @@ function rawMarkdown(blocks, path = 'blocks') {
   );
 }
 export function toMarkdown(blocks, context) {
+  if (globalThis.MarkBridgeParameterDrafts?.pending())
+    fail('COMPONENT_DRAFT', '参数尚未应用；请应用或撤销参数输入后保存。');
   if (context?.origin !== 'markdown_import')
     fail('ORIGIN_REQUIRED', '只有明确Markdown来源文档允许反向转换');
   validateTeaching(blocks, fail);
@@ -1034,6 +1036,8 @@ export function importPairedDocument(source, serialized, documentId) {
   };
 }
 export function exportDocument(document, serialized) {
+  if (globalThis.MarkBridgeParameterDrafts?.pending())
+    fail('COMPONENT_DRAFT', '参数尚未应用；请应用或撤销参数输入后保存。');
   checkSource(serialized);
   checkSource(document?.serialized);
   checkSource(document?.source);

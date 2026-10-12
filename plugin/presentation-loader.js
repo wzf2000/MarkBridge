@@ -90,6 +90,7 @@
     if (config.teachingScript && within(root, '[data-mbb-teaching]').length) {
       load(config.teachingStyle, true).catch(() => {});
       load(config.teachingScript).catch(() => {});
+      if (config.componentScript) load(config.componentScript).catch(() => {});
     }
     if (within(root, '.mbb-footnote-ref,.mbb-footnotes').length)
       load(config.footnotes, true).catch(() => {});

@@ -65,5 +65,12 @@
     "languageLeft": "string",
     "codeRight": "string",
     "languageRight": "string"
+  },
+  "mbb/component": {
+    "id": "string",
+    "component": "string",
+    "componentVersion": "string",
+    "params": "object",
+    "version": "integer"
   }
 }

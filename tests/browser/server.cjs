@@ -20,6 +20,11 @@ const readerDisabledPresentation = JSON.parse(
     encoding: 'utf8',
   }),
 );
+const componentPresentation = JSON.parse(
+  execFileSync('php', [path.join(__dirname, 'presentation-assets.php'), 'empty-component'], {
+    encoding: 'utf8',
+  }),
+);
 const mapped = (name) => '/plugin/' + assets[name];
 const frontScripts = (settings) =>
   settings.scripts
@@ -64,7 +69,7 @@ window.MBB_REVISIONS={open(){}};</script>
 
 // Optional real WordPress block editor fixture, using only a sanitized core-script runtime.
 const wpRuntime = process.env.MARKBRIDGE_TEST_RUNTIME;
-const taskEditor = (source = '- [ ] Browser task\n- ordinary\n') => {
+const taskEditor = (source = '- [ ] Browser task\n- ordinary\n', options = {}) => {
   if (!wpRuntime) return null;
   let html = fs.readFileSync(path.join(wpRuntime, 'run/worker-bootstrap.html'), 'utf8');
   html = html.replaceAll('http://markbridge.invalid', '');
@@ -81,13 +86,13 @@ const taskEditor = (source = '- [ ] Browser task\n- ordinary\n') => {
 const e = wp.element.createElement;
 function EditorBody() {
   window.taskRegistry = wp.data.useRegistry();
-  return e(wp.blockEditor.BlockTools, {}, e(wp.blockEditor.BlockList), e(wp.blockEditor.ButtonBlockAppender));
+  return e(wp.blockEditor.BlockTools, {}, ${options.iframe ? `e(wp.blockEditor.__unstableIframe,{name:'editor-canvas',title:'Editor canvas',style:{width:'100%',height:'500px'}},e(wp.blockEditor.BlockList)),e(wp.components.Panel,{},e(wp.blockEditor.InspectorControls.Slot))` : 'e(wp.blockEditor.BlockList), e(wp.blockEditor.ButtonBlockAppender)'});
 }
 function TaskEditorApp() {
   const [blocks,setBlocks] = wp.element.useState(() => MBB.toBlocks(${JSON.stringify(source)}));
   window.taskBlocks = blocks;
   return e(wp.components.SlotFillProvider, {}, e(wp.blockEditor.BlockEditorProvider, {
-    value:blocks,onInput:setBlocks,onChange:setBlocks,settings:{allowedBlockTypes:true},
+    value:blocks,onInput:setBlocks,onChange:setBlocks,settings:{allowedBlockTypes:true,__unstableResolvedAssets:{styles:'<link rel="stylesheet" href="/wp-includes/css/dist/block-editor/style.min.css">',scripts:''}},
   }, e(EditorBody)));
 }
 wp.element.createRoot(document.getElementById('task-editor')).render(e(TaskEditorApp));
@@ -166,6 +171,64 @@ http
         .end(
           `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="${mapped('footnotes.css')}"><style>body{font:18px/1.7 sans-serif;margin:20px}article{max-width:800px;margin:auto}</style></head><body>${body}</body></html>`,
         );
+    }
+    if (pathname === '/component-dynamic')
+      return response
+        .writeHead(200, { 'Content-Type': 'text/html' })
+        .end(
+          '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><article id="dynamic"></article>' +
+            frontScripts(componentPresentation),
+        );
+    if (pathname === '/component-fixture.html')
+      return response
+        .writeHead(200, { 'Content-Type': 'text/html' })
+        .end(fs.readFileSync(path.join(__dirname, 'fixtures/component.html'), 'utf8'));
+    if (pathname === '/component-editor') {
+      const raw = fs.readFileSync(path.join(__dirname, 'fixtures/component.html'), 'utf8');
+      const provider = {
+        id: 'fixture',
+        version: '0.1.0',
+        protocolVersion: 1,
+        minMarkBridge: '1.9.0-dev.1',
+        budgets: {
+          resourceBytes: 524288,
+          startupMs: 5000,
+          wallMs: 2000,
+          traceFrames: 8192,
+          traceBytes: 524288,
+        },
+        title: 'Fixed fixture',
+        defaults: { value: 42, behavior: 'complete' },
+        resource: {
+          url: '/component-fixture.html',
+          sha256: require('node:crypto').createHash('sha256').update(raw).digest('hex'),
+        },
+      };
+      const source =
+        ':::mbb:v1 component {"id":"editor-component","component":"fixture","componentVersion":"0.1.0","params":{"value":42,"behavior":"complete"}}\n\nEditable static fallback.\n\n:::mbb:end\n';
+      let html = taskEditor(source, { iframe: true });
+      if (html)
+        html = html
+          .replace(
+            'const e = wp.element.createElement;',
+            'window.MBBComponents=' +
+              JSON.stringify([
+                provider,
+                {
+                  ...provider,
+                  id: 'fixture-second',
+                  defaults: { value: 99, behavior: 'complete' },
+                },
+              ]) +
+              ';const e = wp.element.createElement;',
+          )
+          .replace(
+            '<div id="task-editor">',
+            '<script src="' + mapped('components.js') + '"></script><div id="task-editor">',
+          );
+      return response
+        .writeHead(html ? 200 : 404, { 'Content-Type': 'text/html' })
+        .end(html || 'Core runtime required');
     }
     if (pathname === '/teaching-editor') {
       const source =

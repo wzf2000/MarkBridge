@@ -881,6 +881,11 @@ final class Converter
                         self::elementText($attrs['code' . $side]) .
                         '</code></pre></div>';
                 }
+            } elseif ($kind === 'component') {
+                $html .=
+                    '<p data-mbb-generated="" class="mbb-component-params">' .
+                    base64_encode(Teaching::encode($attrs['params'])) .
+                    '</p>';
             } else {
                 $html .=
                     '<p class="mbb-teaching-title" data-mbb-generated="">' .
@@ -1001,13 +1006,7 @@ final class Converter
 
     private static function commentJson(array $attrs): string
     {
-        $json = json_encode(
-            $attrs,
-            JSON_UNESCAPED_UNICODE |
-                JSON_UNESCAPED_SLASHES |
-                JSON_UNESCAPED_LINE_TERMINATORS |
-                JSON_THROW_ON_ERROR,
-        );
+        $json = Teaching::encode($attrs);
         // Match WordPress serializeAttributes: first protect literal backslashes.
         // Otherwise the final slash of an escaped backslash consumes the JSON
         // string's closing quote when the escaped-quote replacement runs first.

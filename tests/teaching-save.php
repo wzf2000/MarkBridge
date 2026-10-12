@@ -109,6 +109,14 @@ try {
     $post = get_post($id);
     $baseline = $post->post_content;
     $baseline_revision = (int) $data['saved_revision'];
+    $rendered = do_blocks($baseline);
+    foreach (['collapse', 'steps', 'step', 'code-compare'] as $kind) {
+        teaching_assert(
+            str_contains($rendered, 'data-mbb-teaching="' . $kind . '"'),
+            'Real rendering did not enhance ' . $kind,
+        );
+    }
+
     teaching_assert($post->post_content_filtered === $source, 'Import changed original Markdown');
     $parsed = parse_blocks($baseline);
     $compare_block = null;

@@ -1,5 +1,7 @@
+import { componentParams } from './component-data.js';
 // Versioned teaching syntax has a closed schema. Bodies use the ordinary parser.
 export const teachingSchemas = {
+  component: { id: 'string', component: 'string', componentVersion: 'string', params: 'object' },
   collapse: { id: 'string', title: 'string', open: 'boolean' },
   steps: {
     id: 'string',
@@ -57,6 +59,14 @@ export function teachingAttributes(kind, attrs, fail, source = false) {
         /[\r\n\x00]/.test(out[key]))
     )
       fail('TEACHING_TITLE', '教学标题需为 1–200 字符的单行纯文字');
+  if (kind === 'component') {
+    if (
+      !/^[a-z][a-z0-9-]{0,63}$/.test(out.component) ||
+      !/^\d+\.\d+\.\d+$/.test(out.componentVersion)
+    )
+      fail('COMPONENT_VERSION', '组件名称或版本非法');
+    componentParams(out.params, fail);
+  }
   if (kind === 'steps' && (!['full', 'staged'].includes(out.mode) || out.full !== true))
     fail('TEACHING_MODE', '阶段模式需为 full/staged 且全文入口必须启用');
   if (kind === 'code-compare') {
@@ -101,7 +111,7 @@ export function teachingJSON(raw, fail) {
 }
 export function validateTeachingSerialized(serialized, fail) {
   for (const m of serialized.matchAll(
-    /<!-- wp:mbb\/(collapse|steps|step|code-compare)(?: (\{[\s\S]*?\}))? -->/g,
+    /<!-- wp:mbb\/(collapse|steps|step|code-compare|component)(?: (\{[\s\S]*?\}))? -->/g,
   ))
     teachingAttributes(m[1], teachingJSON(m[2] || '{}', fail), fail);
 }
@@ -124,7 +134,8 @@ export function teachingSource(source, fail, ignored = new Set(), nonce) {
       let data;
       if (line === ':::mbb:end') data = { end: true };
       else {
-        const match = /^:::mbb:v1 (collapse|steps|step|code-compare) (\{.*\})$/.exec(line);
+        const match =
+          /^:::mbb:v1 (collapse|steps|step|code-compare|component) (\{[^\r\n]*\})$/.exec(line);
         if (!match) fail('TEACHING_SYNTAX', '教学容器需使用完整的 :::mbb:v1 名称 JSON 属性');
         let attrs;
         try {
@@ -201,7 +212,7 @@ export function validateTeaching(blocks, fail) {
           fail('TEACHING_STRUCTURE', '每篇文档只能有一个非空的顶层阶段组');
         if (kind === 'step' && parent !== 'steps')
           fail('TEACHING_STRUCTURE', '阶段只能作为阶段组直接子块');
-        if ((kind === 'collapse' || kind === 'step') && !inner.length)
+        if ((kind === 'collapse' || kind === 'step' || kind === 'component') && !inner.length)
           fail('TEACHING_STRUCTURE', '教学正文不能为空');
         if (kind === 'collapse' && collapseDepth >= 3)
           fail('TEACHING_DEPTH', '折叠内容最多嵌套三层');
@@ -261,14 +272,98 @@ export function teachingMarkdown(b, body, fail) {
 }
 export function registerTeaching() {
   const el = wp.element.createElement;
+  const drafts = new Map();
+  const syncDraftLock = () => {
+    window.MarkBridgeParameterDrafts = { pending: () => drafts.size > 0 };
+    try {
+      const editor = wp.data.dispatch('core/editor');
+      if (drafts.size) editor.lockPostSaving('mbb-component-params');
+      else editor.unlockPostSaving('mbb-component-params');
+    } catch {}
+  };
+  const ParameterEditor = ({ value, onCommit, clientId }) => {
+    const original = JSON.stringify(value || {}, null, 2);
+    const [raw, setRaw] = wp.element.useState(drafts.get(clientId)?.raw ?? original);
+    const [error, setError] = wp.element.useState(drafts.get(clientId)?.error || '');
+    wp.element.useEffect(() => {
+      if (!drafts.has(clientId)) {
+        setRaw(original);
+        setError('');
+      }
+    }, [original]);
+    const change = (text) => {
+      setRaw(text);
+      setError('');
+      if (text === original) drafts.delete(clientId);
+      else drafts.set(clientId, { raw: text, error: '', baseline: original });
+      syncDraftLock();
+    };
+    const commit = () => {
+      try {
+        const parsed = teachingJSON(raw, (code, message) => {
+          throw new Error(message);
+        });
+        componentParams(parsed, (code, message) => {
+          throw new Error(message);
+        });
+        onCommit(parsed);
+        drafts.delete(clientId);
+        syncDraftLock();
+        setError('');
+      } catch (e) {
+        setError(e.message);
+        drafts.set(clientId, {
+          raw,
+          error: e.message,
+          baseline: drafts.get(clientId)?.baseline || original,
+        });
+        syncDraftLock();
+      }
+    };
+    return el(
+      'div',
+      {},
+      el(wp.components.TextareaControl, {
+        label: '参数 JSON（纯数据）',
+        value: raw,
+        help:
+          (error ? error + ' 输入尚未应用，文章保存已暂停。' : '') ||
+          (drafts.has(clientId)
+            ? drafts.get(clientId).baseline !== original
+              ? '已应用配置已变化；当前候选仍保留，尚未应用。保存已暂停。'
+              : '参数尚未应用，文章保存已暂停。应用或撤销后继续。'
+            : '编辑后明确应用；保存时由服务端登记 schema 校验。'),
+        onChange: change,
+      }),
+      el(wp.components.Button, { variant: 'secondary', onClick: commit }, '应用参数'),
+      el(
+        wp.components.Button,
+        {
+          variant: 'tertiary',
+          onClick: () => {
+            drafts.delete(clientId);
+            syncDraftLock();
+            setRaw(original);
+            setError('');
+          },
+        },
+        '撤销参数输入',
+      ),
+    );
+  };
+
   for (const [kind, schema] of Object.entries(teachingSchemas)) {
     const name = 'mbb/' + kind;
     if (wp.blocks.getBlockType(name)) continue;
     wp.blocks.registerBlockType(name, {
       apiVersion: 3,
-      title: { collapse: '折叠内容', steps: '阶段导览', step: '阶段', 'code-compare': '代码比较' }[
-        kind
-      ],
+      title: {
+        component: '教学组件',
+        collapse: '折叠内容',
+        steps: '阶段导览',
+        step: '阶段',
+        'code-compare': '代码比较',
+      }[kind],
       category: 'text',
       ...(kind === 'step' ? { parent: ['mbb/steps'] } : {}),
       attributes: Object.fromEntries(
@@ -280,24 +375,37 @@ export function registerTeaching() {
       ),
       supports: { html: false, customClassName: false, anchor: false },
       edit: ({ attributes: a, setAttributes, clientId }) => {
+        wp.element.useEffect(
+          () => () => {
+            drafts.delete(clientId);
+            syncDraftLock();
+          },
+          [],
+        );
         wp.element.useEffect(() => {
           const initial = a.version === undefined ? { version: 1 } : {};
           for (const [key, type] of Object.entries(schema))
             if (a[key] === undefined)
               initial[key] =
-                key === 'id'
-                  ? 'mbb-' + clientId
-                  : type === 'boolean'
-                    ? key !== 'open'
-                    : key.endsWith('Highlights')
-                      ? ''
-                      : key === 'mode'
-                        ? 'full'
-                        : kind === 'code-compare'
-                          ? key === 'leftTitle'
-                            ? '原代码'
-                            : '新代码'
-                          : '标题';
+                key === 'params'
+                  ? window.MBBComponents?.[0]?.defaults || {}
+                  : key === 'component'
+                    ? window.MBBComponents?.[0]?.id || ''
+                    : key === 'componentVersion'
+                      ? window.MBBComponents?.[0]?.version || ''
+                      : key === 'id'
+                        ? 'mbb-' + clientId
+                        : type === 'boolean'
+                          ? key !== 'open'
+                          : key.endsWith('Highlights')
+                            ? ''
+                            : key === 'mode'
+                              ? 'full'
+                              : kind === 'code-compare'
+                                ? key === 'leftTitle'
+                                  ? '原代码'
+                                  : '新代码'
+                                : '标题';
           if (kind === 'code-compare')
             for (const key of Object.keys(sourceFields))
               if (a[key] === undefined) initial[key] = key.startsWith('code') ? '\n' : '';
@@ -307,50 +415,82 @@ export function registerTeaching() {
           ...schema,
           ...(kind === 'code-compare' ? sourceFields : {}),
         })
-          .filter(([key]) => key !== 'full')
+          .filter(
+            ([key]) =>
+              key !== 'full' &&
+              !(kind === 'component' && ['component', 'componentVersion'].includes(key)),
+          )
           .map(([key, type]) =>
-            el(
-              key === 'mode'
-                ? wp.components.SelectControl
-                : type === 'boolean'
-                  ? wp.components.ToggleControl
-                  : key.startsWith('code')
-                    ? wp.components.TextareaControl
-                    : wp.components.TextControl,
-              {
-                key,
-                ...(key === 'mode'
-                  ? {
-                      options: [
-                        { label: '全文', value: 'full' },
-                        { label: '分阶段', value: 'staged' },
-                      ],
-                    }
-                  : {}),
-                help: key.startsWith('code')
-                  ? '源码必须保留末尾换行；使用下方按钮显式补上。'
-                  : undefined,
-                label: {
-                  id: '稳定 ID',
-                  title: '标题',
-                  open: '默认展开',
-                  previous: '上一阶段',
-                  next: '下一阶段',
-                  full: '全文模式',
-                  leftTitle: '左侧标题',
-                  rightTitle: '右侧标题',
-                  mode: '阅读模式（full / staged）',
-                  leftHighlights: '左侧重点行（逗号分隔）',
-                  rightHighlights: '右侧重点行（逗号分隔）',
-                  codeLeft: '左侧原代码',
-                  codeRight: '右侧原代码',
-                  languageLeft: '左侧语言',
-                  languageRight: '右侧语言',
-                }[key],
-                ...(type === 'boolean' ? { checked: !!a[key] } : { value: a[key] || '' }),
-                onChange: (value) => setAttributes({ [key]: value }),
-              },
-            ),
+            key === 'params'
+              ? el(ParameterEditor, {
+                  key,
+                  value: a.params,
+                  clientId,
+                  onCommit: (params) => setAttributes({ params }),
+                })
+              : el(
+                  key === 'mode'
+                    ? wp.components.SelectControl
+                    : type === 'boolean'
+                      ? wp.components.ToggleControl
+                      : key === 'params' || key.startsWith('code')
+                        ? wp.components.TextareaControl
+                        : wp.components.TextControl,
+                  {
+                    key,
+                    ...(key === 'mode'
+                      ? {
+                          options: [
+                            { label: '全文', value: 'full' },
+                            { label: '分阶段', value: 'staged' },
+                          ],
+                        }
+                      : {}),
+                    help:
+                      key === 'params' || key.startsWith('code')
+                        ? '源码必须保留末尾换行；使用下方按钮显式补上。'
+                        : undefined,
+                    label: {
+                      component: '组件类型',
+                      componentVersion: '组件版本',
+                      params: '参数 JSON（纯数据，保存时验证）',
+                      id: '稳定 ID',
+                      title: '标题',
+                      open: '默认展开',
+                      previous: '上一阶段',
+                      next: '下一阶段',
+                      full: '全文模式',
+                      leftTitle: '左侧标题',
+                      rightTitle: '右侧标题',
+                      mode: '阅读模式（full / staged）',
+                      leftHighlights: '左侧重点行（逗号分隔）',
+                      rightHighlights: '右侧重点行（逗号分隔）',
+                      codeLeft: '左侧原代码',
+                      codeRight: '右侧原代码',
+                      languageLeft: '左侧语言',
+                      languageRight: '右侧语言',
+                    }[key],
+                    ...(type === 'boolean'
+                      ? { checked: !!a[key] }
+                      : {
+                          value:
+                            key === 'params' ? JSON.stringify(a[key] || {}, null, 2) : a[key] || '',
+                        }),
+                    onChange: (value) => {
+                      if (key === 'params') {
+                        try {
+                          const parsed = teachingJSON(value, () => {
+                            throw new Error('JSON');
+                          });
+                          componentParams(parsed, () => {
+                            throw new Error('params');
+                          });
+                          setAttributes({ params: parsed });
+                        } catch {}
+                      } else setAttributes({ [key]: value });
+                    },
+                  },
+                ),
           );
         const field = (key) => controls.find((control) => control.key === key);
         const visible =
@@ -376,15 +516,83 @@ export function registerTeaching() {
             el(
               wp.components.PanelBody,
               { title: '教学配置', initialOpen: true },
+              kind === 'component'
+                ? el(wp.components.SelectControl, {
+                    label: '登记的教学组件',
+                    value: (a.component || '') + '@' + (a.componentVersion || ''),
+                    options: [
+                      ...((window.MBBComponents || []).some(
+                        (p) => p.id === a.component && p.version === a.componentVersion,
+                      )
+                        ? []
+                        : [
+                            {
+                              label:
+                                '保留当前组件 ' +
+                                (a.component || '待选择') +
+                                ' ' +
+                                (a.componentVersion || ''),
+                              value: (a.component || '') + '@' + (a.componentVersion || ''),
+                            },
+                          ]),
+                      ...(window.MBBComponents || []).map((p) => ({
+                        label: p.title + ' ' + p.version,
+                        value: p.id + '@' + p.version,
+                      })),
+                    ],
+                    onChange: (key) => {
+                      const p = (window.MBBComponents || []).find(
+                        (p) => p.id + '@' + p.version === key,
+                      );
+                      if (p)
+                        setAttributes({
+                          component: p.id,
+                          componentVersion: p.version,
+                          params: p.defaults,
+                        });
+                    },
+                  })
+                : null,
               ...controls.filter((control) => !visible.includes(control.key)),
+              kind === 'component'
+                ? el(
+                    'div',
+                    {
+                      'data-mbb-generated': '',
+                      'data-mbb-teaching': 'component',
+                      'data-mbb-teaching-config': JSON.stringify({
+                        component: a.component,
+                        componentVersion: a.componentVersion,
+                        params: a.params,
+                        status: (window.MBBComponents || []).some(
+                          (p) => p.id === a.component && p.version === a.componentVersion,
+                        )
+                          ? 'available'
+                          : 'missing',
+                        provider: (window.MBBComponents || []).find(
+                          (p) => p.id === a.component && p.version === a.componentVersion,
+                        ),
+                      }),
+                    },
+                    el(
+                      'div',
+                      { className: 'mbb-teaching-body' },
+                      '编辑器交互预览；正文静态替代在下方编辑。',
+                    ),
+                  )
+                : null,
             ),
           ),
           el(
             'p',
             { className: 'mbb-teaching-editor-label' },
-            { collapse: '折叠内容', steps: '阶段导览', step: '阶段', 'code-compare': '代码比较' }[
-              kind
-            ],
+            {
+              component: '教学组件',
+              collapse: '折叠内容',
+              steps: '阶段导览',
+              step: '阶段',
+              'code-compare': '代码比较',
+            }[kind],
           ),
           kind === 'code-compare'
             ? el(
@@ -401,7 +609,13 @@ export function registerTeaching() {
                   ),
                 ),
               )
-            : field('title'),
+            : kind === 'component'
+              ? el(
+                  'p',
+                  {},
+                  (a.component || '请在右侧选择教学组件') + ' ' + (a.componentVersion || ''),
+                )
+              : field('title'),
 
           el(
             wp.blockEditor.InnerBlocks,
@@ -432,7 +646,13 @@ export function registerTeaching() {
                   ),
                 ),
               )
-            : el('p', { className: 'mbb-teaching-title', 'data-mbb-generated': '' }, a.title),
+            : kind === 'component'
+              ? el(
+                  'p',
+                  { 'data-mbb-generated': '', className: 'mbb-component-params' },
+                  btoa(String.fromCharCode(...new TextEncoder().encode(JSON.stringify(a.params)))),
+                )
+              : el('p', { className: 'mbb-teaching-title', 'data-mbb-generated': '' }, a.title),
           el('div', { className: 'mbb-teaching-body' }, el(wp.blockEditor.InnerBlocks.Content)),
         ),
     });

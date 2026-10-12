@@ -30,6 +30,8 @@
     return u.toString();
   };
   async function api(route, data) {
+    if (data && window.MarkBridgeParameterDrafts?.pending())
+      throw Error('参数尚未应用；请应用或撤销参数输入后保存。');
     const response = await fetch(cfg.url(route), {
       method: data ? 'POST' : 'GET',
       headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': cfg.nonce },
