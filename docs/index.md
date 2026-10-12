@@ -26,13 +26,15 @@ README 说明产品范围和最短开发入口；本页按用途区分持续有�
 
 ## ACTIVE
 
-- [编辑可靠性与真实 WordPress 自动验收](plans/active/EDITOR-RELIABILITY-1.4.0.md)：1.4.0 实施中，覆盖真实核心 CI、转换定位、兼容提示和展示资源按需加载。
+目前没有已启动且未完成的开发计划；下一轮功能需另行排期。
 
 ## DEFERRED
 
 - 更多区块适配尚未启动。
 
 ## HISTORICAL
+
+- [编辑可靠性与真实 WordPress 自动验收](plans/completed/EDITOR-RELIABILITY-1.4.0.md)：已纳入 1.4.0，覆盖真实核心 CI、转换定位、能力提示和展示资源按需加载；当前行为和验证边界见开发与维护文档。
 
 - [免额外运行环境：PHP 转换架构改进](plans/completed/PORTABLE-CONVERTER.md)：已纳入 1.3.0，保留 PHP 架构、后台配置与双引擎选择的阶段记录；当前契约和验证边界见开发与维护文档。
 
