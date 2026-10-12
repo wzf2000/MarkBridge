@@ -1,6 +1,6 @@
 # 编辑可靠性与真实 WordPress 自动验收
 
-状态：ACTIVE。目标版本：1.4.0。2026-10-12 启动，基线为已发行的 1.3.0。
+状态：**COMPLETED — 已纳入 1.4.0，2026-10-13 正式发行**。2026-10-12 启动，基线为已发行的 1.3.0。[PR #19](https://github.com/wzf2000/MarkBridge/pull/19) 已合并，[正式 Release](https://github.com/wzf2000/MarkBridge/releases/tag/v1.4.0) 对应固定源码 `edd325e2132f97b030d44dd0da004f33f87eefb1`。真实 WordPress CI、安全错误定位、托管编辑器能力提示、展示资源按需加载及最终包候选升级已完成。当前行为见[架构](../../ARCHITECTURE.md)、[编辑与发布](../../USAGE.md)和[常见问题](../../TROUBLESHOOTING.md)，实际验收与保留边界见[验证说明](../../VALIDATION.md#140发行验证范围)。本计划保留实施范围和完成标准，不作当前执行入口。
 
 ## 范围与执行顺序
 
