@@ -154,6 +154,7 @@ function mbb_error($code, $message, $status = 409)
 {
     return new WP_Error($code, $message, ['status' => $status]);
 }
+require_once __DIR__ . '/includes/conversion-errors.php';
 function mbb_convert($input)
 {
     $diagnostics = mbb_runtime_diagnostics();
@@ -169,11 +170,7 @@ function mbb_convert($input)
         return $result;
     }
     if (empty($result['ok'])) {
-        return mbb_error(
-            $result['code'] ?? 'conversion',
-            ($result['message'] ?? '转换失败') . ' ' . ($result['location'] ?? ''),
-            422,
-        );
+        return mbb_conversion_failure($result);
     }
     return $result['document'];
 }
@@ -904,6 +901,12 @@ function mbb_enqueue_ui()
         ),
         'state' => $tool || $new_post ? null : mbb_state($id),
         'footnoteStyle' => file_get_contents(__DIR__ . '/footnotes.css'),
+        'supportedBlocks' => array_keys(
+            json_decode(
+                file_get_contents(__DIR__ . '/includes/php-converter/block-capabilities.json'),
+                true,
+            ),
+        ),
         'sourceFontSize' => mbb_display_preferences()['source_font_size'],
     ]);
     wp_enqueue_style(

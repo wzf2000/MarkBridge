@@ -26,6 +26,7 @@ asset(
 );
 asset('kernel.js');
 asset('emoji.js');
+asset('presentation-loader.js');
 asset('editor-ui.js');
 asset('editor-ui.css');
 asset('math.css');

@@ -68,7 +68,16 @@ const { JSDOM, VirtualConsole } = require(path.join(ROOT, 'node_modules/jsdom'))
         try {
           return { ok: true, document: convert(item) };
         } catch (e) {
-          return { ok: false, code: e.code || 'CONVERSION', message: e.message };
+          return {
+            ok: false,
+            code: e.code || 'CONVERSION',
+            message:
+              w.MBB?.ConversionError && e instanceof w.MBB.ConversionError
+                ? e.message
+                : '转换服务未完成，原内容未写入。',
+            location:
+              w.MBB?.ConversionError && e instanceof w.MBB.ConversionError ? e.location : '',
+          };
         }
       });
     } else document = convert(data);
@@ -78,8 +87,11 @@ const { JSDOM, VirtualConsole } = require(path.join(ROOT, 'node_modules/jsdom'))
       JSON.stringify({
         ok: false,
         code: e.code || 'CONVERSION',
-        message: e.message,
-        location: e.location || '',
+        message:
+          w.MBB?.ConversionError && e instanceof w.MBB.ConversionError
+            ? e.message
+            : '转换服务未完成，原内容未写入。',
+        location: w.MBB?.ConversionError && e instanceof w.MBB.ConversionError ? e.location : '',
       }),
     );
   } finally {

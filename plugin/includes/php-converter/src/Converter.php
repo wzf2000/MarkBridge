@@ -46,8 +46,11 @@ require_once __DIR__ . '/CodeWhitespace.php';
 
 final class ConversionError extends \RuntimeException
 {
-    public function __construct(public readonly string $errorCode, string $message)
-    {
+    public function __construct(
+        public readonly string $errorCode,
+        string $message,
+        public string $location = '',
+    ) {
         parent::__construct($message);
     }
 }
@@ -62,6 +65,7 @@ final class Converter
     private bool $legacyTasks = false;
     private bool $legacyFootnotes = false;
     private bool $markdownInline = false;
+    private bool $sourceLocations = true;
 
     public function fromMarkdown(string $source): array
     {
@@ -74,7 +78,7 @@ final class Converter
         $this->nodes = 0;
         $normalized = $this->decodeAll($parsed);
         $this->input($normalized);
-        if ($this->serializeAll($this->markdownBlocks($normalized)) !== $serialized) {
+        if ($this->serializeAll($this->markdownBlocks($normalized, false)) !== $serialized) {
             throw new ConversionError(
                 'ROUNDTRIP',
                 'This Markdown cannot be represented without a block roundtrip change',
@@ -95,7 +99,7 @@ final class Converter
         $this->nodes = 0;
         $source = $this->decodeAll($blocks);
         $this->input($source);
-        $regenerated = $this->serializeAll($this->markdownBlocks($source));
+        $regenerated = $this->serializeAll($this->markdownBlocks($source, false));
         $this->input($regenerated);
         // Canonical DOM comparison preserves every attribute, text node and block
         // comment. Only attribute order and HTML entity spellings normalize.
@@ -201,10 +205,21 @@ final class Converter
         }
     }
 
-    private function markdownBlocks(string $source): array
+    private function markdownBlocks(string $source, bool $reportSource = true): array
     {
         $this->markdownInline = false;
-        $source = DisplayBoundaries::normalize($source);
+        $original = $source;
+        try {
+            $source = DisplayBoundaries::normalize($source);
+        } catch (ConversionError $error) {
+            if (!$reportSource) {
+                $error->location = '';
+            }
+            throw $error;
+        }
+        // Normalized legacy delimiters can introduce lines. Never report those
+        // generated line numbers as positions in the author's source.
+        $this->sourceLocations = $reportSource && $source === $original;
         $this->input($source);
         $environment = new Environment(['max_nesting_level' => self::MAX_DEPTH + 1]);
         $environment->addExtension(new CommonMarkCoreExtension());
@@ -269,7 +284,8 @@ final class Converter
                 if (!isset($registry->definitions[$label])) {
                     throw new ConversionError(
                         'FOOTNOTE_MISSING',
-                        'Missing footnote definition: ' . $label,
+                        'Missing footnote definition',
+                        $this->nodeLocation($node),
                     );
                 }
                 $references[$label] = true;
@@ -288,7 +304,8 @@ final class Converter
             if (!isset($references[$label])) {
                 throw new ConversionError(
                     'FOOTNOTE_ORPHAN',
-                    'Unreferenced footnote definition: ' . $label,
+                    'Unreferenced footnote definition',
+                    $this->nodeLocation($note),
                 );
             }
             if (!$note->hasChildren()) {
@@ -327,7 +344,30 @@ final class Converter
         return ['name' => $name, 'attrs' => $attrs, 'children' => $children, 'content' => $content];
     }
 
+    private function nodeLocation(Node $node): string
+    {
+        if (!$this->sourceLocations) {
+            return '';
+        }
+        for ($current = $node; $current !== null; $current = $current->parent()) {
+            if (method_exists($current, 'getStartLine') && $current->getStartLine() !== null) {
+                return 'line:' . $current->getStartLine();
+            }
+        }
+        return '';
+    }
+
     private function astBlock(Node $node, int $depth): array
+    {
+        try {
+            return $this->astBlockContent($node, $depth);
+        } catch (ConversionError $error) {
+            $error->location = $error->location ?: $this->nodeLocation($node);
+            throw $error;
+        }
+    }
+
+    private function astBlockContent(Node $node, int $depth): array
     {
         $this->tick($depth);
         if ($node instanceof Paragraph) {
@@ -510,10 +550,7 @@ final class Converter
             }
             return $this->block($complex ? 'mbb/list' : 'core/list', $attrs, $children);
         }
-        throw new ConversionError(
-            'UNSUPPORTED_MARKDOWN',
-            'Unsupported Markdown AST node: ' . $node::class,
-        );
+        throw new ConversionError('UNSUPPORTED_MARKDOWN', 'Unsupported Markdown syntax');
     }
 
     private function complexList(ListBlock $list): bool
@@ -662,10 +699,7 @@ final class Converter
                     ) .
                     '</a>';
             } else {
-                throw new ConversionError(
-                    'UNSUPPORTED_INLINE',
-                    'Unsupported inline AST node: ' . $node::class,
-                );
+                throw new ConversionError('UNSUPPORTED_INLINE', 'Unsupported inline syntax');
             }
         }
         if (
@@ -979,7 +1013,12 @@ final class Converter
                 $position += strlen($match[0]);
                 return $blocks;
             }
-            $blocks[] = $this->parseOne($input, $position, $depth);
+            $blocks[] = $this->parseOne(
+                $input,
+                $position,
+                $depth,
+                'blocks[' . count($blocks) . ']',
+            );
         }
         if ($closing !== null) {
             throw new ConversionError('BLOCK_SYNTAX', 'Missing closing block comment');
@@ -987,7 +1026,21 @@ final class Converter
         return $blocks;
     }
 
-    private function parseOne(string $input, int &$position, int $depth): array
+    private function parseOne(string $input, int &$position, int $depth, string $path): array
+    {
+        try {
+            return $this->parseOneContent($input, $position, $depth, $path);
+        } catch (\JsonException $error) {
+            throw new ConversionError('JSON', 'Invalid block JSON', $path . '.attributes');
+        } catch (ConversionError $error) {
+            if (!str_starts_with($error->location, 'blocks')) {
+                $error->location = $path . $error->location;
+            }
+            throw $error;
+        }
+    }
+
+    private function parseOneContent(string $input, int &$position, int $depth, string $path): array
     {
         $this->tick($depth);
         if (
@@ -1048,10 +1101,16 @@ final class Converter
                     'attrs' => $attrs,
                     'children' => $children,
                     'raw' => trim($raw),
+                    'path' => $path,
                 ];
             }
             $index = count($children);
-            $children[] = $this->parseOne($input, $position, $depth + 1);
+            $children[] = $this->parseOne(
+                $input,
+                $position,
+                $depth + 1,
+                $path . '[' . $index . ']',
+            );
             $raw .= '<mbb-child data-index="' . $index . '"></mbb-child>';
         }
         throw new ConversionError('BLOCK_SYNTAX', 'Missing closing block comment');
@@ -1059,25 +1118,15 @@ final class Converter
 
     private function validateAttrs(string $name, array $attrs): void
     {
-        $schemas = [
-            'core/paragraph' => [],
-            'core/heading' => ['level' => 'integer'],
-            'core/quote' => [],
-            'core/separator' => [],
-            'core/image' => [],
-            'core/table' => [],
-            'core/html' => [],
-            'core/more' => [],
-            'mbb/footnotes' => [],
-            'mbb/footnote' => ['label' => 'string'],
-            'core/list' => ['ordered' => 'boolean', 'start' => 'integer'],
-            'core/list-item' => [],
-            'mbb/list' => ['ordered' => 'boolean', 'start' => 'integer'],
-            'mbb/list-item' => [],
-            'mbb/task-item' => ['content' => 'string', 'checked' => 'boolean'],
-            'mbb/code' => ['code' => 'string', 'language' => 'string'],
-            'mbb/math' => ['tex' => 'string'],
-        ];
+        // Fixed package data shared with the Node converter and editor hints.
+        $root = dirname(__DIR__, basename(dirname(__DIR__)) === 'scoped' ? 4 : 3);
+        static $schemas;
+        $schemas ??= json_decode(
+            file_get_contents($root . '/includes/php-converter/block-capabilities.json'),
+            true,
+            32,
+            JSON_THROW_ON_ERROR,
+        );
         if (!array_key_exists($name, $schemas)) {
             throw new ConversionError('UNSUPPORTED_BLOCK', 'Unsupported block: ' . $name);
         }
@@ -1085,7 +1134,10 @@ final class Converter
             if (!isset($schemas[$name][$key]) || gettype($value) !== $schemas[$name][$key]) {
                 throw new ConversionError(
                     'BLOCK_ATTRIBUTES',
-                    'Unknown or invalid block attribute: ' . $name . '.' . $key,
+                    'Unknown or invalid block attribute',
+                    preg_match('/^[a-zA-Z][a-zA-Z0-9_-]{0,63}$/D', (string) $key)
+                        ? '.attributes.' . $key
+                        : '.attributes',
                 );
             }
         }
@@ -1517,6 +1569,16 @@ final class Converter
     }
 
     private function decode(array $block, int $depth): string
+    {
+        try {
+            return $this->decodeContent($block, $depth);
+        } catch (ConversionError $error) {
+            $error->location = $error->location ?: $block['path'] ?? '';
+            throw $error;
+        }
+    }
+
+    private function decodeContent(array $block, int $depth): string
     {
         $this->tick($depth);
         $name = $block['name'];

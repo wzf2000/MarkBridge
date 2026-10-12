@@ -57,6 +57,13 @@ def release_notes(section, version, repository):
     base = f"https://github.com/{repository}/blob/v{version}"
     section = section.replace("{docs_base}", base)
     portable = tuple(int(part) for part in version.split("-")[0].split(".")) >= (1, 3, 0)
+    verification = (
+        "本次发行包通过仓库 CI 的格式、源码、转换、浏览器、写回保护和包清单检查。"
+        "固定 WordPress 核心的合成站覆盖 PHP／Node 原生 REST 保存链，浏览器使用真实核心编辑器资源并拒绝跳过用例。"
+        "浏览器部分 REST 响应仍为测试替代；这些检查不等同生产 HTTP 登录或全部主题／插件组合验收。"
+        if tuple(int(part) for part in version.split("-")[0].split(".")) >= (1, 4, 0)
+        else "本次发行包通过仓库 CI 的格式、源码、转换、浏览器、写回保护和包清单检查。转换测试使用公开最小运行环境；CI 未运行完整 WordPress 端到端验收，也不代表生产部署已验收。"
+    )
     install = (
         "新安装使用随 ZIP 附带的 PHP 转换依赖，请确认 PHP 扩展与 WordPress 支持范围。"
         "已有 Node 配置升级后保留原后端，仅选择 Node 的兼容安装需要匹配的私有转换环境；"
@@ -77,7 +84,7 @@ def release_notes(section, version, repository):
 
 ## ✅ 验证情况
 
-本次发行包通过仓库 CI 的格式、源码、转换、浏览器、写回保护和包清单检查。转换测试使用公开最小运行环境；CI 未运行完整 WordPress 端到端验收，也不代表生产部署已验收。
+{verification}
 
 支持范围与既有验收记录见[验证说明]({base}/docs/VALIDATION.md)。尚未覆盖所有浏览器与第三方主题／插件组合。
 

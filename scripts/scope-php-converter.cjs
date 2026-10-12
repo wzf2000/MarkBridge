@@ -51,6 +51,7 @@ const inputs = [
     .map((name) => 'plugin/includes/php-converter/src/' + name),
   'plugin/includes/php-converter/composer.json',
   'plugin/includes/php-converter/composer.lock',
+  'plugin/includes/php-converter/block-capabilities.json',
   'tools/php-scoper/composer.json',
   'tools/php-scoper/composer.lock',
   'tools/php-scoper/scoper.inc.php',

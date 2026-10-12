@@ -4,7 +4,7 @@
  * Plugin URI: https://github.com/wzf2000/MarkBridge
  * Author: wzf2000
  * Author URI: https://github.com/wzf2000
- * Version: 1.3.0
+ * Version: 1.4.0
  * License: GPL-3.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  * Requires at least: 7.1
@@ -167,14 +167,6 @@ add_action('enqueue_block_assets', function () {
             plugins_url(mbb_asset('math.css'), __FILE__),
             [],
             substr(hash_file('sha256', __DIR__ . '/math.css'), 0, 12),
-        );
-    }
-    if (!is_admin()) {
-        wp_enqueue_style(
-            'mbb-footnotes',
-            plugins_url(mbb_asset('footnotes.css'), __FILE__),
-            [],
-            substr(hash_file('sha256', __DIR__ . '/footnotes.css'), 0, 12),
         );
     }
 });

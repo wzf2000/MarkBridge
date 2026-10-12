@@ -177,6 +177,53 @@ class WorkerTests(unittest.TestCase):
                 )
                 self.assertFalse(bad["ok"], bad)
 
+    def test_error_locations_are_parser_coordinates_not_content(self):
+        for source, line in [
+            ("Safe.\n\n<script>PRIVATE_BODY</script>\n", 3),
+            ("Safe.\n\nMissing[^PRIVATE_LABEL].\n", 3),
+            ("中文。\n\n$$\nx+y\n", 3),
+        ]:
+            result = convert({"mode": "markdown", "source": source, "documentId": "errors"})
+            self.assertFalse(result["ok"], result)
+            self.assertEqual(result["location"], f"line:{line}")
+            self.assertNotIn("PRIVATE_BODY", result["message"])
+            self.assertNotIn("PRIVATE_LABEL", result["message"])
+        base = self.document("Safe.\n")
+        for serialized, location in [
+            (
+                '<!-- wp:quote -->\n<blockquote><!-- wp:paragraph {"align":"right"} -->\n<p>PRIVATE_BODY</p>\n<!-- /wp:paragraph --></blockquote>\n<!-- /wp:quote -->',
+                "blocks[0][0].attributes.align",
+            ),
+            (
+                '<!-- wp:heading {"level":bad} -->\n<h2>PRIVATE_BODY</h2>\n<!-- /wp:heading -->',
+                "blocks[0].attributes",
+            ),
+        ]:
+            result = convert(
+                {
+                    "mode": "blocks",
+                    "base": base,
+                    "serialized": serialized,
+                    "documentId": base["documentId"],
+                }
+            )
+            self.assertFalse(result["ok"], result)
+            self.assertEqual(result["location"], location)
+            self.assertNotIn("PRIVATE_BODY", result["message"])
+        batch = convert(
+            {
+                "mode": "batch",
+                "items": [
+                    {
+                        "mode": "markdown",
+                        "source": "Safe.\n\n<script>PRIVATE_BODY</script>",
+                        "documentId": "errors",
+                    }
+                ],
+            }
+        )
+        self.assertEqual(batch["document"][0]["location"], "line:3")
+
     def test_batch_is_bounded_and_preserves_item_failure(self):
         valid = {"mode": "markdown", "source": "Safe.", "documentId": "batch-document"}
         r = convert(

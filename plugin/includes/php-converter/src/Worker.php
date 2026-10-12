@@ -27,8 +27,6 @@ final class Worker
                                 'code' => 'REQUEST',
                                 'message' => 'Invalid batch item',
                             ];
-                    // The existing worker exposes location only for the outer error.
-                    unset($result['location']);
                     $results[] = $result;
                 }
                 return ['ok' => true, 'document' => $results];
@@ -39,7 +37,7 @@ final class Worker
                 'ok' => false,
                 'code' => $error->errorCode,
                 'message' => $error->getMessage(),
-                'location' => '',
+                'location' => $error->location,
             ];
         } catch (\JsonException $error) {
             return [

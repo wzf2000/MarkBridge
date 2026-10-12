@@ -18,7 +18,28 @@ permissions:
 jobs:
   verify:
     name: Verify source and tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: synthetic-ci-only-password
+          MYSQL_ROOT_HOST: '%'
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -psynthetic-ci-only-password"
+          --health-interval=10s --health-timeout=5s --health-retries=10
+    env:
+      MARKBRIDGE_CI_DB_HOST: 127.0.0.1:3306
+      MARKBRIDGE_CI_DB_NAME: markbridge_ci_verify
+      MARKBRIDGE_CI_DB_PASSWORD: synthetic-ci-only-password
+      MARKBRIDGE_TEST_WORDPRESS_ROOT: ${{ runner.temp }}/markbridge-wordpress
+      MARKBRIDGE_WORDPRESS_SOURCE: ${{ runner.temp }}/markbridge-wordpress
+      MARKBRIDGE_TEST_HOME: http://127.0.0.1:18764
+      MARKBRIDGE_TEST_WPCLI: ${{ runner.temp }}/markbridge-wp
+      MARKBRIDGE_TEST_RUNTIME: ${{ github.workspace }}/.runtime/ci
+      MARKBRIDGE_TEST_PLUGIN_ROOT: ${{ runner.temp }}/markbridge-wordpress/wp-content/plugins/markbridge
     strategy:
       fail-fast: false
       matrix:
@@ -42,7 +63,7 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
           coverage: none
-          extensions: dom, libxml, mbstring
+          extensions: dom, libxml, mbstring, mysqli
           tools: composer:v2
 
       - name: Set up Python
@@ -62,43 +83,47 @@ jobs:
       - name: Build browser assets for the test runtime
         run: npm run build
 
-      - name: Prepare public conversion test runtime
+      - name: Prepare sandbox support on the ephemeral runner
         run: |
-          rm -rf .runtime/ci
-          mkdir -p .runtime/ci/node/bin .runtime/ci/run .runtime/ci/site/wp-content/plugins/markdown-block-bridge
-          cp "$(command -v node)" .runtime/ci/node/bin/node
-          cp plugin/worker.cjs .runtime/ci/worker.cjs
-          cp plugin/kernel.js .runtime/ci/site/wp-content/plugins/markdown-block-bridge/kernel.js
-          cat > .runtime/ci/run/worker-bootstrap.html <<'HTML'
-          <!doctype html><html><head><meta charset="utf-8"></head><body>
-          <script>
-          const blockTypes = {};
-          window.wp = {
-            blocks: {
-              registerBlockType(name, definition) { blockTypes[name] = definition; },
-              registerBlockVariation() {},
-              getBlockType(name) { return blockTypes[name]; },
-              createBlock(name, attributes = {}, innerBlocks = []) {
-                return { name, attributes, innerBlocks, isValid: true };
-              },
-              serialize() { return ''; },
-              parse() { return []; },
-            },
-            blockEditor: {
-              useBlockProps: () => ({}),
-              useInnerBlocksProps: () => ({}),
-            },
-            components: { TextControl() {}, TextareaControl() {} },
-            element: { Fragment: 'fragment', createElement() {}, useEffect() {}, useState() {} },
-            hooks: { addFilter() {} },
-            richText: { registerFormatType() {} },
-          };
-          </script>
-          <script src="http://markbridge.invalid/wp-content/plugins/markdown-block-bridge/kernel.js"></script>
-          </body></html>
-          HTML
-          cp runtime/package.json runtime/package-lock.json .runtime/ci/
-          PATH="$PWD/.runtime/ci/node/bin:$PATH" npm ci --prefix .runtime/ci --omit=dev --ignore-scripts
+          sudo apt-get update -qq
+          sudo apt-get install -y bubblewrap default-mysql-client
+          # Ubuntu 24.04's AppArmor restriction otherwise prevents unprivileged bwrap.
+          # This runner is disposable; no production host settings are changed.
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
+      - name: Build and verify the final installation package
+        run: python3 scripts/package.py
+
+      - name: Install fixed WordPress and the verified ZIP in a synthetic database
+        run: |
+          python3 scripts/prepare_ci_wordpress.py \
+            --wordpress "$MARKBRIDGE_TEST_WORDPRESS_ROOT" \
+            --downloads "$RUNNER_TEMP/markbridge-downloads" \
+            --wp-cli "$MARKBRIDGE_TEST_WPCLI"
+          version="$(node -p "require('./package.json').version")"
+          "$MARKBRIDGE_TEST_WPCLI" --path="$MARKBRIDGE_TEST_WORDPRESS_ROOT" plugin install "dist/markbridge-$version.zip" --activate
+          python3 scripts/verify_package.py "$MARKBRIDGE_TEST_PLUGIN_ROOT" --manifest "dist/markbridge-$version.manifest.json"
+
+      - name: Prepare the real core conversion and browser runtime from the installed ZIP
+        run: |
+          python3 scripts/prepare_runtime.py \
+            --wordpress "$MARKBRIDGE_TEST_WORDPRESS_ROOT" \
+            --plugin "$MARKBRIDGE_TEST_PLUGIN_ROOT" \
+            --output "$MARKBRIDGE_TEST_RUNTIME" \
+            --wp-cli "$MARKBRIDGE_TEST_WPCLI"
+
+      - name: Verify the real WordPress PHP and Node save chains
+        run: |
+          wp_test() { "$MARKBRIDGE_TEST_WPCLI" --path="$MARKBRIDGE_TEST_WORDPRESS_ROOT" "$@"; }
+          wp_test eval-file tests/ci-backend.php php
+          wp_test eval-file tests/native-rest-save.php
+          wp_test eval-file tests/php-backend-save.php
+          php -d disable_functions=exec,shell_exec,system,passthru,proc_open,popen,pcntl_exec \
+            "$RUNNER_TEMP/markbridge-downloads/wp-cli-2.12.0.phar" --path="$MARKBRIDGE_TEST_WORDPRESS_ROOT" eval-file tests/native-rest-save.php
+          wp_test eval-file tests/ci-backend.php node
+          wp_test eval-file tests/native-rest-save.php
+          wp_test eval-file tests/ci-backend.php php
+          wp_test eval-file tests/native-rest-save.php
 
       - name: Check formatting
         env:
@@ -114,7 +139,11 @@ jobs:
         run: npx playwright install --with-deps --only-shell chromium
 
       - name: Run browser regressions against built plugin assets
-        run: npx playwright test
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ runner.temp }}/browser-results.json
+        run: |
+          npx playwright test --retries=0 --reporter=line,json
+          python3 scripts/check_browser_report.py "$RUNNER_TEMP/browser-results.json"
 
       - name: Upload browser failure screenshots and traces
         if: failure()
@@ -124,6 +153,7 @@ jobs:
           path: |
             test-results/
             playwright-report/
+            ${{ runner.temp }}/browser-results.json
           if-no-files-found: ignore
 
       - name: Run source writeback safety tests
@@ -141,7 +171,9 @@ jobs:
           php tests/converter-settings.php backend-constant
           php tests/converter-settings.php runtime-constant
       - name: Run display settings and presentation contracts
-        run: php tests/admin-settings.php
+        run: |
+          php tests/admin-settings.php
+          php tests/conversion-errors.php
 
       - name: Check release sources and PHP syntax
         run: python3 scripts/check_release.py
@@ -154,7 +186,6 @@ jobs:
 
       - name: Build and verify release package
         run: |
-          python3 scripts/package.py
           rm -rf /tmp/markbridge-package-check
           mkdir -p /tmp/markbridge-package-check
           unzip -q "dist/markbridge-$(node -p "require('./package.json').version").zip" -d /tmp/markbridge-package-check
@@ -237,4 +268,6 @@ jobs:
           php tests/converter-settings.php backend-constant
           php tests/converter-settings.php runtime-constant
       - name: Run display settings and presentation contracts
-        run: php tests/admin-settings.php
+        run: |
+          php tests/admin-settings.php
+          php tests/conversion-errors.php

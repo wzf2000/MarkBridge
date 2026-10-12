@@ -241,3 +241,31 @@
   max-width: 100%;
   white-space: normal;
 }
+
+.mbb-capabilities {
+  position: relative;
+  font-size: 12px;
+}
+.mbb-capabilities summary {
+  cursor: pointer;
+  padding: 6px;
+}
+.mbb-capabilities-help {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  width: min(420px, calc(100vw - 48px));
+  max-height: 50vh;
+  overflow: auto;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #c3c4c7;
+  border-radius: 4px;
+  box-shadow: 0 2px 12px #0002;
+  color: #1d2327;
+}
+
+.mbb-capability-warning {
+  color: #b32d2e;
+  font-weight: 600;
+}

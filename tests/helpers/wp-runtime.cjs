@@ -5,6 +5,9 @@ module.exports = function loadRuntime() {
   const path = require('node:path');
   const vm = require('node:vm');
   const runtime = process.env.MARKBRIDGE_TEST_RUNTIME;
+  const plugin = process.env.MARKBRIDGE_TEST_PLUGIN_ROOT
+    ? fs.realpathSync(process.env.MARKBRIDGE_TEST_PLUGIN_ROOT)
+    : path.resolve(__dirname, '../../plugin');
   assert(runtime, 'Set MARKBRIDGE_TEST_RUNTIME to a prepared runtime.');
   const { JSDOM, VirtualConsole } = require(path.join(runtime, 'node_modules/jsdom'));
   const dom = new JSDOM(fs.readFileSync(path.join(runtime, 'run/worker-bootstrap.html'), 'utf8'), {
@@ -37,9 +40,9 @@ module.exports = function loadRuntime() {
       assert.equal(url.origin, 'http://markbridge.invalid');
       const file =
         url.pathname === '/wp-content/plugins/markdown-block-bridge/kernel.js'
-          ? path.resolve(__dirname, '../../plugin/kernel.js')
+          ? path.join(plugin, 'kernel.js')
           : path.resolve(runtime, 'site', '.' + decodeURIComponent(url.pathname));
-      if (!file.endsWith('/plugin/kernel.js'))
+      if (url.pathname !== '/wp-content/plugins/markdown-block-bridge/kernel.js')
         assert(file.startsWith(path.resolve(runtime, 'site') + path.sep));
       text = fs.readFileSync(file, 'utf8');
     }
