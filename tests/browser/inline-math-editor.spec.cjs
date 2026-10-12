@@ -9,6 +9,46 @@ async function exportMarkdown(page) {
   return page.locator('#task-export').textContent();
 }
 
+async function placeParagraphCaret(page, position) {
+  const editable = page.locator('#task-editor .block-editor-rich-text__editable').first();
+  // A center click can activate a formula on narrow screens. Focus before setting
+  // the range so RichText's focus handler cannot restore an older selection.
+  await editable.focus();
+  await editable.evaluate((root, position) => {
+    const text =
+      position === 'end'
+        ? [...root.childNodes].filter((node) => node.nodeType === Node.TEXT_NODE).at(-1)
+        : root.querySelector('span.mbb-math').parentElement.nextSibling;
+    if (text?.nodeType !== Node.TEXT_NODE) throw new Error('Expected ordinary paragraph text');
+    const range = root.ownerDocument.createRange();
+    range.setStart(text, position === 'end' ? text.length : 0);
+    range.collapse(true);
+    const selection = root.ownerDocument.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+  }, position);
+  await expect
+    .poll(() =>
+      editable.evaluate((root, position) => {
+        const text =
+          position === 'end'
+            ? [...root.childNodes].filter((node) => node.nodeType === Node.TEXT_NODE).at(-1)
+            : root.querySelector('span.mbb-math').parentElement.nextSibling;
+        const selection = root.ownerDocument.getSelection();
+        const offset = position === 'end' ? text.length : 0;
+        return (
+          root.ownerDocument.activeElement === root &&
+          selection.isCollapsed &&
+          selection.anchorNode === text &&
+          selection.focusNode === text &&
+          selection.anchorOffset === offset &&
+          selection.focusOffset === offset
+        );
+      }, position),
+    )
+    .toBe(true);
+}
+
 test('inline formulas render in place without changing the saved span or Markdown', async ({
   page,
 }) => {
@@ -72,10 +112,8 @@ test('keyboard activation, cancel, and ordinary paragraph editing preserve formu
   await page.keyboard.press('Escape');
   await expect(page.locator('.mbb-inline-math-source')).toHaveCount(0);
   await expect(formula(page, 1)).toHaveAttribute('data-mbb-tex', 'y_0');
-  const paragraph = page.locator('#task-editor .block-editor-rich-text__editable').first();
-  await paragraph.click();
-  await paragraph.press('End');
-  await paragraph.press('!');
+  await placeParagraphCaret(page, 'end');
+  await page.keyboard.type('!');
   await expect
     .poll(() => page.evaluate(() => wp.blocks.serialize(taskBlocks)))
     .toContain('after.!');
@@ -85,19 +123,7 @@ test('keyboard activation, cancel, and ordinary paragraph editing preserve formu
 test('caret edits beside a formula keep both inline objects distinct', async ({ page }) => {
   await page.goto('/inline-math-editor');
   await expect(formula(page, 0)).toBeVisible();
-  const editable = page.locator('#task-editor .block-editor-rich-text__editable').first();
-  await editable.click();
-  await page.evaluate(() => {
-    const root = document.querySelector('#task-editor .block-editor-rich-text__editable');
-    const wrapper = root.querySelector('span.mbb-math').parentElement;
-    const range = document.createRange();
-    range.setStartAfter(wrapper);
-    range.collapse(true);
-    const selection = document.getSelection();
-    selection.removeAllRanges();
-    selection.addRange(range);
-    root.focus();
-  });
+  await placeParagraphCaret(page, 'after-first-formula');
   await page.keyboard.type('Z');
   await expect(formula(page, 0)).toHaveAttribute('data-mbb-tex', 'x^2');
   await expect(formula(page, 1)).toHaveAttribute('data-mbb-tex', 'y_0');
@@ -114,6 +140,9 @@ test('same-origin editor iframe uses its own styles; invalid TeX leaves source v
   page,
 }) => {
   await page.goto('/inline-math-editor');
+  await expect(
+    page.locator('#task-editor .block-editor-rich-text__editable').first(),
+  ).toBeVisible();
   await page.evaluate(() => {
     const frame = document.createElement('iframe');
     frame.id = 'math-canvas';
