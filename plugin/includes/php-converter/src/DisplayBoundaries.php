@@ -113,6 +113,8 @@ final class DisplayBoundaries
             throw new ConversionError(
                 'UNCLOSED_MATH',
                 'Display math requires paired $$ delimiters',
+                'line:' .
+                    (substr_count(substr($source, 0, $marks[count($marks) - 1]['pos']), "\n") + 1),
             );
         }
         for ($i = count($marks) - 2; $i >= 0; $i -= 2) {

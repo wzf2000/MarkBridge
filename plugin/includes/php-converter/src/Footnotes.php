@@ -50,10 +50,7 @@ final class NamedFootnoteStartParser implements BlockStartParserInterface
         }
         $label = FootnoteRegistry::label($match[1]);
         if (isset($this->registry->definitions[$label])) {
-            throw new ConversionError(
-                'FOOTNOTE_DUPLICATE',
-                'Duplicate footnote definition: ' . $label,
-            );
+            throw new ConversionError('FOOTNOTE_DUPLICATE', 'Duplicate footnote definition');
         }
         $parser = new FootnoteParser(new Reference($label, $label, $label));
         $this->registry->definitions[$label] = $parser->getBlock();

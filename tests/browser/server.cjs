@@ -3,7 +3,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
-const plugin = path.resolve(__dirname, '../../plugin');
+const plugin = process.env.MARKBRIDGE_TEST_PLUGIN_ROOT
+  ? fs.realpathSync(process.env.MARKBRIDGE_TEST_PLUGIN_ROOT)
+  : path.resolve(__dirname, '../../plugin');
 const assets = JSON.parse(fs.readFileSync(path.join(plugin, 'assets.json'), 'utf8'));
 const presentation = JSON.parse(
   execFileSync('php', [path.join(__dirname, 'presentation-assets.php')], { encoding: 'utf8' }),

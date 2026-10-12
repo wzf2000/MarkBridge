@@ -1,0 +1,37 @@
+{
+  "core/paragraph": {},
+  "core/heading": {
+    "level": "integer"
+  },
+  "core/quote": {},
+  "core/separator": {},
+  "core/image": {},
+  "core/table": {},
+  "core/html": {},
+  "core/more": {},
+  "mbb/footnotes": {},
+  "mbb/footnote": {
+    "label": "string"
+  },
+  "core/list": {
+    "ordered": "boolean",
+    "start": "integer"
+  },
+  "core/list-item": {},
+  "mbb/list": {
+    "ordered": "boolean",
+    "start": "integer"
+  },
+  "mbb/list-item": {},
+  "mbb/task-item": {
+    "content": "string",
+    "checked": "boolean"
+  },
+  "mbb/code": {
+    "code": "string",
+    "language": "string"
+  },
+  "mbb/math": {
+    "tex": "string"
+  }
+}

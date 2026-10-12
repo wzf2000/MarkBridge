@@ -11,7 +11,7 @@ function esc_html($value)
 {
     return esc_attr($value);
 }
-require __DIR__ . '/../../plugin/footnotes.php';
+require (getenv('MARKBRIDGE_TEST_PLUGIN_ROOT') ?: __DIR__ . '/../../plugin') . '/footnotes.php';
 $body = <<<'HTML'
 <p>First<span class="mbb-footnote-ref" data-mbb-footnote="note">[^note]</span>, repeated<span class="mbb-footnote-ref" data-mbb-footnote="note">[^note]</span>, other<span class="mbb-footnote-ref" data-mbb-footnote="other">[^other]</span>.</p>
 <div style="height:900px" aria-hidden="true"></div>

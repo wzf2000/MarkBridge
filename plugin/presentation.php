@@ -3,95 +3,223 @@ if (!defined('ABSPATH')) {
     exit();
 }
 // Independent, pinned presentation assets. This module does not load the former editor.
+function mbb_code_line_number_css()
+{
+    return '.mbb-reading .mbb-document pre.wp-block-mbb-code.line-numbers{padding-left:5em!important}' .
+        'pre.wp-block-mbb-code.line-numbers>code{display:block;font-size:inherit;line-height:inherit}';
+}
+function mbb_enqueue_code_assets()
+{
+    if (wp_script_is('prism-core-js', 'enqueued')) {
+        return;
+    }
+    $preferences = mbb_display_preferences();
+    $base = plugins_url('vendor/', __FILE__);
+    wp_enqueue_style(
+        'prism-theme-style',
+        $base . 'prism/themes/prism-solarizedlight.css',
+        [],
+        '1.15.0',
+    );
+    wp_enqueue_script(
+        'prism-core-js',
+        $base . 'prism/components/prism-core.min.js',
+        [],
+        '1.15.0',
+        true,
+    );
+    wp_add_inline_script(
+        'prism-core-js',
+        'window.Prism=window.Prism||{};Prism.manual=true;',
+        'before',
+    );
+    wp_add_inline_script(
+        'prism-core-js',
+        'Prism.languages.text=Prism.languages.plaintext=Prism.languages.plain={};Prism.languages.sh=Prism.languages.shell={};',
+        'after',
+    );
+    foreach (
+        ['toolbar', 'line-numbers', 'show-language', 'copy-to-clipboard', 'autoloader']
+        as $part
+    ) {
+        if (
+            ($part === 'line-numbers' && !$preferences['code_line_numbers']) ||
+            ($part === 'copy-to-clipboard' && !$preferences['code_copy'])
+        ) {
+            continue;
+        }
+        $deps = ['prism-core-js'];
+        if (in_array($part, ['show-language', 'copy-to-clipboard'])) {
+            $deps[] = 'prism-plugin-toolbar';
+        }
+        if ($part === 'copy-to-clipboard') {
+            $deps[] = 'copy-clipboard';
+        }
+        wp_enqueue_script(
+            'prism-plugin-' . $part,
+            $base . 'prism/plugins/' . $part . '/prism-' . $part . '.min.js',
+            $deps,
+            '1.15.0',
+            true,
+        );
+        if (in_array($part, ['toolbar', 'line-numbers'])) {
+            wp_enqueue_style(
+                'prism-plugin-' . $part,
+                $base . 'prism/plugins/' . $part . '/prism-' . $part . '.css',
+                [],
+                '1.15.0',
+            );
+        }
+    }
+    if ($preferences['code_line_numbers']) {
+        wp_add_inline_style('prism-plugin-line-numbers', mbb_code_line_number_css());
+    }
+    if ($preferences['code_copy']) {
+        wp_enqueue_script(
+            'copy-clipboard',
+            $base . 'clipboard/clipboard.min.js',
+            [],
+            '2.0.1',
+            true,
+        );
+    }
+    wp_add_inline_script(
+        'prism-plugin-autoloader',
+        'Prism.plugins.autoloader.languages_path=' .
+            wp_json_encode($base . 'prism/components/') .
+            ';',
+        'after',
+    );
+}
+
+function mbb_enqueue_emoji_assets()
+{
+    if (wp_script_is('markbridge-emoji', 'enqueued')) {
+        return;
+    }
+    wp_enqueue_script(
+        'markbridge-emoji',
+        plugins_url(mbb_asset('emoji.js'), __FILE__),
+        [],
+        '1.0.1',
+        true,
+    );
+    wp_localize_script('markbridge-emoji', 'MBB_EMOJI_IMAGES', mbb_emoji_config());
+}
+
+function mbb_enqueue_footnote_assets()
+{
+    wp_enqueue_style(
+        'mbb-footnotes',
+        plugins_url(mbb_asset('footnotes.css'), __FILE__),
+        [],
+        substr(hash_file('sha256', __DIR__ . '/footnotes.css'), 0, 12),
+    );
+}
+
+function mbb_detect_presentation($html)
+{
+    if (is_admin() || !is_string($html)) {
+        return $html;
+    }
+    // Inspect real markup; formulas are pre/code too, but do not need Prism.
+    $without_math = preg_replace(
+        '~<pre\b[^>]*class=["\'][^"\']*\bwp-block-mbb-math\b[^"\']*["\'][^>]*>[\s\S]*?</pre\s*>~i',
+        '',
+        $html,
+    );
+    if (preg_match('~<pre\b[^>]*>\s*<code\b~i', $without_math)) {
+        mbb_enqueue_code_assets();
+    }
+    if (
+        preg_match(
+            '~<(?:span|sup|section)\b[^>]*class=["\'][^"\']*\b(?:mbb-footnote-ref|mbb-footnotes)\b~i',
+            $html,
+        )
+    ) {
+        mbb_enqueue_footnote_assets();
+    }
+    $text = preg_replace('~<(pre|code|script|style|textarea)\b[^>]*>[\s\S]*?</\1\s*>~i', '', $html);
+    if (preg_match('/:[a-zA-Z0-9_+\-]+:/', strip_tags($text))) {
+        mbb_enqueue_emoji_assets();
+    }
+    return $html;
+}
+add_filter('render_block', 'mbb_detect_presentation', 99);
+add_filter('the_content', 'mbb_detect_presentation', 99);
+add_filter('comment_text', 'mbb_detect_presentation', 99);
+
 add_action(
     'wp_enqueue_scripts',
     function () {
         $preferences = mbb_display_preferences();
         $base = plugins_url('vendor/', __FILE__);
-        wp_enqueue_style(
-            'prism-theme-style',
-            $base . 'prism/themes/prism-solarizedlight.css',
-            [],
-            '1.15.0',
-        );
-        wp_enqueue_script(
-            'prism-core-js',
+        $scripts = [
             $base . 'prism/components/prism-core.min.js',
-            [],
-            '1.15.0',
-            true,
-        );
-        wp_add_inline_script(
-            'prism-core-js',
-            'Prism.languages.text=Prism.languages.plaintext=Prism.languages.plain={};Prism.languages.sh=Prism.languages.shell={};',
-            'after',
-        );
-        foreach (
-            ['toolbar', 'line-numbers', 'show-language', 'copy-to-clipboard', 'autoloader']
-            as $part
-        ) {
-            if (
-                ($part === 'line-numbers' && !$preferences['code_line_numbers']) ||
-                ($part === 'copy-to-clipboard' && !$preferences['code_copy'])
-            ) {
-                continue;
-            }
-            $deps = ['prism-core-js'];
-            if (in_array($part, ['show-language', 'copy-to-clipboard'])) {
-                $deps[] = 'prism-plugin-toolbar';
-            }
-            if ($part === 'copy-to-clipboard') {
-                $deps[] = 'copy-clipboard';
-            }
-            wp_enqueue_script(
-                'prism-plugin-' . $part,
-                $base . 'prism/plugins/' . $part . '/prism-' . $part . '.min.js',
-                $deps,
-                '1.15.0',
-                true,
-            );
-            if (in_array($part, ['toolbar', 'line-numbers'])) {
-                wp_enqueue_style(
-                    'prism-plugin-' . $part,
-                    $base . 'prism/plugins/' . $part . '/prism-' . $part . '.css',
-                    [],
-                    '1.15.0',
-                );
-            }
-        }
+            $base . 'prism/plugins/toolbar/prism-toolbar.min.js',
+        ];
+        $styles = [
+            $base . 'prism/themes/prism-solarizedlight.css',
+            $base . 'prism/plugins/toolbar/prism-toolbar.css',
+        ];
         if ($preferences['code_line_numbers']) {
-            wp_add_inline_style(
-                'prism-plugin-line-numbers',
-                '.mbb-reading .mbb-document pre.wp-block-mbb-code.line-numbers{padding-left:5em!important}' .
-                    'pre.wp-block-mbb-code.line-numbers>code{display:block;font-size:inherit;line-height:inherit}',
-            );
+            $scripts[] = $base . 'prism/plugins/line-numbers/prism-line-numbers.min.js';
+            $styles[] = $base . 'prism/plugins/line-numbers/prism-line-numbers.css';
         }
+        $scripts[] = $base . 'prism/plugins/show-language/prism-show-language.min.js';
         if ($preferences['code_copy']) {
-            wp_enqueue_script(
-                'copy-clipboard',
-                $base . 'clipboard/clipboard.min.js',
-                [],
-                '2.0.1',
-                true,
-            );
+            $scripts[] = $base . 'clipboard/clipboard.min.js';
+            $scripts[] = $base . 'prism/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js';
         }
-        wp_add_inline_script(
-            'prism-plugin-autoloader',
-            'Prism.plugins.autoloader.languages_path=' .
-                wp_json_encode($base . 'prism/components/') .
-                ';',
-            'after',
-        );
+        $scripts[] = $base . 'prism/plugins/autoloader/prism-autoloader.min.js';
         wp_enqueue_script(
-            'markbridge-emoji',
-            plugins_url(mbb_asset('emoji.js'), __FILE__),
+            'mbb-presentation-loader',
+            plugins_url(mbb_asset('presentation-loader.js'), __FILE__),
             [],
-            '1.0.1',
+            substr(hash_file('sha256', __DIR__ . '/presentation-loader.js'), 0, 12),
             true,
         );
-        wp_localize_script('markbridge-emoji', 'MBB_EMOJI_IMAGES', mbb_emoji_config());
+        wp_add_inline_script(
+            'mbb-presentation-loader',
+            'window.MBB_PRESENTATION=' .
+                wp_json_encode([
+                    'codeScripts' => $scripts,
+                    'codeStyles' => $styles,
+                    'languages' => $base . 'prism/components/',
+                    'lineNumbers' => $preferences['code_line_numbers'],
+                    'lineNumberStyle' => $preferences['code_line_numbers']
+                        ? mbb_code_line_number_css()
+                        : '',
+                    'emoji' => plugins_url(mbb_asset('emoji.js'), __FILE__),
+                    'images' => mbb_emoji_config(),
+                    'footnotes' => plugins_url(mbb_asset('footnotes.css'), __FILE__),
+                ]) .
+                ';',
+            'before',
+        );
+        // Archive and query-loop posts are all considered, not only the singular ID.
+        global $wp_query;
+        foreach ($wp_query->posts ?? [] as $post) {
+            if (is_object($post)) {
+                mbb_detect_presentation($post->post_content ?? '');
+            }
+        }
     },
     9,
+);
+// Content or comments may first render after wp_head. Print late styles before
+// the footer scripts; later browser insertions use the small marker observer.
+add_action(
+    'wp_footer',
+    function () {
+        wp_print_styles([
+            'prism-theme-style',
+            'prism-plugin-toolbar',
+            'prism-plugin-line-numbers',
+            'mbb-footnotes',
+        ]);
+    },
+    5,
 );
 add_filter('body_class', static function ($classes) {
     if (mbb_display_preferences()['code_line_numbers']) {

@@ -71,6 +71,11 @@ class ReleaseGuards(unittest.TestCase):
         self.assertIn("新安装使用随 ZIP 附带的 PHP 转换依赖", portable)
         self.assertIn("已有 Node 配置升级后保留原后端", portable)
         self.assertNotIn("请配置匹配的私有转换运行环境", portable)
+        integrated = release.release_notes("- Editor reliability", "1.4.0", "owner/repository")
+        self.assertIn("合成站覆盖 PHP／Node 原生 REST 保存链", integrated)
+        self.assertIn("拒绝跳过用例", integrated)
+        self.assertIn("部分 REST 响应仍为测试替代", integrated)
+        self.assertNotIn("CI 未运行完整 WordPress", integrated)
         for version, changelog in [
             ("1.2", text),
             ("1.1.0", text),

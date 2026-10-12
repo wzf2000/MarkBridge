@@ -24,6 +24,10 @@ function wp_add_inline_style($handle, $css)
 {
     $GLOBALS['inline'][] = $css;
 }
+function wp_script_is($handle, $status = 'enqueued')
+{
+    return isset($GLOBALS['scripts'][$handle]);
+}
 function wp_enqueue_script($handle, $url, $deps = [], $version = null, $footer = false)
 {
     $GLOBALS['scripts'][$handle] = ['handle' => $handle, 'url' => $url, 'deps' => $deps];
@@ -58,12 +62,12 @@ function get_option($name, $default = false)
 {
     $mode = $GLOBALS['argv'][1] ?? '';
     return $name === 'markbridge_display_preferences' &&
-        in_array($mode, ['disabled', 'reader-disabled'], true)
+        in_array($mode, ['disabled', 'reader-disabled', 'empty-disabled'], true)
         ? [
             'source_font_size' => 18,
             'math_reader' => false,
-            'code_line_numbers' => $mode !== 'disabled',
-            'code_copy' => $mode !== 'disabled',
+            'code_line_numbers' => !in_array($mode, ['disabled', 'empty-disabled'], true),
+            'code_copy' => !in_array($mode, ['disabled', 'empty-disabled'], true),
         ]
         : $default;
 }
@@ -75,10 +79,17 @@ function mbb_emoji_config()
 {
     return [];
 }
-require __DIR__ . '/../../plugin/includes/admin-settings.php';
-require __DIR__ . '/../../plugin/presentation.php';
+$plugin = getenv('MARKBRIDGE_TEST_PLUGIN_ROOT') ?: __DIR__ . '/../../plugin';
+require $plugin . '/includes/admin-settings.php';
+require $plugin . '/presentation.php';
 foreach ($actions['wp_enqueue_scripts'] as $callback) {
     $callback();
+}
+// Match the ordinary code/emoji fixture; dynamic-only tests remove its heavy assets.
+if (!str_starts_with($GLOBALS['argv'][1] ?? '', 'empty')) {
+    mbb_detect_presentation(
+        '<pre><code class="language-javascript">const n=1;</code></pre><p>:smile:</p>',
+    );
 }
 $ordered = [];
 $emit = function ($handle) use (&$emit, &$ordered, $scripts, $script_inline) {

@@ -94,6 +94,10 @@ function plugins_url($path, $file)
 {
     return '/plugin/' . $path;
 }
+function wp_script_is($handle, $status = 'enqueued')
+{
+    return isset($GLOBALS['scripts'][$handle]);
+}
 function wp_enqueue_script($handle, $url, $deps = [], $version = null, $footer = false)
 {
     $GLOBALS['scripts'][$handle] = $deps;
@@ -257,6 +261,7 @@ foreach (
     foreach ($actions['wp_enqueue_scripts'] as $callback) {
         $callback();
     }
+    mbb_detect_presentation('<pre><code>Plain code.</code></pre>');
     mbb_settings_assert(
         isset($scripts['prism-plugin-line-numbers']) === $line_enabled,
         'Line number script did not follow setting',
@@ -292,6 +297,43 @@ foreach (
         'Body class setting changed theme classes',
     );
 }
+// Content-driven resources: empty/plain/math pages must not fetch heavy tools.
+$scripts = $styles = $inline = [];
+foreach ($actions['wp_enqueue_scripts'] as $callback) {
+    $callback();
+}
+mbb_detect_presentation(
+    '<p>Text mentions footnotes and :unknown: in <code>:smile:</code>.</p><pre class="wp-block-mbb-math"><code>x+y</code></pre>',
+);
+mbb_settings_assert(
+    !isset($scripts['prism-core-js']) && !in_array('mbb-footnotes', $styles, true),
+    'Plain text/math loaded code or footnote resources',
+);
+$scripts = $styles = [];
+mbb_detect_presentation('<pre><code>:smile:</code></pre>');
+mbb_settings_assert(
+    isset($scripts['prism-core-js']) && !isset($scripts['markbridge-emoji']),
+    'Code shortcode loaded emoji or ordinary code lost Prism',
+);
+mbb_detect_presentation('<p>A comment :smile:</p>');
+mbb_settings_assert(isset($scripts['markbridge-emoji']), 'Comment emoji did not load');
+mbb_detect_presentation('<p><span class="mbb-footnote-ref" data-mbb-footnote="note">1</span></p>');
+mbb_settings_assert(in_array('mbb-footnotes', $styles, true), 'Actual footnote markup lost CSS');
+$scripts = $styles = [];
+$GLOBALS['wp_query'] = (object) [
+    'posts' => [
+        (object) ['post_content' => '<p>First post</p>'],
+        (object) ['post_content' => '<pre><code>Second post code</code></pre>'],
+    ],
+];
+foreach ($actions['wp_enqueue_scripts'] as $callback) {
+    $callback();
+}
+mbb_settings_assert(
+    isset($scripts['prism-core-js']),
+    'Later archive post did not load code assets',
+);
+unset($GLOBALS['wp_query']);
 $can_manage = true;
 mbb_settings_assert(
     str_contains(implode('', mbb_plugin_action_links(['existing'])), 'page=markbridge'),

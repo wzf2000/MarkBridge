@@ -16,15 +16,17 @@ def main():
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--wp-cli", default="wp")
     parser.add_argument("--node", default=shutil.which("node"))
+    parser.add_argument("--plugin", type=Path, help="Built or unpacked plugin to test")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     wordpress = args.wordpress.resolve()
     output = args.output.resolve()
+    plugin = args.plugin.resolve() if args.plugin else root / "plugin"
     if output == Path("/") or output == wordpress or wordpress in output.parents:
         parser.error("Runtime must be outside the public WordPress directory")
     if output.exists():
         parser.error("Output already exists; use a new directory and switch after verification")
-    if not args.node or not (root / "plugin/kernel.js").is_file():
+    if not args.node or not (plugin / "kernel.js").is_file():
         parser.error("Node.js and npm run build are required")
     node = Path(args.node).resolve()
     version = subprocess.check_output([str(node), "--version"], text=True).strip()
@@ -57,7 +59,7 @@ def main():
             source = root / "runtime" / name
             shutil.copy2(source, staging / name)
             runtime_hashes[name] = hashlib.sha256(source.read_bytes()).hexdigest()
-        worker = root / "plugin/worker.cjs"
+        worker = plugin / "worker.cjs"
         shutil.copy2(worker, staging / "worker.cjs")
         scripts = []
         hashes = {}
@@ -77,7 +79,7 @@ def main():
         kernel = "wp-content/plugins/markdown-block-bridge/kernel.js"
         target = staging / "site" / kernel
         target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(root / "plugin/kernel.js", target)
+        shutil.copy2(plugin / "kernel.js", target)
         scripts.append('<script src="http://markbridge.invalid/' + kernel + '"></script>')
         (staging / "run/worker-bootstrap.html").write_text(
             '<!doctype html><html><head><meta charset="utf-8"></head><body>'
@@ -85,6 +87,11 @@ def main():
             + "</body></html>",
             encoding="utf-8",
         )
+        # Real browser fixtures need the same core CSS and local fonts as their scripts.
+        for directory in ["css", "fonts"]:
+            source = wordpress / "wp-includes" / directory
+            if source.is_dir():
+                shutil.copytree(source, staging / "site/wp-includes" / directory)
         (staging / "manifest.json").write_text(
             json.dumps(
                 {

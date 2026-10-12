@@ -52,6 +52,10 @@
     candidateSource = null;
     if (save) save.disabled = true;
   }
+  function describeError(error) {
+    const label = window.MBB?.formatLocation?.(error.location);
+    return error.message + (label ? `（${label}）` : '');
+  }
   function message(text, error = false) {
     status.textContent = text;
     status.className = error ? 'mbb-error' : 'mbb-status';
@@ -411,7 +415,7 @@
     } catch (e) {
       if (!active(session)) return;
       if (isConflict(e) && payload) enterConflict(e, payload, payload.source ?? null);
-      else message(e.message, true);
+      else message(describeError(e), true);
     } finally {
       if (active(session)) {
         busy = false;
@@ -443,7 +447,7 @@
       if (!active(session)) return;
       if (isConflict(e)) enterConflict(e, payload, markdown);
       else {
-        message(e.message, true);
+        message(describeError(e), true);
         candidate = null;
         candidateSource = null;
       }
@@ -526,7 +530,7 @@
         invalidate();
         message('文件已读取，尚未保存。请先查看差异。');
       } catch (error) {
-        if (active(serial)) message(error.message, true);
+        if (active(serial)) message(describeError(error), true);
       } finally {
         if (active(serial)) {
           busy = false;
@@ -686,7 +690,7 @@
             : '编辑或上传 Markdown，再检查差异。',
       );
     } catch (e) {
-      if (active(serial)) message(e.message, true);
+      if (active(serial)) message(describeError(e), true);
     } finally {
       if (active(serial)) {
         busy = false;
@@ -817,7 +821,66 @@
               : '请使用预览中的保存按钮',
         ),
       );
+      const getCurrentBlocks = () => wp.data.select('core/block-editor')?.getBlocks?.() || [];
+      const capabilities = el('details', { class: 'mbb-capabilities' });
+      const capabilitySummary = el('summary', { 'aria-live': 'polite' }, '转换支持与当前内容');
+      capabilities.append(capabilitySummary);
+      const help = el('div', { class: 'mbb-capabilities-help' });
+      help.append(
+        el(
+          'p',
+          {},
+          '支持段落、标题、引用、列表、任务列表、表格、图片、链接、代码、TeX 公式、命名脚注和受限 HTML。样式、额外属性和第三方区块仍需通过往返校验。',
+        ),
+      );
+      const current = el('p', { role: 'status' });
+      help.append(current);
+      const check = el('button', { type: 'button' }, '检查当前区块转换');
+      check.onclick = () => {
+        try {
+          const blocks = getCurrentBlocks();
+          window.MBB.toMarkdown(blocks, { origin: 'markdown_import' });
+          current.textContent = '当前区块通过浏览器往返检查；保存时服务器还会重新校验。';
+        } catch (error) {
+          current.textContent =
+            describeError(error) +
+            '。请检查该区块的格式，或先下载 Markdown 保留候选，再修正并重新预览。';
+        }
+      };
+      help.append(check);
+      capabilities.append(help);
+      bar.append(capabilities);
       document.body.append(bar);
+      const inspectCapabilities = () => {
+        const unsupported = [];
+        const supported = new Set(cfg.supportedBlocks || window.MBB?.supportedBlocks || []);
+        const visit = (blocks, path = []) =>
+          blocks.forEach((block, index) => {
+            const at = [...path, index];
+            if (!supported.has(block.name)) {
+              const title = wp.blocks.getBlockType?.(block.name)?.title || block.name;
+              unsupported.push(`${title}（第 ${at.map((i) => i + 1).join(' → ')} 个区块）`);
+            }
+            visit(block.innerBlocks || [], at);
+          });
+        visit(getCurrentBlocks());
+        capabilitySummary.textContent = unsupported.length
+          ? `转换支持：${unsupported.length} 个区块暂不支持`
+          : '转换支持与当前内容';
+        capabilitySummary.classList.toggle('mbb-capability-warning', unsupported.length > 0);
+        current.textContent = unsupported.length
+          ? `当前包含尚不支持转换的区块：${unsupported.slice(0, 8).join('、')}${unsupported.length > 8 ? '等' : ''}。请保留现有内容，调整后重新预览。`
+          : '当前区块类型已有转换映射；请检查当前区块转换，确认其属性和格式也能保留。';
+      };
+      inspectCapabilities();
+      let capabilityBlocks = getCurrentBlocks();
+      wp.data.subscribe(() => {
+        const blocks = getCurrentBlocks();
+        if (blocks !== capabilityBlocks) {
+          capabilityBlocks = blocks;
+          inspectCapabilities();
+        }
+      });
       // Keep the toolbar inside the visible editor canvas, never over its settings sidebar.
       const placeBar = () => {
         const canvas = document.querySelector('.interface-interface-skeleton__content');
