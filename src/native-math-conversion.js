@@ -74,24 +74,25 @@ const isEscaped = (text, index) => {
 };
 export function inspectNativeMath({ tex, mathML = '', attributes = {}, inline = false }, owner) {
   if (typeof tex !== 'string' || !tex.trim() || tex.length > 20000)
-    return '原生公式缺少可用的 TeX，或公式超过长度限制。';
+    return 'The native formula has no usable TeX or exceeds its length budget.';
   if (inline && (tex.trim() !== tex || /[\r\n]/.test(tex)))
-    return '行内公式必须为单行且两端没有空白。';
+    return 'Inline formulas must occupy one line without leading or trailing whitespace.';
   for (let index = 0; index < tex.length; index++) {
-    if (tex[index] === '$' && !isEscaped(tex, index)) return 'TeX 含未转义美元符，无法无损转换。';
+    if (tex[index] === '$' && !isEscaped(tex, index))
+      return 'TeX contains unescaped dollar signs and cannot be converted without loss.';
   }
   const allowed = inline ? new Set(['data-latex']) : new Set(['latex', 'mathML']);
   if (Object.keys(attributes).some((key) => !allowed.has(key)))
-    return '原生公式带有额外样式或属性，无法无损转换。';
-  if (typeof mathML !== 'string') return '原生 MathML 无效。';
+    return 'The native formula has extra styles or attributes and cannot be converted without loss.';
+  if (typeof mathML !== 'string') return 'The native MathML is invalid.';
   if (!mathML) return null;
-  if (/<!|<\?|\]\]>/.test(mathML)) return '原生 MathML 含不支持的结构。';
+  if (/<!|<\?|\]\]>/.test(mathML)) return 'The native MathML contains unsupported structure.';
   const parser = new owner.defaultView.DOMParser();
   const parsed = parser.parseFromString(
     `<math xmlns="${mathNS}">${mathML}</math>`,
     'application/xml',
   );
-  if (parsed.querySelector('parsererror')) return '原生 MathML 无法解析。';
+  if (parsed.querySelector('parsererror')) return 'The native MathML could not be parsed.';
   const root = parsed.documentElement;
   if (
     root.children.length !== 1 ||
@@ -101,22 +102,22 @@ export function inspectNativeMath({ tex, mathML = '', attributes = {}, inline = 
       (node) => node.nodeType === 3 && node.textContent.trim(),
     )
   )
-    return '原生 MathML 缺少可核对的语义结构。';
+    return 'The native MathML lacks verifiable semantic structure.';
   let annotations = 0;
   for (const element of root.querySelectorAll('*')) {
     if (element.namespaceURI !== mathNS || !mathTags.has(element.localName))
-      return '原生 MathML 含不支持的元素。';
+      return 'The native MathML contains unsupported elements.';
     for (const attribute of element.attributes) {
       if (attribute.namespaceURI || !mathAttributes.has(attribute.localName))
-        return '原生 MathML 含不支持的属性。';
+        return 'The native MathML contains unsupported attributes.';
     }
     if (element.localName === 'annotation') {
       annotations++;
       if (element.getAttribute('encoding') !== 'application/x-tex' || element.textContent !== tex)
-        return '原生 MathML 内的 TeX 与公式源码不一致。';
+        return 'TeX inside native MathML differs from the formula source.';
     }
   }
-  if (annotations !== 1) return '原生 MathML 缺少唯一的 TeX 源码注释。';
+  if (annotations !== 1) return 'The native MathML lacks a unique TeX source annotation.';
   return null;
 }
 function mathTree(markup, owner) {
@@ -155,9 +156,9 @@ export async function verifyNativeMathML(tex, mathML, display, owner) {
     const generatedTree = mathTree(generated, owner);
     return originalTree && originalTree === generatedTree
       ? null
-      : '原生公式的显示结构与 TeX 不一致，无法无损转换。';
+      : "The native formula's display structure differs from its TeX and cannot be converted without loss.";
   } catch {
-    return '无法核对原生公式的显示结构，请保留原生公式。';
+    return "The native formula's display structure could not be verified. Preserve the native formula.";
   }
 }
 export async function verifyRenderedMath(tex, display, owner) {
@@ -166,9 +167,9 @@ export async function verifyRenderedMath(tex, display, owner) {
     const template = owner.createElement('template');
     template.innerHTML = html;
     return template.content.querySelector('mjx-merror,[data-mbb-math-error]')
-      ? '公式引擎无法解析该 TeX。'
+      ? 'The formula engine cannot parse this TeX.'
       : null;
   } catch (error) {
-    return error?.message || '公式引擎未能验证该 TeX。';
+    return error?.message || 'The formula engine did not verify this TeX.';
   }
 }

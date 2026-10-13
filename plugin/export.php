@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/includes/i18n.php';
 // Read-only saved-document export. No source-file reads and no article writes.
 require_once __DIR__ . '/includes/php-converter/ResourceImages.php';
 use MarkBridge\Probe\ResourceImages;
@@ -32,8 +33,8 @@ function mbb_export_error(Throwable $error)
     return mbb_error(
         $code,
         $code === 'export_failed'
-            ? '导出未完成；已保存文章与源文件未修改。'
-            : $parts[1] ?? '导出未完成',
+            ? mbb_t('Export did not complete. The saved article and source file are unchanged.')
+            : $parts[1] ?? mbb_t('Export did not complete'),
         in_array($code, ['export_forbidden', 'export_scope'], true)
             ? 403
             : (in_array($code, ['export_unavailable', 'export_storage'], true)
@@ -45,10 +46,14 @@ function mbb_export_permission($r)
 {
     $id = $r['post_id'] ?? null;
     if (!is_int($id) || $id < 1) {
-        return mbb_error('export_id', '请选择已保存的托管文章。', 422);
+        return mbb_error('export_id', mbb_t('Choose a saved managed article.'), 422);
     }
     if (!is_user_logged_in() || !current_user_can('edit_post', $id)) {
-        return mbb_error('export_forbidden', '当前账号无权导出此文章。', 403);
+        return mbb_error(
+            'export_forbidden',
+            mbb_t('The current account cannot export this article.'),
+            403,
+        );
     }
     $p = get_post($id);
     if (
@@ -57,10 +62,14 @@ function mbb_export_permission($r)
         !in_array($p->post_type, ['post', 'page'], true) ||
         in_array($p->post_status, ['trash', 'auto-draft'], true)
     ) {
-        return mbb_error('export_inactive', '仅可导出仍可编辑的已保存托管文章。', 409);
+        return mbb_error(
+            'export_inactive',
+            mbb_t('Only a saved managed article that remains editable can be exported.'),
+            409,
+        );
     }
     if (!is_string(mbb_id($id)) || !preg_match('/^[A-Za-z][A-Za-z0-9_-]{2,63}$/D', mbb_id($id))) {
-        return mbb_error('export_identity', '已保存文档身份无效', 409);
+        return mbb_error('export_identity', mbb_t('The saved document identity is invalid'), 409);
     }
     return true;
 }
@@ -70,7 +79,10 @@ function mbb_export_keys(array $data, array $keys): void
     sort($actual);
     sort($keys);
     if ($actual !== $keys) {
-        mbb_export_throw('export_request', '导出请求含未知或缺失字段');
+        mbb_export_throw(
+            'export_request',
+            mbb_t('The export request has unknown or missing fields'),
+        );
     }
 }
 function mbb_export_snapshot(int $id, string $expected): array
@@ -82,7 +94,10 @@ function mbb_export_snapshot(int $id, string $expected): array
     }
     $p = get_post($id);
     if (!preg_match('/^[a-f0-9]{64}$/D', $expected) || !hash_equals(mbb_token($p), $expected)) {
-        mbb_export_throw('export_conflict', '已保存文章已变化，请重新准备导出');
+        mbb_export_throw(
+            'export_conflict',
+            mbb_t('The saved article changed. Prepare the export again'),
+        );
     }
     $document = mbb_convert([
         'mode' => 'paired_restore',
@@ -91,7 +106,10 @@ function mbb_export_snapshot(int $id, string $expected): array
         'documentId' => mbb_id($id),
     ]);
     if (is_wp_error($document)) {
-        mbb_export_throw('export_pair', '已保存双格式不匹配，不能导出');
+        mbb_export_throw(
+            'export_pair',
+            mbb_t('The saved representations do not match and cannot be exported'),
+        );
     }
     return ['post' => $p, 'document' => $document];
 }
@@ -150,7 +168,12 @@ function mbb_export_store(array $record): string
             return mbb_export_slot($index);
         }
     }
-    mbb_export_throw('export_quota', '最多保留四个导出候选，请取消旧候选或等待过期');
+    mbb_export_throw(
+        'export_quota',
+        mbb_t(
+            'At most four export candidates can be kept. Cancel an older candidate or wait for expiration',
+        ),
+    );
 }
 function mbb_export_receipt(array $record): string
 {
@@ -169,7 +192,7 @@ function mbb_export_ready(string $key, array $old, array $record): void
     );
     wp_cache_delete($key, 'options');
     if ($updated !== 1) {
-        mbb_export_throw('export_expired', '导出准备期间已取消或过期');
+        mbb_export_throw('export_expired', mbb_t('Export preparation was canceled or expired'));
     }
 }
 function mbb_export_directory(string $token, bool $create = false): string
@@ -177,11 +200,13 @@ function mbb_export_directory(string $token, bool $create = false): string
     if (!mbb_export_config()['zipAvailable']) {
         mbb_export_throw(
             'export_unavailable',
-            'ZIP 导出需要 PHP zip、intl 与 POSIX；Markdown 单文件仍可用',
+            mbb_t(
+                'ZIP export requires PHP zip, intl, and POSIX. Markdown single-file export remains available',
+            ),
         );
     }
     if (!preg_match('/^[a-f0-9]{64}$/D', $token)) {
-        mbb_export_throw('export_scope', '导出身份无效');
+        mbb_export_throw('export_scope', mbb_t('The export identity is invalid'));
     }
     $root =
         rtrim(sys_get_temp_dir(), '/') .
@@ -191,20 +216,29 @@ function mbb_export_directory(string $token, bool $create = false): string
         posix_geteuid();
     foreach ([$root, $root . '/' . $token] as $path) {
         if (!file_exists($path) && $create && !is_link($path) && !mkdir($path, 0700)) {
-            mbb_export_throw('export_storage', '无法建立私有导出暂存');
+            mbb_export_throw(
+                'export_storage',
+                mbb_t('Private export staging could not be created'),
+            );
         }
         mbb_resource_private_owner($path);
         if (!is_dir($path) || realpath($path) !== $path) {
-            mbb_export_throw('export_storage', '导出暂存路径不安全');
+            mbb_export_throw('export_storage', mbb_t('The export staging path is unsafe'));
         }
         foreach ([ABSPATH, $_SERVER['DOCUMENT_ROOT'] ?? ''] as $web) {
             $web = $web ? realpath($web) : false;
             if ($web && ($path === $web || str_starts_with($path, $web . '/'))) {
-                mbb_export_throw('export_storage', '导出暂存必须在 Web 根之外');
+                mbb_export_throw(
+                    'export_storage',
+                    mbb_t('Export staging must be outside the web root'),
+                );
             }
         }
         if (!chmod($path, 0700)) {
-            mbb_export_throw('export_storage', '无法限制导出目录权限');
+            mbb_export_throw(
+                'export_storage',
+                mbb_t('Export directory permissions could not be restricted'),
+            );
         }
     }
     return $root . '/' . $token;
@@ -217,14 +251,17 @@ function mbb_export_remove(string $token): void
             continue;
         }
         if ($name !== 'export.zip') {
-            mbb_export_throw('export_storage', '导出目录出现未知文件，未删除');
+            mbb_export_throw(
+                'export_storage',
+                mbb_t('The export directory contains unknown files and was not removed'),
+            );
         }
         mbb_resource_private_owner($dir . '/' . $name);
         if (!is_file($dir . '/' . $name) || is_link($dir . '/' . $name)) {
-            mbb_export_throw('export_storage', '导出文件不安全');
+            mbb_export_throw('export_storage', mbb_t('The export file is unsafe'));
         }
         if (!unlink($dir . '/' . $name)) {
-            mbb_export_throw('export_storage', '无法清理导出文件');
+            mbb_export_throw('export_storage', mbb_t('The export file could not be removed'));
         }
     }
     rmdir($dir);
@@ -235,17 +272,20 @@ function mbb_export_media_file(string $file): string
     $base = realpath($uploads['basedir']);
     $real = realpath($file);
     if (!$base || !$real || !str_starts_with($real, $base . '/') || !is_file($real)) {
-        mbb_export_throw('export_file', '图片必须是 uploads 内的普通本地文件');
+        mbb_export_throw('export_file', mbb_t('Images must be regular local files within uploads'));
     }
     // Check each path component before trusting realpath; never follow a symlink alias.
     $cursor = '/';
     foreach (explode('/', ltrim($file, '/')) as $part) {
         if ($part === '' || $part === '.' || $part === '..') {
-            mbb_export_throw('export_file', '图片路径不规范');
+            mbb_export_throw('export_file', mbb_t('The image path is not canonical'));
         }
         $cursor = rtrim($cursor, '/') . '/' . $part;
         if (is_link($cursor)) {
-            mbb_export_throw('export_file', '图片路径不能包含符号链接');
+            mbb_export_throw(
+                'export_file',
+                mbb_t('The image path must not contain symbolic links'),
+            );
         }
     }
     return $real;
@@ -270,7 +310,10 @@ function mbb_export_plan(array $snapshot, string $format): array
     }
     $images = ResourceImages::urls($document['serialized']);
     if (count($images) > 256) {
-        mbb_export_throw('export_references', '正文最多导出 256 种图片引用');
+        mbb_export_throw(
+            'export_references',
+            mbb_t('The body may contain at most 256 distinct image references for export'),
+        );
     }
     $resources = [];
     $retained = [];
@@ -278,7 +321,12 @@ function mbb_export_plan(array $snapshot, string $format): array
     $mappings = [];
     if ($format === 'zip') {
         if (!mbb_export_config()['zipAvailable']) {
-            mbb_export_throw('export_unavailable', 'ZIP 导出环境不可用；Markdown 单文件仍可用');
+            mbb_export_throw(
+                'export_unavailable',
+                mbb_t(
+                    'ZIP export dependencies are unavailable. Markdown single-file export remains available',
+                ),
+            );
         }
         $ids = get_posts([
             'post_type' => 'attachment',
@@ -292,11 +340,19 @@ function mbb_export_plan(array $snapshot, string $format): array
             'no_found_rows' => true,
         ]);
         if (count($ids) > 32) {
-            mbb_export_throw('export_images', '文章关联资源超过 32 张，不能静默截取');
+            mbb_export_throw(
+                'export_images',
+                mbb_t(
+                    'The article has more than 32 related images; silent truncation is not allowed',
+                ),
+            );
         }
         $ids = array_values(array_unique($ids));
         if (count($ids) > 32) {
-            mbb_export_throw('export_images', '可验证附件超过 32 张');
+            mbb_export_throw(
+                'export_images',
+                mbb_t('More than 32 attachments were found for verification'),
+            );
         }
         $known = [];
         foreach ($ids as $id) {
@@ -328,7 +384,9 @@ function mbb_export_plan(array $snapshot, string $format): array
             if (!isset($known[$url])) {
                 $retained[] = [
                     'url' => $url,
-                    'reason' => '未验证为本文章可读的本地关联附件；保留原 URL，不抓取',
+                    'reason' => mbb_t(
+                        'This URL was not verified as a readable local attachment related to this article. The URL is preserved and is not fetched',
+                    ),
                 ];
                 continue;
             }
@@ -336,7 +394,7 @@ function mbb_export_plan(array $snapshot, string $format): array
             $file = mbb_export_media_file($item['file']);
             $bytes = filesize($file);
             if (!is_int($bytes) || $bytes < 1 || $bytes > 8388608) {
-                mbb_export_throw('export_size', '单张图片最多 8 MiB');
+                mbb_export_throw('export_size', mbb_t('Each image is limited to 8 MiB'));
             }
             $image = mbb_resource_image($file, basename($file));
             $ext = [
@@ -347,7 +405,7 @@ function mbb_export_plan(array $snapshot, string $format): array
             ][$image['mime']];
             $sha = hash_file('sha256', $file);
             if (!$sha) {
-                mbb_export_throw('export_file', '无法读取图片摘要');
+                mbb_export_throw('export_file', mbb_t('The image digest could not be read'));
             }
             $path = 'images/' . $sha . '.' . $ext;
             $mappings[] = ['from' => $url, 'to' => $path];
@@ -365,7 +423,7 @@ function mbb_export_plan(array $snapshot, string $format): array
             }
         }
         if (count($resources) > 32) {
-            mbb_export_throw('export_images', '最多导出 32 张实际图片');
+            mbb_export_throw('export_images', mbb_t('At most 32 actual images may be exported'));
         }
         $projected = mbb_convert([
             'mode' => 'portable_images',
@@ -376,7 +434,9 @@ function mbb_export_plan(array $snapshot, string $format): array
         if (is_wp_error($projected)) {
             mbb_export_throw(
                 'export_projection',
-                '无法只改图片目标而保留正文其他字节；请选择 Markdown 单文件或修正图片引用',
+                mbb_t(
+                    'Image targets cannot be changed while preserving the remaining body bytes. Choose Markdown single-file export or correct the references',
+                ),
             );
         }
         $source = $projected['source'];
@@ -409,7 +469,10 @@ function mbb_export_plan(array $snapshot, string $format): array
         strlen($json) > 262144 ||
         $digest['bytes'] + strlen($json) + array_sum(array_column($resources, 'bytes')) > 33554432
     ) {
-        mbb_export_throw('export_size', '导出展开体积超限，未截断内容');
+        mbb_export_throw(
+            'export_size',
+            mbb_t('The uncompressed export exceeds its budget. Content was not truncated'),
+        );
     }
     return [
         'source' => $source,
@@ -443,7 +506,7 @@ function mbb_export_prepare($r)
     try {
         $data = $r->get_json_params();
         if (!is_array($data)) {
-            mbb_export_throw('export_request', '需要 JSON 导出请求');
+            mbb_export_throw('export_request', mbb_t('A JSON export request is required'));
         }
         mbb_export_keys($data, ['schema', 'post_id', 'expected', 'format']);
         if (
@@ -452,7 +515,7 @@ function mbb_export_prepare($r)
             !is_string($data['expected']) ||
             !in_array($data['format'], ['markdown', 'zip'], true)
         ) {
-            mbb_export_throw('export_request', '导出请求类型不正确');
+            mbb_export_throw('export_request', mbb_t('The export request has invalid field types'));
         }
         $snapshot = mbb_export_snapshot($data['post_id'], $data['expected']);
         $plan = mbb_export_plan($snapshot, $data['format']);
@@ -477,14 +540,20 @@ function mbb_export_prepare($r)
             $dir = mbb_export_directory($token, true);
             $zip = new ZipArchive();
             if ($zip->open($dir . '/export.zip', ZipArchive::CREATE | ZipArchive::EXCL) !== true) {
-                mbb_export_throw('export_storage', '无法建立导出包');
+                mbb_export_throw(
+                    'export_storage',
+                    mbb_t('The export archive could not be created'),
+                );
             }
             try {
                 if (
                     !$zip->addFromString('document.md', $plan['source']) ||
                     !$zip->addFromString('markbridge-export.json', $plan['sidecar'])
                 ) {
-                    mbb_export_throw('export_storage', '无法写入导出正文');
+                    mbb_export_throw(
+                        'export_storage',
+                        mbb_t('The exported body could not be written'),
+                    );
                 }
                 foreach ($plan['files'] as $name => $file) {
                     // Read verified bytes now instead of leaving ZipArchive deferred file reads.
@@ -494,18 +563,24 @@ function mbb_export_prepare($r)
                         !hash_equals($file['sha256'], hash('sha256', $bytes)) ||
                         !$zip->addFromString($name, $bytes)
                     ) {
-                        mbb_export_throw('export_file', '图片在打包期间变化，未完成导出');
+                        mbb_export_throw(
+                            'export_file',
+                            mbb_t('An image changed during packaging. Export did not complete'),
+                        );
                     }
                 }
             } finally {
                 if (!$zip->close()) {
-                    mbb_export_throw('export_storage', '无法完成 ZIP');
+                    mbb_export_throw('export_storage', mbb_t('The ZIP could not be completed'));
                 }
             }
             chmod($dir . '/export.zip', 0600);
             $bytes = filesize($dir . '/export.zip');
             if (!is_int($bytes) || $bytes > 8388608) {
-                mbb_export_throw('export_size', '压缩包最多 8 MiB，未截断图片');
+                mbb_export_throw(
+                    'export_size',
+                    mbb_t('The compressed archive is limited to 8 MiB. Images were not truncated'),
+                );
             }
             $record['archive'] = [
                 'bytes' => $bytes,
@@ -519,7 +594,10 @@ function mbb_export_prepare($r)
                 mbb_export_plan_digest(mbb_export_plan($latest, $data['format'])),
             )
         ) {
-            mbb_export_throw('export_changed', '资源在准备期间变化，请重新准备');
+            mbb_export_throw(
+                'export_changed',
+                mbb_t('Resources changed during preparation. Prepare again'),
+            );
         }
         if ($slotKey) {
             mbb_export_ready($slotKey, $reservation, $record);
@@ -556,18 +634,24 @@ function mbb_export_prepare($r)
 function mbb_export_load(string $token): array
 {
     if (!is_user_logged_in() || !preg_match('/^[a-f0-9]{64}$/D', $token)) {
-        mbb_export_throw('export_scope', '导出候选不属于当前身份');
+        mbb_export_throw(
+            'export_scope',
+            mbb_t('The export candidate does not belong to the current identity'),
+        );
     }
     $slot = mbb_export_record($token);
     if (!$slot) {
-        mbb_export_throw('export_expired', '导出候选已过期或取消，请重新准备');
+        mbb_export_throw(
+            'export_expired',
+            mbb_t('The export candidate expired or was canceled. Prepare again'),
+        );
     }
     if (
         ($slot['record']['site'] ?? null) !== mbb_resource_site() ||
         ($slot['record']['user'] ?? null) !== get_current_user_id() ||
         ($slot['record']['schema'] ?? null) !== 1
     ) {
-        mbb_export_throw('export_scope', '导出候选身份不匹配');
+        mbb_export_throw('export_scope', mbb_t('The export candidate identity does not match'));
     }
     return $slot;
 }
@@ -577,11 +661,16 @@ function mbb_export_download($r)
         $slot = mbb_export_load($r['token']);
         $record = $slot['record'];
         if (($record['state'] ?? null) !== 'ready') {
-            mbb_export_throw('export_pending', '导出仍在准备或已中断，请取消或等待清理');
+            mbb_export_throw(
+                'export_pending',
+                mbb_t(
+                    'The export is still preparing or was interrupted. Cancel it or wait for cleanup',
+                ),
+            );
         }
         $data = $r->get_json_params();
         if (!is_array($data)) {
-            mbb_export_throw('export_request', '需要明确确认导出');
+            mbb_export_throw('export_request', mbb_t('Explicit export confirmation is required'));
         }
         mbb_export_keys($data, ['schema', 'receipt']);
         if (
@@ -589,29 +678,38 @@ function mbb_export_download($r)
             !is_string($data['receipt']) ||
             !hash_equals(mbb_export_receipt($record), $data['receipt'])
         ) {
-            mbb_export_throw('export_receipt', '导出确认凭据不匹配');
+            mbb_export_throw(
+                'export_receipt',
+                mbb_t('The export confirmation receipt does not match'),
+            );
         }
         $snapshot = mbb_export_snapshot($record['post'], $record['expected']);
         if ($snapshot['document']['documentId'] !== $record['documentId']) {
-            mbb_export_throw('export_scope', '文章身份已改变');
+            mbb_export_throw('export_scope', mbb_t('The article identity changed'));
         }
         $plan = mbb_export_plan($snapshot, $record['format']);
         if (!hash_equals($record['digest'], mbb_export_plan_digest($plan))) {
-            mbb_export_throw('export_changed', '图片或导出元数据已变化，请重新准备');
+            mbb_export_throw(
+                'export_changed',
+                mbb_t('Images or export metadata changed. Prepare again'),
+            );
         }
         $body = $plan['source'];
         if ($record['format'] === 'zip') {
             $file = mbb_export_directory($record['token']) . '/export.zip';
             mbb_resource_private_owner($file);
             if (!is_file($file) || filesize($file) !== $record['archive']['bytes']) {
-                mbb_export_throw('export_changed', '暂存包已改变');
+                mbb_export_throw('export_changed', mbb_t('The staged archive changed'));
             }
             $body = file_get_contents($file);
             if (
                 !is_string($body) ||
                 !hash_equals(hash('sha256', $body), $record['archive']['sha256'])
             ) {
-                mbb_export_throw('export_changed', '暂存包摘要不匹配');
+                mbb_export_throw(
+                    'export_changed',
+                    mbb_t('The staged archive digest does not match'),
+                );
             }
         }
         $latest = mbb_export_snapshot($record['post'], $record['expected']);
@@ -621,10 +719,16 @@ function mbb_export_download($r)
                 mbb_export_plan_digest(mbb_export_plan($latest, $record['format'])),
             )
         ) {
-            mbb_export_throw('export_changed', '资源在下载期间变化，请重新准备');
+            mbb_export_throw(
+                'export_changed',
+                mbb_t('Resources changed during download. Prepare again'),
+            );
         }
         if ($record['expires'] <= time() || !mbb_export_drop($slot['key'], $record)) {
-            mbb_export_throw('export_expired', '导出在确认期间已取消或领取');
+            mbb_export_throw(
+                'export_expired',
+                mbb_t('The export was canceled or claimed during confirmation'),
+            );
         }
         return new WP_REST_Response($body, 200, [
             'Content-Type' =>
@@ -660,7 +764,7 @@ add_action('rest_api_init', function () {
                 !is_scalar($r['post_id']) ||
                 !preg_match('/^[1-9][0-9]{0,12}$/D', (string) $r['post_id'])
             ) {
-                return mbb_error('export_id', '缺少有效文章 ID', 422);
+                return mbb_error('export_id', mbb_t('A valid article ID is required'), 422);
             }
             return mbb_export_permission(['post_id' => absint($r['post_id'])]);
         },

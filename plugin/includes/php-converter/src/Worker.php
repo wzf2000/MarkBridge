@@ -42,6 +42,8 @@ final class Worker
                 'ok' => false,
                 'code' => $error->errorCode,
                 'message' => $error->getMessage(),
+                'message_id' => $error->translation['id'],
+                'message_args' => $error->translation['args'],
                 'location' => $error->location,
             ];
         } catch (\JsonException $error) {
@@ -56,7 +58,8 @@ final class Worker
             return [
                 'ok' => false,
                 'code' => 'CONVERSION',
-                'message' => 'PHP 转换服务未完成，原内容未写入。',
+                'message' =>
+                    'The PHP conversion service did not complete. Original content was not written.',
                 'location' => '',
             ];
         }

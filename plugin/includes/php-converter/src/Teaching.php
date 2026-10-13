@@ -78,7 +78,7 @@ final class Teaching
             }
             $d = $blockName ? BlockAdapters::descriptor($blockName, true) : null;
             if (!$d) {
-                self::fail('ADAPTER_VERSION', '静态适配器缺失或版本不兼容');
+                self::fail('ADAPTER_VERSION', 'The static adapter is missing or incompatible');
             }
             return BlockAdapters::leafAttrs($d, $attrs);
         }
@@ -633,7 +633,7 @@ final class Teaching
                 $end++;
             }
             if ($end === count($rawLines)) {
-                self::fail('ADAPTER_STRUCTURE', '按钮文字段落未闭合');
+                self::fail('ADAPTER_STRUCTURE', 'The button text paragraph is unclosed');
             }
             $html = rtrim(implode('', array_slice($rawLines, $begin, $end - $begin + 1)), "\r\n");
             $replacements[$begin] = $marker(['rawButton' => BlockAdapters::buttonParagraph($html)]);
@@ -758,7 +758,10 @@ final class Teaching
                         ) ||
                         ($item['children'][0]['children'] ?? []) !== []
                     ) {
-                        self::fail('ADAPTER_STRUCTURE', '链接按钮必须恰好有一个受控文字段落');
+                        self::fail(
+                            'ADAPTER_STRUCTURE',
+                            'A link button must contain exactly one controlled text paragraph',
+                        );
                     }
                     $a['text'] =
                         $item['children'][0]['name'] === 'core/html'
@@ -776,7 +779,10 @@ final class Teaching
             }
             if ($item['kind'] === 'adapter') {
                 if ($item['children']) {
-                    self::fail('ADAPTER_STRUCTURE', '静态适配器容器不能有正文');
+                    self::fail(
+                        'ADAPTER_STRUCTURE',
+                        'Static adapter containers must not contain body content',
+                    );
                 }
                 $a = BlockAdapters::sourceAttrs($item['attrs']);
                 $stack[count($stack) - 1]['children'][] = [
@@ -868,11 +874,14 @@ final class Teaching
                     $a = self::attrs($kind, $b['attrs'], false, $b['name']);
                     if (isset(BlockAdapters::NATIVE[$kind]) || $kind === 'adapter') {
                         if ($kind === 'details' && $details >= 8) {
-                            self::fail('ADAPTER_LIMIT', '原生详情最多嵌套 8 层');
+                            self::fail(
+                                'ADAPTER_LIMIT',
+                                'Native details are limited to 8 nested levels',
+                            );
                         }
                         if (isset($a['anchor'])) {
                             if (isset($ids[$a['anchor']])) {
-                                self::fail('ADAPTER_ANCHOR', '锚点与文档 ID 重复');
+                                self::fail('ADAPTER_ANCHOR', 'The anchor duplicates a document ID');
                             }
                             $ids[$a['anchor']] = true;
                         }
@@ -885,13 +894,22 @@ final class Teaching
                                     fn($child) => $child['name'] !== 'core/button',
                                 ))
                         ) {
-                            self::fail('ADAPTER_STRUCTURE', '按钮组需要 1–32 个直接链接按钮');
+                            self::fail(
+                                'ADAPTER_STRUCTURE',
+                                'A button group requires 1–32 direct link buttons',
+                            );
                         }
                         if ($kind === 'button' && ($parent !== 'buttons' || $inner)) {
-                            self::fail('ADAPTER_STRUCTURE', '链接按钮只能是按钮组直接叶节点');
+                            self::fail(
+                                'ADAPTER_STRUCTURE',
+                                'A link button must be a direct leaf of a button group',
+                            );
                         }
                         if ($kind === 'adapter' && $inner) {
-                            self::fail('ADAPTER_STRUCTURE', '静态适配器不能包含嵌套区块');
+                            self::fail(
+                                'ADAPTER_STRUCTURE',
+                                'Static adapters must not contain nested blocks',
+                            );
                         }
                         $walk(
                             $inner,

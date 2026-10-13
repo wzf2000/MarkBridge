@@ -122,6 +122,32 @@ const mime = {
 http
   .createServer((request, response) => {
     const pathname = new URL(request.url, 'http://localhost').pathname;
+    const locale =
+      new URL(request.url, 'http://localhost').searchParams.get('locale') === 'en_US'
+        ? 'en_US'
+        : 'zh_CN';
+    const originalEnd = response.end.bind(response);
+    response.end = (body, ...rest) => {
+      if (typeof body === 'string' && /<html\b/i.test(body)) {
+        // Explicit synthetic catalogs; this does not model WordPress's real user/site locale selection.
+        body = body.replace(
+          /(<script\b[^>]*src=["'][^"']*(?:\/plugin\/|markdown-block-bridge\/kernel)[^"']*["'][^>]*>)/g,
+          '<script src="/fixture-localization.js?locale=' + locale + '"></script>$1',
+        );
+      }
+      return originalEnd(body, ...rest);
+    };
+    if (pathname === '/fixture-localization.js') {
+      const jed = JSON.parse(
+        fs.readFileSync(path.join(plugin, 'languages/markbridge-zh_CN-mbb-i18n.json'), 'utf8'),
+      ).locale_data.messages;
+      const data = locale === 'zh_CN' ? jed : {};
+      const boot = `(() => { const data=${JSON.stringify(data)};window.MBB_UI_LOCALE=${JSON.stringify(locale)};window.wp=window.wp||{};if(window.wp.i18n?.setLocaleData)window.wp.i18n.setLocaleData(data,'markbridge');else window.wp.i18n={__(text,domain){return domain==='markbridge'?(data[text]?.[0]??text):text;},_n(single,plural,count,domain){return domain==='markbridge'?(data[single]?.[0]??(count===1?single:plural)):(count===1?single:plural);}};})();`;
+      return response
+        .writeHead(200, { 'Content-Type': 'application/javascript' })
+        .end(boot + '\n' + fs.readFileSync(path.join(plugin, 'i18n.js'), 'utf8'));
+    }
+
     if (pathname === '/health') return response.writeHead(200).end('ok');
     if (pathname === '/wp/v2/types')
       return response.writeHead(200, { 'Content-Type': 'application/json' }).end('{}');

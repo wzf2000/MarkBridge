@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/i18n.php';
 // Display preferences never participate in conversion or paired saving.
 const MBB_DISPLAY_OPTION = 'markbridge_display_preferences';
 
@@ -62,7 +63,7 @@ function mbb_display_parse_submission($input)
 function mbb_display_settings_save()
 {
     if (!current_user_can('manage_options')) {
-        wp_die('无权修改 MarkBridge 设置。', '', ['response' => 403]);
+        wp_die(mbb_t('You cannot change MarkBridge settings.'), '', ['response' => 403]);
     }
     check_admin_referer('mbb_display_save');
     $preferences = mbb_display_parse_submission(wp_unslash($_POST['preferences'] ?? null));
@@ -84,11 +85,13 @@ function mbb_plugin_action_links($links)
     if (current_user_can('manage_options')) {
         array_unshift(
             $links,
-            '<a href="' . esc_url(admin_url('options-general.php?page=markbridge')) . '">设置</a>',
+            '<a href="' .
+                esc_url(admin_url('options-general.php?page=markbridge')) .
+                mbb_t('">Settings</a>'),
         );
     }
-    $links[] = '<a href="https://github.com/wzf2000/MarkBridge/wiki">使用文档</a>';
-    $links[] = '<a href="https://github.com/wzf2000/MarkBridge/issues">反馈问题</a>';
+    $links[] = mbb_t('<a href="https://github.com/wzf2000/MarkBridge/wiki">Documentation</a>');
+    $links[] = mbb_t('<a href="https://github.com/wzf2000/MarkBridge/issues">Report an issue</a>');
     return $links;
 }
 add_filter(
@@ -101,26 +104,32 @@ function mbb_admin_settings_overview($backend, $diagnostics)
     $headers = get_file_data(dirname(__DIR__) . '/markdown-block-bridge.php', [
         'version' => 'Version',
     ]);
-    echo '<h2>概览与开始使用</h2><p>版本：' .
+    echo mbb_t('<h2>Overview and getting started</h2><p>Version: ') .
         esc_html($headers['version']) .
-        ' · 转换后端：' .
+        mbb_t(' · Conversion backend: ') .
         esc_html(is_string($backend) ? $backend : 'invalid') .
         ' · ' .
-        ($diagnostics['ok'] ? '转换环境就绪' : '转换环境需要检查，请查看下方诊断') .
+        ($diagnostics['ok']
+            ? mbb_t('The conversion runtime is ready')
+            : mbb_t('The conversion runtime needs attention. See the diagnostics below')) .
         '</p>';
-    echo '<p>基础安装使用内置 PHP，无需填写服务器路径。已有 Node 配置升级后继续沿用；管理员可在下方验证并选择转换方案。</p>';
+    echo mbb_t(
+        '<p>A basic installation uses bundled PHP and needs no server directory configuration. Existing Node configuration is preserved during upgrades. Administrators can verify and select a backend below.</p>',
+    );
     echo '<p>';
     if (current_user_can('edit_posts')) {
         echo '<a class="button button-primary" href="' .
             esc_url(admin_url('post-new.php')) .
-            '">新建文章</a> ';
+            mbb_t('">New article</a> ');
         echo '<a class="button" href="' .
             esc_url(admin_url('tools.php?page=mbb-editor')) .
-            '">上传 Markdown</a> ';
+            mbb_t('">Upload Markdown</a> ');
     }
-    echo '<a href="https://github.com/wzf2000/MarkBridge/wiki/Getting-Started">快速开始</a> · ';
-    echo '<a href="https://github.com/wzf2000/MarkBridge/wiki">使用文档</a> · ';
-    echo '<a href="https://github.com/wzf2000/MarkBridge/issues">反馈问题</a></p>';
+    echo mbb_t(
+        '<a href="https://github.com/wzf2000/MarkBridge/wiki/Getting-Started">Quick start</a> · ',
+    );
+    echo mbb_t('<a href="https://github.com/wzf2000/MarkBridge/wiki">Documentation</a> · ');
+    echo mbb_t('<a href="https://github.com/wzf2000/MarkBridge/issues">Report an issue</a></p>');
 }
 
 function mbb_admin_settings_preferences()
@@ -128,16 +137,22 @@ function mbb_admin_settings_preferences()
     $preferences = mbb_display_preferences();
     $result = $_GET['mbb-display'] ?? '';
     if ($result === 'updated') {
-        echo '<div class="notice notice-success"><p>显示设置已保存。</p></div>';
+        echo mbb_t('<div class="notice notice-success"><p>Display settings saved.</p></div>');
     } elseif ($result === 'rejected') {
-        echo '<div class="notice notice-error"><p>显示设置含无效值，原设置保持不变。</p></div>';
+        echo mbb_t(
+            '<div class="notice notice-error"><p>Display settings contain invalid values. Original settings are unchanged.</p></div>',
+        );
     } elseif ($result === 'save-failed') {
-        echo '<div class="notice notice-error"><p>显示设置未能保存，请检查数据库状态。</p></div>';
+        echo mbb_t(
+            '<div class="notice notice-error"><p>Display settings could not be saved. Check the database state.</p></div>',
+        );
     }
     echo '<form action="' . esc_url(admin_url('admin-post.php')) . '" method="post">';
     echo '<input type="hidden" name="action" value="mbb_display_save">';
     wp_nonce_field('mbb_display_save');
-    echo '<h2>编辑体验</h2><p><label for="mbb-source-font-size">Markdown 源码字号</label> ';
+    echo mbb_t(
+        '<h2>Editing experience</h2><p><label for="mbb-source-font-size">Markdown source font size</label> ',
+    );
     echo '<select id="mbb-source-font-size" name="preferences[source_font_size]">';
     foreach ([14, 16, 18] as $size) {
         echo '<option value="' .
@@ -148,18 +163,27 @@ function mbb_admin_settings_preferences()
             $size .
             ' px</option>';
     }
-    echo '</select></p><p class="description">仅调整 Markdown 编辑窗口，不改变正文或前台字体。已打开的编辑窗口需刷新。</p>';
-    echo '<h2>公式与代码显示</h2><table class="form-table"><tbody>';
+    echo mbb_t(
+        '</select></p><p class="description">Only adjusts the Markdown editing window, not body or frontend fonts. Refresh an already open editing window.</p>',
+    );
+    echo mbb_t('<h2>Formula and code display</h2><table class="form-table"><tbody>');
     foreach (
         [
             'math_reader' => [
-                '公式阅读工具',
-                '点击公式可放大、复制 TeX。关闭仅取消前台阅读交互，公式排版与编辑预览继续工作。',
+                mbb_t('Formula reading tools'),
+                mbb_t(
+                    'Click a formula to enlarge it or copy TeX. Disabling this only removes frontend interactions; formula layout and editor previews remain available.',
+                ),
             ],
-            'code_line_numbers' => ['代码行号', '在前台代码块旁显示行号。'],
+            'code_line_numbers' => [
+                mbb_t('Code line numbers'),
+                mbb_t('Show line numbers beside frontend code blocks.'),
+            ],
             'code_copy' => [
-                '代码复制按钮',
-                '在前台代码工具栏中显示复制按钮；代码高亮与语言标签继续工作。',
+                mbb_t('Code copy button'),
+                mbb_t(
+                    'Show copy buttons in frontend code toolbars. Highlighting and language labels remain available.',
+                ),
             ],
         ]
         as $key => [$label, $description]
@@ -170,7 +194,7 @@ function mbb_admin_settings_preferences()
             esc_html($label) .
             '</label></th><td>';
         echo '<select id="mbb-' . esc_attr($key) . '" name="preferences[' . esc_attr($key) . ']">';
-        foreach (['1' => '开启', '0' => '关闭'] as $value => $text) {
+        foreach (['1' => mbb_t('Enabled'), '0' => mbb_t('Close')] as $value => $text) {
             echo '<option value="' .
                 $value .
                 '" ' .
@@ -182,10 +206,14 @@ function mbb_admin_settings_preferences()
         echo '</select><p class="description">' . esc_html($description) . '</p></td></tr>';
     }
     echo '</tbody></table>';
-    submit_button('保存显示设置');
-    echo '</form><h2>可选图片资源</h2><p>默认使用 Unicode 表情。图片包由管理员导入，基础安装不需要下载资源。</p>';
+    submit_button(mbb_t('Save display settings'));
+    echo mbb_t(
+        '</form><h2>Optional image resources</h2><p>Unicode emoji are used by default. Administrators may import image packs; basic installation requires no resource downloads.</p>',
+    );
     echo '<p><a class="button" href="' .
         esc_url(admin_url('options-general.php?page=markbridge-emoji')) .
-        '">管理图片表情包</a> ';
-    echo '<a href="https://github.com/wzf2000/MarkBridge/wiki/Emoji-Packs">图片包说明</a></p>';
+        mbb_t('">Manage image emoji packs</a> ');
+    echo mbb_t(
+        '<a href="https://github.com/wzf2000/MarkBridge/wiki/Emoji-Packs">Image pack guide</a></p>',
+    );
 }

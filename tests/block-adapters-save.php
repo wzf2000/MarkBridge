@@ -247,7 +247,7 @@ try {
     bas_assert(is_wp_error($missing), 'Missing adapter conversion succeeded');
     $shown = do_blocks($baseline);
     bas_assert(
-        str_contains($shown, '适配包或版本不可用') &&
+        str_contains($shown, 'mbb-adapter-unavailable') &&
             str_contains($shown, 'Literal') === false &&
             str_contains($shown, '&lt;literal'),
         'Missing adapter erased stored static content',

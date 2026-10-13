@@ -106,7 +106,8 @@ export function portableImageSource(source, mappings, fail) {
   let end = source.length,
     result = source;
   for (const edit of edits) {
-    if (edit.end > end) fail('EXPORT_PROJECTION', '无法可靠投影重叠的图片语法');
+    if (edit.end > end)
+      fail('EXPORT_PROJECTION', 'Overlapping image syntax cannot be projected reliably');
     result = result.slice(0, edit.start) + edit.value + result.slice(edit.end);
     end = edit.start;
   }

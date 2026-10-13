@@ -1,3 +1,4 @@
+import { translate as T, format as F } from './i18n.js';
 // The stored reference is a RichText format, so editing a paragraph never
 // turns its footnote into an opaque HTML block.
 let formatRegistered = false;
@@ -9,14 +10,14 @@ export function registerFootnotes() {
   if (!wp.blocks.getBlockType('mbb/footnotes')) {
     wp.blocks.registerBlockType('mbb/footnotes', {
       apiVersion: 3,
-      title: '脚注定义',
+      title: T('Footnote definitions'),
       category: 'text',
       supports: { html: false },
       edit: () =>
         el(
           'section',
           useBlockProps({ className: 'mbb-footnotes' }),
-          el('strong', { contentEditable: false }, '脚注定义'),
+          el('strong', { contentEditable: false }, T('Footnote definitions')),
           el(
             'ol',
             useInnerBlocksProps(
@@ -38,7 +39,7 @@ export function registerFootnotes() {
     });
     wp.blocks.registerBlockType('mbb/footnote', {
       apiVersion: 3,
-      title: '脚注',
+      title: T('Footnote'),
       category: 'text',
       parent: ['mbb/footnotes'],
       attributes: { label: { type: 'string', default: '' } },
@@ -48,7 +49,7 @@ export function registerFootnotes() {
           'li',
           useBlockProps({ 'data-mbb-footnote': attributes.label }),
           el(wp.components.TextControl, {
-            label: '脚注名称',
+            label: T('Footnote name'),
             value: attributes.label,
             onChange: (label) => setAttributes({ label }),
           }),
@@ -69,7 +70,7 @@ export function registerFootnotes() {
   if (!formatRegistered) {
     formatRegistered = true;
     wp.richText.registerFormatType('mbb/footnote-ref', {
-      title: '脚注引用',
+      title: T('Footnote reference'),
       tagName: 'span',
       className: 'mbb-footnote-ref',
       attributes: { 'data-mbb-footnote': 'data-mbb-footnote' },
@@ -125,7 +126,7 @@ export function registerFootnotes() {
           {},
           el(RichTextToolbarButton, {
             icon: 'editor-ol',
-            title: '插入或修改脚注引用',
+            title: T('Insert or edit footnote reference'),
             isActive,
             onClick: () => {
               setLabel(current);
@@ -140,7 +141,7 @@ export function registerFootnotes() {
                 'div',
                 { style: { padding: '12px', minWidth: '220px' } },
                 el(wp.components.TextControl, {
-                  label: '脚注名称',
+                  label: T('Footnote name'),
                   value: label,
                   onChange: setLabel,
                   onKeyDown: (event) => {
@@ -157,7 +158,7 @@ export function registerFootnotes() {
                     onClick: submit,
                     disabled: !/^[\p{L}\p{N}_-]{1,64}$/u.test(label),
                   },
-                  '插入引用',
+                  T('Insert reference'),
                 ),
               ),
             ),

@@ -1,4 +1,15 @@
 (() => {
+  const E = (error) => globalThis.MBBI18n?.error(error) ?? error.message;
+  const T = (message) => globalThis.MBBI18n?.t(message) ?? message;
+  const F = (message, ...values) => {
+    let next = 0;
+    return String(message).replace(/%%|%(?:(\d+)\$)?([sd])/g, (token, index, kind) => {
+      if (token === '%%') return '%';
+      const value = values[index ? Number(index) - 1 : next++];
+      return kind === 'd' ? String(Number(value)) : String(value ?? '');
+    });
+  };
+
   const cfg = window.MBB_EDITOR;
   if (!cfg) return;
   let dialog,
@@ -40,7 +51,12 @@
     });
     if (!response.ok) {
       const error = await response.json().catch(() => ({}));
-      throw Error(error.message || '导出请求未完成，请检查权限与网络后重新准备。');
+      throw Error(
+        E(error) ||
+          T(
+            'The export request did not complete. Check permissions and the network, then prepare again.',
+          ),
+      );
     }
     return binary
       ? {
@@ -77,7 +93,9 @@
     list.replaceChildren();
     controls();
     if (!dialog.open) dialog.showModal();
-    status.textContent = '正在核对已保存文章；未保存输入不会进入导出。';
+    status.textContent = T(
+      'Verifying the saved article. Unsaved input is not included in the export.',
+    );
     try {
       const value = await api('export/context?post_id=' + Number(postId), null, 'GET');
       if (session !== epoch || !dialog.open) return;
@@ -86,12 +104,13 @@
         !/^[a-f0-9]{64}$/.test(value.expected || '') ||
         !value.documentId
       )
-        throw Error('文章快照不完整。');
+        throw Error(T('The article snapshot is incomplete.'));
       target = { post_id: value.post_id, expected: value.expected };
-      status.textContent =
-        '导出当前服务器已保存的双格式文章。请准备清单并确认下载；编辑器未保存内容保持不变。';
+      status.textContent = T(
+        "Export the article's current saved paired representations. Prepare the manifest and confirm the download. Unsaved editor input is unchanged.",
+      );
     } catch (error) {
-      if (session === epoch) status.textContent = error.message;
+      if (session === epoch) status.textContent = E(error);
     } finally {
       if (session === epoch) {
         pending = false;
@@ -106,7 +125,7 @@
     discard();
     pending = true;
     controls();
-    status.textContent = '正在准备导出清单…';
+    status.textContent = T('Preparing the export manifest…');
     try {
       const value = await api('export/prepare', { schema: 1, ...target, format: chosen });
       if (session !== epoch || !dialog.open) {
@@ -122,7 +141,7 @@
         !Array.isArray(value.resources) ||
         !Array.isArray(value.retainedImages)
       )
-        throw Error('导出清单不完整，未允许下载。');
+        throw Error(T('The export manifest is incomplete. Download was not allowed.'));
       prepared = value;
       source.value = value.projectedSource;
       list.replaceChildren();
@@ -132,10 +151,17 @@
         list.append(el('li', {}, `${item.url}：${item.reason}`));
       status.textContent =
         chosen === 'markdown'
-          ? '原始 Markdown 字节将完整下载，包括头部与代码换行。图片 URL 保留，图片不会打包。'
-          : `ZIP 包含 ${value.resources.length} 张已核验图片；仅图片目标改为便携路径。外部或未关联图片保留 URL，请核对下方副本。清单不包含作者、私有笔记或源文件路径。`;
+          ? T(
+              'Original Markdown bytes, including header and code newlines, will be downloaded. Image URLs are preserved; images are not bundled.',
+            )
+          : F(
+              T(
+                'The ZIP includes %1$s verified images. Only image targets are replaced with portable paths. External or unrelated images retain their URLs. Verify the copy below. The manifest contains no author, private notes, or source file paths.',
+              ),
+              value.resources.length,
+            );
     } catch (error) {
-      if (session === epoch) status.textContent = error.message;
+      if (session === epoch) status.textContent = E(error);
     } finally {
       if (session === epoch) {
         pending = false;
@@ -149,7 +175,7 @@
       value = prepared;
     pending = true;
     controls();
-    status.textContent = '正在重新鉴权并核验当前文章与图片…';
+    status.textContent = T('Rechecking permissions, the article, and images…');
     try {
       const result = await api(
         'export/' + value.token + '/download',
@@ -168,11 +194,13 @@
       anchor.remove();
       setTimeout(() => URL.revokeObjectURL(object), 1000);
       prepared = null;
-      status.textContent = '已下载；已保存文章、源文件和未保存输入均未修改。';
+      status.textContent = T(
+        'Downloaded. The saved article, source file, and unsaved input are unchanged.',
+      );
     } catch (error) {
       if (session === epoch) {
         discard(value);
-        status.textContent = error.message + ' 请重新准备导出。';
+        status.textContent = E(error) + T(' Prepare the export again.');
       }
     } finally {
       if (session === epoch) {
@@ -183,35 +211,49 @@
   }
   function setup() {
     if (dialog) return;
-    dialog = el('dialog', { id: 'mbb-export-dialog', 'aria-label': '导出已保存文章' });
+    dialog = el('dialog', { id: 'mbb-export-dialog', 'aria-label': T('Export saved article') });
     dialog.append(
-      el('h2', {}, '导出已保存文章'),
+      el('h2', {}, T('Export saved article')),
       el(
         'p',
         {},
-        'Markdown 保留原始字节；ZIP 仅打包可验证的关联图片，并准备便携副本。此操作不保存编辑器输入。',
+        T(
+          'Markdown preserves original bytes. ZIP bundles only verifiable related images and prepares a portable copy. This does not save editor input.',
+        ),
       ),
     );
-    const label = el('label', { for: 'mbb-export-format' }, '导出格式');
+    const label = el('label', { for: 'mbb-export-format' }, T('Export format'));
     format = el('select', { id: 'mbb-export-format' });
     format.append(
-      el('option', { value: 'markdown' }, 'Markdown 单文件'),
-      el('option', { value: 'zip' }, 'Markdown 与图片 ZIP'),
+      el('option', { value: 'markdown' }, T('Markdown single file')),
+      el('option', { value: 'zip' }, T('Markdown and images ZIP')),
     );
     if (cfg.exports?.zipAvailable === false) {
       format.options[1].disabled = true;
-      dialog.append(el('p', {}, 'ZIP 所需可选环境不可用，Markdown 单文件仍可下载。'));
+      dialog.append(
+        el(
+          'p',
+          {},
+          T(
+            'Optional ZIP dependencies are unavailable. Markdown single-file download remains available.',
+          ),
+        ),
+      );
     }
     status = el('p', { role: 'status' });
     list = el('ul', { id: 'mbb-export-resources' });
     source = el('textarea', {
       id: 'mbb-export-projected-source',
       readonly: '',
-      'aria-label': '导出正文副本',
+      'aria-label': T('Export body copy'),
     });
-    preview = el('button', { id: 'mbb-export-preview', type: 'button' }, '准备导出与资源清单');
-    confirm = el('button', { id: 'mbb-export-confirm', type: 'button' }, '确认下载');
-    const cancel = el('button', { id: 'mbb-export-cancel', type: 'button' }, '取消导出');
+    preview = el(
+      'button',
+      { id: 'mbb-export-preview', type: 'button' },
+      T('Prepare export and resource manifest'),
+    );
+    confirm = el('button', { id: 'mbb-export-confirm', type: 'button' }, T('Confirm download'));
+    const cancel = el('button', { id: 'mbb-export-cancel', type: 'button' }, T('Cancel export'));
     preview.onclick = review;
     confirm.onclick = download;
     cancel.onclick = () => dialog.close();
@@ -221,7 +263,7 @@
       discard();
       source.value = '';
       list.replaceChildren();
-      status.textContent = '格式已变更，请重新准备导出。';
+      status.textContent = T('The format changed. Prepare the export again.');
       controls();
     };
     dialog.append(label, format, preview, confirm, cancel, status, list, source);
@@ -245,7 +287,11 @@
     const install = () => {
       const bar = document.querySelector('#mbb-toolbar');
       if (bar && cfg.postId && !document.querySelector('#mbb-export-open')) {
-        const button = el('button', { id: 'mbb-export-open', type: 'button' }, '导出已保存文章');
+        const button = el(
+          'button',
+          { id: 'mbb-export-open', type: 'button' },
+          T('Export saved article'),
+        );
         button.onclick = () => open(cfg.postId);
         bar.prepend(button);
       }

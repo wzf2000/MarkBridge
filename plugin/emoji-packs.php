@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/includes/i18n.php';
 /** Optional, data-only emoji packs. Never extract an untrusted archive. */
 if (!defined('ABSPATH')) {
     exit();
@@ -260,8 +261,8 @@ function mbb_emoji_config()
 }
 add_action('admin_menu', function () {
     add_options_page(
-        'MarkBridge 图片表情',
-        'MarkBridge 图片表情',
+        mbb_t('MarkBridge image emoji'),
+        mbb_t('MarkBridge image emoji'),
         'manage_options',
         'markbridge-emoji',
         'mbb_emoji_page',
@@ -294,15 +295,19 @@ function mbb_emoji_page()
             } else {
                 throw new RuntimeException('Unknown operation.');
             }
-            $message = '操作完成。';
+            $message = mbb_t('Operation completed.');
         } catch (Throwable $error) {
             $message = $error->getMessage();
         }
     }
-    echo '<div class="wrap"><h1>MarkBridge 图片表情</h1><p>默认使用 Unicode，不自动下载外部资源。当前没有预置下载源；可导入具有明确来源与许可的图片数据包。导入不授予资源使用许可。</p>';
+    echo mbb_t(
+        '<div class="wrap"><h1>MarkBridge image emoji</h1><p>Unicode is used by default; external resources are not automatically downloaded. No download source is bundled. Import only image packs with known provenance and licensing. Importing does not grant a license to use the resources.</p>',
+    );
     echo '<p>' . esc_html($message) . '</p><form method="post" enctype="multipart/form-data">';
     wp_nonce_field('markbridge-emoji');
-    echo '<input type="hidden" name="operation" value="import"><input type="file" name="pack_zip" accept=".zip" required><button class="button">导入数据包</button></form><form method="post">';
+    echo mbb_t(
+        '<input type="hidden" name="operation" value="import"><input type="file" name="pack_zip" accept=".zip" required><button class="button">Import pack</button></form><form method="post">',
+    );
     wp_nonce_field('markbridge-emoji');
     echo '<p><select name="pack"><option value="">Unicode</option>';
     foreach (get_option('markbridge_emoji_packs', []) as $key => $pack) {
@@ -314,5 +319,7 @@ function mbb_emoji_page()
             esc_html($pack['name'] . ' ' . $pack['version'] . ' — ' . $pack['license']) .
             '</option>';
     }
-    echo '</select> <button class="button" name="operation" value="select">启用所选</button> <button class="button" name="operation" value="delete">删除未启用包</button></p></form></div>';
+    echo mbb_t(
+        '</select> <button class="button" name="operation" value="select">Enable selected pack</button> <button class="button" name="operation" value="delete">Delete inactive pack</button></p></form></div>',
+    );
 }

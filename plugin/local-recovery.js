@@ -1,4 +1,15 @@
 (() => {
+  const E = (error) => globalThis.MBBI18n?.error(error) ?? error.message;
+  const T = (message) => globalThis.MBBI18n?.t(message) ?? message;
+  const F = (message, ...values) => {
+    let next = 0;
+    return String(message).replace(/%%|%(?:(\d+)\$)?([sd])/g, (token, index, kind) => {
+      if (token === '%%') return '%';
+      const value = values[index ? Number(index) - 1 : next++];
+      return kind === 'd' ? String(Number(value)) : String(value ?? '');
+    });
+  };
+
   const LIMIT = 256 * 1024,
     TOTAL = 1024 * 1024,
     COUNT = 8,
@@ -148,7 +159,7 @@
           new Set(entries.map((e) => e.key)).size !== entries.length ||
           entries.reduce((sum, e) => sum + e.bytes, 0) > TOTAL
         )
-          throw Error('损坏的索引');
+          throw Error(T('Damaged index'));
       } catch {
         clear();
         return [];
@@ -178,7 +189,7 @@
       let record;
       try {
         if (typeof raw !== 'string' || bytes(raw) !== entry.bytes || bytes(raw) > LIMIT)
-          throw Error('损坏的候选');
+          throw Error(T('Damaged candidate'));
         record = JSON.parse(raw);
         if (
           !exact(record, [
@@ -199,7 +210,7 @@
           record.expires !== entry.expires ||
           !validPayload(record.payload, record.kind)
         )
-          throw Error('候选身份不匹配');
+          throw Error(T('Candidate identity does not match'));
       } catch {
         remove(entry.key);
         return null;
@@ -213,7 +224,11 @@
     }
     function write(context, type, payload, instance = '0'.repeat(32)) {
       if (!validContext(context) || !validPayload(payload, type))
-        throw Error('候选正文超过 256 KiB 或格式不受支持；编辑内容仍在页面中，可下载保留。');
+        throw Error(
+          T(
+            'The candidate body exceeds 256 KiB or has an unsupported format. Edited content remains on the page and can be downloaded.',
+          ),
+        );
       const created = now(),
         record = {
           schema: 1,
@@ -226,7 +241,11 @@
         },
         raw = JSON.stringify(record);
       if (bytes(raw) > LIMIT)
-        throw Error('候选 JSON 超过 256 KiB；编辑内容仍在页面中，可下载保留。');
+        throw Error(
+          T(
+            'The candidate JSON exceeds 256 KiB. Edited content remains on the page and can be downloaded.',
+          ),
+        );
       const previous = index(),
         retained = previous.filter(
           (e) =>
@@ -325,7 +344,11 @@
   }
   async function initializeInstance() {
     if (!navigator.locks?.request)
-      throw Error('浏览器不支持可靠的多标签页存储锁；本地恢复已停用，正常编辑不受影响。');
+      throw Error(
+        T(
+          'This browser does not support reliable cross-tab storage locks. Local recovery is disabled; normal editing is unaffected.',
+        ),
+      );
     const key = prefix + 'instance:' + location.pathname + ':' + (Number(cfg.postId) || 'new');
     instance = sessionStorage.getItem(key);
     if (!/^[a-f0-9]{32}$/.test(instance || '')) instance = uuid();
@@ -353,13 +376,18 @@
       instance = uuid();
       sessionStorage.removeItem(prefix + 'new:' + location.pathname);
     }
-    throw Error('无法隔离本标签页的草稿身份，本地恢复已停用。');
+    throw Error(T("This tab's draft identity could not be isolated. Local recovery is disabled."));
   }
   async function locked(operation, serial = epoch) {
-    if (!navigator.locks?.request) throw Error('浏览器不支持可靠存储锁。');
+    if (!navigator.locks?.request)
+      throw Error(T('This browser does not support reliable storage locks.'));
     return navigator.locks.request(prefix + 'storage', () => {
       if (!current(serial) || localStorage.getItem(revocationKey) !== generation)
-        throw Error('另一窗口已停用恢复，旧校验不能重新启用或写入。');
+        throw Error(
+          T(
+            'Another window disabled recovery. Older verification cannot enable it or write again.',
+          ),
+        );
       return operation();
     });
   }
@@ -380,10 +408,16 @@
   function failure(code, status, id) {
     const error = Error(
       code === 'rest_cookie_invalid_nonce' || status === 401
-        ? '认证已过期；本地候选保留。请刷新页面或重新登录，再重新校验恢复权限。'
+        ? T(
+            'Authentication expired. Local candidates are preserved. Refresh or sign in again, then recheck recovery permissions.',
+          )
         : code === 'forbidden' || code === 'rest_cannot_edit'
-          ? '这篇文章的编辑权限已失效；仅清除此文章的本地候选，其他文章保留。'
-          : '权限校验失败，恢复已暂停，本地候选保留。',
+          ? T(
+              "Editing permission for this article was lost. Only this article's local candidates are removed; other articles are preserved.",
+            )
+          : T(
+              'Permission verification failed. Recovery is paused and local candidates are preserved.',
+            ),
     );
     error.authExpired = code === 'rest_cookie_invalid_nonce' || status === 401;
     error.permissionLost = !error.authExpired && ['forbidden', 'rest_cannot_edit'].includes(code);
@@ -402,7 +436,7 @@
   }
   async function authorize(id = postId, serial = epoch, draftKey = null) {
     if (!current(serial)) {
-      const error = Error('恢复会话或当前账号已变化。');
+      const error = Error(T('The recovery session or current account changed.'));
       error.authExpired = !currentUser();
       throw error;
     }
@@ -421,45 +455,65 @@
       });
       data = await response.json();
     } catch {
-      throw Error('无法完成恢复权限校验，已暂停本地恢复；编辑内容仍在页面中。');
+      throw Error(
+        T(
+          'Recovery permission verification did not complete. Local recovery is paused; edited content remains on the page.',
+        ),
+      );
     } finally {
       clearTimeout(timeout);
       requests.delete(controller);
     }
-    if (!current(serial)) throw Error('恢复会话已变化。');
+    if (!current(serial)) throw Error(T('The recovery session changed.'));
     if (!response.ok) {
       if (response.status === 401 || response.status === 403)
         throw failure(data.code, response.status, id);
       const error = Error(
         response.status === 401 || response.status === 403
-          ? '登录或编辑权限已失效；本账号的本地候选已清除，请重新登录后手动启用。'
+          ? T(
+              "Sign-in or editing permission was lost. This account's local candidates were cleared. Sign in and explicitly enable recovery again.",
+            )
           : data.code === 'inactive'
-            ? '文章已在回收站或不可编辑。本地候选保留；请先通过 WordPress 正常还原。'
+            ? T(
+                'The article is trashed or not editable. Local candidates are preserved. Restore the article normally through WordPress first.',
+              )
             : data.code === 'not_found'
-              ? '文章已删除。本地候选保留，但不能恢复或以旧 ID 重建。'
-              : '无法重新校验恢复权限；本地恢复已暂停，编辑内容仍在页面中。',
+              ? T(
+                  'The article was deleted. Local candidates are preserved but cannot restore it or recreate its old ID.',
+                )
+              : T(
+                  'Recovery permissions could not be verified again. Local recovery is paused; edited content remains on the page.',
+                ),
       );
       throw error;
     }
     const value = data;
-    if (!current(serial)) throw Error('恢复会话已变化。');
+    if (!current(serial)) throw Error(T('The recovery session changed.'));
     if (
       !validContext(value) ||
       value.siteKey !== config.siteKey ||
       value.userKey !== config.userKey ||
       value.postId !== id
     ) {
-      const error = Error('作者或站点身份已变化，本地恢复已停用。');
+      const error = Error(T('The author or site identity changed. Local recovery is disabled.'));
       error.authExpired = true;
       throw error;
     }
     if (context?.postId === id && context.permission !== value.permission) {
-      const error = Error('权限指纹已变化；本地候选保留，但不能按旧权限恢复。请重新校验身份。');
+      const error = Error(
+        T(
+          'The permission fingerprint changed. Local candidates are preserved but cannot be restored under the old permissions. Verify your identity again.',
+        ),
+      );
       error.permissionChanged = true;
       throw error;
     }
     if (id && context?.postId === id && context.identity !== value.identity) {
-      const error = Error('来源身份已变化，候选不能恢复到新的来源绑定。');
+      const error = Error(
+        T(
+          'The source identity changed. The candidate cannot be restored into a new source binding.',
+        ),
+      );
       error.scopeChanged = true;
       throw error;
     }
@@ -475,7 +529,11 @@
     entries.replaceChildren();
     if (error.permissionLost) {
       purge(error.affectedPost ?? postId).catch(() =>
-        message('权限已失效且浏览器拒绝清理。请在浏览器站点数据中清除此站点的本地候选。'),
+        message(
+          T(
+            "Permission was lost and the browser refused cleanup. Clear this site's local candidates in the browser's site data settings.",
+          ),
+        ),
       );
     }
     if (
@@ -489,7 +547,9 @@
       window.MarkBridgeEditorRecovery?.cancel();
     }
     retry.hidden = !!(error.permissionLost || error.authExpired);
-    message(error.message + (lastCapture ? '可重试校验或下载当前候选。' : ''));
+    message(
+      E(error) + (lastCapture ? T('Retry verification or download the current candidate.') : ''),
+    );
   }
   function renderRows(value) {
     entries.replaceChildren();
@@ -500,18 +560,22 @@
       row.append(
         node(
           'span',
-          (entry.kind === 'blocks' ? '区块候选' : 'Markdown 候选') +
-            (entry.instance === instance ? ' · 本标签页' : ' · 另一标签页') +
-            (entry.baseline !== value.baseline ? '（旧版本基线，须比较冲突）' : '') +
-            (entry.identity !== value.identity && value.postId ? '（来源绑定已变）' : '') +
-            (entry.permission !== value.permission ? '（权限已变，候选保留）' : '') +
+          (entry.kind === 'blocks' ? T('Block candidate') : T('Markdown candidate')) +
+            (entry.instance === instance ? T(' · This tab') : T(' · Another tab')) +
+            (entry.baseline !== value.baseline ? T(' (older baseline; compare conflicts)') : '') +
+            (entry.identity !== value.identity && value.postId
+              ? T(' (source binding changed)')
+              : '') +
+            (entry.permission !== value.permission
+              ? T(' (permissions changed; candidate preserved)')
+              : '') +
             ' · ' +
             new Date(entry.created).toLocaleString(),
         ),
       );
-      const restore = node('button', '恢复候选并查看差异'),
-        discard = node('button', '删除候选'),
-        downloadRecord = node('button', '下载本地候选');
+      const restore = node('button', T('Restore candidate and view differences')),
+        discard = node('button', T('Delete candidate')),
+        downloadRecord = node('button', T('Download local candidate'));
       restore.type = discard.type = downloadRecord.type = 'button';
       restore.disabled = downloadRecord.disabled =
         entry.permission !== value.permission ||
@@ -545,7 +609,10 @@
       row.append(restore, downloadRecord, discard);
       entries.append(row);
     }
-    if (!records.length) entries.append(node('p', '当前身份与版本没有可恢复候选。'));
+    if (!records.length)
+      entries.append(
+        node('p', T('No recoverable candidate exists for the current identity and version.')),
+      );
   }
   async function restoreRecord(entry) {
     const serial = epoch;
@@ -555,7 +622,11 @@
       const record = await locked(() => store.read(fresh, entry), serial);
       if (!record) {
         await locked(() => renderRows(fresh), serial);
-        message('候选损坏、过期或身份/基线不匹配，未恢复正文。');
+        message(
+          T(
+            'The candidate is damaged, expired, or has a different identity or baseline. Body content was not restored.',
+          ),
+        );
         return;
       }
       if (!record.context.postId) {
@@ -571,15 +642,28 @@
           throw error;
         }
         if (!current(serial) || !enabled || !same(verified, record.context))
-          throw Error('版本、来源或权限已变化，请重新打开文章，候选未应用。');
+          throw Error(
+            T(
+              'The version, source, or permissions changed. Reopen the article. The candidate was not applied.',
+            ),
+          );
         if (
           baseline &&
           (verified.expected !== baseline.expected ||
             verified.sourceDigest !== baseline.sourceDigest)
         )
-          throw Error('预览后版本或来源再次变化，候选未应用。请重新查看差异。');
+          throw Error(
+            T(
+              'The version or source changed after preview. The candidate was not applied. Preview the differences again.',
+            ),
+          );
       });
-      if (current(serial)) message('候选已进入差异预览，尚未写入 WordPress 或源文件。');
+      if (current(serial))
+        message(
+          T(
+            'The candidate is in the difference preview and has not been written to WordPress or the source file.',
+          ),
+        );
     } catch (error) {
       suspend(error, serial);
     }
@@ -622,10 +706,10 @@
         return !rowsFor(fresh).length;
       }, serial);
       if (!enabled) {
-        message('本地恢复尚未启用。');
+        message(T('Local recovery is not enabled.'));
         return;
       }
-      message('已启用：候选只保存在本浏览器，7 天到期。');
+      message(T('Enabled: candidates are stored only in this browser and expire after 7 days.'));
       if (ready) {
         const markdown = window.MarkBridgeEditorRecovery?.snapshot();
         if (markdown) changed(markdown.kind || 'markdown', () => markdown);
@@ -655,7 +739,7 @@
     const revision = (revisions.get(type) || 0) + 1;
     revisions.set(type, revision);
     clearTimeout(timers.get(type));
-    message('编辑已变化，等待校验并更新本地候选……');
+    message(T('Editing changed. Waiting for verification before updating the local candidate…'));
     const serial = epoch;
     timers.set(
       type,
@@ -677,7 +761,9 @@
             fresh.sourceDigest !== snapshot.sourceDigest
           ) {
             message(
-              '服务器版本或来源文件已变化，当前编辑未覆盖本地候选。请先处理版本冲突；可下载当前候选。',
+              T(
+                'The server version or source file changed. Current edits did not overwrite the local candidate. Resolve the version conflict first; the current candidate can be downloaded.',
+              ),
             );
             return;
           }
@@ -689,7 +775,7 @@
             return true;
           }, serial);
           if (didWrite && current(serial) && revisions.get(type) === revision)
-            message('本地候选已更新；尚未保存到站点。');
+            message(T('The local candidate was updated and has not been saved to the site.'));
         } catch (error) {
           suspend(error, serial);
         }
@@ -745,7 +831,11 @@
         sessionStorage.removeItem(prefix + 'new:' + location.pathname);
         newKey = null;
       }
-      message('成功保存；仅清理与本次保存相同的本标签页候选，其他修改保留。');
+      message(
+        T(
+          "Save succeeded. Only this tab's candidates matching this save were cleaned; other changes are preserved.",
+        ),
+      );
       if (enabled && unsaved && !equal(unsaved.payload, savedRecord.payload)) {
         changed('blocks', nativeCapture.bind(null, true));
       }
@@ -794,8 +884,9 @@
         const response = options.parse === false ? await result.clone().json() : result;
         if (Number(response?.id) !== Number(target[1])) return result;
         ordinaryNotice.hidden = false;
-        ordinaryNotice.textContent =
-          'WordPress 已保存本次普通文章提交；不同的本地修改仍保留，不会自动转为托管文章。';
+        ordinaryNotice.textContent = T(
+          'WordPress saved this ordinary article submission. Different local edits are preserved; the article is not automatically managed by MarkBridge.',
+        );
         const payload = {
           ...snapshot.payload,
           content: sent.content,
@@ -815,7 +906,12 @@
                 JSON.stringify(sent[key]) === JSON.stringify(response[key])),
           );
         if (exact) await saved(0, { kind: 'blocks', payload }, ticket, true);
-        else message('WordPress 已保存，但响应与本地候选不同；候选保留，请先比较。');
+        else
+          message(
+            T(
+              'WordPress saved the submission, but the response differs from the local candidate. The candidate is preserved. Compare first.',
+            ),
+          );
       } catch {
         /* Cleanup failures never turn a successful native save into a failed save. */
       }
@@ -886,8 +982,8 @@
   function setup() {
     panel = node('details');
     panel.id = 'mbb-local-recovery';
-    panel.append(node('summary', '浏览器草稿恢复'));
-    const label = node('label', '启用此浏览器的本地恢复 ');
+    panel.append(node('summary', T('Browser draft recovery')));
+    const label = node('label', T('Enable local recovery in this browser '));
     checkbox = document.createElement('input');
     checkbox.type = 'checkbox';
     checkbox.id = 'mbb-recovery-opt-in';
@@ -896,21 +992,23 @@
       label,
       node(
         'p',
-        '默认不保存。启用后，草稿以未加密文字保存在这个浏览器；共享设备上的其他使用者可能访问。最多 8 条、合计 1 MiB，7 天到期；不能替代站点保存。',
+        T(
+          'Nothing is stored by default. When enabled, drafts are stored as unencrypted text in this browser and may be accessible to other users of a shared device. At most 8 records and 1 MiB total, expiring after 7 days. This is not a substitute for saving to the site.',
+        ),
       ),
     );
-    status = node('p', '本地恢复尚未启用。');
+    status = node('p', T('Local recovery is not enabled.'));
     status.setAttribute('role', 'status');
     ordinaryNotice = node('p');
     ordinaryNotice.hidden = true;
     panel.append(ordinaryNotice);
     entries = node('div');
     entries.id = 'mbb-recovery-entries';
-    retry = node('button', '重试本地恢复校验');
+    retry = node('button', T('Retry local recovery verification'));
     retry.type = 'button';
     retry.hidden = true;
     retry.onclick = () => refresh(true);
-    const clear = node('button', '清除此账号的本地候选');
+    const clear = node('button', T("Clear this account's local candidates"));
     clear.type = 'button';
     clear.onclick = async () => {
       epoch++;
@@ -920,12 +1018,16 @@
       try {
         await purge();
         entries.replaceChildren();
-        message('此账号的本地候选已清除并停用。');
+        message(T("This account's local candidates were cleared and recovery was disabled."));
       } catch {
-        message('浏览器拒绝清理存储。请在浏览器站点数据设置中清除；编辑内容仍在页面中。');
+        message(
+          T(
+            'The browser refused storage cleanup. Clear site data in the browser settings. Edited content remains on the page.',
+          ),
+        );
       }
     };
-    download = node('button', '下载当前未保存候选');
+    download = node('button', T('Download current unsaved candidate'));
     download.type = 'button';
     download.disabled = true;
     download.onclick = () => {
@@ -951,7 +1053,7 @@
         checkbox.checked = false;
         cancelPending();
         entries.replaceChildren();
-        message('另一窗口已停用本地恢复。');
+        message(T('Another window disabled local recovery.'));
       }
     });
     window.addEventListener('pageshow', (event) => {
@@ -959,7 +1061,11 @@
       observer.observe(document.body, { childList: true, subtree: true });
       installWatchers();
       retry.hidden = false;
-      message('页面已重新激活；本地恢复须重新校验，正常编辑不受影响。');
+      message(
+        T(
+          'The page was reactivated. Local recovery must be verified again; normal editing is unaffected.',
+        ),
+      );
     });
     window.addEventListener('pagehide', () => {
       epoch++;

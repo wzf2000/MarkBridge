@@ -7,11 +7,61 @@ import os
 from pathlib import Path
 import re
 import shutil
+import stat
 import subprocess
 import urllib.request
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def install_test_locales(archive, site):
+    """Install verified core translations without changing site or user language."""
+    target = site / "wp-content" / "languages"
+    if (
+        target.exists()
+        or target.is_symlink()
+        or site.is_symlink()
+        or not target.parent.is_dir()
+        or target.parent.is_symlink()
+        or archive.is_symlink()
+        or not archive.is_file()
+        or archive.stat().st_size > 8 * 1024 * 1024
+    ):
+        raise RuntimeError("Test language target must be a new directory")
+    pattern = re.compile(
+        r"(?:admin(?:-network)?-|continents-cities-)?zh_CN"
+        r"(?:-[a-f0-9]{32})?\.(?:mo|po|json|l10n\.php)"
+    )
+    with zipfile.ZipFile(archive) as bundle:
+        entries = bundle.infolist()
+        names = [entry.filename for entry in entries]
+        if (
+            not entries
+            or len(entries) > 256
+            or len(names) != len(set(names))
+            or "zh_CN.mo" not in names
+            or sum(entry.file_size for entry in entries) > 20 * 1024 * 1024
+        ):
+            raise RuntimeError("Unexpected core language inventory")
+        for entry in entries:
+            if (
+                not pattern.fullmatch(entry.filename)
+                or entry.is_dir()
+                or stat.S_ISLNK(entry.external_attr >> 16)
+                or entry.file_size > 4 * 1024 * 1024
+                or entry.flag_bits & 1
+            ):
+                raise RuntimeError("Unexpected core language archive entry")
+        if bundle.testzip():
+            raise RuntimeError("Core language ZIP CRC failed")
+        contents = {entry.filename: bundle.read(entry) for entry in entries}
+    target.mkdir(parents=True, mode=0o755)
+    for name, body in contents.items():
+        file = target / name
+        file.write_bytes(body)
+        file.chmod(0o644)
+    return {name: hashlib.sha256(body).hexdigest() for name, body in sorted(contents.items())}
 
 
 def dependency(name, downloads, pins):
@@ -35,6 +85,7 @@ def main():
     parser.add_argument("--downloads", required=True, type=Path)
     parser.add_argument("--wp-cli", required=True, type=Path, help="New executable wrapper path")
     parser.add_argument("--php", default=shutil.which("php"))
+    parser.add_argument("--with-test-locales", action="store_true")
     args = parser.parse_args()
     site, downloads, wrapper = (
         args.wordpress.resolve(),
@@ -114,6 +165,33 @@ def main():
     version = wp("core", "version")
     if version != pins["wordpress"]["version"]:
         raise RuntimeError("Unexpected WordPress version")
+    if args.with_test_locales:
+        language = dependency("wordpress_zh_CN", downloads, pins)
+        if pins["wordpress_zh_CN"]["version"] != version:
+            raise RuntimeError("Core language version differs from WordPress")
+        files = install_test_locales(language, site)
+        if (
+            wp(
+                "eval",
+                "echo in_array('zh_CN', get_available_languages(), true) ? 'available' : 'missing';",
+            )
+            != "available"
+        ):
+            raise RuntimeError("Actual WordPress Chinese locale is unavailable")
+        (downloads / "test-locale-proof.json").write_text(
+            json.dumps(
+                {
+                    "wordpress": version,
+                    "archive_sha256": pins["wordpress_zh_CN"]["sha256"],
+                    "files": files,
+                    "site_language_changed": False,
+                    "user_locale_changed": False,
+                },
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n"
+        )
     print("Installed pinned synthetic WordPress " + version)
 
 

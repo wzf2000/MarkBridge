@@ -85,16 +85,16 @@ jobs:
       - name: Install locked PHP conversion dependencies
         run: npm run build:php
 
-      - name: Build browser assets for the test runtime
-        run: npm run build
-
-      - name: Prepare sandbox support on the ephemeral runner
+      - name: Prepare sandbox and translation tools on the ephemeral runner
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y bubblewrap default-mysql-client
+          sudo apt-get install -y bubblewrap default-mysql-client gettext
           # Ubuntu 24.04's AppArmor restriction otherwise prevents unprivileged bwrap.
           # This runner is disposable; no production host settings are changed.
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
+      - name: Build browser assets for the test runtime
+        run: npm run build
 
       - name: Build and verify the final installation package
         run: python3 scripts/package.py
@@ -104,7 +104,7 @@ jobs:
           python3 scripts/prepare_ci_wordpress.py \
             --wordpress "$MARKBRIDGE_TEST_WORDPRESS_ROOT" \
             --downloads "$RUNNER_TEMP/markbridge-downloads" \
-            --wp-cli "$MARKBRIDGE_TEST_WPCLI"
+            --wp-cli "$MARKBRIDGE_TEST_WPCLI" --with-test-locales
           version="$(node -p "require('./package.json').version")"
           "$MARKBRIDGE_TEST_WPCLI" --path="$MARKBRIDGE_TEST_WORDPRESS_ROOT" plugin install "dist/markbridge-$version.zip" --activate
           python3 scripts/verify_package.py "$MARKBRIDGE_TEST_PLUGIN_ROOT" --manifest "dist/markbridge-$version.manifest.json"
@@ -132,6 +132,7 @@ jobs:
           wp_test eval-file tests/export-save.php
           wp_test eval-file tests/merge-save.php
           wp_test eval-file tests/block-adapters-save.php
+          wp_test eval-file tests/localization-save.php
           php -d disable_functions=exec,shell_exec,system,passthru,proc_open,popen,pcntl_exec \
             "$RUNNER_TEMP/markbridge-downloads/wp-cli-2.12.0.phar" --path="$MARKBRIDGE_TEST_WORDPRESS_ROOT" eval-file tests/native-rest-save.php
           wp_test eval-file tests/ci-backend.php node
@@ -145,6 +146,7 @@ jobs:
           wp_test eval-file tests/export-save.php
           wp_test eval-file tests/merge-save.php
           wp_test eval-file tests/block-adapters-save.php
+          wp_test eval-file tests/localization-save.php
           wp_test eval-file tests/ci-backend.php php
           wp_test eval-file tests/native-rest-save.php
           wp_test eval-file tests/teaching-save.php
@@ -156,6 +158,7 @@ jobs:
           wp_test eval-file tests/export-save.php
           wp_test eval-file tests/merge-save.php
           wp_test eval-file tests/block-adapters-save.php
+          wp_test eval-file tests/localization-save.php
 
       - name: Check formatting
         env:
@@ -214,6 +217,11 @@ jobs:
 
       - name: Test curated Wiki synchronization
         run: python3 -m unittest discover -s tests -p 'test_wiki_sync.py'
+
+      - name: Verify translation catalog and synthetic core locale setup
+        run: |
+          python3 scripts/build-localization.py --check
+          python3 -m unittest discover -s tests -p 'test_ci_locales.py'
 
       - name: Test manual release guards
         run: python3 -m unittest discover -s tests -p 'test_release_workflow.py'
@@ -287,6 +295,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
+      - name: Install translation compiler
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y gettext
       - name: Build locked namespaced conversion dependencies
         run: |
           npm ci --ignore-scripts
@@ -312,3 +324,4 @@ jobs:
           php tests/export.php
           php tests/merge.php
           php tests/block-adapters.php
+          php tests/localization.php

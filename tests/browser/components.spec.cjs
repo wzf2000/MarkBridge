@@ -7,7 +7,15 @@ const plugin = path.resolve(__dirname, '../../plugin'),
   sha = crypto.createHash('sha256').update(html).digest('hex');
 async function load(
   page,
-  { status = 'available', digest = sha, behavior = 'complete', instances = 1, budgets = {} } = {},
+  {
+    status = 'available',
+    digest = sha,
+    behavior = 'complete',
+    instances = 1,
+    budgets = {},
+    supportsUiLocale,
+    locale = 'zh_CN',
+  } = {},
 ) {
   await page.goto('/health');
   await page.route('**/component/frame.html', (route) =>
@@ -19,6 +27,7 @@ async function load(
     componentVersion: '0.1.0',
     params: { value: 42, behavior },
     provider: {
+      ...(supportsUiLocale === undefined ? {} : { supportsUiLocale }),
       id: 'fixture',
       version: '0.1.0',
       protocolVersion: 1,
@@ -41,6 +50,10 @@ async function load(
   await page.evaluate((p) => {
     window.MBBComponents = [p];
   }, config.provider);
+  await page.addScriptTag({ url: '/fixture-localization.js?locale=' + locale });
+  await page.evaluate((value) => {
+    window.MBB_UI_LOCALE = value;
+  }, locale);
   await page.addScriptTag({ content: fs.readFileSync(path.join(plugin, 'components.js'), 'utf8') });
 }
 test('generic fixed provider uses opaque iframe, enforced CSP and public data, retains static fallback', async ({
@@ -422,4 +435,37 @@ test('a first dynamically inserted teaching component uses the prepublished serv
   await page.getByRole('button', { name: '启动交互演示' }).click();
   await expect(page.frameLocator('iframe').locator('#status')).toHaveText('Ready');
   await expect(page.getByText('Dynamic static fallback')).toBeVisible();
+});
+
+test('legacy init stays closed; trusted opt-in sends only the closed UI locale without changing parameters', async ({
+  page,
+}) => {
+  for (const scenario of [
+    { locale: 'zh_CN' },
+    { supportsUiLocale: false, locale: 'zh_CN' },
+    { supportsUiLocale: true, locale: 'zh_CN' },
+    { supportsUiLocale: true, locale: 'en_US' },
+    { supportsUiLocale: true, locale: 'unknown' },
+  ]) {
+    await load(page, scenario);
+    await page.locator('[data-mbb-teaching=component] button').first().click();
+    const frame = page.frameLocator('iframe');
+    await expect(frame.locator('#status')).toHaveText('Ready');
+    const init = JSON.parse(await frame.locator('#init').textContent());
+    const keys = [
+      'protocol',
+      'session',
+      'type',
+      'params',
+      'execution',
+      'component',
+      'componentVersion',
+      'budgets',
+    ];
+    if (scenario.supportsUiLocale === true) keys.push('uiLocale');
+    expect(Object.keys(init).sort()).toEqual(keys.sort());
+    expect(init.params).toEqual({ value: 42, behavior: 'complete' });
+    if (scenario.supportsUiLocale === true)
+      expect(init.uiLocale).toBe(scenario.locale === 'zh_CN' ? 'zh_CN' : 'en_US');
+  }
 });

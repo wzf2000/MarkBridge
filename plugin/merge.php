@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/includes/i18n.php';
 // Signed, read-only merge baselines. This module never saves articles or source files.
 function mbb_binding_projection($p): string
 {
@@ -35,21 +36,23 @@ function mbb_merge_error(Throwable $error)
     return mbb_error(
         $code,
         $code === 'merge_failed'
-            ? '合并准备未完成，原候选与已保存内容未修改。'
-            : $parts[1] ?? '合并准备失败',
+            ? mbb_t(
+                'Merge preparation did not complete. The original candidate and saved content are unchanged.',
+            )
+            : $parts[1] ?? mbb_t('Merge preparation failed'),
         in_array($code, ['merge_forbidden', 'merge_identity'], true) ? 403 : 409,
     );
 }
 function mbb_merge_keys($data, array $keys): void
 {
     if (!is_array($data)) {
-        mbb_merge_throw('merge_shape', '合并数据不是闭合对象');
+        mbb_merge_throw('merge_shape', mbb_t('Merge data must be a closed object'));
     }
     $actual = array_keys($data);
     sort($actual);
     sort($keys);
     if ($actual !== $keys) {
-        mbb_merge_throw('merge_shape', '合并数据字段未知或缺失');
+        mbb_merge_throw('merge_shape', mbb_t('Merge data has unknown or missing fields'));
     }
 }
 function mbb_merge_permission($r)
@@ -86,7 +89,10 @@ function mbb_merge_candidate($value): array
         $value['featured_media'] < 0 ||
         $value['featured_media'] > 9007199254740991
     ) {
-        mbb_merge_throw('merge_candidate', '候选正文或元数据超限/类型非法');
+        mbb_merge_throw(
+            'merge_candidate',
+            mbb_t('Candidate body or metadata exceeds its budget or has invalid types'),
+        );
     }
     mbb_merge_source_budget($value['source']);
     return [
@@ -102,7 +108,9 @@ function mbb_merge_source_budget(string $source): void
     if (strlen($source) > 262144 || count($lines[0]) > 32768) {
         mbb_merge_throw(
             'merge_budget',
-            '三方合并每份原文最多 256 KiB / 32,768 行，原候选可下载后手动比较',
+            mbb_t(
+                'Each merge source is limited to 256 KiB and 32,768 lines. Download the original candidate for manual comparison',
+            ),
         );
     }
 }
@@ -126,7 +134,10 @@ function mbb_merge_pair($document): array
         strlen($document['source']) > 262144 ||
         strlen($document['serialized']) > 262144
     ) {
-        mbb_merge_throw('merge_pair', '合并基线文档形状或容量不合法');
+        mbb_merge_throw(
+            'merge_pair',
+            mbb_t('The merge baseline document has an invalid shape or exceeds its budget'),
+        );
     }
     mbb_merge_source_budget($document['source']);
     $verified = mbb_convert([
@@ -136,7 +147,10 @@ function mbb_merge_pair($document): array
         'documentId' => $document['documentId'],
     ]);
     if (is_wp_error($verified)) {
-        mbb_merge_throw('merge_pair', '合并基线无法通过完整配对核验');
+        mbb_merge_throw(
+            'merge_pair',
+            mbb_t('The merge baseline failed complete paired verification'),
+        );
     }
     return $verified;
 }
@@ -145,7 +159,10 @@ function mbb_merge_current(int $id, ?string $expected = null): array
     clean_post_cache($id);
     $permission = mbb_merge_permission(['post_id' => $id]);
     if ($permission !== true) {
-        mbb_merge_throw('merge_forbidden', '当前账号无权准备此文章或源文件的合并');
+        mbb_merge_throw(
+            'merge_forbidden',
+            mbb_t('The current account cannot prepare a merge for this article or source file'),
+        );
     }
     $p = clone get_post($id);
     $metadata = [
@@ -158,7 +175,12 @@ function mbb_merge_current(int $id, ?string $expected = null): array
         $expected !== null &&
         (!preg_match('/^[a-f0-9]{64}$/D', $expected) || !hash_equals($token, $expected))
     ) {
-        mbb_merge_throw('merge_conflict', '文章已变化，不能把当前版本倒充打开时基线');
+        mbb_merge_throw(
+            'merge_conflict',
+            mbb_t(
+                'The article changed. Its current version cannot masquerade as the opening baseline',
+            ),
+        );
     }
     $document = mbb_merge_pair(mbb_document($p));
     $managed = get_post_meta($id, '_mbb_source_managed', true) === 'file';
@@ -166,14 +188,21 @@ function mbb_merge_current(int $id, ?string $expected = null): array
     if ($managed) {
         $target = mbb_source_target($p);
         if (is_wp_error($target)) {
-            mbb_merge_throw('merge_source', '绑定源不可用，请保留候选并手动协调');
+            mbb_merge_throw(
+                'merge_source',
+                mbb_t(
+                    'The bound source is unavailable. Preserve the candidate and reconcile manually',
+                ),
+            );
         }
         $contents = mbb_merge_read_source($target);
         mbb_merge_source_budget($contents);
         if ($contents !== $document['source']) {
             mbb_merge_throw(
                 'merge_source_diverged',
-                '实际源文件与已保存配对不同，自动三方合并不可用；请先正常协调来源',
+                mbb_t(
+                    'The actual source file differs from the saved pair. Automatic three-way merge is unavailable; reconcile the source normally first',
+                ),
             );
         }
         $sha = hash('sha256', $contents);
@@ -194,7 +223,7 @@ function mbb_merge_assert_current(array $snapshot, int $id): void
 {
     clean_post_cache($id);
     if (mbb_merge_permission(['post_id' => $id]) !== true) {
-        mbb_merge_throw('merge_forbidden', '合并读取期间权限已变化');
+        mbb_merge_throw('merge_forbidden', mbb_t('Permissions changed while reading merge inputs'));
     }
     $p = get_post($id);
     $metadata = [
@@ -207,11 +236,17 @@ function mbb_merge_assert_current(array $snapshot, int $id): void
         mbb_document($p) !== $snapshot['document'] ||
         (get_post_meta($id, '_mbb_source_managed', true) === 'file') !== $snapshot['source_managed']
     ) {
-        mbb_merge_throw('merge_conflict', '文章身份或配对在读取期间变化，请重新协调');
+        mbb_merge_throw(
+            'merge_conflict',
+            mbb_t('The article identity or pair changed while reading. Reconcile again'),
+        );
     }
     foreach ($metadata as $key => $value) {
         if ($snapshot[$key] !== $value) {
-            mbb_merge_throw('merge_conflict', '文章元数据在读取期间变化，请重新协调');
+            mbb_merge_throw(
+                'merge_conflict',
+                mbb_t('Article metadata changed while reading. Reconcile again'),
+            );
         }
     }
     if ($snapshot['source_managed']) {
@@ -220,7 +255,10 @@ function mbb_merge_assert_current(array $snapshot, int $id): void
             is_wp_error($target) ||
             hash('sha256', mbb_merge_read_source($target)) !== $snapshot['source_sha256']
         ) {
-            mbb_merge_throw('merge_conflict', '绑定源在读取期间变化，请重新协调');
+            mbb_merge_throw(
+                'merge_conflict',
+                mbb_t('The bound source changed while reading. Reconcile again'),
+            );
         }
     }
 }
@@ -248,20 +286,31 @@ function mbb_merge_read_source(string $path): string
 {
     clearstatcache(true, $path);
     if (is_link($path) || !is_file($path) || filesize($path) > 262144) {
-        mbb_merge_throw('merge_source_diverged', '绑定源不是有界普通文件，请先正常协调来源');
+        mbb_merge_throw(
+            'merge_source_diverged',
+            mbb_t(
+                'The bound source is not a bounded regular file. Reconcile the source normally first',
+            ),
+        );
     }
     $file = fopen($path, 'rb');
     if (!$file) {
-        mbb_merge_throw('merge_source', '无法读取绑定源文件');
+        mbb_merge_throw('merge_source', mbb_t('The bound source file could not be read'));
     }
     try {
         $stat = fstat($file);
         if (!$stat || ($stat['mode'] & 0170000) !== 0100000 || $stat['size'] > 262144) {
-            mbb_merge_throw('merge_source_diverged', '绑定源超出安全读取预算');
+            mbb_merge_throw(
+                'merge_source_diverged',
+                mbb_t('The bound source exceeds its safe read budget'),
+            );
         }
         $bytes = stream_get_contents($file, 262145);
         if (!is_string($bytes) || strlen($bytes) > 262144 || strlen($bytes) !== $stat['size']) {
-            mbb_merge_throw('merge_source_diverged', '源文件读取期间变化或超过预算');
+            mbb_merge_throw(
+                'merge_source_diverged',
+                mbb_t('The source file changed while reading or exceeds its budget'),
+            );
         }
         return $bytes;
     } finally {
@@ -303,7 +352,10 @@ function mbb_merge_claims(
             $claims['binding'] !== $opening['claims']['binding'] ||
             $claims['actor'] !== $opening['claims']['actor']
         ) {
-            mbb_merge_throw('merge_binding', '打开基线与最新版本身份在读取期间变化');
+            mbb_merge_throw(
+                'merge_binding',
+                mbb_t('The opening baseline or latest version identity changed while reading'),
+            );
         }
         $claims['opening'] = $opening['signature'];
         $claims['candidate'] = hash('sha256', mbb_component_json($candidate));
@@ -362,7 +414,10 @@ function mbb_merge_verify($envelope, int $id, string $kind): array
     mbb_merge_keys($claims, $keys);
     $encoded = mbb_component_json($claims);
     if (!is_string($encoded) || strlen($encoded) > 8192) {
-        mbb_merge_throw('merge_shape', '合并签名投影超限或不是有效 JSON');
+        mbb_merge_throw(
+            'merge_shape',
+            mbb_t('The merge signature projection exceeds its budget or is not valid JSON'),
+        );
     }
     if (
         $envelope['schema'] !== 1 ||
@@ -372,18 +427,21 @@ function mbb_merge_verify($envelope, int $id, string $kind): array
         !preg_match('/^[a-f0-9]{64}$/D', $envelope['signature']) ||
         !hash_equals(mbb_merge_sign($claims), $envelope['signature'])
     ) {
-        mbb_merge_throw('merge_signature', '合并基线签名不匹配');
+        mbb_merge_throw('merge_signature', mbb_t('The merge baseline signature does not match'));
     }
     if (
         !is_int($claims['expires']) ||
         $claims['expires'] <= time() ||
         $claims['expires'] > time() + 900
     ) {
-        mbb_merge_throw('merge_expired', '打开基线已过期，请保留候选并重新协调');
+        mbb_merge_throw(
+            'merge_expired',
+            mbb_t('The opening baseline expired. Preserve the candidate and reconcile again'),
+        );
     }
     $permission = mbb_merge_permission(['post_id' => $id]);
     if ($permission !== true) {
-        mbb_merge_throw('merge_forbidden', '合并权限已失效');
+        mbb_merge_throw('merge_forbidden', mbb_t('Merge permission was lost'));
     }
     clean_post_cache($id);
     $p = get_post($id);
@@ -394,13 +452,21 @@ function mbb_merge_verify($envelope, int $id, string $kind): array
         $claims['type'] !== $p->post_type ||
         $claims['documentId'] !== mbb_id($id)
     ) {
-        mbb_merge_throw('merge_identity', '合并基线不属于当前用户、站点或文章身份');
+        mbb_merge_throw(
+            'merge_identity',
+            mbb_t(
+                'The merge baseline does not belong to the current user, site, or article identity',
+            ),
+        );
     }
     if (
         !is_string($claims['binding']) ||
         !hash_equals(mbb_binding_projection($p), $claims['binding'])
     ) {
-        mbb_merge_throw('merge_binding', '文章或来源绑定已变化，不能沿用旧基线');
+        mbb_merge_throw(
+            'merge_binding',
+            mbb_t('The article or source binding changed. The old baseline cannot be reused'),
+        );
     }
     $document = mbb_merge_pair($envelope['document']);
     $metadata = [
@@ -412,7 +478,10 @@ function mbb_merge_verify($envelope, int $id, string $kind): array
     mbb_merge_candidate(['source' => $document['source']] + $metadata);
     foreach ($metadata as $key => $value) {
         if ($claims['metadata'][$key] !== $value) {
-            mbb_merge_throw('merge_pair', '元数据类型或值与签名不同');
+            mbb_merge_throw(
+                'merge_pair',
+                mbb_t('Metadata types or values differ from the signature'),
+            );
         }
     }
     if (
@@ -424,12 +493,18 @@ function mbb_merge_verify($envelope, int $id, string $kind): array
         $claims['sourceSha256'] !== $envelope['source_sha256'] ||
         ($claims['sourceManaged'] && $claims['sourceSha256'] !== $claims['sourceSha'])
     ) {
-        mbb_merge_throw('merge_pair', '合并正文、元数据或来源投影与签名不同');
+        mbb_merge_throw(
+            'merge_pair',
+            mbb_t('The merge body, metadata, or source projection differs from the signature'),
+        );
     }
     // Paired conversion can call hooks; authority checked before it must still hold afterwards.
     clean_post_cache($id);
     if (mbb_merge_permission(['post_id' => $id]) !== true) {
-        mbb_merge_throw('merge_forbidden', '配对核验期间合并权限已失效');
+        mbb_merge_throw(
+            'merge_forbidden',
+            mbb_t('Merge permission was lost during paired verification'),
+        );
     }
     $p = get_post($id);
     if (
@@ -438,10 +513,16 @@ function mbb_merge_verify($envelope, int $id, string $kind): array
         $claims['type'] !== $p->post_type ||
         $claims['documentId'] !== mbb_id($id)
     ) {
-        mbb_merge_throw('merge_identity', '配对核验期间文章身份已变化');
+        mbb_merge_throw(
+            'merge_identity',
+            mbb_t('The article identity changed during paired verification'),
+        );
     }
     if (!hash_equals(mbb_binding_projection($p), $claims['binding'])) {
-        mbb_merge_throw('merge_binding', '配对核验期间来源绑定已变化');
+        mbb_merge_throw(
+            'merge_binding',
+            mbb_t('The source binding changed during paired verification'),
+        );
     }
     return $envelope;
 }
@@ -450,7 +531,7 @@ function mbb_merge_request($r, array $keys): array
     $data = $r->get_json_params();
     mbb_merge_keys($data, $keys);
     if ($data['schema'] !== 1 || !is_int($data['post_id']) || $data['post_id'] < 1) {
-        mbb_merge_throw('merge_shape', '合并请求身份不合法');
+        mbb_merge_throw('merge_shape', mbb_t('The merge request identity is invalid'));
     }
     return $data;
 }
@@ -459,7 +540,7 @@ function mbb_merge_open($r)
     try {
         $data = mbb_merge_request($r, ['schema', 'post_id', 'expected']);
         if (!is_string($data['expected'])) {
-            mbb_merge_throw('merge_shape', '缺少打开时版本');
+            mbb_merge_throw('merge_shape', mbb_t('The opening version is missing'));
         }
         $snapshot = mbb_merge_current($data['post_id'], $data['expected']);
         return mbb_merge_envelope(
@@ -503,11 +584,17 @@ function mbb_merge_adopt($r)
             $latest['claims']['opening'] !== $opening['signature'] ||
             $latest['claims']['candidate'] !== hash('sha256', mbb_component_json($candidate))
         ) {
-            mbb_merge_throw('merge_candidate', '候选或打开基线在预览合并后变化');
+            mbb_merge_throw(
+                'merge_candidate',
+                mbb_t('The candidate or opening baseline changed after the merge preview'),
+            );
         }
         $current = mbb_merge_current($data['post_id'], $latest['expected']);
         if (!mbb_merge_same_snapshot($current, $latest)) {
-            mbb_merge_throw('merge_conflict', '服务器或来源在合并确认期间变化');
+            mbb_merge_throw(
+                'merge_conflict',
+                mbb_t('The server or source changed during merge confirmation'),
+            );
         }
         $merged = mbb_merge_candidate([
             'source' => $data['source'],
@@ -521,11 +608,19 @@ function mbb_merge_adopt($r)
             'documentId' => $current['document']['documentId'],
         ]);
         if (is_wp_error($document)) {
-            mbb_merge_throw('merge_conversion', '合并结果无法闭合转换，原候选仍保留');
+            mbb_merge_throw(
+                'merge_conversion',
+                mbb_t(
+                    'The merged result failed closed conversion. The original candidate is preserved',
+                ),
+            );
         }
         $final = mbb_merge_current($data['post_id'], $latest['expected']);
         if (!mbb_merge_same_snapshot($final, $latest)) {
-            mbb_merge_throw('merge_conflict', '来源在转换期间变化，请重新核对');
+            mbb_merge_throw(
+                'merge_conflict',
+                mbb_t('The source changed during conversion. Verify it again'),
+            );
         }
         $final['post_id'] = $data['post_id'];
         $final['source_write_available'] = $final['source_managed'];

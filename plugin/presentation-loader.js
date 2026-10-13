@@ -23,7 +23,7 @@
       node.onerror = () => {
         pending.delete(url);
         node.remove();
-        reject(Error('展示资源暂时无法加载'));
+        reject(Error('Presentation resources could not be loaded'));
       };
       document.head.append(node);
     });
@@ -102,6 +102,13 @@
       )
         block.classList.add('language-text');
       if (config.lineNumbers) block.parentElement.classList.add('line-numbers');
+      block.parentElement.setAttribute('data-prismjs-copy', T('Copy'));
+      block.parentElement.setAttribute('data-prismjs-copy-success', T('Copied'));
+      block.parentElement.setAttribute(
+        'data-prismjs-copy-error',
+        T('Copy the original code manually'),
+      );
+
       Prism.highlightElement(block);
       for (const numbers of block.querySelectorAll('.line-numbers-rows'))
         numbers.dataset.mbbGenerated = '';

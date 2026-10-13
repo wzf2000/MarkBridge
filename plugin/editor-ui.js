@@ -1,4 +1,17 @@
 (() => {
+  const N = (single, plural, count) =>
+    globalThis.MBBI18n?.n(single, plural, count) ?? (count === 1 ? single : plural);
+  const E = (error) => globalThis.MBBI18n?.error(error) ?? error.message;
+  const T = (message) => globalThis.MBBI18n?.t(message) ?? message;
+  const F = (message, ...values) => {
+    let next = 0;
+    return String(message).replace(/%%|%(?:(\d+)\$)?([sd])/g, (token, index, kind) => {
+      if (token === '%%') return '%';
+      const value = values[index ? Number(index) - 1 : next++];
+      return kind === 'd' ? String(Number(value)) : String(value ?? '');
+    });
+  };
+
   const cfg = window.MBB_EDITOR;
   let base = null,
     mode = 'markdown',
@@ -30,8 +43,12 @@
     const untouchedCR = typeof rawSource === 'string' && /\r/.test(rawSource);
     sourceNotice.hidden = source.hidden || (!untouchedCR && !normalizedSourceEOL);
     sourceNotice.textContent = untouchedCR
-      ? '原文含 CR/CRLF。上传、切换和未编辑预览保留原字节；实际编辑此原文框会按浏览器规范化整篇原文的换行，代码中的换行也可能变化。'
-      : '已实际编辑原文框，后续以浏览器输入框的换行为准；请在差异预览中核对代码。';
+      ? T(
+          "The source contains CR/CRLF. Uploading, switching views, and unedited previews preserve its original bytes. Editing this source box applies the browser's newline normalization to the document, including code.",
+        )
+      : T(
+          "The source box was edited. Subsequent operations use the browser's textarea newlines. Check code in the difference preview.",
+        );
   }
   function setSource(value) {
     rawSource = value;
@@ -71,7 +88,9 @@
   };
   async function api(route, data, method = data ? 'POST' : 'GET', signal, raw = false) {
     if (data && method !== 'DELETE' && window.MarkBridgeParameterDrafts?.pending())
-      throw Error('参数尚未应用；请应用或撤销参数输入后保存。');
+      throw Error(
+        T('Parameters have not been applied. Apply or discard the parameter input before saving.'),
+      );
     const session = epoch;
     const requestId =
       Number(
@@ -100,7 +119,7 @@
           recoveryTicket,
         );
       const error = Error(
-        `${json.message || '请求失败'}（${json.code || 'HTTP'} / ${response.status}）`,
+        `${json.message || T('Request failed')}（${json.code || 'HTTP'} / ${response.status}）`,
       );
       error.code = json.code;
       error.status = response.status;
@@ -146,7 +165,7 @@
   }
   function describeError(error) {
     const label = window.MBB?.formatLocation?.(error.location);
-    return error.message + (label ? `（${label}）` : '');
+    return E(error) + (label ? `（${label}）` : '');
   }
   function message(text, error = false) {
     status.textContent = text;
@@ -204,7 +223,7 @@
       title.disabled = false;
       publication.disabled = false;
     }
-    dialog.querySelector('[aria-label="关闭编辑桥"]').disabled = false;
+    dialog.querySelector('[data-mbb-close]').disabled = false;
     resources?.render(source.readOnly || mode === 'blocks' || !!base?.source_managed, busy);
     if (mode === 'blocks' || !!base?.source_managed)
       dialog.querySelector('#mbb-upload').accept = '.md,.markdown,text/markdown,text/plain';
@@ -283,7 +302,7 @@
         throw Error(message);
       });
     } catch (error) {
-      frontmatterRows.replaceChildren(el('p', { role: 'alert' }, error.message));
+      frontmatterRows.replaceChildren(el('p', { role: 'alert' }, E(error)));
       frontmatterSelected.clear();
       frontmatterAuthority = null;
       return;
@@ -308,19 +327,27 @@
           ['publish', 'private'].includes(value) &&
           !cfg.canPublish
         ),
-        reason: '权限与解析值将在服务器预览中复核。',
+        reason: T('Permissions and resolved values will be checked again in the server preview.'),
       }));
     frontmatterRows.replaceChildren();
     if (!fields.length)
-      frontmatterRows.append(el('p', {}, '没有版本化元数据提案；旧无版本头继续作为正文。'));
+      frontmatterRows.append(
+        el(
+          'p',
+          {},
+          T(
+            'No versioned metadata proposal exists. An unversioned header remains ordinary body content.',
+          ),
+        ),
+      );
     const labels = {
-      title: '标题',
-      excerpt: '摘要',
+      title: T('Title'),
+      excerpt: T('Excerpt'),
       slug: 'slug',
-      status: '状态',
-      categories: '分类 slugs',
-      tags: '标签 slugs',
-      featured_media: '特色图片',
+      status: T('Status'),
+      categories: T('Category slugs'),
+      tags: T('Tag slugs'),
+      featured_media: T('Featured image'),
     };
     for (const original of fields) {
       const row =
@@ -328,12 +355,13 @@
           ? {
               ...original,
               available: false,
-              reason:
-                '本地区块恢复只还原候选，头部提案保留；需要应用元数据请通过编辑桥另行预览确认。',
+              reason: T(
+                'Local block restoration only restores a candidate. The header proposal is preserved. Use a separate bridge preview and confirmation to apply metadata.',
+              ),
             }
           : original;
       const line = el('div', { 'data-frontmatter-field': row.field, class: 'mbb-frontmatter-row' });
-      const label = el('label', {}, ' 应用 ' + labels[row.field]);
+      const label = el('label', {}, T(' Apply ') + labels[row.field]);
       const input = el('input', {
         type: 'checkbox',
         id: 'mbb-frontmatter-' + row.field,
@@ -350,12 +378,16 @@
       label.prepend(input);
       line.append(label);
       line.append(
-        el('div', { 'data-role': 'before' }, '当前：' + JSON.stringify(row.before)),
-        el('div', { 'data-role': 'proposal' }, '提案：' + JSON.stringify(row.proposal)),
+        el('div', { 'data-role': 'before' }, T('Current: ') + JSON.stringify(row.before)),
+        el('div', { 'data-role': 'proposal' }, T('Proposal: ') + JSON.stringify(row.proposal)),
       );
       if (row.resolved !== null)
         line.append(
-          el('div', { 'data-role': 'resolved' }, '应用值：' + JSON.stringify(row.resolved)),
+          el(
+            'div',
+            { 'data-role': 'resolved' },
+            T('Applied value: ') + JSON.stringify(row.resolved),
+          ),
         );
       if (row.reason) line.append(el('p', { class: 'mbb-frontmatter-reason' }, row.reason));
       frontmatterRows.append(line);
@@ -373,7 +405,11 @@
         const fresh = await api('document?post_id=' + base.post_id);
         if (!active(session) || version !== serial) return;
         if (fresh.expected !== base.expected)
-          throw Error('当前文章已变化，请先处理版本冲突；头部未修改。');
+          throw Error(
+            T(
+              'The current article changed. Resolve the version conflict first. The header was not changed.',
+            ),
+          );
         metadata = fresh.frontmatter_current;
         base.frontmatter_current = structuredClone(metadata);
         if (Number(base.post_id) === Number(cfg.postId) && cfg.state?.expected === base.expected)
@@ -395,7 +431,11 @@
       frontmatterSelected.clear();
       frontmatterAuthority = null;
       invalidate();
-      message('当前元数据已写入头部候选，尚未保存；请重新预览，来源文章仍须经源文件写回流程。');
+      message(
+        T(
+          'Current metadata was written to the header candidate but has not been saved. Preview again. Source-managed articles still require the source write workflow.',
+        ),
+      );
     } catch (error) {
       if (active(session) && version === serial) message(describeError(error), true);
     } finally {
@@ -508,7 +548,7 @@
       if (row.kind !== 'same') changed.push(i);
     });
     if (!changed.length) {
-      target.append(el('p', {}, '正文无变化。'));
+      target.append(el('p', {}, T('No body changes.')));
       return;
     }
     const ranges = [];
@@ -518,13 +558,24 @@
       else ranges.push({ first: index, last: index });
     }
     target.append(
-      el('p', {}, `共 ${ranges.length} 处差异；绿色为新增，红色为删除，灰色为未变上下文。`),
+      el(
+        'p',
+        {},
+        F(
+          N(
+            '%1$s difference: green additions, red deletions, and gray unchanged context.',
+            '%1$s differences: green additions, red deletions, and gray unchanged context.',
+            ranges.length,
+          ),
+          ranges.length,
+        ),
+      ),
     );
     let shownHunks = 0;
     const moreHunks = el(
       'button',
       { type: 'button', class: 'mbb-diff-more-hunks' },
-      '显示更多差异',
+      T('Show more differences'),
     );
     target.append(moreHunks);
     const renderHunks = () => {
@@ -538,7 +589,7 @@
           newCount = part.filter((r) => r.newNo !== null).length;
         const hunk = el('section', {
           class: 'mbb-diff-hunk',
-          'aria-label': `差异 ${shownHunks + 1}`,
+          'aria-label': F(T('Difference %1$s'), shownHunks + 1),
         });
         hunk.append(
           el('h4', {}, `@@ -${part[0].oldAt},${oldCount} +${part[0].newAt},${newCount} @@`),
@@ -546,7 +597,7 @@
         const list = el('div', { class: 'mbb-diff-lines', role: 'list' });
         hunk.append(list);
         let shown = 0;
-        const more = el('button', { type: 'button', class: 'mbb-diff-more' }, '显示更多行');
+        const more = el('button', { type: 'button', class: 'mbb-diff-more' }, T('Show more lines'));
         const render = () => {
           const rowLimit = Math.min(part.length, shown + 200),
             fragment = document.createDocumentFragment();
@@ -554,8 +605,16 @@
             const row = part[shown];
             const line = el('div', { class: `mbb-diff-row mbb-${row.kind}`, role: 'listitem' });
             line.append(
-              el('span', { class: 'mbb-diff-number', 'aria-label': '旧行号' }, row.oldNo ?? ''),
-              el('span', { class: 'mbb-diff-number', 'aria-label': '新行号' }, row.newNo ?? ''),
+              el(
+                'span',
+                { class: 'mbb-diff-number', 'aria-label': T('Old line number') },
+                row.oldNo ?? '',
+              ),
+              el(
+                'span',
+                { class: 'mbb-diff-number', 'aria-label': T('New line number') },
+                row.newNo ?? '',
+              ),
               el(
                 'span',
                 { class: 'mbb-diff-text' },
@@ -617,7 +676,9 @@
     opening = null;
     openingReason = '';
     if (!base?.post_id || recoveryRecord) {
-      openingReason = '恢复候选或新文章没有本会话的可信打开基线；可手动比较。';
+      openingReason = T(
+        'Restored candidates and new articles have no trusted opening baseline for this session. Compare manually.',
+      );
       return;
     }
     const held = base;
@@ -635,9 +696,13 @@
         !value.signature ||
         !value.document
       )
-        throw Error('服务器未返回完整的可信打开基线');
+        throw Error(T('The server did not return a complete trusted opening baseline'));
       if (preserveDisplay && !openingMatchesDisplay(value, held, readSource()))
-        throw Error('最终展示的正文、元数据或来源指纹与签名基线不一致');
+        throw Error(
+          T(
+            'The displayed source, metadata, or source fingerprint does not match the signed baseline',
+          ),
+        );
       opening = value;
       if (preserveDisplay) return;
       base.document = value.document;
@@ -646,7 +711,11 @@
       base.featured_media = value.featured_media;
     } catch (error) {
       if (!active(session) || version !== serial || base !== held) return;
-      openingReason = error.message + '；自动三方合并不可用，原候选可下载并手动比较。';
+      openingReason =
+        E(error) +
+        T(
+          '; automatic three-way merge is unavailable. Download the candidate and compare manually.',
+        );
     }
   }
   function metadataChoices(baseMeta, mine, latest, target, onChange, choices = {}) {
@@ -661,19 +730,30 @@
       const label = el(
         'label',
         {},
-        { title: '标题', post_status: '保存状态', featured_media: '特色图片 ID' }[row.key],
+        {
+          title: T('Title'),
+          post_status: T('Save status'),
+          featured_media: T('Featured image ID'),
+        }[row.key],
       );
-      label.append(el('p', {}, `我的候选：${row.mine}；服务器最新版：${row.latest}`));
+      label.append(
+        el('p', {}, F(T('My candidate: %1$s; latest server version: %2$s'), row.mine, row.latest)),
+      );
       const select = el('select', {
         'data-field': row.key,
-        'aria-label': `合并${{ title: '标题', post_status: '状态', featured_media: '特色图片' }[row.key]}`,
+        'aria-label': F(
+          T('Merge %1$s'),
+          { title: T('Title'), post_status: T('Status'), featured_media: T('Featured image') }[
+            row.key
+          ],
+        ),
       });
       select.append(
-        el('option', { value: '' }, '请选择'),
-        el('option', { value: 'mine' }, '采用我的候选'),
-        el('option', { value: 'latest' }, '采用服务器最新版'),
+        el('option', { value: '' }, T('Choose an option')),
+        el('option', { value: 'mine' }, T('Use my candidate')),
+        el('option', { value: 'latest' }, T('Use the latest server version')),
       );
-      if (baseMeta) select.append(el('option', { value: 'base' }, '采用打开时版本'));
+      if (baseMeta) select.append(el('option', { value: 'base' }, T('Use the opening version')));
       select.value = choices[row.key] || '';
       select.onchange = () => {
         choices[row.key] = select.value;
@@ -716,7 +796,7 @@
     controls();
     mergePanel.hidden = false;
     mergeRows.replaceChildren();
-    mergeStatus.textContent = '正在重新核验打开时基线与服务器最新版……';
+    mergeStatus.textContent = T('Re-verifying the opening baseline and latest server version…');
     try {
       const latest = await api('merge/latest', {
         schema: 1,
@@ -727,7 +807,7 @@
       if (!active(session) || version !== serial || conflict !== current || opening !== signedA)
         return;
       if (!latest.document || latest.claims?.post !== current.payload.post_id || !latest.signature)
-        throw Error('服务器最新版签名不完整');
+        throw Error(T('The latest server signature is incomplete'));
       const plan = MBB.planMerge(signedA.document.source, mine.source, latest.document.source);
       current.merge = { plan, latest, choices: {}, metadataChoices: {}, mine, opening: signedA };
       mergeViews.base.value = signedA.document.source;
@@ -739,21 +819,29 @@
           el(
             'h4',
             {},
-            `正文冲突 ${hunk.id}（打开时第 ${hunk.line} 行${hunk.ambiguous ? '；重复结构无法可靠定位' : ''}）`,
+            F(
+              T('Body conflict %1$s (opening line %2$s%3$s)'),
+              hunk.id,
+              hunk.line,
+              hunk.ambiguous ? T('; repeated structure cannot be located reliably') : '',
+            ),
           ),
         );
         for (const [key, name] of [
-          ['base', '打开时版本'],
-          ['mine', '我的候选'],
-          ['latest', '服务器最新版'],
+          ['base', T('Opening version')],
+          ['mine', T('My candidate')],
+          ['latest', T('Latest server version')],
         ])
           row.append(el('pre', {}, name + '\n' + hunk[key]));
-        const select = el('select', { 'data-hunk': hunk.id, 'aria-label': '正文冲突 ' + hunk.id });
+        const select = el('select', {
+          'data-hunk': hunk.id,
+          'aria-label': T('Body conflict ') + hunk.id,
+        });
         select.append(
-          el('option', { value: '' }, '请选择此冲突'),
-          el('option', { value: 'mine' }, '采用我的候选'),
-          el('option', { value: 'latest' }, '采用服务器最新版'),
-          el('option', { value: 'base' }, '采用打开时版本'),
+          el('option', { value: '' }, T('Choose this conflict')),
+          el('option', { value: 'mine' }, T('Use my candidate')),
+          el('option', { value: 'latest' }, T('Use the latest server version')),
+          el('option', { value: 'base' }, T('Use the opening version')),
         );
         select.onchange = () => {
           current.merge.choices[hunk.id] = select.value;
@@ -764,12 +852,17 @@
       }
       metadataChoices(signedA, mine, latest, mergeRows, controls, current.merge.metadataChoices);
       mergeStatus.textContent = plan.conflicts.length
-        ? '请逐项选择全部正文和元数据冲突。采用只生成未保存候选，仍须重新预览与保存。'
-        : '独立正文变化已组合。未修改的元数据采用服务器最新版；重叠元数据仍须明确选择。';
+        ? T(
+            'Choose every body and metadata conflict. Adoption only creates an unsaved candidate; preview and save again.',
+          )
+        : T(
+            'Independent body changes were combined. Unchanged metadata uses the latest server version; overlapping metadata requires an explicit choice.',
+          );
     } catch (error) {
       if (active(session) && version === serial && conflict === current) {
         current.merge = null;
-        mergeStatus.textContent = error.message + '。当前候选未丢弃，请下载或手动比较。';
+        mergeStatus.textContent =
+          E(error) + T('. The current candidate is preserved. Download it or compare manually.');
       }
     } finally {
       if (active(session) && version === serial && conflict === current) {
@@ -824,7 +917,7 @@
         result.newbase.expected !== record.latest.expected ||
         result.document?.source !== text
       )
-        throw Error('服务器未返回正确的未保存合并候选');
+        throw Error(T('The server did not return a valid unsaved merge candidate'));
       base = result.newbase;
       setSource(text);
       source.hidden = false;
@@ -845,21 +938,29 @@
       resetMerge();
       // C is a verified, signed opening baseline for the next conflict; never manufacture A from B.
       opening = null;
-      openingReason = '采用合并候选后须重新获取打开时基线。';
+      openingReason = T('Acquire a new opening baseline after adopting the merged candidate.');
       invalidate();
       const adoptionVersion = version;
       await acquireOpening(session, adoptionVersion);
       if (!active(session) || version !== adoptionVersion) return;
       message(
-        '合并候选尚未保存。请核对标题、状态、特色图片与 FrontMatter 提案，再重新查看差异与预览。' +
+        T(
+          'The merged candidate has not been saved. Verify its title, status, featured image, and FrontMatter proposal, then preview all differences again.',
+        ) +
           (headerChanged
-            ? '头部提案已变化，原元数据选择已重置，请重新选择。'
-            : '原头部选择已保留，仍须重新预览获取新凭据。'),
+            ? T(
+                'The header proposal changed. Previous metadata selections were reset; choose them again.',
+              )
+            : T(
+                'Original header selections are preserved. Preview again to obtain a new receipt.',
+              )),
       );
     } catch (error) {
       if (active(session) && version === serial && conflict === current) {
         current.merge = null;
-        mergeStatus.textContent = error.message + '；原候选仍可下载，请重新核对最新版。';
+        mergeStatus.textContent =
+          E(error) +
+          T('; the original candidate remains downloadable. Verify the latest version again.');
       }
     } finally {
       if (active(session)) {
@@ -878,7 +979,7 @@
     conflictAdopt.disabled = true;
     busy = true;
     controls();
-    conflictSummary.textContent = '正在读取服务器最新版……';
+    conflictSummary.textContent = T('Reading the latest server version…');
     try {
       const latest = await api(`document?post_id=${current.payload.post_id}`);
       if (!active(serial) || conflict !== current) return;
@@ -887,7 +988,9 @@
         const fresh = await api(`source?post_id=${current.payload.post_id}`);
         if (!active(serial) || conflict !== current) return;
         if (fresh.expected !== latest.expected)
-          throw Error('读取期间文章再次变化，请重新读取服务器最新版');
+          throw Error(
+            T('The article changed again while reading. Read the latest server version again'),
+          );
         latest.expected = fresh.expected;
         latest.source_sha256 = fresh.source_sha256;
         latestSource = fresh.source;
@@ -910,22 +1013,39 @@
       );
       current.manualMetadata = Object.fromEntries(meta.conflicts.map((row) => [row.key, true]));
       conflictSummary.textContent =
-        `服务器标题：${latest.title}；状态：${latest.post_status}。` +
-        `你的标题：${current.payload.title}；状态：${current.payload.post_status}。` +
-        '当前候选暂时锁定以保持比较准确。手动继续须先明确选择不同的标题、状态与特色图片，仍须重新预览。' +
+        F(T('Server title: %1$s; status: %2$s.'), latest.title, latest.post_status) +
+        F(
+          T('Your title: %1$s; status: %2$s.'),
+          current.payload.title,
+          current.payload.post_status,
+        ) +
+        T(
+          'The current candidate is temporarily locked for an accurate comparison. Choose differing title, status, and featured image values explicitly before continuing manually, then preview again.',
+        ) +
         (opening ? '' : openingReason);
       if (typeof current.markdown === 'string')
         showDiff(latestSource, current.markdown, conflictDiff);
       else
         conflictDiff.replaceChildren(
-          el('p', {}, '区块候选尚无成功生成的 Markdown；保留当前区块，请先核对标题和状态。'),
+          el(
+            'p',
+            {},
+            T(
+              'The block candidate has no successfully generated Markdown. Current blocks are preserved. Check the title and status first.',
+            ),
+          ),
         );
       conflictDiff.prepend(metadataPanel);
     } catch (error) {
       if (!active(serial) || conflict !== current) return;
       current.latest = null;
       conflictDiff.replaceChildren();
-      conflictSummary.textContent = `无法读取服务器最新版：${error.message}。当前候选仍在编辑器中；请重试读取。`;
+      conflictSummary.textContent = F(
+        T(
+          'The latest server version could not be read: %1$s. The candidate remains in the editor. Try reading again.',
+        ),
+        E(error),
+      );
     } finally {
       if (active(serial) && conflict === current) {
         busy = false;
@@ -940,8 +1060,16 @@
     resetMerge();
     conflictPanel.hidden = false;
     conflictDiff.replaceChildren();
-    conflictSummary.textContent = `${error.message}。正在读取最新版以供比较。`;
-    message('检测到版本冲突，保存已停用。请检查下方服务器版本与当前候选。', true);
+    conflictSummary.textContent = F(
+      T('%1$s. Reading the latest version for comparison.'),
+      E(error),
+    );
+    message(
+      T(
+        'A version conflict was detected. Saving is disabled. Compare the server version and current candidate below.',
+      ),
+      true,
+    );
   }
   function adoptConflict() {
     if (busy || !conflict?.latest) return;
@@ -956,14 +1084,20 @@
     publication.value = metadata.post_status;
     featuredOverride = metadata.featured_media;
     opening = null;
-    openingReason = '手动采用的基线尚未重新签名；后续冲突可继续手动比较。';
+    openingReason = T(
+      'The manually adopted baseline has not been signed again. Future conflicts can still be compared manually.',
+    );
     if (recoveryRecord) recoveryRebased = true;
     conflict.latest = null;
     conflict = null;
     resetMerge();
     conflictPanel.hidden = true;
     invalidate();
-    message('已保留你的修改并以服务器最新版继续；请重新预览全部差异，再明确保存。');
+    message(
+      T(
+        'Your changes are preserved against the latest server baseline. Preview all differences and explicitly save again.',
+      ),
+    );
     controls();
   }
   async function review() {
@@ -972,7 +1106,7 @@
     candidate = null;
     candidateSource = null;
     controls();
-    message('正在由服务器校验并生成预览……');
+    message(T('The server is validating and generating a preview…'));
     const serial = version,
       session = epoch;
     let payload;
@@ -985,7 +1119,7 @@
       const result = await api('preview', payload);
       if (!active(session)) return;
       if (version !== serial) {
-        message('内容已变化，请重新查看差异。');
+        message(T('The content changed. Preview the differences again.'));
         return;
       }
       renderFrontmatter(result.frontmatter);
@@ -995,17 +1129,17 @@
       const rendered = await MBB_MATH.preview(result.html);
       if (!active(session)) return;
       if (version !== serial) {
-        message('内容已变化，请重新查看差异。');
+        message(T('The content changed. Preview the differences again.'));
         return;
       }
       save.textContent =
         result.post_status === 'publish'
-          ? '确认公开发布'
+          ? T('Confirm public publication')
           : result.post_status === 'private'
-            ? '确认私密发布'
+            ? T('Confirm private publication')
             : result.post_status === 'pending'
-              ? '确认提交审核'
-              : '确认保存草稿';
+              ? T('Confirm submission for review')
+              : T('Confirm draft save');
       showDiff(
         result.before,
         result.resource_plan?.projectedDocument.source || result.document.source,
@@ -1030,24 +1164,37 @@
       conflict = null;
       conflictPanel.hidden = true;
       message(
-        '校验通过；目标状态：' +
-          ({ draft: '草稿', pending: '待审核', publish: '公开发布', private: '私密发布' }[
-            result.post_status
-          ] || publication.selectedOptions[0].textContent) +
-          '。请检查差异和预览后确认。',
+        T('Validation passed; target status: ') +
+          ({
+            draft: T('Draft'),
+            pending: T('Pending review'),
+            publish: T('Published publicly'),
+            private: T('Published privately'),
+          }[result.post_status] || publication.selectedOptions[0].textContent) +
+          T('. Check the differences and preview before confirming.'),
       );
       if (recoveryRecord?.kind === 'blocks')
         message(
           recoveryRecord.context.postId === 0
-            ? '新文章区块候选已校验；请确认标题、文档 ID 和差异，再明确创建 Markdown 与区块成对保存的托管草稿。'
+            ? T(
+                'The new block candidate was verified. Check its title, document ID, and differences, then explicitly create a managed draft with paired Markdown and blocks.',
+              )
             : base?.source_managed
-              ? '本地区块候选仅供预览；来源文章仍须经源文件流程保存，不会解除保存限制。'
-              : '本地区块候选校验通过；确认后只恢复到当前编辑器，尚不保存到站点。',
+              ? T(
+                  'The local block candidate is for preview only. Source-managed articles still require the source workflow; save restrictions remain in effect.',
+                )
+              : T(
+                  'The local block candidate was verified. Confirmation only restores it to the current editor and does not save it to the site.',
+                ),
         );
     } catch (e) {
       if (!active(session)) return;
       if (version !== serial) {
-        message('先前候选的预览未完成；新输入已保留，请重新查看差异。');
+        message(
+          T(
+            'The earlier candidate preview did not complete. New input is preserved. Preview the differences again.',
+          ),
+        );
         return;
       }
       if (isConflict(e) && payload) {
@@ -1083,7 +1230,7 @@
     let savedResult = null;
     busy = saving = true;
     controls();
-    message('正在保存两种表示……');
+    message(T('Saving both representations…'));
     try {
       if (recoveryRecord)
         await recoveryVerify({ expected: payload.expected, sourceDigest: payload.source_sha256 });
@@ -1092,10 +1239,10 @@
       savedResult = result;
       message(
         result.noop
-          ? '内容未变，无需重复写入。'
+          ? T('The content is unchanged; no duplicate write is needed.')
           : base?.source_managed
-            ? '已安全写回源文件，并同时保存 Markdown 和区块。'
-            : '已同时保存 Markdown 和区块。',
+            ? T('The source file was safely written, and Markdown and blocks were saved together.')
+            : T('Markdown and blocks were saved together.'),
       );
       await window.MarkBridgeLocalRecovery?.saved(
         result.post_id || base?.post_id || 0,
@@ -1130,7 +1277,9 @@
         await acquireOpening(session, baselineVersion);
         if (!active(session) || version !== baselineVersion) return;
         message(
-          '已保存确认的候选；保存期间的新输入仍保留、尚未保存。图片若仍引用原 ZIP 路径，请重新上传后预览。',
+          T(
+            'The confirmed candidate was saved. Input entered while saving is preserved and unsaved. Re-upload the ZIP if images still refer to its original paths.',
+          ),
         );
       }
     } catch (e) {
@@ -1142,13 +1291,20 @@
         resources?.reset(false, true);
         invalidate();
         message(
-          '已保存确认的候选；后续本地恢复清理未完成。当前输入仍保留，请重新预览或下载。',
+          T(
+            'The confirmed candidate was saved, but subsequent local recovery cleanup did not complete. Current input is preserved. Preview again or download it.',
+          ),
           true,
         );
         return;
       }
       if (version !== savedVersion) {
-        message('先前候选未获保存确认；新输入已保留，请重新查看差异。', true);
+        message(
+          T(
+            'The earlier candidate was not confirmed as saved. New input is preserved. Preview the differences again.',
+          ),
+          true,
+        );
         return;
       }
       if (isConflict(e)) enterConflict(e, payload, markdown);
@@ -1166,7 +1322,7 @@
     }
   }
   function build() {
-    dialog = el('dialog', { id: 'mbb-dialog', 'aria-label': 'Markdown 与区块编辑' });
+    dialog = el('dialog', { id: 'mbb-dialog', 'aria-label': T('Markdown and block editing') });
     dialog.addEventListener('close', () => {
       const snapshot = recoverySnapshot(true);
       rawSource = null;
@@ -1189,15 +1345,19 @@
       recoveryRebased = false;
     });
     const header = el('div', { class: 'mbb-dialog-header' });
-    header.append(el('h2', {}, 'Markdown 与区块编辑'));
-    const close = el('button', { type: 'button', 'aria-label': '关闭编辑桥' }, '关闭');
+    header.append(el('h2', {}, T('Markdown and block editing')));
+    const close = el(
+      'button',
+      { type: 'button', 'aria-label': T('Close editing bridge'), 'data-mbb-close': '' },
+      T('Close'),
+    );
     close.onclick = () => dialog.close();
     header.append(close);
     dialog.append(header);
     const meta = el('div', { class: 'mbb-fields' });
     for (const [label, id] of [
-      ['标题', 'mbb-title'],
-      ['稳定文档 ID', 'mbb-document-id'],
+      [T('Title'), 'mbb-title'],
+      [T('Stable document ID'), 'mbb-document-id'],
     ]) {
       const l = el('label', {}, label);
       const n = el('input', { id, type: 'text' });
@@ -1208,15 +1368,15 @@
     dialog.append(meta);
     title = meta.querySelector('#mbb-title');
     docId = meta.querySelector('#mbb-document-id');
-    const stateLabel = el('label', {}, '保存为 ');
+    const stateLabel = el('label', {}, T('Save as '));
     publication = el('select', { id: 'mbb-publication' });
     for (const [value, label] of [
-      ['draft', '草稿'],
-      ['pending', '待审核'],
+      ['draft', T('Draft')],
+      ['pending', T('Pending review')],
       ...(cfg.canPublish
         ? [
-            ['publish', '公开发布'],
-            ['private', '私密发布'],
+            ['publish', T('Published publicly')],
+            ['private', T('Published privately')],
           ]
         : []),
     ])
@@ -1224,7 +1384,7 @@
     publication.onchange = invalidate;
     stateLabel.append(publication);
     dialog.append(stateLabel);
-    const upload = el('label', {}, '上传 Markdown 或图片资源 ZIP ');
+    const upload = el('label', {}, T('Upload Markdown or an image resource ZIP '));
     const file = el('input', {
       type: 'file',
       accept: '.md,.markdown,.zip,text/markdown,text/plain,application/zip',
@@ -1236,7 +1396,12 @@
       if (/\.zip$/i.test(f.name)) {
         const uploadSession = epoch;
         if (mode === 'blocks' || base?.source_managed || source.readOnly) {
-          message('此入口不能导入 ZIP 新媒体；正文和来源保存规则保持不变。', true);
+          message(
+            T(
+              'This entry cannot import new ZIP media. Body and source save rules remain in effect.',
+            ),
+            true,
+          );
           return;
         }
         if (!docId.value) {
@@ -1257,7 +1422,7 @@
         return;
       }
       if (f.size > 1500000) {
-        message('文件过大。', true);
+        message(T('The file is too large.'), true);
         return;
       }
       const serial = epoch,
@@ -1268,7 +1433,11 @@
         const value = await f.text();
         if (!active(serial)) return;
         if (version !== inputVersion) {
-          message('上传期间的新输入已保留；未用迟到文件覆盖候选。');
+          message(
+            T(
+              'New input entered while uploading is preserved. The late file did not overwrite the candidate.',
+            ),
+          );
           return;
         }
         setSource(value);
@@ -1276,7 +1445,7 @@
         source.hidden = false;
         mode = 'upload';
         invalidate();
-        message('文件已读取，尚未保存。请先查看差异。');
+        message(T('The file was read but has not been saved. Preview the differences first.'));
       } catch (error) {
         if (active(serial) && version === inputVersion) message(describeError(error), true);
       } finally {
@@ -1288,7 +1457,10 @@
     };
     upload.append(file);
     dialog.append(upload);
-    const resourcePanel = el('section', { id: 'mbb-resources', 'aria-label': '图片资源导入' });
+    const resourcePanel = el('section', {
+      id: 'mbb-resources',
+      'aria-label': T('Image resource import'),
+    });
     dialog.append(resourcePanel);
     resources = window.MarkBridgeResources?.create({
       panel: resourcePanel,
@@ -1316,7 +1488,7 @@
     });
     source = el('textarea', {
       id: 'mbb-source',
-      'aria-label': 'Markdown 原文',
+      'aria-label': T('Markdown source'),
       spellcheck: 'false',
     });
     // WordPress localizes top-level scalar preferences as strings.
@@ -1338,30 +1510,40 @@
     dialog.append(source, sourceNotice);
     frontmatterPanel = el('section', {
       id: 'mbb-frontmatter',
-      'aria-label': 'FrontMatter 元数据提案',
+      'aria-label': T('FrontMatter metadata proposal'),
     });
     frontmatterPanel.append(
-      el('h3', {}, 'FrontMatter 元数据提案'),
-      el('p', {}, '默认不应用。逐项选择后须重新预览；取消选择不会改写当前文章设置或头部。'),
+      el('h3', {}, T('FrontMatter metadata proposal')),
+      el(
+        'p',
+        {},
+        T(
+          'No fields are applied by default. Select fields and preview again. Clearing a selection changes neither current article settings nor the header.',
+        ),
+      ),
     );
     frontmatterRows = el('div', { id: 'mbb-frontmatter-fields' });
     frontmatterWrite = el(
       'button',
       { type: 'button', id: 'mbb-frontmatter-from-current' },
-      '将当前元数据写入头部',
+      T('Write current metadata into the header'),
     );
     frontmatterWrite.onclick = writeCurrentMetadata;
     frontmatterPanel.append(frontmatterRows, frontmatterWrite);
     dialog.append(frontmatterPanel);
     const actions = el('div', { class: 'mbb-actions' });
-    reviewButton = el('button', { type: 'button', id: 'mbb-review' }, '查看差异与预览');
+    reviewButton = el(
+      'button',
+      { type: 'button', id: 'mbb-review' },
+      T('View differences and preview'),
+    );
     reviewButton.onclick = review;
-    save = el('button', { type: 'button', id: 'mbb-save' }, '确认保存双格式');
+    save = el('button', { type: 'button', id: 'mbb-save' }, T('Confirm paired save'));
     save.onclick = persist;
     recoveryApply = el(
       'button',
       { type: 'button', id: 'mbb-recovery-apply' },
-      '恢复到当前区块（不保存）',
+      T('Restore to current blocks (without saving)'),
     );
     recoveryApply.hidden = true;
     recoveryApply.onclick = async () => {
@@ -1386,7 +1568,11 @@
         });
         if (!active(session) || recoveryRecord !== record) return;
         if (version !== appliedVersion || candidate !== reviewed) {
-          message('恢复校验期间的新输入已保留，请重新预览后再恢复区块。');
+          message(
+            T(
+              'New input entered during restoration checks is preserved. Preview again before restoring blocks.',
+            ),
+          );
           return;
         }
         if (recoveryRebased && Number(base.post_id) === Number(cfg.postId)) {
@@ -1394,7 +1580,8 @@
           cfg.state = structuredClone(base);
         }
         const parsed = wp.blocks.parse(record.payload.content);
-        if (!parsed.length && record.payload.content.trim()) throw Error('候选无法恢复为区块。');
+        if (!parsed.length && record.payload.content.trim())
+          throw Error(T('The candidate could not be restored as blocks.'));
         wp.data.dispatch('core/block-editor').resetBlocks(parsed);
         wp.data.dispatch('core/editor').editPost({
           title: record.payload.title,
@@ -1414,56 +1601,71 @@
     actions.append(reviewButton, save, recoveryApply);
     dialog.append(actions);
     status = el('p', { role: 'status' });
-    diff = el('section', { 'aria-label': '修改差异' });
-    preview = el('iframe', { title: '内置内容预览', sandbox: '' });
+    diff = el('section', { 'aria-label': T('Changes') });
+    preview = el('iframe', { title: T('Built-in content preview'), sandbox: '' });
     conflictPanel = el('section', {
       id: 'mbb-conflict',
       'aria-labelledby': 'mbb-conflict-heading',
     });
     conflictPanel.hidden = true;
     conflictPanel.append(
-      el('h3', { id: 'mbb-conflict-heading' }, '版本冲突：核对服务器与当前候选'),
+      el(
+        'h3',
+        { id: 'mbb-conflict-heading' },
+        T('Version conflict: compare the server and candidate'),
+      ),
     );
     conflictSummary = el('p', { role: 'status' });
-    conflictDiff = el('section', { 'aria-label': '服务器最新版与当前候选的差异' });
+    conflictDiff = el('section', {
+      'aria-label': T('Differences between the latest server version and candidate'),
+    });
     const conflictActions = el('div', { class: 'mbb-actions' });
     const refresh = el(
       'button',
       { type: 'button', id: 'mbb-conflict-refresh' },
-      '重新读取服务器最新版',
+      T('Read the latest server version again'),
     );
     refresh.onclick = refreshConflict;
     conflictDownload = el(
       'button',
       { type: 'button', id: 'mbb-conflict-download' },
-      '下载当前候选 .md',
+      T('Download current candidate .md'),
     );
     conflictDownload.onclick = downloadCandidate;
     conflictAdopt = el(
       'button',
       { type: 'button', id: 'mbb-conflict-adopt' },
-      '保留我的修改，基于最新版继续',
+      T('Keep my changes and continue from the latest version'),
     );
     conflictAdopt.onclick = adoptConflict;
     conflictActions.append(refresh, conflictDownload, conflictAdopt);
-    mergeOpen = el('button', { type: 'button', id: 'mbb-merge-open' }, '准备三方合并');
+    mergeOpen = el(
+      'button',
+      { type: 'button', id: 'mbb-merge-open' },
+      T('Prepare three-way merge'),
+    );
     mergeOpen.onclick = prepareMerge;
     conflictActions.append(mergeOpen);
-    mergePanel = el('section', { id: 'mbb-merge-panel', 'aria-label': '三方合并候选' });
+    mergePanel = el('section', {
+      id: 'mbb-merge-panel',
+      'aria-label': T('Three-way merge candidate'),
+    });
     mergePanel.hidden = true;
     mergePanel.append(
       el(
         'p',
         {},
-        '仅生成未保存候选。围栏、FrontMatter 与完整教学容器按整体比较；无法定位的重复结构需明确选择。候选换行与末尾空白保持原字节。',
+        T(
+          'Only creates an unsaved candidate. Fences, FrontMatter, and complete teaching containers are compared atomically. Ambiguous repeated structures require explicit choices. Newlines and trailing whitespace retain their original bytes.',
+        ),
       ),
     );
     const versions = el('div', { class: 'mbb-merge-versions' });
     mergeViews = {};
     for (const [key, name] of [
-      ['base', '打开时版本'],
-      ['mine', '我的候选'],
-      ['latest', '服务器最新版'],
+      ['base', T('Opening version')],
+      ['mine', T('My candidate')],
+      ['latest', T('Latest server version')],
     ]) {
       const label = el('label', {}, name);
       mergeViews[key] = el('textarea', {
@@ -1476,7 +1678,11 @@
     }
     mergeStatus = el('p', { role: 'status' });
     mergeRows = el('div', { class: 'mbb-merge-choices' });
-    mergeAdopt = el('button', { type: 'button', id: 'mbb-merge-adopt' }, '采用未保存合并候选');
+    mergeAdopt = el(
+      'button',
+      { type: 'button', id: 'mbb-merge-adopt' },
+      T('Adopt unsaved merge candidate'),
+    );
     mergeAdopt.onclick = adoptMerge;
     mergePanel.append(versions, mergeStatus, mergeRows, mergeAdopt);
     conflictPanel.append(conflictSummary, conflictActions, conflictDiff, mergePanel);
@@ -1515,7 +1721,7 @@
     conflictPanel.hidden = true;
     conflictDiff.replaceChildren();
     controls();
-    message('正在读取服务器版本……');
+    message(T('Reading the server version…'));
     try {
       let freshBase = id
         ? id === cfg.postId
@@ -1552,13 +1758,17 @@
           if (!stillOpening()) return;
           if (fresh.expected !== base.expected) {
             if (id === cfg.postId)
-              throw Error('当前文章已变化，请先处理版本冲突；保留原版本基线。');
+              throw Error(
+                T(
+                  'The current article changed. Resolve the version conflict first. The original baseline is preserved.',
+                ),
+              );
             const current = await api('document?post_id=' + id);
             if (!stillOpening()) return;
             fresh = await api('source?post_id=' + id);
             if (!stillOpening()) return;
             if (fresh.expected !== current.expected)
-              throw Error('读取期间文章再次变化，请重新打开编辑器');
+              throw Error(T('The article changed again while reading. Reopen the editor'));
             base = current;
           }
           base.expected = fresh.expected;
@@ -1571,7 +1781,9 @@
         }
         if (sourceReadFailed) {
           opening = null;
-          openingReason = '来源读取未完成，自动三方合并不可用；当前文字保留供手动比较。';
+          openingReason = T(
+            'The source read did not complete. Automatic three-way merge is unavailable. Current text is preserved for manual comparison.',
+          );
         } else if (!openingMatchesDisplay(opening, base, readSource())) {
           // The tool screen may have followed a concurrent source save from A to C.
           // Never retain A while presenting C as the unchanged local candidate.
@@ -1615,13 +1827,19 @@
       message(
         base?.source_managed
           ? sourceReadFailed
-            ? '无法读取绑定源文件，当前显示 WordPress 已保存的 Markdown（可能不是源文件最新版），仅供查看和预览。'
+            ? T(
+                'The bound source file could not be read. The displayed Markdown is the WordPress saved copy and may not be the latest source file. Viewing and previewing only.',
+              )
             : base.source_write_available
-              ? '已读取绑定源文件；请编辑后查看差异和预览，再明确确认写回。'
-              : '已读取绑定源文件，当前仅供查看和预览，请使用同步工具更新。'
+              ? T(
+                  'The bound source file was read. Edit it, preview the differences, and explicitly confirm the source write.',
+                )
+              : T(
+                  'The bound source file was read for viewing and previewing only. Use the synchronization tool to update it.',
+                )
           : selectedMode === 'blocks'
-            ? '将当前区块转换回 Markdown 并预览，尚未保存。'
-            : '编辑或上传 Markdown，再检查差异。',
+            ? T('Current blocks were converted to Markdown for preview and have not been saved.')
+            : T('Edit or upload Markdown, then check the differences.'),
       );
     } catch (e) {
       if (stillOpening()) message(describeError(e), true);
@@ -1652,7 +1870,10 @@
       )
         return next(options);
       if (!options.data || typeof options.data !== 'object' || Array.isArray(options.data))
-        throw { code: 'mbb_request', message: '无法验证此保存请求，请重新打开编辑器后重试。' };
+        throw {
+          code: 'mbb_request',
+          message: T('This save request could not be verified. Reopen the editor and try again.'),
+        };
       const recoveryTicket = window.MarkBridgeLocalRecovery?.ticket(Number(cfg.postId), 'blocks');
       const result = await next({
         ...options,
@@ -1693,7 +1914,11 @@
       const invocation = epoch,
         invocationVersion = version;
       const cancelled = () => {
-        throw Error('编辑会话或输入已变化，本地恢复未应用；当前内容已保留。');
+        throw Error(
+          T(
+            'The editing session or input changed. Local recovery was not applied; current content is preserved.',
+          ),
+        );
       };
       await verify();
       if (epoch !== invocation || version !== invocationVersion) cancelled();
@@ -1726,7 +1951,9 @@
         cancelled();
       recoveryRecord = record;
       opening = null;
-      openingReason = '本地恢复记录没有可信的打开时签名基线，需手动比较，不能冒充三方合并基线。';
+      openingReason = T(
+        'This local recovery record has no trusted signed opening baseline. Compare manually; it cannot serve as a three-way merge baseline.',
+      );
       resources?.restore(record.payload.requiresResources);
       recoveryVerify = verify;
       title.value = record.payload.title;
@@ -1739,7 +1966,11 @@
         const markdown = window.MBB.toMarkdown(parsed, { origin: 'markdown_import' });
         const verified = window.MBB.importDocument(markdown, record.payload.documentId);
         if (verified.serialized !== record.payload.content)
-          throw Error('新原生区块无法精确往返；候选未创建，可下载保留原区块。');
+          throw Error(
+            T(
+              'New native blocks cannot round-trip exactly. No candidate was created. Download the original blocks for safekeeping.',
+            ),
+          );
         setSource(markdown);
         mode = 'markdown';
       }
@@ -1782,16 +2013,20 @@
               type: 'button',
               id: 'mbb-new-post',
               class: 'components-button is-secondary mbb-new-post-button',
-              'aria-label': '导入 Markdown 文件',
+              'aria-label': T('Import Markdown file'),
             },
-            '导入 Markdown',
+            T('Import Markdown'),
           );
           button.onclick = () => {
             const editor = wp.data.select('core/editor');
             const title = editor?.getEditedPostAttribute('title') || '';
             const content = editor?.getEditedPostContent() || '';
             if (title.trim() || content.trim()) {
-              window.alert('当前新文章已有未保存内容，请先保存或清空后再导入 Markdown。');
+              window.alert(
+                T(
+                  'This new article already has unsaved content. Save or clear it before importing Markdown.',
+                ),
+              );
               return;
             }
             open(0);
@@ -1824,16 +2059,16 @@
       const a = el(
         'button',
         { type: 'button', id: 'mbb-markdown' },
-        cfg.state?.source_managed ? 'Markdown 原文 / 预览' : 'Markdown 编辑 / 上传',
+        cfg.state?.source_managed ? T('Markdown source / preview') : T('Markdown edit / upload'),
       );
       a.onclick = () => open(cfg.postId);
       const b = el(
         'button',
         { type: 'button', id: 'mbb-block-review' },
-        cfg.state?.source_managed ? '区块预览' : '查看差异与预览',
+        cfg.state?.source_managed ? T('Block preview') : T('View differences and preview'),
       );
       b.onclick = () => open(cfg.postId, 'blocks');
-      const h = el('button', { type: 'button', id: 'mbb-history' }, '历史版本 / 恢复');
+      const h = el('button', { type: 'button', id: 'mbb-history' }, T('Revisions / restore'));
       h.onclick = () => window.MBB_REVISIONS.open(cfg.postId);
       bar.append(
         a,
@@ -1843,36 +2078,46 @@
           'span',
           {},
           cfg.state?.source_managed
-            ? '正文由源文件同步，需预览后确认写回'
+            ? T('The body is synchronized from a source file; preview and confirm the source write')
             : nativeSave
-              ? '可直接使用编辑器保存／更新，两种格式同步保存'
-              : '请使用预览中的保存按钮',
+              ? T("Use the editor's Save / Update action to save both representations together")
+              : T('Use the save button in the preview'),
         ),
       );
       const getCurrentBlocks = () => wp.data.select('core/block-editor')?.getBlocks?.() || [];
       const capabilities = el('details', { class: 'mbb-capabilities' });
-      const capabilitySummary = el('summary', { 'aria-live': 'polite' }, '转换支持与当前内容');
+      const capabilitySummary = el(
+        'summary',
+        { 'aria-live': 'polite' },
+        T('Conversion support and current content'),
+      );
       capabilities.append(capabilitySummary);
       const help = el('div', { class: 'mbb-capabilities-help' });
       help.append(
         el(
           'p',
           {},
-          '支持段落、标题、引用、列表、任务列表、表格、图片、链接、代码、TeX 公式、命名脚注和受限 HTML。样式、额外属性和第三方区块仍需通过往返校验。',
+          T(
+            'Paragraphs, headings, quotes, lists, task lists, tables, images, links, code, TeX formulas, named footnotes, and restricted HTML are supported. Styles, extra attributes, and third-party blocks must still pass round-trip validation.',
+          ),
         ),
       );
       const current = el('p', { role: 'status' });
       help.append(current);
-      const check = el('button', { type: 'button' }, '检查当前区块转换');
+      const check = el('button', { type: 'button' }, T('Check current block conversion'));
       check.onclick = () => {
         try {
           const blocks = getCurrentBlocks();
           window.MBB.toMarkdown(blocks, { origin: 'markdown_import' });
-          current.textContent = '当前区块通过浏览器往返检查；保存时服务器还会重新校验。';
+          current.textContent = T(
+            'Current blocks passed the browser round-trip check. The server will validate them again when saving.',
+          );
         } catch (error) {
           current.textContent =
             describeError(error) +
-            '。请检查该区块的格式，或先下载 Markdown 保留候选，再修正并重新预览。';
+            T(
+              ". Check this block's formatting, or download Markdown for safekeeping before correcting and previewing it again.",
+            );
         }
       };
       help.append(check);
@@ -1887,18 +2132,26 @@
             const at = [...path, index];
             if (!supported.has(block.name)) {
               const title = wp.blocks.getBlockType?.(block.name)?.title || block.name;
-              unsupported.push(`${title}（第 ${at.map((i) => i + 1).join(' → ')} 个区块）`);
+              unsupported.push(F(T('%1$s (block %2$s)'), title, at.map((i) => i + 1).join(' → ')));
             }
             visit(block.innerBlocks || [], at);
           });
         visit(getCurrentBlocks());
         capabilitySummary.textContent = unsupported.length
-          ? `转换支持：${unsupported.length} 个区块暂不支持`
-          : '转换支持与当前内容';
+          ? F(T('Conversion support: %1$s unsupported blocks'), unsupported.length)
+          : T('Conversion support and current content');
         capabilitySummary.classList.toggle('mbb-capability-warning', unsupported.length > 0);
         current.textContent = unsupported.length
-          ? `当前包含尚不支持转换的区块：${unsupported.slice(0, 8).join('、')}${unsupported.length > 8 ? '等' : ''}。请保留现有内容，调整后重新预览。`
-          : '当前区块类型已有转换映射；请检查当前区块转换，确认其属性和格式也能保留。';
+          ? F(
+              T(
+                'The current content includes unsupported blocks: %1$s%2$s. Preserve the content, adjust it, and preview again.',
+              ),
+              unsupported.slice(0, 8).join(T(', ')),
+              unsupported.length > 8 ? T(' and others') : '',
+            )
+          : T(
+              'Current block types have conversion mappings. Check their conversion to confirm that attributes and formatting are preserved.',
+            );
       };
       inspectCapabilities();
       let capabilityBlocks = getCurrentBlocks();

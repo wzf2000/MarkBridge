@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/includes/i18n.php';
 // Revision selection is always scoped to an editable Markdown-origin parent.
 function mbb_revision_token($r)
 {
@@ -17,7 +18,7 @@ function mbb_revision_token($r)
 function mbb_revision_permission($r)
 {
     if (!absint($r['post_id'])) {
-        return mbb_error('id', '缺少文章ID。', 422);
+        return mbb_error('id', mbb_t('The article ID is missing.'), 422);
     }
     return mbb_permission($r);
 }
@@ -50,18 +51,18 @@ function mbb_revisions($r)
 function mbb_revision_candidate($r, $p)
 {
     if (!$p) {
-        return mbb_error('revision', '请选择已有文章。', 422);
+        return mbb_error('revision', mbb_t('Choose an existing article.'), 422);
     }
     $revision_id = absint($r['revision_id']);
     $v = wp_get_post_revision($revision_id);
     if (!$v || (int) $v->post_parent !== (int) $p->ID || wp_is_post_autosave($v)) {
-        return mbb_error('revision', '该修订不可用于此文章。', 422);
+        return mbb_error('revision', mbb_t('This revision cannot be used for this article.'), 422);
     }
     if (
         !is_string($r['expected_revision']) ||
         !hash_equals(mbb_revision_token($v), $r['expected_revision'])
     ) {
-        return mbb_error('revision_changed', '历史版本已变化，请重新选择。');
+        return mbb_error('revision_changed', mbb_t('The revision changed. Choose it again.'));
     }
     $meta = get_metadata('post', $v->ID, '_mbb_revision_pair', true);
     if (
@@ -73,13 +74,23 @@ function mbb_revision_candidate($r, $p)
             ($meta['source_sha256'] ?? null) !== hash('sha256', $v->post_content_filtered) ||
             ($meta['blocks_sha256'] ?? null) !== hash('sha256', $v->post_content))
     ) {
-        return mbb_error('revision_pair', '该历史版本的配对记录不兼容或已损坏，未恢复。', 422);
+        return mbb_error(
+            'revision_pair',
+            mbb_t(
+                'The revision\'s paired record is incompatible or damaged. Nothing was restored.',
+            ),
+            422,
+        );
     }
     if (strlen($v->post_content_filtered) > 1500000 || strlen($v->post_content) > 1500000) {
-        return mbb_error('size', '历史版本过大。', 413);
+        return mbb_error('size', mbb_t('The revision is too large.'), 413);
     }
     if (sanitize_text_field($v->post_title) !== $v->post_title || !trim($v->post_title)) {
-        return mbb_error('title', '历史标题不符合当前规则。', 422);
+        return mbb_error(
+            'title',
+            mbb_t('The revision title does not satisfy the current rules.'),
+            422,
+        );
     }
     $doc = mbb_convert([
         'mode' => 'paired_restore',
@@ -97,7 +108,9 @@ function mbb_revision_candidate($r, $p)
     ) {
         return mbb_error(
             'revision_pair',
-            '该历史版本的Markdown与区块不一致或不兼容，未恢复。',
+            mbb_t(
+                'The revision\'s Markdown and blocks differ or are incompatible. Nothing was restored.',
+            ),
             422,
         );
     }
@@ -113,7 +126,7 @@ function mbb_pair_snapshot($id, $after_id = 0)
 {
     $result = wp_save_post_revision($id);
     if (is_wp_error($result)) {
-        throw new RuntimeException('修订保存失败');
+        throw new RuntimeException(mbb_t('Revision save failed'));
     }
     $p = get_post($id);
     $expected = [
@@ -139,7 +152,7 @@ function mbb_pair_snapshot($id, $after_id = 0)
     // An autosave or a damaged latest entry must not hide the last intact pair.
     $rid = _wp_put_post_revision($p);
     if (!$rid || is_wp_error($rid)) {
-        throw new RuntimeException('未能保留配对修订');
+        throw new RuntimeException(mbb_t('The paired revision could not be preserved'));
     }
     $v = get_post($rid);
     if (
@@ -147,7 +160,7 @@ function mbb_pair_snapshot($id, $after_id = 0)
         $v->post_content_filtered !== $p->post_content_filtered ||
         $v->post_title !== $p->post_title
     ) {
-        throw new RuntimeException('修订内容核验失败');
+        throw new RuntimeException(mbb_t('Revision content verification failed'));
     }
     return $rid;
 }
@@ -181,7 +194,7 @@ add_action(
         ];
         // update_post_meta redirects revision IDs to their parent: use the metadata API directly.
         if (!update_metadata('post', $revision_id, '_mbb_revision_pair', $meta)) {
-            throw new RuntimeException('修订配对记录保存失败');
+            throw new RuntimeException(mbb_t('The revision paired record could not be saved'));
         }
     },
     10,

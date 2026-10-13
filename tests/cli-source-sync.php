@@ -1,4 +1,5 @@
 <?php
+require __DIR__ . '/helpers/localization.php';
 // Isolated regression for the existing file-bound CLI save path.
 define('WP_CLI', true);
 // This fixture supplies a Node worker stub, not a PHP dependency installation.

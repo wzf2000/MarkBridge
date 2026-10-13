@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/i18n.php';
 // Configuration chooses the backend; readiness never triggers a fallback.
 require_once __DIR__ . '/converter-settings.php';
 
@@ -27,19 +28,28 @@ function mbb_php_converter_diagnostics($smoke = false)
     };
     $php = PHP_VERSION_ID >= 80200;
     $extensions = extension_loaded('dom') && extension_loaded('mbstring');
-    $add('php', 'PHP 版本', $php, $php ? 'PHP 8.2 或更新版本。' : 'PHP 转换候选需要 PHP 8.2。');
+    $add(
+        'php',
+        mbb_t('PHP version'),
+        $php,
+        $php ? mbb_t('PHP 8.2 or newer.') : mbb_t('The PHP converter requires PHP 8.2.'),
+    );
     $add(
         'extensions',
-        'PHP 扩展',
+        mbb_t('PHP extensions'),
         $extensions,
-        $extensions ? 'DOM 与 mbstring 可用。' : '缺少 DOM 或 mbstring。',
+        $extensions
+            ? mbb_t('DOM and mbstring are available.')
+            : mbb_t('DOM or mbstring is missing.'),
     );
     $wordpress = preg_match('/^7\.1(?:\.|$)/', (string) get_bloginfo('version')) === 1;
     $add(
         'wordpress',
-        'WordPress 版本',
+        mbb_t('WordPress version'),
         $wordpress,
-        $wordpress ? '匹配已验证的 WordPress 7.1 模板。' : 'PHP 候选尚未验证此 WordPress 版本。',
+        $wordpress
+            ? mbb_t('Matches the verified WordPress 7.1 templates.')
+            : mbb_t('The PHP converter has not been verified with this WordPress version.'),
     );
     $manifest = json_decode(@file_get_contents(__DIR__ . '/../php-converter-manifest.json'), true);
     $manifestOk =
@@ -91,22 +101,30 @@ function mbb_php_converter_diagnostics($smoke = false)
     }
     $add(
         'php_dependencies',
-        'PHP 转换依赖',
+        mbb_t('PHP conversion dependencies'),
         $manifestOk,
-        $manifestOk ? '转换库与锁定依赖清单匹配。' : 'PHP 转换依赖未构建、缺失或与清单不匹配。',
+        $manifestOk
+            ? mbb_t('The conversion library matches its locked dependency manifest.')
+            : mbb_t(
+                'PHP conversion dependencies are unbuilt, missing, or differ from their manifest.',
+            ),
     );
     $limits = ['max_bytes' => 262144, 'max_nodes' => 10000, 'max_depth' => 32];
     $add(
         'limits',
-        '候选容量',
+        mbb_t('Candidate budgets'),
         true,
-        '原文、规范原文与区块分别最多 256 KiB；最多 10,000 节点、32 层。超限拒绝，不切换其他后端。',
+        mbb_t(
+            'Source, canonical source, and blocks are each limited to 256 KiB, with at most 10,000 nodes and 32 levels. Exceeding a budget is rejected without switching backends.',
+        ),
     );
     $add(
         'policy',
-        '候选内容策略',
+        mbb_t('Candidate content policy'),
         true,
-        '危险链接、重复 HTML 属性及会丢失替代文字的图片输入明确拒绝。',
+        mbb_t(
+            'Unsafe links, duplicate HTML attributes, and image inputs that would lose alternative text are explicitly rejected.',
+        ),
     );
     if (!$php || !$extensions || !$wordpress || !$manifestOk) {
         return [
@@ -168,11 +186,13 @@ function mbb_php_converter_diagnostics($smoke = false)
     }
     $add(
         'php_autoload',
-        '依赖加载',
+        mbb_t('Dependency loading'),
         $compatible,
         $compatible
-            ? '已加载命名空间隔离后的依赖与独立加载表。'
-            : 'PHP 依赖无法加载或存在同名依赖冲突；未改用 Node。',
+            ? mbb_t('Namespaced dependencies and the standalone loading map are loaded.')
+            : mbb_t(
+                'PHP dependencies failed to load or conflict with an existing dependency. Node was not used as a fallback.',
+            ),
     );
     if ($compatible && $smoke) {
         $result = \MarkBridge\Probe\Worker::convert([
@@ -183,9 +203,11 @@ function mbb_php_converter_diagnostics($smoke = false)
         $compatible = !empty($result['ok']);
         $add(
             'conversion',
-            'PHP 转换',
+            mbb_t('PHP conversion'),
             $compatible,
-            $compatible ? 'PHP 配对转换通过。' : 'PHP 转换失败，未改用 Node。',
+            $compatible
+                ? mbb_t('PHP paired conversion passed.')
+                : mbb_t('PHP conversion failed. Node was not used as a fallback.'),
         );
     }
     return [
@@ -204,19 +226,31 @@ function mbb_converter_dispatch($input)
         return mbb_run_worker($input);
     }
     if ($backend !== 'php') {
-        return mbb_error('conversion_backend', '转换后端设置无效，原内容未写入。', 503);
+        return mbb_error(
+            'conversion_backend',
+            mbb_t('The conversion backend settings are invalid. Original content was not written.'),
+            503,
+        );
     }
     if (!is_array($input)) {
         return ['ok' => false, 'code' => 'REQUEST', 'message' => 'Invalid conversion request'];
     }
     if (!mbb_php_converter_diagnostics()['ok']) {
-        return mbb_error('conversion_backend', 'PHP 转换依赖不可用或存在冲突，原内容未写入。', 503);
+        return mbb_error(
+            'conversion_backend',
+            mbb_t(
+                'PHP conversion dependencies are unavailable or conflict. Original content was not written.',
+            ),
+            503,
+        );
     }
     $lock = mbb_runtime_lock();
     if (!$lock) {
         return mbb_error(
             'busy',
-            '转换服务正在处理另一请求，或共享锁不可读，请稍后重试并检查权限。',
+            mbb_t(
+                'The converter is processing another request or the shared lock is unreadable. Try later and check permissions.',
+            ),
             409,
         );
     }

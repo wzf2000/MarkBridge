@@ -1,7 +1,7 @@
 // Only operate on a converter-validated serialized snapshot, never arbitrary Markdown.
 export function rewriteSerializedImageURLs(serialized, mappings, fail, portable = false) {
   if (!Array.isArray(mappings) || mappings.length > 256)
-    fail('RESOURCE_MAP', '图片映射最多 256 种引用、32 个目标');
+    fail('RESOURCE_MAP', 'Image mappings are limited to 256 references and 32 targets');
   const replacements = new Map();
   for (const item of mappings) {
     if (
@@ -20,11 +20,11 @@ export function rewriteSerializedImageURLs(serialized, mappings, fail, portable 
           : /^(?:https?:\/\/[^\s<>"'\\]+|mbb-import\/[a-f0-9]{64})$/
       ).test(item.to)
     )
-      fail('RESOURCE_MAP', '图片映射非法或重复');
+      fail('RESOURCE_MAP', 'Image mappings are invalid or duplicated');
     replacements.set(item.from, { url: item.to, count: 0 });
   }
   if (new Set([...replacements.values()].map((item) => item.url)).size > 32)
-    fail('RESOURCE_MAP', '图片映射最多 32 个目标');
+    fail('RESOURCE_MAP', 'Image mappings are limited to 32 targets');
   const decode = (value) => {
     const element = document.createElement('textarea');
     element.innerHTML = value;
@@ -62,6 +62,6 @@ export function rewriteSerializedImageURLs(serialized, mappings, fail, portable 
     },
   );
   if ([...replacements.values()].some((item) => item.count === 0))
-    fail('RESOURCE_TARGET', '图片映射必须指向实际作者图片');
+    fail('RESOURCE_TARGET', 'Image mappings must point to actual author images');
   return result;
 }

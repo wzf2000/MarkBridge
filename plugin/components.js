@@ -1,5 +1,15 @@
 (() => {
-  'use strict';
+  const T = (message) => globalThis.MBBI18n?.t(message) ?? message;
+  const F = (message, ...values) => {
+    let next = 0;
+    return String(message).replace(/%%|%(?:(\d+)\$)?([sd])/g, (token, index, kind) => {
+      if (token === '%%') return '%';
+      const value = values[index ? Number(index) - 1 : next++];
+      return kind === 'd' ? String(Number(value)) : String(value ?? '');
+    });
+  };
+
+  ('use strict');
   if (window.MarkBridgeComponents) return;
   const EXECUTION_ENABLED = true;
   const CSP =
@@ -97,13 +107,14 @@
           new TextEncoder().encode(JSON.stringify(message)).length >
           (type === 'init' ? 20480 : 8192)
         ) {
-          if (type !== 'cancel') failure('组件初始化信封超过预算。');
+          if (type !== 'cancel')
+            failure(T('The component initialization envelope exceeds its budget.'));
           return false;
         }
         frame.contentWindow.postMessage(message, '*');
         return true;
       } catch {
-        if (type !== 'cancel') failure('组件消息无法发送。');
+        if (type !== 'cancel') failure(T('The component message could not be sent.'));
         return false;
       }
     };
@@ -129,13 +140,15 @@
       if (changedLayout) changed();
     }
     function failure(message) {
-      stop(message + ' 静态替代内容仍可阅读；可重新启动。');
+      stop(message + T(' Static fallback content remains readable. You can start again.'));
     }
     async function launchComponent() {
       stop();
       const current = ++generation;
       if (config.status !== 'available' || !config.provider?.resource) {
-        status.textContent = '组件缺失、版本不兼容或资源校验失败。保留静态替代与原配置。';
+        status.textContent = T(
+          'The component is missing, incompatible, or failed resource verification. Static fallback content and configuration are preserved.',
+        );
         return;
       }
       if (
@@ -144,34 +157,39 @@
         !window.TextDecoder ||
         !window.TextEncoder
       ) {
-        status.textContent = '浏览器无法安全验证隔离组件，保留静态替代。';
+        status.textContent = T(
+          'This browser cannot safely verify the isolated component. Static fallback content is preserved.',
+        );
         return;
       }
       if (slots.size >= 4) {
-        status.textContent = '已打开 4 个交互预览，请先关闭其他预览。';
+        status.textContent = T(
+          'Four interactive previews are already open. Close another preview first.',
+        );
         return;
       }
       slots.add(node);
       loading = true;
       launch.disabled = true;
-      status.textContent = '正在验证组件资源…';
+      status.textContent = T('Verifying component resources…');
       abort = new AbortController();
       startup = setTimeout(() => {
-        if (current === generation) failure('组件初始化超时。');
+        if (current === generation) failure(T('Component initialization timed out.'));
       }, budgets.startupMs);
       try {
         const url = new URL(config.provider.resource.url, location.href);
-        if (url.origin !== location.origin) throw Error('仅允许本地登记资源');
+        if (url.origin !== location.origin)
+          throw Error(T('Only registered local resources are allowed'));
         const response = await fetch(url, {
           credentials: 'omit',
           redirect: 'error',
           signal: abort.signal,
         });
-        if (!response.ok) throw Error('组件资源不可用');
+        if (!response.ok) throw Error(T('The component resource is unavailable'));
         if (Number(response.headers.get('content-length')) > budgets.resourceBytes)
-          throw Error('组件资源过大');
+          throw Error(T('The component resource is too large'));
         const reader = response.body?.getReader();
-        if (!reader) throw Error('浏览器不支持有界资源读取');
+        if (!reader) throw Error(T('This browser does not support bounded resource reads'));
         const chunks = [];
         let size = 0;
         while (true) {
@@ -180,7 +198,7 @@
           size += part.value.byteLength;
           if (size > budgets.resourceBytes) {
             await reader.cancel();
-            throw Error('组件资源过大');
+            throw Error(T('The component resource is too large'));
           }
           chunks.push(part.value);
         }
@@ -194,24 +212,28 @@
           new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)),
           (v) => v.toString(16).padStart(2, '0'),
         ).join('');
-        if (digest !== config.provider.resource.sha256) throw Error('组件资源摘要不匹配');
+        if (digest !== config.provider.resource.sha256)
+          throw Error(T('The component resource digest does not match'));
         if (current !== generation || !node.isConnected) return;
         session = random();
         frame = document.createElement('iframe');
-        frame.title = config.provider.title + ' 隔离交互预览';
+        frame.title = config.provider.title + T(' isolated interactive preview');
         frame.setAttribute('sandbox', 'allow-scripts');
         frame.referrerPolicy = 'no-referrer';
         frame.className = 'mbb-component-frame';
         let initialized = false;
         frame.onload = () => {
           if (initialized) {
-            failure('隔离组件发生未授权导航。');
+            failure(T('The isolated component attempted unauthorized navigation.'));
             return;
           }
           initialized = true;
           send('init', {
             params: config.params,
             execution: EXECUTION_ENABLED,
+            ...(config.provider.supportsUiLocale === true
+              ? { uiLocale: window.MBB_UI_LOCALE === 'zh_CN' ? 'zh_CN' : 'en_US' }
+              : {}),
             component: config.component,
             componentVersion: config.componentVersion,
             budgets,
@@ -224,15 +246,16 @@
           new TextDecoder().decode(bytes);
         controls.append(frame);
         close.hidden = false;
-        status.textContent = '正在初始化隔离组件…';
+        status.textContent = T('Initializing the isolated component…');
         changed();
       } catch (error) {
-        if (current === generation) failure(error.message || '组件无法加载。');
+        if (current === generation)
+          failure(error.message || T('The component could not be loaded.'));
       }
     }
-    const launch = button('启动交互演示', launchComponent),
-      close = button('关闭交互预览', () => {
-        stop('交互预览已关闭。');
+    const launch = button(T('Start interactive demonstration'), launchComponent),
+      close = button(T('Close interactive preview'), () => {
+        stop(T('The interactive preview is closed.'));
         launch.focus();
       });
     close.hidden = true;
@@ -240,8 +263,12 @@
     node.insertBefore(controls, node.firstChild);
     status.textContent =
       config.status === 'available'
-        ? '静态替代始终保留；交互组件需显式启动。'
-        : '组件缺失或版本不兼容；静态替代与原配置保留。';
+        ? T(
+            'Static fallback content is always preserved. Start the interactive component explicitly.',
+          )
+        : T(
+            'The component is missing or incompatible. Static fallback content and configuration are preserved.',
+          );
     const receive = (event) => {
       const data = event.data;
       if (
@@ -253,11 +280,11 @@
         return;
       try {
         if (new TextEncoder().encode(JSON.stringify(data)).length > 8192) {
-          failure('组件消息超过预算。');
+          failure(T('The component message exceeds its budget.'));
           return;
         }
       } catch {
-        failure('组件消息格式无效。');
+        failure(T('The component message format is invalid.'));
         return;
       }
       if (
@@ -275,14 +302,14 @@
           ) ||
           (data.matches !== undefined && typeof data.matches !== 'boolean'))
       ) {
-        failure('组件执行摘要超过预算或格式无效。');
+        failure(T('The execution summary exceeds its budget or has an invalid format.'));
         return;
       }
       if (data.type === 'ready' && !ready) {
         clearTimeout(startup);
         loading = false;
         ready = true;
-        status.textContent = '隔离组件已就绪。';
+        status.textContent = T('The isolated component is ready.');
       } else if (data.type === 'resize' && Number.isFinite(data.height))
         frame.style.height = Math.min(1200, Math.max(280, data.height)) + 'px';
       else if (data.type === 'run-request') {
@@ -301,11 +328,12 @@
         runId = data.runId;
         const expectedRun = runId;
         timer = setTimeout(() => {
-          if (runId === expectedRun) failure('执行超过时间预算，已终止。');
+          if (runId === expectedRun)
+            failure(T('Execution exceeded its time budget and was terminated.'));
         }, budgets.wallMs);
         send('grant', { runId });
       } else if (data.type === 'error' && !ready) {
-        failure('组件初始化失败。');
+        failure(T('Component initialization failed.'));
       } else if (
         ['complete', 'error', 'stopped'].includes(data.type) &&
         runId &&
@@ -316,10 +344,10 @@
         runId = null;
         status.textContent =
           data.type === 'complete'
-            ? '组件执行完成。'
+            ? T('Component execution completed.')
             : data.type === 'stopped'
-              ? '执行已停止。'
-              : '执行失败；静态替代仍可阅读。';
+              ? T('Execution stopped.')
+              : T('Execution failed. Static fallback content remains readable.');
       }
     };
     window.addEventListener('message', receive);
@@ -328,7 +356,12 @@
       controls,
       stop,
       hidden() {
-        if (frame || loading) stop('内容已隐藏，交互预览已终止；展开后可重新启动。');
+        if (frame || loading)
+          stop(
+            T(
+              'The content is hidden and its interactive preview was terminated. Expand it to start again.',
+            ),
+          );
       },
       dispose() {
         stop();
@@ -358,7 +391,9 @@
   scan();
   window.addEventListener('pagehide', () => {
     for (const instance of instances.values())
-      instance.stop('页面已暂停；返回后请显式重启交互预览。');
+      instance.stop(
+        T('The page is suspended. Explicitly restart the interactive preview after returning.'),
+      );
   });
   document.addEventListener('mbb:teaching-change', () => {
     for (const [node, instance] of instances) if (node.closest('[hidden]')) instance.hidden();

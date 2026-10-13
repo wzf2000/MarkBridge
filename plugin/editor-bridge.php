@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/includes/i18n.php';
 // Paired document storage, validation and capability-checked editing endpoints.
 require_once __DIR__ . '/includes/conversion-backends.php';
 require_once __DIR__ . '/frontmatter.php';
@@ -113,10 +114,16 @@ function mbb_permission($r)
 {
     $id = absint($r->get_param('post_id'));
     if (!is_user_logged_in() || !current_user_can($id ? 'edit_post' : 'edit_posts', $id)) {
-        return new WP_Error('forbidden', '无权编辑这篇文章。', ['status' => 403]);
+        return new WP_Error(
+            'forbidden',
+            mbb_t('You do not have permission to edit this article.'),
+            ['status' => 403],
+        );
     }
     if ($id && !mbb_managed($id)) {
-        return new WP_Error('origin', '该文章不是Markdown来源文档。', ['status' => 403]);
+        return new WP_Error('origin', mbb_t('This article is not a Markdown source document.'), [
+            'status' => 403,
+        ]);
     }
     return true;
 }
@@ -129,7 +136,11 @@ function mbb_source_write_permission($r)
     $id = absint($r->get_param('post_id'));
     $capability = apply_filters('mbb_source_write_capability', 'edit_post', $id);
     if (!$capability || !current_user_can($capability, $id)) {
-        return new WP_Error('source_forbidden', '无权写回这篇文章的源文件。', ['status' => 403]);
+        return new WP_Error(
+            'source_forbidden',
+            mbb_t('You do not have permission to write this article\'s source file.'),
+            ['status' => 403],
+        );
     }
     return true;
 }
@@ -137,10 +148,16 @@ function mbb_source_audit_permission($r)
 {
     $id = absint($r->get_param('post_id'));
     if (!$id || !current_user_can('manage_options')) {
-        return new WP_Error('forbidden', '只有管理员可以查看源文件写回审计。', ['status' => 403]);
+        return new WP_Error(
+            'forbidden',
+            mbb_t('Only administrators can view the source write audit.'),
+            ['status' => 403],
+        );
     }
     if (get_post_meta($id, '_mbb_source_managed', true) !== 'file') {
-        return new WP_Error('source_managed', '该文章没有文件来源绑定。', ['status' => 409]);
+        return new WP_Error('source_managed', mbb_t('This article has no source file binding.'), [
+            'status' => 409,
+        ]);
     }
     return true;
 }
@@ -169,7 +186,9 @@ function mbb_convert($input)
     if (!$diagnostics['ok']) {
         return mbb_error(
             'runtime_incompatible',
-            '转换运行环境未配置或与当前插件、WordPress 不兼容，原内容未写入。',
+            mbb_t(
+                'The conversion runtime is unconfigured or incompatible with this plugin or WordPress. Original content was not written.',
+            ),
             503,
         );
     }
@@ -177,7 +196,12 @@ function mbb_convert($input)
     $input['blockAdapters'] = mbb_block_adapter_snapshot();
     $result = mbb_converter_dispatch($input);
     if (!hash_equals($adapter_digest, mbb_block_adapter_digest())) {
-        return mbb_error('adapter_conflict', '转换期间静态区块登记已变化，原候选未写入。');
+        return mbb_error(
+            'adapter_conflict',
+            mbb_t(
+                'Static block registrations changed during conversion. The candidate was not written.',
+            ),
+        );
     }
     if (is_wp_error($result)) {
         return $result;
@@ -276,27 +300,37 @@ function mbb_candidate($r)
         $candidate['_adapter_registry_digest'] = $digest;
     }
     if (!hash_equals($digest, mbb_block_adapter_digest())) {
-        return mbb_error('adapter_conflict', '候选准备期间静态登记已变化，请重新预览。');
+        return mbb_error(
+            'adapter_conflict',
+            mbb_t('Static registrations changed while preparing the candidate. Preview again.'),
+        );
     }
     return $candidate;
 }
 function mbb_candidate_current($r)
 {
     if (strlen((string) $r->get_body()) > 2000000) {
-        return mbb_error('size', '请求过大。', 413);
+        return mbb_error('size', mbb_t('The request is too large.'), 413);
     }
     $id = absint($r['post_id']);
     $p = $id ? get_post($id) : null;
     $mode = $r['mode'] ?? 'markdown';
     if (!in_array($mode, ['markdown', 'upload', 'blocks', 'restore'], true)) {
-        return mbb_error('mode', '未知编辑模式。', 422);
+        return mbb_error('mode', mbb_t('Unknown editing mode.'), 422);
     }
     if ($p && (!is_string($r['expected']) || !hash_equals(mbb_token($p), $r['expected']))) {
-        return mbb_error('conflict', '文章已有新修改，请重新载入后合并。');
+        return mbb_error(
+            'conflict',
+            mbb_t('The article has newer changes. Reload and merge them.'),
+        );
     }
     if ($mode === 'restore') {
         if ($r->has_param('resource_import') || $r->has_param('resource_receipt')) {
-            return mbb_error('resource_mode', '历史恢复不能导入新的 ZIP 资源。', 422);
+            return mbb_error(
+                'resource_mode',
+                mbb_t('Revision restoration cannot import new ZIP resources.'),
+                422,
+            );
         }
         $revision = mbb_revision_candidate($r, $p);
         return is_wp_error($revision) ? $revision : mbb_frontmatter_candidate($r, $p, $revision);
@@ -305,12 +339,14 @@ function mbb_candidate_current($r)
     if (!is_string($docId) || !preg_match('/^[A-Za-z][A-Za-z0-9_-]{2,63}$/', $docId)) {
         return mbb_error(
             'identity',
-            '文档ID需为3–64位字母、数字、下划线或连字符，以字母开头。',
+            mbb_t(
+                'The document ID must begin with a letter and contain 3–64 ASCII letters, digits, underscores, or hyphens.',
+            ),
             422,
         );
     }
     if (!$p && $mode === 'blocks') {
-        return mbb_error('origin', '新文档请先导入Markdown。', 422);
+        return mbb_error('origin', mbb_t('Import Markdown first for a new document.'), 422);
     }
     $originalBlocks = $r['new_blocks_original'];
     if (
@@ -322,19 +358,21 @@ function mbb_candidate_current($r)
     ) {
         return mbb_error(
             'recovery_shape',
-            '新原生区块候选必须以有界 Markdown 导入，且保留原区块形状。',
+            mbb_t(
+                'A new native block candidate must be imported through bounded Markdown while preserving its original block shape.',
+            ),
             422,
         );
     }
     $title = $r['title'] ?? ($p ? $p->post_title : '');
     if ($mode !== 'blocks' && (!is_string($r['source']) || strlen($r['source']) > 1500000)) {
-        return mbb_error('source', '缺少Markdown或原文过大。', 422);
+        return mbb_error('source', mbb_t('Markdown is missing or the source is too large.'), 422);
     }
     if (
         $mode === 'blocks' &&
         (!is_string($r['serialized']) || strlen($r['serialized']) > 1500000)
     ) {
-        return mbb_error('blocks', '缺少区块内容或内容过大。', 422);
+        return mbb_error('blocks', mbb_t('Block content is missing or too large.'), 422);
     }
     if ($p && $mode === 'upload') {
         $history = get_post_meta($id, '_mbb_source_history', true);
@@ -344,7 +382,12 @@ function mbb_candidate_current($r)
             in_array($hash, $history, true) &&
             $hash !== hash('sha256', $p->post_content_filtered)
         ) {
-            return mbb_error('old_upload', '上传文件是已知旧版本，不能覆盖当前编辑结果。');
+            return mbb_error(
+                'old_upload',
+                mbb_t(
+                    'The uploaded file is a known older version and cannot overwrite the current edits.',
+                ),
+            );
         }
     }
     $doc = mbb_convert([
@@ -360,7 +403,9 @@ function mbb_candidate_current($r)
     if ($r->has_param('new_blocks_original') && !hash_equals($doc['serialized'], $originalBlocks)) {
         return mbb_error(
             'recovery_shape',
-            '原生区块无法精确往返为 Markdown，候选未创建；请下载保留或调整区块。',
+            mbb_t(
+                'Native blocks cannot round-trip exactly through Markdown. No candidate was created. Download them for safekeeping or adjust the blocks.',
+            ),
             422,
         );
     }
@@ -372,7 +417,13 @@ function mbb_candidate_current($r)
             'documentId' => mbb_id($p->ID),
         ]);
         if (is_wp_error($trusted)) {
-            return mbb_error('component_base', '原组件配对已损坏，不能据此保留未登记配置。', 422);
+            return mbb_error(
+                'component_base',
+                mbb_t(
+                    'The original component pair is damaged and cannot authorize preservation of unregistered configuration.',
+                ),
+                422,
+            );
         }
     }
     $admission = mbb_component_admit($doc['serialized'], $p ? $p->post_content : '');
@@ -381,7 +432,11 @@ function mbb_candidate_current($r)
     }
     // Independent server HTML policy: never silently strip content accepted by the worker.
     if (!mbb_html_allowed(parse_blocks($doc['serialized']))) {
-        return mbb_error('html_policy', '内容不符合服务器HTML白名单，未保存。', 422);
+        return mbb_error(
+            'html_policy',
+            mbb_t('The content does not satisfy the server HTML allowlist and was not saved.'),
+            422,
+        );
     }
     $candidate = mbb_frontmatter_candidate($r, $p, [
         'document' => $doc,
@@ -420,7 +475,9 @@ function mbb_preview($r)
     if (!hash_equals($c['_adapter_registry_digest'], mbb_block_adapter_digest())) {
         return mbb_error(
             'adapter_conflict',
-            '预览生成期间静态登记已变化，候选未写入；请重新预览。',
+            mbb_t(
+                'Static registrations changed while rendering the preview. The candidate was not written. Preview again.',
+            ),
         );
     }
     unset($c['_adapter_registry_digest']);
@@ -550,7 +607,11 @@ function mbb_save($r, $cli_source_path = null)
 {
     global $wpdb;
     if (!empty($GLOBALS['mbb_native_pair'])) {
-        return mbb_error('nested_save', '原生保存事务中不能再次启动配对保存。', 409);
+        return mbb_error(
+            'nested_save',
+            mbb_t('A paired save cannot start inside a native save transaction.'),
+            409,
+        );
     }
     $id = absint($r['post_id']);
     $cli_source_sync =
@@ -563,13 +624,15 @@ function mbb_save($r, $cli_source_path = null)
     ) {
         return mbb_error(
             'source_managed',
-            '此文章由源文件同步；请修改原文后运行同步工具，后台可查看区块与预览。',
+            mbb_t(
+                'This article is synchronized from a source file. Edit the source and run the synchronization tool; blocks and previews remain available here.',
+            ),
             409,
         );
     }
     $docId = $id ? mbb_id($id) : $r['documentId'] ?? '';
     if (!is_string($docId) || !preg_match('/^[A-Za-z][A-Za-z0-9_-]{2,63}$/', $docId)) {
-        return mbb_error('identity', '文档ID无效。', 422);
+        return mbb_error('identity', mbb_t('The document ID is invalid.'), 422);
     }
     $source_lock =
         $id &&
@@ -582,7 +645,7 @@ function mbb_save($r, $cli_source_path = null)
     }
     $lock = fopen($dir . '/' . hash('sha256', $docId) . '.lock', 'c');
     if (!$lock || !flock($lock, LOCK_EX | LOCK_NB)) {
-        return mbb_error('busy', '另一个保存正在进行，请稍后重试。');
+        return mbb_error('busy', mbb_t('Another save is in progress. Try again later.'));
     }
     $resource_context = null;
     try {
@@ -601,7 +664,10 @@ function mbb_save($r, $cli_source_path = null)
             ],
         ]);
         if (count($ids) > 1 || (!$id && $ids)) {
-            return mbb_error('duplicate', '文档ID已存在，请从已有文档继续编辑。');
+            return mbb_error(
+                'duplicate',
+                mbb_t('The document ID already exists. Continue editing the existing document.'),
+            );
         }
         $c = mbb_candidate($r);
         if (is_wp_error($c)) {
@@ -629,7 +695,12 @@ function mbb_save($r, $cli_source_path = null)
             $cli_source_sync &&
             (!$p || !mbb_managed($id) || get_post_meta($id, '_mbb_source_managed', true) !== 'file')
         ) {
-            return mbb_error('conflict', '文章或文件来源身份已变化，请重新核对后再同步。');
+            return mbb_error(
+                'conflict',
+                mbb_t(
+                    'The article or source binding identity changed. Verify it again before synchronization.',
+                ),
+            );
         }
         $source_backup = null;
         $source_target = null;
@@ -638,25 +709,34 @@ function mbb_save($r, $cli_source_path = null)
         } catch (Throwable $error) {
             return mbb_error(
                 'save_state_unavailable',
-                '无法核对数据库保存基线；未写入文章或源文件。',
+                mbb_t(
+                    'The database save baseline could not be verified. Neither the article nor the source file was written.',
+                ),
                 500,
             );
         }
         if ($p && get_post_meta($id, '_mbb_source_managed', true) === 'file') {
             if ($cli_source_sync) {
                 if (!hash_equals((string) ($r['expected'] ?? ''), mbb_token($p))) {
-                    return mbb_error('conflict', '文章已有新修改，请重新载入后合并。');
+                    return mbb_error(
+                        'conflict',
+                        mbb_t('The article has newer changes. Reload and merge them.'),
+                    );
                 }
                 if (!mbb_cli_source_matches($id, $cli_source_path, $doc['source'])) {
                     return mbb_error(
                         'source_conflict',
-                        '源文件绑定或内容已变化，请重新读取后再同步。',
+                        mbb_t(
+                            'The source binding or content changed. Read it again before synchronization.',
+                        ),
                     );
                 }
             } elseif (empty($GLOBALS['mbb_source_web_write'])) {
                 return mbb_error(
                     'source_managed',
-                    '此文章由源文件同步；请使用受控的源文件写回流程。',
+                    mbb_t(
+                        'This article is synchronized from a source file. Use the controlled source write workflow.',
+                    ),
                 );
             } else {
                 $source_target = mbb_source_target($p);
@@ -673,7 +753,9 @@ function mbb_save($r, $cli_source_path = null)
                 ) {
                     return mbb_error(
                         'source_conflict',
-                        '源文件或文章内容已变化，请重新读取后再确认。',
+                        mbb_t(
+                            'The source file or article content changed. Read it again before confirming.',
+                        ),
                     );
                 }
                 $source_backup = $current_source['contents'];
@@ -704,7 +786,7 @@ function mbb_save($r, $cli_source_path = null)
             }
             $transaction_attempted = true;
             if ($wpdb->query('START TRANSACTION') === false) {
-                throw new RuntimeException('无法开启保存事务');
+                throw new RuntimeException(mbb_t('The save transaction could not be started'));
             }
             $transaction_started = true;
             if ($resource_context) {
@@ -725,7 +807,9 @@ function mbb_save($r, $cli_source_path = null)
                 if (array_key_exists($key, $c['frontmatter_applied'])) {
                     $old = $p ? wp_get_object_terms($p->ID, $taxonomy, ['fields' => 'ids']) : [];
                     if (is_wp_error($old)) {
-                        throw new RuntimeException('无法读取原分类或标签');
+                        throw new RuntimeException(
+                            mbb_t('The original categories or tags could not be read'),
+                        );
                     }
                     $term_cache[$taxonomy] = array_values(
                         array_unique(
@@ -767,14 +851,14 @@ function mbb_save($r, $cli_source_path = null)
                 ? wp_update_post(wp_slash($data), true)
                 : wp_insert_post(wp_slash($data), true);
             if (is_wp_error($id)) {
-                throw new RuntimeException('WordPress保存失败');
+                throw new RuntimeException(mbb_t('WordPress save failed'));
             }
             if ($c['featured_media']) {
                 if (
                     (int) get_post_thumbnail_id($id) !== $c['featured_media'] &&
                     !set_post_thumbnail($id, $c['featured_media'])
                 ) {
-                    throw new RuntimeException('特色图片保存失败');
+                    throw new RuntimeException(mbb_t('Featured image save failed'));
                 }
             } else {
                 delete_post_thumbnail($id);
@@ -788,7 +872,7 @@ function mbb_save($r, $cli_source_path = null)
                         false,
                     );
                     if (is_wp_error($set)) {
-                        throw new RuntimeException('分类或标签保存失败');
+                        throw new RuntimeException(mbb_t('Category or tag save failed'));
                     }
                 }
             }
@@ -818,7 +902,7 @@ function mbb_save($r, $cli_source_path = null)
                 (int) get_post_thumbnail_id($id) !== $c['featured_media'] ||
                 $wpdb->last_error
             ) {
-                throw new RuntimeException('保存后内容核验失败');
+                throw new RuntimeException(mbb_t('Post-save content verification failed'));
             }
             $after_revision = mbb_pair_snapshot($id, $revision_floor);
             if ($resource_context) {
@@ -840,14 +924,16 @@ function mbb_save($r, $cli_source_path = null)
                     (int) $c['revision_id'],
                 )
             ) {
-                throw new RuntimeException('恢复来源记录失败');
+                throw new RuntimeException(mbb_t('Restoration provenance could not be recorded'));
             }
             if (is_wp_error(mbb_block_adapter_confirm($r, $c))) {
-                throw new RuntimeException('静态区块登记在保存期间变化');
+                throw new RuntimeException(
+                    mbb_t('Static block registrations changed during saving'),
+                );
             }
             $commit_attempted = true;
             if ($wpdb->query('COMMIT') === false) {
-                throw new RuntimeException('事务提交失败');
+                throw new RuntimeException(mbb_t('Transaction commit failed'));
             }
         } catch (Throwable $e) {
             $cached_revisions = $GLOBALS['mbb_frontmatter_revision_ids'] ?? [];
@@ -902,7 +988,9 @@ function mbb_save($r, $cli_source_path = null)
             if ($commit_attempted && !$rollback_certain) {
                 return mbb_error(
                     'commit_uncertain',
-                    '提交结果无法可靠确认；已保留当前源稿、媒体和导入记录，请重新核对文章，勿重复导入。',
+                    mbb_t(
+                        'The commit result could not be reliably confirmed. Current source, media, and import records are preserved. Verify the article before importing again.',
+                    ),
                     500,
                 );
             }
@@ -910,24 +998,46 @@ function mbb_save($r, $cli_source_path = null)
                 return mbb_error(
                     'rollback_failed',
                     $source_restored
-                        ? '数据库事务回退未成功，不能确认保存状态；请重新核对文章。'
-                        : '数据库事务和源文件回退均未成功，请核对两份内容。',
+                        ? mbb_t(
+                            'Database rollback failed; the save state is uncertain. Verify the article.',
+                        )
+                        : mbb_t(
+                            'Database and source file rollback both failed. Verify both representations.',
+                        ),
                     500,
                 );
             }
             if (!$source_restored) {
-                return mbb_error('source_restore_failed', '数据库已回滚，但源文件未能回退。', 500);
+                return mbb_error(
+                    'source_restore_failed',
+                    mbb_t(
+                        'The database was rolled back, but the source file could not be restored.',
+                    ),
+                    500,
+                );
             }
             if (!$resources_restored) {
                 return mbb_error(
                     'resource_cleanup_failed',
-                    '数据库已回退，但本次新增媒体未能全部清理，请核对导入状态。',
+                    mbb_t(
+                        'The database was rolled back, but some newly created media could not be removed. Verify the import state.',
+                    ),
                     500,
                 );
             }
             return $transaction_started
-                ? mbb_error('save_failed', '保存未完成，已回滚。', 500)
-                : mbb_error('transaction', '保存事务未开启，源文件已回退；原文未保存。', 500);
+                ? mbb_error(
+                    'save_failed',
+                    mbb_t('Saving did not complete and was rolled back.'),
+                    500,
+                )
+                : mbb_error(
+                    'transaction',
+                    mbb_t(
+                        'The save transaction did not start; the source file was restored. The source was not saved.',
+                    ),
+                    500,
+                );
         } finally {
             remove_filter('safe_style_css', 'mbb_safe_css');
             mbb_restore_source_filters($raw_source_filters);
@@ -959,7 +1069,7 @@ add_action('rest_api_init', function () {
         'permission_callback' => 'mbb_permission',
         'callback' => function ($r) {
             if (!$r['post_id']) {
-                return mbb_error('id', '缺少文章ID。', 422);
+                return mbb_error('id', mbb_t('The article ID is missing.'), 422);
             }
             return mbb_state(absint($r['post_id']));
         },
@@ -971,7 +1081,11 @@ add_action('rest_api_init', function () {
             $id = absint($r['post_id']);
             $p = get_post($id);
             if (!$p || get_post_meta($id, '_mbb_source_managed', true) !== 'file') {
-                return mbb_error('source_managed', '该文章没有可写回的文件来源。', 409);
+                return mbb_error(
+                    'source_managed',
+                    mbb_t('This article has no writable source file binding.'),
+                    409,
+                );
             }
             $target = mbb_source_target($p);
             if (is_wp_error($target)) {
@@ -1001,10 +1115,18 @@ add_action('rest_api_init', function () {
             $id = absint($r['post_id']);
             $p = get_post($id);
             if (!$p || get_post_meta($id, '_mbb_source_managed', true) !== 'file') {
-                return mbb_error('source_managed', '该文章没有可写回的文件来源。', 409);
+                return mbb_error(
+                    'source_managed',
+                    mbb_t('This article has no writable source file binding.'),
+                    409,
+                );
             }
             if (!is_string($r['source'] ?? null) || !is_string($r['source_sha256'] ?? null)) {
-                return mbb_error('source_input', '缺少源文件内容或版本指纹。', 422);
+                return mbb_error(
+                    'source_input',
+                    mbb_t('Source file content or its version fingerprint is missing.'),
+                    422,
+                );
             }
             $target = mbb_source_target($p);
             if (is_wp_error($target)) {
@@ -1027,7 +1149,10 @@ add_action('rest_api_init', function () {
                 return $current;
             }
             if (!hash_equals($r['source_sha256'], $current['sha256'])) {
-                $error = mbb_error('source_conflict', '源文件已变化，请重新读取后再确认。');
+                $error = mbb_error(
+                    'source_conflict',
+                    mbb_t('The source file changed. Read it again before confirming.'),
+                );
                 mbb_source_record_audit($id, [
                     'source_sha256_before' => $current['sha256'],
                     'source_sha256_after' => null,
@@ -1040,7 +1165,11 @@ add_action('rest_api_init', function () {
             try {
                 $result = mbb_save($r);
             } catch (Throwable $e) {
-                $result = mbb_error('source_save_failed', '源文件和配对正文均未完成保存。', 500);
+                $result = mbb_error(
+                    'source_save_failed',
+                    mbb_t('Neither the source file nor the paired article was saved.'),
+                    500,
+                );
             } finally {
                 $GLOBALS['mbb_source_web_write'] = false;
                 unset($GLOBALS['mbb_frontmatter_revision_ids']);
@@ -1113,17 +1242,19 @@ add_filter(
     2,
 );
 add_filter('_wp_post_revision_fields', function ($fields) {
-    $fields['post_content_filtered'] = 'Markdown 原文';
+    $fields['post_content_filtered'] = mbb_t('Markdown source');
     return $fields;
 });
 add_action('admin_menu', function () {
     add_management_page(
-        'Markdown 编辑桥',
-        'Markdown 编辑桥',
+        mbb_t('Markdown editing bridge'),
+        mbb_t('Markdown editing bridge'),
         'edit_posts',
         'mbb-editor',
         function () {
-            echo '<div class="wrap"><h1>Markdown 编辑桥</h1><p>上传Markdown后可双向编辑；通过差异预览保存、发布或提交审核。发布前请设置特色图片。</p><p><button class="button button-primary" id="mbb-new">上传新文档</button></p><ul>';
+            echo mbb_t(
+                '<div class="wrap"><h1>Markdown editing bridge</h1><p>Upload Markdown for editing in both representations. Preview differences before saving, publishing, or submitting for review. Set a featured image before publishing.</p><p><button class="button button-primary" id="mbb-new">Upload a new document</button></p><ul>',
+            );
             $page = max(1, absint($_GET['mbb_page'] ?? 1));
             $posts = get_posts([
                 'post_type' => 'post',
@@ -1145,23 +1276,27 @@ add_action('admin_menu', function () {
                         esc_html($p->post_title) .
                         '</a> <button class="button mbb-open" data-post="' .
                         (int) $p->ID .
-                        '">Markdown 编辑</button> <button class="button mbb-history" data-post="' .
+                        mbb_t(
+                            '">Edit Markdown</button> <button class="button mbb-history" data-post="',
+                        ) .
                         (int) $p->ID .
-                        '">历史版本 / 恢复</button> <button class="button mbb-export" data-post="' .
+                        mbb_t(
+                            '">Revisions / restore</button> <button class="button mbb-export" data-post="',
+                        ) .
                         (int) $p->ID .
-                        '">导出已保存文章</button></li>';
+                        mbb_t('">Export saved article</button></li>');
                 }
             }
-            echo '</ul><nav aria-label="文档分页">';
+            echo '</ul><nav aria-label="' . esc_attr(mbb_t('Document pagination')) . '">';
             if ($page > 1) {
                 echo '<a href="' .
                     esc_url(admin_url('tools.php?page=mbb-editor&mbb_page=' . ($page - 1))) .
-                    '">上一页</a> ';
+                    mbb_t('">Previous page</a> ');
             }
             if (count($posts) > 100) {
                 echo '<a href="' .
                     esc_url(admin_url('tools.php?page=mbb-editor&mbb_page=' . ($page + 1))) .
-                    '">下一页</a>';
+                    mbb_t('">Next page</a>');
             }
             echo '</nav></div>';
         },

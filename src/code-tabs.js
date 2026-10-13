@@ -1,9 +1,11 @@
+import { translate as T, format as F } from './i18n.js';
 // Code tabs contain inert source text only. Markdown metadata never duplicates the fence language.
+const displayLabel = (tab) => tab.title || tab.language || T('Code');
 export const tabsLabel = (tab) => tab.title || tab.language || '代码';
 export function codeTabsAttributes(attrs, source, fail) {
   const keys = source ? ['id', 'title', 'terminalNewline'] : ['id', 'title', 'language', 'code'];
   if (!Array.isArray(attrs.tabs) || attrs.tabs.length < 1 || attrs.tabs.length > 8)
-    fail('CODE_TABS_STRUCTURE', '代码组需有 1–8 个版本');
+    fail('CODE_TABS_STRUCTURE', 'A code group requires 1–8 versions');
   const ids = new Set();
   let bytes = 0;
   const tabs = attrs.tabs.map((tab) => {
@@ -14,36 +16,40 @@ export function codeTabsAttributes(attrs, source, fail) {
       Object.keys(tab).length !== keys.length ||
       Object.keys(tab).some((key) => !keys.includes(key))
     )
-      fail('CODE_TABS_ATTRIBUTES', '代码版本属性不完整或未知');
+      fail('CODE_TABS_ATTRIBUTES', 'Code version attributes are incomplete or unknown');
     if (
       typeof tab.id !== 'string' ||
       !/^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(tab.id) ||
       ids.has(tab.id)
     )
-      fail('TEACHING_ID', '代码版本 ID 非法或重复');
+      fail('TEACHING_ID', 'Code version IDs are invalid or duplicated');
     ids.add(tab.id);
     if (
       typeof tab.title !== 'string' ||
       [...tab.title].length > 200 ||
       /[\r\n\0\uD800-\uDFFF]/u.test(tab.title)
     )
-      fail('TEACHING_TITLE', '代码版本标题需为空或不超过 200 字符的单行文字');
+      fail(
+        'TEACHING_TITLE',
+        'A code version title must be empty or single-line text of at most 200 characters',
+      );
     if (source) {
       if (typeof tab.terminalNewline !== 'boolean')
-        fail('CODE_TABS_ATTRIBUTES', '末尾换行标记需为布尔值');
+        fail('CODE_TABS_ATTRIBUTES', 'The terminal newline marker must be boolean');
     } else {
       if (typeof tab.language !== 'string' || !/^[A-Za-z0-9_+-]{0,64}$/.test(tab.language))
-        fail('CODE_INFO', '代码语言需为最长 64 位安全 ASCII 标记');
+        fail('CODE_INFO', 'The code language must be a safe ASCII token of at most 64 characters');
       if (typeof tab.code !== 'string' || /[\0\uD800-\uDFFF]/u.test(tab.code))
-        fail('CODE_TABS_CODE', '代码需为有效 Unicode，不得含 NUL');
+        fail('CODE_TABS_CODE', 'Code must be valid Unicode without NUL');
       const size = new TextEncoder().encode(tab.code).length;
       bytes += size;
       if (size > 65536 || bytes > 131072)
-        fail('CODE_TABS_LIMIT', '每版最多 64 KiB，全组最多 128 KiB');
+        fail('CODE_TABS_LIMIT', 'Each version is limited to 64 KiB and the group to 128 KiB');
     }
     return Object.fromEntries(keys.map((key) => [key, tab[key]]));
   });
-  if (!ids.has(attrs.defaultTab)) fail('CODE_TABS_DEFAULT', '默认版本必须引用组内 ID');
+  if (!ids.has(attrs.defaultTab))
+    fail('CODE_TABS_DEFAULT', 'The default version must reference an ID in the group');
   return tabs;
 }
 export function codeTabsMarkdown(a) {
@@ -99,7 +105,7 @@ export function registerCodeTabs() {
   const freshTab = () => ({ id: freshId(), title: '', language: '', code: '' });
   wp.blocks.registerBlockType('mbb/code-tabs', {
     apiVersion: 3,
-    title: '多语言代码页签',
+    title: T('Multilingual code tabs'),
     category: 'text',
     attributes: {
       id: { type: 'string' },
@@ -162,9 +168,9 @@ export function registerCodeTabs() {
           {},
           el(
             wp.components.PanelBody,
-            { title: '代码组配置', initialOpen: true },
+            { title: T('Code group settings'), initialOpen: true },
             el(wp.components.TextControl, {
-              label: '代码组稳定 ID',
+              label: T('Stable code group ID'),
               value: a.id || '',
               onChange: (id) => setAttributes({ id }),
             }),
@@ -172,22 +178,22 @@ export function registerCodeTabs() {
               ? el(
                   'div',
                   {},
-                  field('版本稳定 ID', 'id'),
-                  field('版本标题（可留空）', 'title'),
-                  field('版本语言', 'language'),
+                  field(T('Stable version ID'), 'id'),
+                  field(T('Version title (optional)'), 'title'),
+                  field(T('Version language'), 'language'),
                 )
               : null,
             el(wp.components.SelectControl, {
-              label: '默认代码版本',
+              label: T('Default code version'),
               value: a.defaultTab || '',
-              options: tabs.map((t) => ({ value: t.id, label: tabsLabel(t) })),
+              options: tabs.map((t) => ({ value: t.id, label: displayLabel(t) })),
               onChange: (defaultTab) => setAttributes({ defaultTab }),
             }),
           ),
         ),
         el(
           'div',
-          { role: 'tablist', 'aria-label': '代码版本' },
+          { role: 'tablist', 'aria-label': T('Code versions') },
           ...tabs.map((t, i) =>
             el(
               'button',
@@ -213,7 +219,7 @@ export function registerCodeTabs() {
                   event.currentTarget.parentElement.children[next].focus();
                 },
               },
-              tabsLabel(t),
+              displayLabel(t),
             ),
           ),
         ),
@@ -226,11 +232,15 @@ export function registerCodeTabs() {
                 'aria-labelledby': 'mbb-editor-tab-' + clientId + '-' + index,
               },
               el(wp.components.TextareaControl, {
-                label: '当前版本原代码',
+                label: T('Original code for the current version'),
                 value: tab.code,
                 help: /\r/.test(tab.code)
-                  ? '原代码含 CR/CRLF；显示框可能以 LF 显示。切换与重开保留原字节；实际输入会按浏览器文本框换行保存。'
-                  : '保留所有空白；允许空代码或没有末尾换行。',
+                  ? T(
+                      "The original code contains CR/CRLF and may display as LF here. Switching and reopening preserve original bytes; actual input uses the browser textarea's newlines.",
+                    )
+                  : T(
+                      'All whitespace is preserved. Empty code and code without a trailing newline are allowed.',
+                    ),
                 onChange: (code) => update({ code }),
               }),
             )
@@ -238,10 +248,14 @@ export function registerCodeTabs() {
         el(
           'p',
           {},
-          `${tabs.length} / 8 个版本；${tabs.reduce((n, t) => n + new TextEncoder().encode(t.code).length, 0)} / 131072 字节`,
+          F(
+            T('%1$s / 8 versions; %2$s / 131072 bytes'),
+            tabs.length,
+            tabs.reduce((n, t) => n + new TextEncoder().encode(t.code).length, 0),
+          ),
         ),
         action(
-          '添加代码版本',
+          T('Add code version'),
           () => {
             const t = freshTab();
             setAttributes({ tabs: [...tabs, t] });
@@ -250,7 +264,7 @@ export function registerCodeTabs() {
           tabs.length >= 8,
         ),
         action(
-          '删除当前版本',
+          T('Delete current version'),
           () => {
             const remaining = tabs.filter((_, i) => i !== index);
             setAttributes({ tabs: remaining });
@@ -259,17 +273,25 @@ export function registerCodeTabs() {
           tabs.length <= 1 || a.defaultTab === tab?.id,
         ),
         a.defaultTab === tab?.id && tabs.length > 1
-          ? el('p', {}, '删除默认版本前，请先明确选择其他默认版本。')
+          ? el(
+              'p',
+              {},
+              T(
+                'Choose a different default version explicitly before deleting the default version.',
+              ),
+            )
           : null,
-        tabs.length === 1 ? action('删除整个代码组', () => actions.removeBlock(clientId)) : null,
-        action('上移当前版本', () => move(-1), index === 0),
-        action('下移当前版本', () => move(1), index === tabs.length - 1),
+        tabs.length === 1
+          ? action(T('Delete entire code group'), () => actions.removeBlock(clientId))
+          : null,
+        action(T('Move current version up'), () => move(-1), index === 0),
+        action(T('Move current version down'), () => move(1), index === tabs.length - 1),
         action(
-          '将当前版本设为默认',
+          T('Set current version as default'),
           () => setAttributes({ defaultTab: tab.id }),
           !tab || a.defaultTab === tab.id,
         ),
-        action('复制代码组', () => {
+        action(T('Duplicate code group'), () => {
           const copies = tabs.map((t) => ({ ...t, id: freshId() }));
           const block = wp.blocks.createBlock('mbb/code-tabs', {
             version: 1,

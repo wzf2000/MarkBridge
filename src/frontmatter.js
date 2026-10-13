@@ -1,3 +1,4 @@
+import { translate as T, format as F, translateError as E } from './i18n.js';
 import { teachingJSON } from './teaching.js';
 export const frontmatterFields = [
   'title',
@@ -14,31 +15,34 @@ export function parseFrontmatter(source, fail) {
   const lines = source.match(/[^\n]*(?:\n|$)/g) || [];
   if (!/^---\r?\n$/.test(lines[0] || '') || !/^markbridge:/.test(lines[1] || '')) return null;
   if (!/^markbridge: 1\r?\n$/.test(lines[1]))
-    fail('FRONTMATTER_VERSION', 'FrontMatter 版本必须为 1');
+    fail('FRONTMATTER_VERSION', 'The FrontMatter version must be 1');
   let raw = lines[0] + lines[1];
   const proposal = {};
   let closed = false;
   for (let i = 2; i < lines.length; i++) {
     const line = lines[i].replace(/\r?\n$/, '');
     raw += lines[i];
-    if (bytes(raw) > 16384) fail('FRONTMATTER_LIMIT', 'FrontMatter 头最多 16 KiB');
+    if (bytes(raw) > 16384) fail('FRONTMATTER_LIMIT', 'A FrontMatter header is limited to 16 KiB');
     if (line === '---') {
       closed = true;
       break;
     }
     const match = /^([a-z_]+): ([^\r\n]+)$/.exec(line);
     if (!match || !frontmatterFields.includes(match[1]) || Object.hasOwn(proposal, match[1]))
-      fail('FRONTMATTER_FIELD', 'FrontMatter 字段未知、重复或不是单行 JSON');
+      fail(
+        'FRONTMATTER_FIELD',
+        'FrontMatter fields are unknown, duplicated, or not single-line JSON',
+      );
     const key = match[1];
     let value;
     try {
       value = JSON.parse(match[2]);
     } catch {
-      fail('FRONTMATTER_VALUE', 'FrontMatter 值必须是合法 JSON');
+      fail('FRONTMATTER_VALUE', 'FrontMatter values must be valid JSON');
     }
     if (key === 'featured_media') {
       if (!/^(?:0|[1-9]\d*)$/.test(match[2]) || !Number.isSafeInteger(value))
-        fail('FRONTMATTER_VALUE', '特色图片需为非负安全整数');
+        fail('FRONTMATTER_VALUE', 'The featured image must be a nonnegative safe integer');
     } else if (key === 'categories' || key === 'tags') {
       if (
         !Array.isArray(value) ||
@@ -46,31 +50,40 @@ export function parseFrontmatter(source, fail) {
         new Set(value).size !== value.length ||
         value.some((slug) => typeof slug !== 'string' || !/^[a-z0-9%_-]{1,200}$/.test(slug))
       )
-        fail('FRONTMATTER_VALUE', '分类和标签需为最多 100 个不重复的现有 term slug');
+        fail(
+          'FRONTMATTER_VALUE',
+          'Categories and tags require at most 100 unique existing term slugs',
+        );
     } else {
       if (typeof value !== 'string' || /[\uD800-\uDFFF\x00]/u.test(value))
-        fail('FRONTMATTER_VALUE', 'FrontMatter 字符串需为有效 Unicode');
+        fail('FRONTMATTER_VALUE', 'FrontMatter strings must be valid Unicode');
       if (
         key === 'title' &&
         (blank(value) || [...value].length > 200 || /[\x00-\x1f\x7f]/.test(value))
       )
-        fail('FRONTMATTER_VALUE', '标题需为 1–200 字符的单行文字');
+        fail('FRONTMATTER_VALUE', 'The title must be single-line text of 1–200 characters');
       if (
         key === 'excerpt' &&
         (bytes(value) > 8192 || /[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/.test(value))
       )
-        fail('FRONTMATTER_VALUE', '摘要最多 8 KiB，不能含非法控制字符');
+        fail(
+          'FRONTMATTER_VALUE',
+          'The excerpt is limited to 8 KiB and must not contain invalid control characters',
+        );
       if (
         key === 'slug' &&
         ([...value].length > 200 || /[\p{White_Space}\uFEFF<>\\/\x00-\x1f\x7f]/u.test(value))
       )
-        fail('FRONTMATTER_VALUE', 'slug 需为最多 200 字符的单行路径名称');
+        fail(
+          'FRONTMATTER_VALUE',
+          'The slug must be a single-line path name of at most 200 characters',
+        );
       if (key === 'status' && !['draft', 'pending', 'publish', 'private'].includes(value))
-        fail('FRONTMATTER_VALUE', 'FrontMatter 状态非法');
+        fail('FRONTMATTER_VALUE', 'Invalid FrontMatter status');
     }
     proposal[key] = value;
   }
-  if (!closed) fail('FRONTMATTER_SYNTAX', 'FrontMatter 缺少结束分隔线');
+  if (!closed) fail('FRONTMATTER_SYNTAX', 'The FrontMatter closing delimiter is missing');
   return { raw, body: source.slice(raw.length), proposal };
 }
 export function validateFrontmatter(blocks, fail) {
@@ -80,7 +93,7 @@ export function validateFrontmatter(blocks, fail) {
       if (block.name === 'mbb/frontmatter') {
         const attrs = block.attributes;
         if (block.isValid === false || !top || index !== 0 || found || block.innerBlocks?.length)
-          fail('FRONTMATTER_STRUCTURE', 'FrontMatter 只能是唯一的第一个顶层区块');
+          fail('FRONTMATTER_STRUCTURE', 'FrontMatter must be the unique first top-level block');
         found = true;
         if (
           !attrs ||
@@ -88,10 +101,13 @@ export function validateFrontmatter(blocks, fail) {
           attrs.version !== 1 ||
           typeof attrs.raw !== 'string'
         )
-          fail('FRONTMATTER_ATTRIBUTES', 'FrontMatter 属性只能包含 version:1 和 raw');
+          fail(
+            'FRONTMATTER_ATTRIBUTES',
+            'FrontMatter attributes may only contain version:1 and raw',
+          );
         const parsed = parseFrontmatter(attrs.raw, fail);
         if (!parsed || parsed.body)
-          fail('FRONTMATTER_ATTRIBUTES', 'raw 必须只包含完整 FrontMatter 头');
+          fail('FRONTMATTER_ATTRIBUTES', 'raw must contain only the complete FrontMatter header');
       }
       walk(block.innerBlocks || []);
     });
@@ -110,7 +126,7 @@ export function registerFrontmatter() {
   if (wp.blocks.getBlockType('mbb/frontmatter')) return;
   wp.blocks.registerBlockType('mbb/frontmatter', {
     apiVersion: 3,
-    title: '文档元数据提案',
+    title: T('Document metadata proposal'),
     category: 'text',
     attributes: {
       version: { type: 'number' },
@@ -131,7 +147,7 @@ export function registerFrontmatter() {
           },
         );
       } catch (e) {
-        error = e.message;
+        error = E(e);
       }
       return wp.element.createElement(
         'div',
@@ -139,10 +155,12 @@ export function registerFrontmatter() {
         wp.element.createElement(
           'p',
           {},
-          '元数据提案：修改此头不会自动更改文章设置。请在编辑桥中逐项选择、重新预览并确认。',
+          T(
+            'Metadata proposal: editing this header does not automatically change article settings. Select fields in the editing bridge, preview again, and confirm.',
+          ),
         ),
         wp.element.createElement(wp.components.TextareaControl, {
-          label: 'FrontMatter 原始头',
+          label: T('Raw FrontMatter header'),
           value: attributes.raw || '',
           onChange: (raw) => setAttributes({ raw }),
         }),

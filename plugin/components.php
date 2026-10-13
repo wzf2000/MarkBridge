@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/includes/i18n.php';
 /** Trusted, local provider registration. Conversion remains provider-independent. */
 function mbb_component_registry(): array
 {
@@ -304,6 +305,10 @@ function markbridge_register_teaching_component(string $id, array $provider): bo
         return mbb_component_reject($id, 'invalid-registration');
     }
 }
+function markbridge_teaching_supports_ui_locale(): bool
+{
+    return true;
+}
 function mbb_component_register_checked(string $id, array $provider): bool
 {
     $registry = mbb_component_registry();
@@ -322,7 +327,9 @@ function mbb_component_register_checked(string $id, array $provider): bool
     ];
     if (
         count($registry) >= 32 ||
-        array_diff(array_keys($provider), $fields) ||
+        array_diff(array_keys($provider), [...$fields, 'supportsUiLocale']) ||
+        (array_key_exists('supportsUiLocale', $provider) &&
+            !is_bool($provider['supportsUiLocale'])) ||
         array_diff($fields, array_keys($provider)) ||
         !preg_match('/^[a-z][a-z0-9-]{0,63}$/D', $id) ||
         !is_string($provider['version']) ||
@@ -459,12 +466,18 @@ function mbb_component_admit(string $serialized, string $base)
         if (!$p || $p['status'] !== 'available' || $p['version'] !== $a->componentVersion) {
             return mbb_error(
                 'component_unavailable',
-                '组件缺失或版本不兼容；保留原配置或启用相应扩展后修改。',
+                mbb_t(
+                    'The component is missing or incompatible. Preserve its configuration or enable the matching extension before editing.',
+                ),
                 422,
             );
         }
         if (!mbb_component_schema($a->params, $p['schema'])) {
-            return mbb_error('component_params', '组件参数不符合已登记的严格 schema。', 422);
+            return mbb_error(
+                'component_params',
+                mbb_t('Component parameters do not satisfy the registered strict schema.'),
+                422,
+            );
         }
     }
     return true;
@@ -482,6 +495,7 @@ function mbb_component_public(array $p): array
             'protocolVersion',
             'minMarkBridge',
             'budgets',
+            'supportsUiLocale',
         ]),
     ) + [
         'resource' => ['url' => $p['resource']['url'], 'sha256' => $p['resource']['sha256']],

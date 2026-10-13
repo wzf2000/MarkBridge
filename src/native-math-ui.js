@@ -1,3 +1,4 @@
+import { translate as T, format as F } from './i18n.js';
 import {
   inspectNativeMath,
   verifyNativeMathML,
@@ -33,7 +34,7 @@ export function registerNativeMathConversion() {
       const tex = block.attributes.latex;
       const problem =
         block.innerBlocks.length > 0
-          ? '原生公式含嵌套区块，无法无损转换。'
+          ? T('The native formula contains nested blocks and cannot be converted without loss.')
           : inspectNativeMath(
               {
                 tex,
@@ -68,7 +69,9 @@ export function registerNativeMathConversion() {
         JSON.stringify([current.attributes, current.innerBlocks]) !== signature ||
         registry.select('core/block-editor').getSelectedBlockClientId() !== props.clientId
       )
-        return setError('原生公式在验证期间已变化，请重新选择后转换。');
+        return setError(
+          T('The native formula changed during verification. Select it again before converting.'),
+        );
       registry
         .dispatch('core/block-editor')
         .replaceBlock(props.clientId, wp.blocks.createBlock('mbb/math', { tex }));
@@ -89,7 +92,7 @@ export function registerNativeMathConversion() {
                 'aria-busy': busy,
                 className: 'mbb-native-math-convert',
               },
-              busy ? '正在核对公式…' : '转换为行间公式（MathJax）',
+              busy ? T('Verifying the formula…') : T('Convert to display formula (MathJax)'),
             ),
           )
         : null,
@@ -102,10 +105,10 @@ export function registerNativeMathConversion() {
               wp.components.ToolbarGroup,
               {},
               el(wp.components.ToolbarButton, {
-                label: '转换为行间公式（MathJax）',
+                label: T('Convert to display formula (MathJax)'),
                 onClick: convert,
                 disabled: busy,
-                children: '转换为行间公式',
+                children: T('Convert to display formula'),
               }),
             ),
           )

@@ -39,6 +39,7 @@ use League\CommonMark\Node\Node;
 use League\CommonMark\Parser\MarkdownParser;
 
 require_once __DIR__ . '/../autoload.php';
+require_once __DIR__ . '/Diagnostics.php';
 require_once __DIR__ . '/MathExtension.php';
 require_once __DIR__ . '/Footnotes.php';
 require_once __DIR__ . '/DisplayBoundaries.php';
@@ -51,12 +52,14 @@ require_once __DIR__ . '/PortableImages.php';
 
 final class ConversionError extends \RuntimeException
 {
+    public readonly array $translation;
     public function __construct(
         public readonly string $errorCode,
         string $message,
         public string $location = '',
     ) {
         parent::__construct($message);
+        $this->translation = Diagnostics::describe($message);
     }
 }
 
@@ -938,7 +941,10 @@ final class Converter
         }
         if (($descriptor = BlockAdapters::descriptor($name, true)) !== null) {
             if ($children) {
-                throw new ConversionError('ADAPTER_STRUCTURE', '静态适配器不能有子区块');
+                throw new ConversionError(
+                    'ADAPTER_STRUCTURE',
+                    'Static adapters must not contain child blocks',
+                );
             }
             $a = BlockAdapters::leafAttrs($descriptor, $attrs);
             return '<!-- wp:' .
@@ -1797,7 +1803,10 @@ final class Converter
                         ),
                     )
             ) {
-                throw new ConversionError('ADAPTER_STRUCTURE', '静态适配器 HTML 与登记模板不一致');
+                throw new ConversionError(
+                    'ADAPTER_STRUCTURE',
+                    'Static adapter HTML does not match the registered template',
+                );
             }
             return Teaching::markdown($block, '');
         }

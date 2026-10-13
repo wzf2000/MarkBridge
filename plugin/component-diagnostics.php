@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/includes/i18n.php';
 // Administrator-only, read-only extension status. Never expose local resource paths.
 function mbb_component_diagnostics(): array
 {
@@ -31,7 +32,9 @@ function mbb_component_diagnostics_page(): void
         return;
     }
     $report = mbb_component_diagnostics();
-    echo '<div class="wrap"><h1>MarkBridge 教学扩展</h1><p>只读诊断：固定本地资源与公开纯数据参数。执行并发上限 2，预览上限 4；参数上限 16 KiB。停用扩展后静态正文与原配置仍保留。</p><table class="widefat striped"><thead><tr><th>组件</th><th>版本 / 协议 / 最低 MarkBridge</th><th>状态</th><th>预算</th></tr></thead><tbody>';
+    echo mbb_t(
+        '<div class="wrap"><h1>MarkBridge teaching extensions</h1><p>Read-only diagnostics: fixed local resources and public data-only parameters. At most 2 active executions and 4 previews; parameters are limited to 16 KiB. Static content and configuration are preserved when an extension is disabled.</p><table class="widefat striped"><thead><tr><th>Component</th><th>Version / protocol / minimum MarkBridge</th><th>Status</th><th>Budgets</th></tr></thead><tbody>',
+    );
     foreach ($report['providers'] as $p) {
         echo '<tr><td>' .
             esc_html($p['id'] . ' · ' . $p['title']) .
@@ -43,7 +46,7 @@ function mbb_component_diagnostics_page(): void
             esc_html(mbb_component_json($p['budgets'])) .
             '</td></tr>';
     }
-    echo '</tbody></table><h2>登记拒绝</h2><ul>';
+    echo mbb_t('</tbody></table><h2>Rejected registrations</h2><ul>');
     foreach ($report['rejections'] as $r) {
         echo '<li>' . esc_html($r['id'] . ': ' . $r['reason']) . '</li>';
     }
@@ -51,8 +54,8 @@ function mbb_component_diagnostics_page(): void
 }
 add_action('admin_menu', static function () {
     add_management_page(
-        'MarkBridge 教学扩展',
-        'MarkBridge 教学扩展',
+        mbb_t('MarkBridge teaching extensions'),
+        mbb_t('MarkBridge teaching extensions'),
         'manage_options',
         'markbridge-teaching',
         'mbb_component_diagnostics_page',

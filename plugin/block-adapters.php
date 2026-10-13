@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/includes/i18n.php';
 // Trusted PHP registrations describe static content only. Article/REST data cannot register adapters.
 require_once __DIR__ . '/includes/php-converter/Converter.php';
 function mbb_block_adapters(): array
@@ -130,7 +131,9 @@ function mbb_block_adapter_confirm($request, array $candidate)
     ) {
         return mbb_error(
             'adapter_conflict',
-            '静态区块登记已变化或尚未确认，请保留候选并重新预览。',
+            mbb_t(
+                'Static block registrations changed or were not confirmed. Keep the candidate and preview again.',
+            ),
         );
     }
     return true;
@@ -164,8 +167,9 @@ add_filter(
                 return $html;
             }
         }
-        return '<p class="mbb-adapter-unavailable" data-mbb-generated="" role="status">静态区块适配包或版本不可用；已保存内容与配置保留，转换和配对恢复暂不可用。</p>' .
-            $html;
+        return mbb_t(
+            '<p class="mbb-adapter-unavailable" data-mbb-generated="" role="status">The static block adapter package or version is unavailable. Saved content and configuration are preserved; conversion and paired restoration are unavailable.</p>',
+        ) . $html;
     },
     20,
     2,

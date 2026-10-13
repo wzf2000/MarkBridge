@@ -1,4 +1,15 @@
 (() => {
+  const E = (error) => globalThis.MBBI18n?.error(error) ?? error.message;
+  const T = (message) => globalThis.MBBI18n?.t(message) ?? message;
+  const F = (message, ...values) => {
+    let next = 0;
+    return String(message).replace(/%%|%(?:(\d+)\$)?([sd])/g, (token, index, kind) => {
+      if (token === '%%') return '%';
+      const value = values[index ? Number(index) - 1 : next++];
+      return kind === 'd' ? String(Number(value)) : String(value ?? '');
+    });
+  };
+
   const cfg = window.MBB_EDITOR;
   let dialog,
     list,
@@ -24,7 +35,7 @@
       ...(data ? { body: JSON.stringify(data) } : {}),
     });
     const j = await r.json();
-    if (!r.ok) throw Error(j.message || '请求失败');
+    if (!r.ok) throw Error(j.message || T('Request failed'));
     return j;
   }
   const message = (text, error = false) => {
@@ -46,40 +57,54 @@
     return cfg.postId && wp.data.select('core/editor')?.isEditedPostDirty();
   }
   function build() {
-    dialog = el('dialog', { id: 'mbb-revisions-dialog', 'aria-label': '恢复历史版本' });
+    dialog = el('dialog', { id: 'mbb-revisions-dialog', 'aria-label': T('Restore revision') });
     dialog.addEventListener('cancel', (e) => {
       if (busy) e.preventDefault();
     });
     const header = el('div', { class: 'mbb-dialog-header' }),
-      close = el('button', { type: 'button', id: 'mbb-revision-close' }, '关闭，不恢复');
+      close = el(
+        'button',
+        { type: 'button', id: 'mbb-revision-close' },
+        T('Close without restoring'),
+      );
     close.onclick = () => dialog.close();
-    header.append(el('h2', {}, '恢复历史版本'), close);
+    header.append(el('h2', {}, T('Restore revision')), close);
     dialog.append(header);
     dialog.append(
       el(
         'p',
         {},
-        '恢复所选版本的标题、Markdown 和区块；当前已保存版本会保留在历史记录中。文章 ID、作者和可见性保持不变。',
+        T(
+          "Restore the selected revision's title, Markdown, and blocks. The current saved version is preserved in history. Article ID, author, and visibility remain unchanged.",
+        ),
       ),
     );
-    const label = el('label', {}, '选择历史版本（最近 100 条）');
+    const label = el('label', {}, T('Choose a revision (latest 100)'));
     list = el('select', { id: 'mbb-revision-list' });
     label.append(list);
     dialog.append(label);
     list.onchange = () => {
       invalidate();
-      message('请选择查看差异，校验通过后才能恢复。');
+      message(T('View differences first. Restoration requires successful verification.'));
     };
     const actions = el('div', { class: 'mbb-actions' });
-    review = el('button', { type: 'button', id: 'mbb-revision-review' }, '查看恢复差异与预览');
-    confirm = el('button', { type: 'button', id: 'mbb-revision-confirm' }, '确认恢复两种格式');
+    review = el(
+      'button',
+      { type: 'button', id: 'mbb-revision-review' },
+      T('View restoration differences and preview'),
+    );
+    confirm = el(
+      'button',
+      { type: 'button', id: 'mbb-revision-confirm' },
+      T('Confirm restoration of both representations'),
+    );
     review.onclick = compare;
     confirm.onclick = restore;
     actions.append(review, confirm);
     dialog.append(actions);
     status = el('p', { role: 'status' });
-    diff = el('section', { 'aria-label': '恢复差异' });
-    preview = el('iframe', { title: '历史版本内容预览', sandbox: '' });
+    diff = el('section', { 'aria-label': T('Restoration differences') });
+    preview = el('iframe', { title: T('Revision content preview'), sandbox: '' });
     dialog.append(status, diff, preview);
     document.body.append(dialog);
   }
@@ -93,23 +118,32 @@
     controls();
     diff.replaceChildren();
     preview.srcdoc = '';
-    message('正在读取历史版本……');
+    message(T('Reading revisions…'));
     try {
-      if (dirty()) throw Error('区块编辑器有未保存修改，请先用编辑桥保存，再恢复历史版本。');
+      if (dirty())
+        throw Error(
+          T(
+            'The block editor has unsaved changes. Save through the bridge before restoring a revision.',
+          ),
+        );
       base = id === cfg.postId ? structuredClone(cfg.state) : await api('document?post_id=' + id);
       rows = (await api('revisions?post_id=' + id)).revisions;
-      list.append(el('option', { value: '' }, '请选择历史版本'));
+      list.append(el('option', { value: '' }, T('Choose a revision')));
       for (const r of rows)
         list.append(
           el(
             'option',
             { value: r.id },
-            `${r.date} · #${r.id} · ${r.title}${r.restored_from ? ' · 恢复自 #' + r.restored_from : ''}${r.paired ? '' : ' · 旧记录待校验'}`,
+            `${r.date} · #${r.id} · ${r.title}${r.restored_from ? T(' · Restored from #') + r.restored_from : ''}${r.paired ? '' : T(' · Older record awaiting verification')}`,
           ),
         );
-      message(rows.length ? '选择版本后查看差异；此时尚未恢复。' : '没有可选择的历史版本。');
+      message(
+        rows.length
+          ? T('Choose a revision and view its differences. Nothing has been restored yet.')
+          : T('No selectable revision exists.'),
+      );
     } catch (e) {
-      message(e.message, true);
+      message(E(e), true);
     } finally {
       busy = false;
       controls();
@@ -120,9 +154,9 @@
     candidate = null;
     busy = true;
     controls();
-    message('正在校验历史版本的两种格式……');
+    message(T('Validating both representations of the revision…'));
     try {
-      if (dirty()) throw Error('有未保存修改，请先保存后再恢复。');
+      if (dirty()) throw Error(T('There are unsaved changes. Save before restoring.'));
       const v = rows.find((r) => String(r.id) === list.value);
       const payload = {
         post_id: base.post_id,
@@ -135,7 +169,7 @@
       payload.adapter_digest = result.adapter_digest;
       candidate = payload;
       diff.replaceChildren();
-      diff.append(el('p', {}, `标题：${result.before_title} → ${result.title}`));
+      diff.append(el('p', {}, F(T('Title: %1$s → %2$s'), result.before_title, result.title)));
       const a = result.before.split('\n'),
         b = result.document.source.split('\n');
       let start = 0,
@@ -151,8 +185,15 @@
           'p',
           {},
           start === a.length && start === b.length
-            ? '正文相同。'
-            : `第 ${start + 1} 行起：当前 ${ae - start} 行 → 历史 ${be - start} 行（含中间未变行）。`,
+            ? T('The body is identical.')
+            : F(
+                T(
+                  'From line %1$s: current %2$s lines → revision %3$s lines (including unchanged lines between changes).',
+                ),
+                start + 1,
+                ae - start,
+                be - start,
+              ),
         ),
       );
       const grid = el('div', { class: 'mbb-diff-grid' });
@@ -166,9 +207,9 @@
         MBB_MATH.style +
         'body{font:16px/1.7 system-ui;padding:16px;overflow-wrap:anywhere}pre{overflow:auto}table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:4px}img{max-width:100%}</style>' +
         (await MBB_MATH.preview(result.html));
-      message('两种格式校验一致。请检查差异，再确认恢复。');
+      message(T('Both representations match. Check the differences and confirm restoration.'));
     } catch (e) {
-      message(e.message, true);
+      message(E(e), true);
     } finally {
       busy = false;
       controls();
@@ -178,14 +219,14 @@
     if (busy || !candidate) return;
     busy = true;
     controls();
-    message('正在同时恢复两种格式……');
+    message(T('Restoring both representations together…'));
     try {
-      if (dirty()) throw Error('有未保存修改，请先保存后再恢复。');
+      if (dirty()) throw Error(T('There are unsaved changes. Save before restoring.'));
       const r = await api('save', candidate);
       window.location.assign(r.editor_url);
     } catch (e) {
       candidate = null;
-      message(e.message, true);
+      message(E(e), true);
     } finally {
       busy = false;
       controls();

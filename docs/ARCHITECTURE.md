@@ -170,6 +170,14 @@ PHP 的单一实现位于 `plugin/includes/php-converter/`，Worker 适配 Markd
 
 保存链、依赖隔离、干净安装、升级／回退及管理员双引擎选择已通过限定本地验收。实际环境、安装包检查与未覆盖范围见[验证说明](VALIDATION.md)，已完成的阶段记录见[归档架构计划](plans/completed/PORTABLE-CONVERTER.md)。
 
+## 界面语言（2.0 候选）
+
+英文 msgid 与 `plugin/languages/messages.json` 的中文译文共同生成 POT、PO、MO 和稳定脚本 handle 的 JSON。编辑器、管理员和 REST 可读提示采用用户语言，前台阅读控件采用站点语言；纯 PHP／Node 转换器始终返回英文诊断、原错误码与位置，在展示边界按已登记的 `message_id`／`message_args` 翻译。未知诊断、正文片段或路径不进入译文插值，使用通用失败提示；没有匹配翻译时回到英文。
+
+翻译入口验证占位符，包含 HTML 的译文必须保留原标签、属性及片段边界；输出仍按所在的文本、属性或 URL 上下文转义。`mbb-i18n` 一次加载完整脚本目录，其他 handle 的 JSON 只补目录元数据，避免重复下载；构建检查实际调用、确定性输出与目录摘要。
+
+语言不进入 Markdown、区块保存 HTML、参数、登记摘要或版本指纹。为精确兼容旧配对，既有固定默认标题、代码组保存说明、静态待应用占位及受信模板文字继续保留，不因界面语言迁移；作者可以正常编辑自己的标题。公式隔离文档仅接受闭合的英文／中文界面选择。受信教学提供者必须显式声明 `supportsUiLocale` 才收到新增的初始化语言字段；旧 v1 提供者仍收到原来的闭合消息，语言不写入组件参数或执行状态。
+
 ## 管理员显示设置
 
 `plugin/includes/admin-settings.php` 通过 WordPress Options API 保存单一 `markbridge_display_preferences` 选项。只有具备 `manage_options` 的账号通过专用 nonce 才能提交，四个字段按固定枚举／布尔值校验；未知字段、缺失字段或错误类型拒绝，读取损坏值按字段回到默认但不自动回写数据库。

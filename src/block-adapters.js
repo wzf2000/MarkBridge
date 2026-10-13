@@ -1,3 +1,4 @@
+import { translate as T, format as F, translateError as E } from './i18n.js';
 // Closed native containers and trusted declarative static leaves; never execute article code.
 const nativeNames = { details: 'core/details', buttons: 'core/buttons', button: 'core/button' };
 const bytes = (v) => new TextEncoder().encode(v).length;
@@ -14,7 +15,7 @@ const plain = (v, max, fail, nonempty = false) => {
     [...v].length > max ||
     (nonempty && !nonblank(v))
   )
-    fail('ADAPTER_ATTRIBUTES', '纯文字字段类型、Unicode 或长度非法');
+    fail('ADAPTER_ATTRIBUTES', 'Invalid plain text field type, Unicode, or length');
   return v;
 };
 const closed = (v, keys, required, fail) => {
@@ -23,7 +24,7 @@ const closed = (v, keys, required, fail) => {
     Object.keys(v).some((k) => !keys.includes(k)) ||
     required.some((k) => !Object.hasOwn(v, k))
   )
-    fail('ADAPTER_ATTRIBUTES', '适配属性缺失或包含未知字段');
+    fail('ADAPTER_ATTRIBUTES', 'Adapter attributes are missing or contain unknown fields');
 };
 export const nativeAdapterKind = (name) =>
   Object.keys(nativeNames).find((k) => nativeNames[k] === name) || null;
@@ -35,12 +36,15 @@ export function adapterURL(value, fail) {
     /[\x00-\x20\x7f<>"`]/.test(value) ||
     (/^([^:/?#]+):/.test(value) && !/^(?:https?|mailto|tel|ftp):/i.test(value))
   )
-    fail('ADAPTER_URL', '按钮链接协议或字符不安全');
+    fail('ADAPTER_URL', 'The button link has an unsafe scheme or character');
   return value;
 }
 export function adapterAnchor(value, fail) {
   if (typeof value !== 'string' || !/^(?:[A-Za-z][A-Za-z0-9_-]{0,63})?$/.test(value))
-    fail('ADAPTER_ANCHOR', '锚点需为字母开头的 1–64 位 ASCII 字母、数字、下划线或连字符');
+    fail(
+      'ADAPTER_ANCHOR',
+      'An anchor must begin with a letter and contain 1–64 ASCII letters, digits, underscores, or hyphens',
+    );
   return value;
 }
 const fragment = (html) => {
@@ -50,12 +54,13 @@ const fragment = (html) => {
 };
 export function plainSummary(html, fail) {
   plain(html, 4096, fail);
-  if (/<\/?[A-Za-z]|<!/.test(html)) fail('ADAPTER_SUMMARY', '摘要只允许单行纯文字');
+  if (/<\/?[A-Za-z]|<!/.test(html))
+    fail('ADAPTER_SUMMARY', 'A summary must be single-line plain text');
   const root = fragment(html);
   if ([...root.childNodes].some((n) => n.nodeType !== 3))
-    fail('ADAPTER_SUMMARY', '摘要只允许单行纯文字');
+    fail('ADAPTER_SUMMARY', 'A summary must be single-line plain text');
   const value = plain(root.textContent, 200, fail, true);
-  if (/[\r\n]/.test(value)) fail('ADAPTER_SUMMARY', '摘要只允许单行纯文字');
+  if (/[\r\n]/.test(value)) fail('ADAPTER_SUMMARY', 'A summary must be single-line plain text');
   return value;
 }
 export function buttonText(html, fail) {
@@ -68,12 +73,13 @@ export function buttonText(html, fail) {
       (m) => !['strong', 'em', 's', 'del', 'code'].includes(m[1].toLowerCase()),
     )
   )
-    fail('ADAPTER_INLINE', '按钮只允许受控文字格式');
-  if (bytes(html) > 4096) fail('ADAPTER_LIMIT', '按钮文字最多 4 KiB');
+    fail('ADAPTER_INLINE', 'Buttons only support controlled text formatting');
+  if (bytes(html) > 4096) fail('ADAPTER_LIMIT', 'Button text is limited to 4 KiB');
   const root = fragment(html);
   let count = 0;
   const walk = (node, depth = 1) => {
-    if (++count > 256 || depth > 16) fail('ADAPTER_LIMIT', '按钮文字最多 256 节点/16 层');
+    if (++count > 256 || depth > 16)
+      fail('ADAPTER_LIMIT', 'Button text is limited to 256 nodes and 16 levels');
     if (node.nodeType === 3) {
       plain(node.textContent, 4096, fail);
       return;
@@ -84,11 +90,14 @@ export function buttonText(html, fail) {
       node.attributes.length ||
       (node.localName === 'code' && [...node.childNodes].some((n) => n.nodeType !== 3))
     )
-      fail('ADAPTER_INLINE', '按钮仅支持纯文字与 strong/em/del/code，不支持链接、图片或交互嵌套');
+      fail(
+        'ADAPTER_INLINE',
+        'Buttons only support plain text and strong/em/del/code, without links, images, or nested interactions',
+      );
     [...node.childNodes].forEach((child) => walk(child, depth + 1));
   };
   [...root.childNodes].forEach((child) => walk(child));
-  if (!nonblank(root.textContent)) fail('ADAPTER_INLINE', '按钮文字不能为空');
+  if (!nonblank(root.textContent)) fail('ADAPTER_INLINE', 'Button text must not be empty');
   return html;
 }
 export function buttonParagraph(html, fail) {
@@ -99,7 +108,7 @@ export function buttonParagraph(html, fail) {
     root.firstChild.localName !== 'p' ||
     root.firstChild.attributes.length
   )
-    fail('ADAPTER_STRUCTURE', '链接按钮必须恰好有一个受控文字段落');
+    fail('ADAPTER_STRUCTURE', 'A link button must contain exactly one controlled text paragraph');
   return buttonText(root.firstChild.innerHTML, fail);
 }
 const nativeRichText = (value) =>
@@ -107,7 +116,7 @@ const nativeRichText = (value) =>
     ? value.toString()
     : value;
 export function nativeAttributes(kind, attrs, fail, source = false) {
-  if (!nativeAdapterKinds.has(kind)) fail('ADAPTER_KIND', '未知原生适配类型');
+  if (!nativeAdapterKinds.has(kind)) fail('ADAPTER_KIND', 'Unknown native adapter type');
   const keys = {
     details: ['summary', 'showContent', 'anchor', ...(!source ? ['name'] : [])],
     buttons: ['anchor', 'layout'],
@@ -135,13 +144,14 @@ export function nativeAttributes(kind, attrs, fail, source = false) {
     out.anchor = attrs.anchor;
   if (kind === 'details') {
     if (Object.hasOwn(attrs, 'name') && attrs.name !== '')
-      fail('ADAPTER_ATTRIBUTES', '互斥详情组尚不支持');
+      fail('ADAPTER_ATTRIBUTES', 'Exclusive details groups are not supported');
     out.summary = source
       ? plain(attrs.summary, 200, fail, true)
       : plainSummary(nativeRichText(attrs.summary), fail);
-    if (/[\r\n]/.test(out.summary)) fail('ADAPTER_SUMMARY', '摘要只允许单行纯文字');
+    if (/[\r\n]/.test(out.summary))
+      fail('ADAPTER_SUMMARY', 'A summary must be single-line plain text');
     if (Object.hasOwn(attrs, 'showContent') && typeof attrs.showContent !== 'boolean')
-      fail('ADAPTER_ATTRIBUTES', '详情展开状态需为布尔值');
+      fail('ADAPTER_ATTRIBUTES', 'The details open state must be boolean');
     out.showContent = attrs.showContent ?? false;
   } else if (kind === 'buttons') {
     if (
@@ -150,38 +160,39 @@ export function nativeAttributes(kind, attrs, fail, source = false) {
         Object.keys(attrs.layout).length !== 1 ||
         attrs.layout.type !== 'flex')
     )
-      fail('ADAPTER_ATTRIBUTES', '按钮组只支持默认 flex 布局');
+      fail('ADAPTER_ATTRIBUTES', 'Button groups only support the default flex layout');
     if (Object.hasOwn(attrs, 'layout')) out.layout = { type: 'flex' };
   } else {
     if (
       (Object.hasOwn(attrs, 'tagName') && attrs.tagName !== 'a') ||
       (Object.hasOwn(attrs, 'type') && attrs.type !== 'button')
     )
-      fail('ADAPTER_ATTRIBUTES', '仅支持链接按钮，不支持动作按钮');
+      fail('ADAPTER_ATTRIBUTES', 'Only link buttons are supported, not action buttons');
     out.url = adapterURL(attrs.url, fail);
     if (Object.hasOwn(attrs, 'title')) {
       plain(attrs.title, 200, fail);
-      if (/[\r\n]/.test(attrs.title)) fail('ADAPTER_ATTRIBUTES', '链接标题必须单行');
+      if (/[\r\n]/.test(attrs.title))
+        fail('ADAPTER_ATTRIBUTES', 'A link title must occupy a single line');
       out.title = attrs.title;
     }
     if (Object.hasOwn(attrs, 'linkTarget')) {
       if (!['', '_self', '_blank'].includes(attrs.linkTarget))
-        fail('ADAPTER_ATTRIBUTES', '链接 target 非法');
+        fail('ADAPTER_ATTRIBUTES', 'Invalid link target');
       out.linkTarget = attrs.linkTarget;
     }
     if (Object.hasOwn(attrs, 'rel')) {
-      if (typeof attrs.rel !== 'string') fail('ADAPTER_ATTRIBUTES', '链接 rel 需为文字');
+      if (typeof attrs.rel !== 'string') fail('ADAPTER_ATTRIBUTES', 'Link rel must be text');
       const tokens = attrs.rel ? attrs.rel.split(' ') : [];
       if (
         tokens.length > 5 ||
         new Set(tokens).size !== tokens.length ||
         tokens.some((v) => !['noopener', 'noreferrer', 'nofollow', 'ugc', 'sponsored'].includes(v))
       )
-        fail('ADAPTER_ATTRIBUTES', '链接 rel 必须为闭合、不重复的安全标记');
+        fail('ADAPTER_ATTRIBUTES', 'Link rel must contain unique tokens from the closed safe set');
       out.rel = tokens.join(' ');
     }
     if (out.linkTarget === '_blank' && !out.rel?.split(' ').includes('noopener'))
-      fail('ADAPTER_ATTRIBUTES', '新窗口链接必须含 noopener');
+      fail('ADAPTER_ATTRIBUTES', 'New-window links must include noopener');
     if (!source) out.text = buttonText(nativeRichText(attrs.text), fail);
   }
   return out;
@@ -201,11 +212,11 @@ export function validateAdapterDescriptors(input, fail) {
     try {
       input = JSON.parse(input);
     } catch {
-      fail('ADAPTER_REGISTRY', '适配快照 JSON 无效');
+      fail('ADAPTER_REGISTRY', 'The adapter snapshot JSON is invalid');
     }
   }
   if (!Array.isArray(input) || input.length > 16)
-    fail('ADAPTER_REGISTRY', '最多登记 16 个静态适配器');
+    fail('ADAPTER_REGISTRY', 'At most 16 static adapters may be registered');
   const names = new Set(),
     blocks = new Set();
   const result = input.map((raw) => {
@@ -228,7 +239,7 @@ export function validateAdapterDescriptors(input, fail) {
       names.has(raw.name) ||
       blocks.has(raw.blockName)
     )
-      fail('ADAPTER_REGISTRY', '登记身份/版本无效或冲突');
+      fail('ADAPTER_REGISTRY', 'Invalid or conflicting registration identity or version');
     names.add(raw.name);
     blocks.add(raw.blockName);
     if (
@@ -236,7 +247,7 @@ export function validateAdapterDescriptors(input, fail) {
       !Object.keys(raw.attributes).length ||
       Object.keys(raw.attributes).length > 16
     )
-      fail('ADAPTER_REGISTRY', '每个适配器需要 1–16 个字段');
+      fail('ADAPTER_REGISTRY', 'Each adapter requires 1–16 fields');
     const attributes = {};
     for (const key of Object.keys(raw.attributes).sort()) {
       if (
@@ -262,12 +273,12 @@ export function validateAdapterDescriptors(input, fail) {
           'allowedBlocks',
         ].includes(key)
       )
-        fail('ADAPTER_REGISTRY', '字段名称非法');
+        fail('ADAPTER_REGISTRY', 'Invalid field name');
       const v = raw.attributes[key];
       if (v?.type === 'plainText') {
         closed(v, ['type', 'maxLength'], ['type', 'maxLength'], fail);
         if (!Number.isSafeInteger(v.maxLength) || v.maxLength < 1 || v.maxLength > 4096)
-          fail('ADAPTER_REGISTRY', '文字长度预算非法');
+          fail('ADAPTER_REGISTRY', 'Invalid text length budget');
         attributes[key] = { type: v.type, maxLength: v.maxLength };
       } else if (v?.type === 'integer') {
         closed(v, ['type', 'minimum', 'maximum'], ['type', 'minimum', 'maximum'], fail);
@@ -276,7 +287,7 @@ export function validateAdapterDescriptors(input, fail) {
           !Number.isSafeInteger(v.maximum) ||
           v.minimum > v.maximum
         )
-          fail('ADAPTER_REGISTRY', '整数预算非法');
+          fail('ADAPTER_REGISTRY', 'Invalid integer budget');
         attributes[key] = {
           type: v.type,
           minimum: v.minimum === 0 ? 0 : v.minimum,
@@ -293,19 +304,19 @@ export function validateAdapterDescriptors(input, fail) {
           v.values.length > 16 ||
           new Set(v.values).size !== v.values.length
         )
-          fail('ADAPTER_REGISTRY', '枚举声明非法');
+          fail('ADAPTER_REGISTRY', 'Invalid enum declaration');
         v.values.forEach((x) => plain(x, 200, fail));
         attributes[key] = { type: v.type, values: [...v.values] };
-      } else fail('ADAPTER_REGISTRY', '未知字段类型');
+      } else fail('ADAPTER_REGISTRY', 'Unknown field type');
     }
     let count = 0;
     const template = (v, depth) => {
       if (!object(v) || ++count > 64 || depth > 8)
-        fail('ADAPTER_REGISTRY', '模板最多 64 节点/8 层');
+        fail('ADAPTER_REGISTRY', 'Templates are limited to 64 nodes and 8 levels');
       if (Object.hasOwn(v, 'field')) {
         closed(v, ['field'], ['field'], fail);
         if (typeof v.field !== 'string' || !Object.hasOwn(attributes, v.field))
-          fail('ADAPTER_REGISTRY', '模板引用未知字段');
+          fail('ADAPTER_REGISTRY', 'The template references an unknown field');
         return { field: v.field };
       }
       if (Object.hasOwn(v, 'text')) {
@@ -314,7 +325,7 @@ export function validateAdapterDescriptors(input, fail) {
       }
       closed(v, ['tag', 'class', 'children'], ['tag', 'children'], fail);
       if (!tags.includes(v.tag) || !Array.isArray(v.children))
-        fail('ADAPTER_REGISTRY', '模板只允许固定安全标签');
+        fail('ADAPTER_REGISTRY', 'Templates only allow fixed safe tags');
       const out = { tag: v.tag };
       if (Object.hasOwn(v, 'class')) {
         if (
@@ -322,7 +333,7 @@ export function validateAdapterDescriptors(input, fail) {
           v.class.length > 200 ||
           !/^[A-Za-z][A-Za-z0-9_-]*(?: [A-Za-z][A-Za-z0-9_-]*)*$/.test(v.class)
         )
-          fail('ADAPTER_REGISTRY', '模板 class 非法');
+          fail('ADAPTER_REGISTRY', 'Invalid template class');
         out.class = v.class;
       }
       out.children = v.children.map((child) => template(child, depth + 1));
@@ -333,11 +344,11 @@ export function validateAdapterDescriptors(input, fail) {
             ((v.tag !== 'div' && ['div', 'p'].includes(child.tag)) || v.tag === 'code'),
         )
       )
-        fail('ADAPTER_REGISTRY', '模板标签嵌套会改变保存结构');
+        fail('ADAPTER_REGISTRY', 'Template tag nesting would change the saved structure');
       return out;
     };
     const node = template(raw.template, 1);
-    if (!node.tag) fail('ADAPTER_REGISTRY', '模板根必须为安全标签');
+    if (!node.tag) fail('ADAPTER_REGISTRY', 'The template root must be a safe tag');
     const descriptor = {
       schema: 1,
       name: raw.name,
@@ -347,7 +358,7 @@ export function validateAdapterDescriptors(input, fail) {
       template: node,
     };
     if (bytes(JSON.stringify(descriptor)) > 16384)
-      fail('ADAPTER_REGISTRY', '单个登记描述最多 16 KiB');
+      fail('ADAPTER_REGISTRY', 'Each registration descriptor is limited to 16 KiB');
     return descriptor;
   });
   return result.sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
@@ -365,7 +376,10 @@ export function staticAdapterAttributes(descriptor, attrs, fail, source = false)
     fail,
   );
   if (!source && attrs.mbbAdapterVersion !== descriptor.version)
-    fail('ADAPTER_VERSION', '适配版本不匹配，原配置保留但不能转换新候选');
+    fail(
+      'ADAPTER_VERSION',
+      'The adapter version does not match. Original configuration is preserved but cannot convert new candidates',
+    );
   const out = {};
   if (!source) out.mbbAdapterVersion = descriptor.version;
   for (const key of keys) {
@@ -374,13 +388,14 @@ export function staticAdapterAttributes(descriptor, attrs, fail, source = false)
     if (field.type === 'plainText') out[key] = plain(v, field.maxLength, fail);
     else if (field.type === 'integer') {
       if (!Number.isSafeInteger(v) || v < field.minimum || v > field.maximum)
-        fail('ADAPTER_ATTRIBUTES', '整数超出登记预算');
+        fail('ADAPTER_ATTRIBUTES', 'The integer exceeds its registered budget');
       out[key] = v === 0 ? 0 : v;
     } else if (field.type === 'boolean') {
-      if (typeof v !== 'boolean') fail('ADAPTER_ATTRIBUTES', '布尔字段类型非法');
+      if (typeof v !== 'boolean') fail('ADAPTER_ATTRIBUTES', 'Invalid boolean field type');
       out[key] = v;
     } else {
-      if (!field.values.includes(v)) fail('ADAPTER_ATTRIBUTES', '枚举值不在登记集合中');
+      if (!field.values.includes(v))
+        fail('ADAPTER_ATTRIBUTES', 'The enum value is not in the registered set');
       out[key] = v;
     }
   }
@@ -389,7 +404,11 @@ export function staticAdapterAttributes(descriptor, attrs, fail, source = false)
 export function adapterSourceAttributes(attrs, fail) {
   closed(attrs, ['name', 'version', 'attrs'], ['name', 'version', 'attrs'], fail);
   const descriptor = registry.find((d) => d.name === attrs.name && d.version === attrs.version);
-  if (!descriptor) fail('ADAPTER_VERSION', '静态适配器缺失或版本不兼容；原配置未删除');
+  if (!descriptor)
+    fail(
+      'ADAPTER_VERSION',
+      'The static adapter is missing or incompatible. Original configuration was not removed',
+    );
   return {
     descriptor,
     attributes: {
@@ -437,7 +456,11 @@ export function registerStaticBlockAdapters(fail) {
   for (const d of registry) {
     if (ownedTypes.has(d.blockName)) continue;
     const existing = wp.blocks.getBlockType(d.blockName);
-    if (existing) fail('ADAPTER_REGISTRY', '已有同名区块不属于登记静态模板；不会覆盖原区块');
+    if (existing)
+      fail(
+        'ADAPTER_REGISTRY',
+        'An existing block with this name does not match the registered static template and will not be overwritten',
+      );
     const attributes = { mbbAdapterVersion: { type: 'string' } };
     for (const [key, v] of Object.entries(d.attributes))
       attributes[key] = {
@@ -488,8 +511,8 @@ export function registerStaticBlockAdapters(fail) {
           unlock();
           setError('');
         } catch (err) {
-          setError(err.message);
-          parameterDrafts.set(clientId, { raw, error: err.message });
+          setError(E(err));
+          parameterDrafts.set(clientId, { raw, error: E(err) });
           lock();
         }
       };
@@ -511,16 +534,24 @@ export function registerStaticBlockAdapters(fail) {
       return e(
         'div',
         wp.blockEditor.useBlockProps({ className: 'mbb-static-adapter-editor' }),
-        e('strong', null, '静态适配器 ' + d.name + ' / ' + d.version),
+        e('strong', null, T('Static adapter ') + d.name + ' / ' + d.version),
         e(wp.components.TextareaControl, {
-          label: '静态适配器参数（JSON）',
+          label: T('Static adapter parameters (JSON)'),
           value: raw,
           onChange: change,
         }),
         error ? e('p', { role: 'alert' }, error) : null,
-        e('p', null, '参数为纯数据，须明确应用或撤销；不执行代码。'),
-        e(wp.components.Button, { variant: 'secondary', onClick: initialize }, '准备初始参数'),
-        e(wp.components.Button, { variant: 'primary', onClick: apply }, '应用参数'),
+        e(
+          'p',
+          null,
+          T('Parameters are data only. Explicitly apply or discard them. No code is executed.'),
+        ),
+        e(
+          wp.components.Button,
+          { variant: 'secondary', onClick: initialize },
+          T('Prepare initial parameters'),
+        ),
+        e(wp.components.Button, { variant: 'primary', onClick: apply }, T('Apply parameters')),
         e(
           wp.components.Button,
           {
@@ -532,13 +563,13 @@ export function registerStaticBlockAdapters(fail) {
               setError('');
             },
           },
-          '撤销参数输入',
+          T('Discard parameter input'),
         ),
       );
     }
     wp.blocks.registerBlockType(d.blockName, {
       apiVersion: 3,
-      title: '静态适配器 ' + d.name,
+      title: T('Static adapter ') + d.name,
       category: 'widgets',
       attributes,
       supports: { className: false, customClassName: false, html: false, anchor: false },
@@ -567,7 +598,7 @@ export function validateAdaptersSerialized(serialized, fail, parse = JSON.parse)
     try {
       a = parse(m[2] || '{}', fail);
     } catch {
-      fail('ADAPTER_ATTRIBUTES', '区块属性 JSON 非法');
+      fail('ADAPTER_ATTRIBUTES', 'The block attribute JSON is invalid');
     }
     if (descriptor) staticAdapterAttributes(descriptor, a, fail);
     else {
@@ -587,17 +618,21 @@ export function validateAdaptersSerialized(serialized, fail, parse = JSON.parse)
         ((Object.hasOwn(a, 'showContent') && typeof a.showContent !== 'boolean') ||
           (Object.hasOwn(a, 'name') && a.name !== ''))
       )
-        fail('ADAPTER_ATTRIBUTES', '详情原始属性类型或中性值非法');
+        fail(
+          'ADAPTER_ATTRIBUTES',
+          'Raw details attributes have invalid types or non-neutral values',
+        );
       if (kind === 'buttons' && Object.hasOwn(a, 'layout')) {
         closed(a.layout, ['type'], ['type'], fail);
-        if (a.layout.type !== 'flex') fail('ADAPTER_ATTRIBUTES', '按钮组仅支持默认 flex');
+        if (a.layout.type !== 'flex')
+          fail('ADAPTER_ATTRIBUTES', 'Button groups only support the default flex layout');
       }
       if (
         kind === 'button' &&
         ((Object.hasOwn(a, 'tagName') && a.tagName !== 'a') ||
           (Object.hasOwn(a, 'type') && a.type !== 'button'))
       )
-        fail('ADAPTER_ATTRIBUTES', '按钮原始属性非链接按钮');
+        fail('ADAPTER_ATTRIBUTES', 'Raw button attributes do not describe a link button');
     }
   }
 }

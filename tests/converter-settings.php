@@ -1,4 +1,5 @@
 <?php
+require __DIR__ . '/helpers/localization.php';
 // The real handler and option parser; only environment diagnostics are controlled here.
 const MINUTE_IN_SECONDS = 60;
 $options = ['mbb_runtime_path' => '/synthetic/legacy/node', 'unrelated' => 'preserved'];

@@ -94,10 +94,12 @@ const { JSDOM, VirtualConsole } = require(path.join(ROOT, 'node_modules/jsdom'))
           return {
             ok: false,
             code: e.code || 'CONVERSION',
+            message_id: e.messageId ?? null,
+            message_args: e.messageArgs ?? [],
             message:
               w.MBB?.ConversionError && e instanceof w.MBB.ConversionError
                 ? e.message
-                : '转换服务未完成，原内容未写入。',
+                : 'The conversion service did not complete. Original content was not written.',
             location:
               w.MBB?.ConversionError && e instanceof w.MBB.ConversionError ? e.location : '',
           };
@@ -110,10 +112,12 @@ const { JSDOM, VirtualConsole } = require(path.join(ROOT, 'node_modules/jsdom'))
       JSON.stringify({
         ok: false,
         code: e.code || 'CONVERSION',
+        message_id: e.messageId ?? null,
+        message_args: e.messageArgs ?? [],
         message:
           w.MBB?.ConversionError && e instanceof w.MBB.ConversionError
             ? e.message
-            : '转换服务未完成，原内容未写入。',
+            : 'The conversion service did not complete. Original content was not written.',
         location: w.MBB?.ConversionError && e instanceof w.MBB.ConversionError ? e.location : '',
       }),
     );
@@ -122,7 +126,11 @@ const { JSDOM, VirtualConsole } = require(path.join(ROOT, 'node_modules/jsdom'))
   }
 })().catch(() => {
   process.stdout.write(
-    JSON.stringify({ ok: false, code: 'WORKER_FAILED', message: '转换服务未完成，原内容未写入。' }),
+    JSON.stringify({
+      ok: false,
+      code: 'WORKER_FAILED',
+      message: 'The conversion service did not complete. Original content was not written.',
+    }),
   );
   process.exitCode = 1;
 });

@@ -9,12 +9,15 @@
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  * Requires at least: 7.1
  * Requires PHP: 8.2
+ * Domain Path: /languages
  * Text Domain: markbridge
  * Description: Markdown and block editing with paired revisions and local math rendering; capability-scoped author publishing.
  */
 if (!defined('ABSPATH')) {
     exit();
 }
+require_once __DIR__ . '/includes/i18n.php';
+mbb_i18n_register();
 require_once __DIR__ . '/includes/runtime-settings.php';
 require_once __DIR__ . '/includes/admin-settings.php';
 require_once __DIR__ . '/block-adapters.php';

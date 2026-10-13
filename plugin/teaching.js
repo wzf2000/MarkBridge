@@ -1,4 +1,14 @@
 (() => {
+  const T = (message) => globalThis.MBBI18n?.t(message) ?? message;
+  const F = (message, ...values) => {
+    let next = 0;
+    return String(message).replace(/%%|%(?:(\d+)\$)?([sd])/g, (token, index, kind) => {
+      if (token === '%%') return '%';
+      const value = values[index ? Number(index) - 1 : next++];
+      return kind === 'd' ? String(Number(value)) : String(value ?? '');
+    });
+  };
+
   const groups = new Map();
   const codeGroups = new Map();
   const annotationBudgets = new WeakMap();
@@ -156,9 +166,9 @@
       list = document.createElement('div');
     list.className = 'mbb-code-tabs-list';
     list.setAttribute('role', 'tablist');
-    list.setAttribute('aria-label', '代码版本');
+    list.setAttribute('aria-label', T('Code versions'));
     const tabs = panels.map((panel, index) => {
-      const tab = button(values[index].title || values[index].language || '代码', () =>
+      const tab = button(values[index].title || values[index].language || T('Code'), () =>
         select(panel, true),
       );
       let suffix = 0;
@@ -181,25 +191,30 @@
         tabs[next].focus();
       });
       const copyControls = generated(),
-        copy = button('复制 ' + tab.textContent, async () => {
+        copy = button(T('Copy ') + tab.textContent, async () => {
           try {
             await navigator.clipboard.writeText(values[index].code);
-            copy.textContent = '已复制 ' + tab.textContent;
+            copy.textContent = T('Copied ') + tab.textContent;
           } catch {
             let area = copyControls.querySelector('textarea');
             if (!area) {
               area = document.createElement('textarea');
               area.readOnly = true;
-              area.setAttribute('aria-label', '代码文本手动复制（换行可能规范化）');
+              area.setAttribute(
+                'aria-label',
+                T('Code text for manual copying (newlines may be normalized)'),
+              );
               copyControls.append(area);
             }
             area.value = values[index].code;
             area.focus();
             area.select();
-            copy.textContent = '手动复制可能规范化换行；下载原代码保留字节';
+            copy.textContent = T(
+              'Manual copying may normalize newlines. Download the original code to preserve bytes',
+            );
           }
         });
-      const download = button('下载原代码 ' + tab.textContent, () => {
+      const download = button(T('Download original code ') + tab.textContent, () => {
         const blob = new Blob([values[index].code], {
             type: 'text/plain;charset=utf-8',
             endings: 'transparent',
@@ -236,12 +251,12 @@
       update(notify);
       if (push) record(false, '#' + encodeURIComponent(panel.id));
     }
-    const all = button('显示全部代码版本', () => {
+    const all = button(T('Show all code versions'), () => {
         full = true;
         update();
         record();
       }),
-      single = button('返回页签阅读', () => {
+      single = button(T('Return to tabbed reading'), () => {
         full = false;
         update();
         record();
@@ -312,22 +327,22 @@
         status = document.createElement('span');
       status.setAttribute('role', 'status');
       controls.append(
-        button('复制' + (index === 0 ? '左侧' : '右侧') + '代码', async () => {
+        button(F(T('Copy %1$s code'), index === 0 ? T('Left') : T('Right')), async () => {
           try {
             await navigator.clipboard.writeText(sources[index]);
-            status.textContent = '已复制';
+            status.textContent = T('Copied');
           } catch {
             let fallback = controls.querySelector('textarea');
             if (!fallback) {
               fallback = document.createElement('textarea');
               fallback.readOnly = true;
-              fallback.setAttribute('aria-label', '原始代码手动复制');
+              fallback.setAttribute('aria-label', T('Original code for manual copying'));
               controls.append(fallback);
             }
             fallback.value = sources[index];
             fallback.focus();
             fallback.select();
-            status.textContent = '请手动复制原始代码';
+            status.textContent = T('Copy the original code manually');
           }
         }),
         status,
@@ -360,7 +375,7 @@
       language.textContent = codes[index].className.match(/language-([\w+-]+)/)?.[1] || 'text';
       controls.prepend(language);
       if (displayed < lines[index].length) {
-        const expand = button('标注后续代码行', () => {
+        const expand = button(T('Annotate additional code lines'), () => {
           const next = Math.min(
             displayed + 400,
             displayed + Math.max(0, 8000 - budget.lines),
@@ -375,17 +390,20 @@
         });
         controls.append(expand);
         const note = document.createElement('span');
-        note.textContent =
-          '首次标注 400 行，每份最多 2000 行，每篇初次最多 4000 行、手动最多 8000 行；其余源码原样显示并完整复制。';
+        note.textContent = T(
+          'Initially annotates 400 lines; at most 2000 per side, 4000 initial lines per article, and 8000 manually requested lines. Remaining source stays unchanged and fully copyable.',
+        );
         controls.append(note);
       }
     });
     const legend = generated();
     legend.textContent =
       (a.length <= 1500 && b.length <= 1500 && a.length * b.length <= 250000
-        ? '行级差异：'
-        : '长代码按相同行位置估计差异：') +
-      '− 左侧删除或修改；+ 右侧新增或修改；框线标记作者重点。';
+        ? T('Line differences: ')
+        : T('Long code differences estimated by matching line positions: ')) +
+      T(
+        '− left-side deletions or changes; + right-side additions or changes. Outlines mark author highlights.',
+      );
     node.append(legend);
     return true;
   }
@@ -429,9 +447,9 @@
         status.setAttribute('aria-live', 'polite');
         let current = 0,
           full = options.mode !== 'staged';
-        const prev = button('上一阶段', () => select(steps[current - 1], true)),
-          next = button('下一阶段', () => select(steps[current + 1], true)),
-          all = button('全文', () => {
+        const prev = button(T('Previous stage'), () => select(steps[current - 1], true)),
+          next = button(T('Next stage'), () => select(steps[current + 1], true)),
+          all = button(T('Full text'), () => {
             full = true;
             update();
             const article = node.closest('article,.mbb-document') || node;
@@ -449,7 +467,7 @@
             change();
             record();
           });
-        const staged = button('分阶段阅读', () => {
+        const staged = button(T('Read by stage'), () => {
           full = false;
           update();
           change();
@@ -465,7 +483,9 @@
           staged.setAttribute('aria-pressed', String(!full));
           controls.querySelector('select')?.value !== undefined &&
             (controls.querySelector('select').value = String(current));
-          status.textContent = full ? '显示全文' : `阶段 ${current + 1} / ${steps.length}`;
+          status.textContent = full
+            ? T('Show full text')
+            : F(T('Stage %1$s / %2$s'), current + 1, steps.length);
         }
         function select(step, scroll) {
           const index = steps.indexOf(step);
@@ -496,12 +516,12 @@
         if (options.next) controls.append(next);
         controls.append(all, staged, status);
         const chooser = document.createElement('select');
-        chooser.setAttribute('aria-label', '选择阶段');
+        chooser.setAttribute('aria-label', T('Choose a stage'));
         steps.forEach((step, index) => {
           const option = document.createElement('option');
           option.value = String(index);
           option.textContent =
-            child(step, '.mbb-teaching-title')?.textContent || `阶段 ${index + 1}`;
+            child(step, '.mbb-teaching-title')?.textContent || F(T('Stage %1$s'), index + 1);
           chooser.append(option);
         });
         chooser.addEventListener('change', () => {

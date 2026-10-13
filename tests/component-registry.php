@@ -84,6 +84,33 @@ try {
         mbb_component_registry()['fixture']['defaults']->n === 3,
         'Duplicate changed defaults',
     );
+    registry_assert(markbridge_teaching_supports_ui_locale(), 'Locale capability probe missing');
+    registry_assert(
+        !array_key_exists(
+            'supportsUiLocale',
+            mbb_component_public(mbb_component_registry()['fixture']),
+        ),
+        'Legacy DTO gained an optional field',
+    );
+    foreach ([true, false] as $flag) {
+        $localeProvider = $provider;
+        $localeProvider['supportsUiLocale'] = $flag;
+        $localeId = $flag ? 'locale-enabled' : 'locale-disabled';
+        registry_assert(
+            markbridge_register_teaching_component($localeId, $localeProvider) &&
+                mbb_component_public(mbb_component_registry()[$localeId])['supportsUiLocale'] ===
+                    $flag,
+            'Trusted locale capability was not preserved',
+        );
+    }
+    foreach ([null, 1, 'true', []] as $flag) {
+        $localeProvider = $provider;
+        $localeProvider['supportsUiLocale'] = $flag;
+        registry_assert(
+            !markbridge_register_teaching_component('bad-locale', $localeProvider),
+            'Nonboolean locale capability accepted',
+        );
+    }
     $numeric = $provider;
     $numeric['schema'] = [
         'type' => 'object',

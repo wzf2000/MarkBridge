@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+require __DIR__ . '/helpers/localization.php';
 // Pure registration/JSON/HTML trust contracts. Actual WordPress writes use block-adapters-save.php.
 $actions = $filters = $types = $inline = [];
 function add_action($name, $callback, ...$args)

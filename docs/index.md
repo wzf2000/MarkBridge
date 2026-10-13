@@ -29,7 +29,7 @@ README 说明产品范围和最短开发入口；本页按用途区分持续有�
 
 ## ACTIVE
 
-- [通用作者工作流与发行渠道完善](plans/active/AUTHOR-WORKFLOW-2.0.md)：按顺序实施八个旧候选，本地恢复、Front Matter、图片导入、多语言代码页签、文章导出、三方合并与原生／静态适配已完成，当前实施完整本地化；仅本地和隔离验收。
+- [通用作者工作流与发行渠道完善](plans/active/AUTHOR-WORKFLOW-2.0.md)：按顺序实施八个旧候选，本地恢复、Front Matter、图片导入、多语言代码页签、文章导出、三方合并与原生／静态适配、本地化已完成，当前实施发行渠道准备；仅本地和隔离验收。
 
 - [多语言代码页签](plans/completed/MULTI-LANGUAGE-CODE-TABS.md)：资源导入之后的阶段 3A；已完成隔离验收并归档，未发行。
 

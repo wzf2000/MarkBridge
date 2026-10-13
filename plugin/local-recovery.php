@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/includes/i18n.php';
 // Read-only, authenticated identity checks. Draft bodies never leave the browser here.
 function mbb_recovery_config(): ?array
 {
@@ -18,9 +19,13 @@ function mbb_recovery_config(): ?array
 function mbb_recovery_permission($request)
 {
     if (!is_user_logged_in()) {
-        return new WP_Error('recovery_auth_expired', '请刷新页面或重新登录后校验恢复权限。', [
-            'status' => 401,
-        ]);
+        return new WP_Error(
+            'recovery_auth_expired',
+            mbb_t('Refresh or sign in again to verify recovery permissions.'),
+            [
+                'status' => 401,
+            ],
+        );
     }
     $id = absint($request->get_param('post_id'));
     if (
@@ -29,7 +34,11 @@ function mbb_recovery_permission($request)
         $id &&
         !get_post($id)
     ) {
-        return new WP_Error('not_found', '文章已删除，不能以旧身份重建。', ['status' => 404]);
+        return new WP_Error(
+            'not_found',
+            mbb_t('The article was deleted and cannot be recreated with its old identity.'),
+            ['status' => 404],
+        );
     }
     return mbb_permission($request);
 }
@@ -41,16 +50,20 @@ function mbb_recovery_context($request)
     }
     $config = mbb_recovery_config();
     if (!$config) {
-        return new WP_Error('forbidden', '请重新登录有编辑权限的账号。', ['status' => 403]);
+        return new WP_Error('forbidden', mbb_t('Sign in again with an account that can edit.'), [
+            'status' => 403,
+        ]);
     }
     $id = absint($request->get_param('post_id'));
     $newKey = $request->get_param('new_key');
     if (!$id && (!is_string($newKey) || !preg_match('/^[a-f0-9]{32}$/D', $newKey))) {
-        return new WP_Error('recovery_identity', '新草稿身份无效。', ['status' => 400]);
+        return new WP_Error('recovery_identity', mbb_t('The new draft identity is invalid.'), [
+            'status' => 400,
+        ]);
     }
     $post = $id ? get_post($id) : null;
     if ($id && !$post) {
-        return new WP_Error('not_found', '文章不存在。', ['status' => 404]);
+        return new WP_Error('not_found', mbb_t('The article does not exist.'), ['status' => 404]);
     }
     if (
         $post &&
@@ -61,9 +74,15 @@ function mbb_recovery_context($request)
                 true,
             ))
     ) {
-        return new WP_Error('inactive', '文章当前不可编辑恢复；请先通过 WordPress 正常还原。', [
-            'status' => 409,
-        ]);
+        return new WP_Error(
+            'inactive',
+            mbb_t(
+                'The article is currently unavailable for recovery. Restore it normally through WordPress first.',
+            ),
+            [
+                'status' => 409,
+            ],
+        );
     }
     $state = $id ? mbb_state($id) : null;
     $user = wp_get_current_user();

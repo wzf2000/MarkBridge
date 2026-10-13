@@ -1,3 +1,4 @@
+import { describeDiagnostic } from './diagnostics.js';
 // Pure bounded candidate merge. It does not authorize or save any content.
 import MarkdownIt from 'markdown-it';
 import footnotes from 'markdown-it-footnote';
@@ -10,16 +11,23 @@ export class MergeError extends Error {
   constructor(code, message) {
     super(message);
     this.code = code;
+    const diagnostic = describeDiagnostic(message);
+    this.messageId = diagnostic.id;
+    this.messageArgs = diagnostic.args;
   }
 }
 const byteCount = (value) => new TextEncoder().encode(value).length;
 function validate(value) {
   if (typeof value !== 'string' || /[\uD800-\uDFFF\0]/u.test(value))
-    throw new MergeError('MERGE_INPUT', '候选必须为有效 UTF-8 文本');
+    throw new MergeError('MERGE_INPUT', 'Candidates must be valid UTF-8 text');
   if (byteCount(value) > MAX_BYTES)
-    throw new MergeError('MERGE_BUDGET', '每份候选最多 256 KiB，请下载后手动比较');
+    throw new MergeError(
+      'MERGE_BUDGET',
+      'Each candidate is limited to 256 KiB. Download for manual comparison',
+    );
   const lines = value.match(/[^\r\n]*(?:\r\n|\r|\n)|[^\r\n]+$/g) || [];
-  if (lines.length > MAX_LINES) throw new MergeError('MERGE_BUDGET', '每份候选最多 32,768 行');
+  if (lines.length > MAX_LINES)
+    throw new MergeError('MERGE_BUDGET', 'Each candidate is limited to 32,768 lines');
   return lines;
 }
 function units(lines, charge) {
@@ -65,7 +73,10 @@ export function planMerge(base, mine, latest) {
   const charge = (amount = 1) => {
     work += amount;
     if (work > MAX_WORK || Date.now() - begin > MAX_MS)
-      throw new MergeError('MERGE_BUDGET', '合并计算超出预算，请保留候选并手动比较');
+      throw new MergeError(
+        'MERGE_BUDGET',
+        'Merge computation exceeded its budget. Preserve the candidate and compare manually',
+      );
   };
   const linesA = validate(base),
     linesB = validate(mine),
@@ -143,7 +154,10 @@ export function planMerge(base, mine, latest) {
         return;
       }
       if ((na + 1) * (nb + 1) > MAX_CELLS)
-        throw new MergeError('MERGE_BUDGET', '局部差异超过 12,000 单元，请手动比较');
+        throw new MergeError(
+          'MERGE_BUDGET',
+          'The local difference exceeds 12,000 cells. Compare manually',
+        );
       const width = nb + 1,
         table = new Uint16Array((na + 1) * width);
       for (let i = na - 1; i >= 0; i--)
@@ -240,7 +254,10 @@ export function planMerge(base, mine, latest) {
       group.edits.some((v) => v.ambiguous)
     ) {
       if (conflicts.length >= 128)
-        throw new MergeError('MERGE_BUDGET', '冲突超过 128 处，请下载候选后手动处理');
+        throw new MergeError(
+          'MERGE_BUDGET',
+          'More than 128 conflicts were found. Download the candidate and resolve them manually',
+        );
       const hunk = {
         id: 'h' + conflicts.length,
         base: slice(group.start, group.end),
@@ -260,14 +277,14 @@ export function planMerge(base, mine, latest) {
 }
 export function resolveMerge(plan, choices = {}) {
   if (Object.keys(choices).some((id) => !plan.conflicts.some((v) => v.id === id)))
-    throw new MergeError('MERGE_CHOICE', '未知冲突选择');
+    throw new MergeError('MERGE_CHOICE', 'Unknown conflict choice');
   const conflicts = new Map(plan.conflicts.map((h) => [h.id, h]));
   const source = plan.parts
     .map((part) => {
       if (!part.conflict) return part.text;
       const choice = choices[part.conflict];
       if (!['mine', 'latest', 'base'].includes(choice))
-        throw new MergeError('MERGE_CHOICE', '请逐项选择全部冲突');
+        throw new MergeError('MERGE_CHOICE', 'Choose every conflict explicitly');
       return conflicts.get(part.conflict)[choice];
     })
     .join('');

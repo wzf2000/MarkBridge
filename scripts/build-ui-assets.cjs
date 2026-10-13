@@ -24,6 +24,7 @@ asset(
     'root + ' + JSON.stringify(engine),
   ),
 );
+asset('i18n.js');
 asset('kernel.js');
 asset('emoji.js');
 asset('presentation-loader.js');

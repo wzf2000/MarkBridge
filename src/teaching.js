@@ -1,3 +1,4 @@
+import { translate as T, format as F, translateError as E } from './i18n.js';
 import {
   nativeAdapterKind,
   nativeAdapterName,
@@ -64,7 +65,7 @@ export function teachingAttributes(kind, attrs, fail, source = false, blockName 
       };
     }
     const d = staticAdapterKind(blockName);
-    if (!d) fail('ADAPTER_VERSION', '静态适配器缺失或版本不兼容');
+    if (!d) fail('ADAPTER_VERSION', 'The static adapter is missing or incompatible');
     return staticAdapterAttributes(d, attrs, fail);
   }
   const schema = {
@@ -79,14 +80,21 @@ export function teachingAttributes(kind, attrs, fail, source = false, blockName 
     Object.keys(attrs).length !== Object.keys(schema).length ||
     Object.keys(attrs).some((k) => !Object.hasOwn(schema, k) || typeof attrs[k] !== schema[k])
   )
-    fail('TEACHING_ATTRIBUTES', '教学容器属性不完整、未知或类型非法');
-  if (!source && attrs.version !== 1) fail('TEACHING_VERSION', '教学区块版本需为 1');
+    fail(
+      'TEACHING_ATTRIBUTES',
+      'Teaching container attributes are incomplete, unknown, or have invalid types',
+    );
+  if (!source && attrs.version !== 1)
+    fail('TEACHING_VERSION', 'The teaching block version must be 1');
   if (Object.values(attrs).some((v) => typeof v === 'string' && /[\uD800-\uDFFF]/u.test(v)))
-    fail('TEACHING_ATTRIBUTES', '教学属性必须为有效 Unicode');
+    fail('TEACHING_ATTRIBUTES', 'Teaching attributes must be valid Unicode');
   const out = Object.fromEntries(Object.keys(schema).map((key) => [key, attrs[key]]));
   if (kind === 'code-tabs') out.tabs = codeTabsAttributes(out, source, fail);
   if (!/^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(out.id))
-    fail('TEACHING_ID', '教学 ID 需为字母开头的 1–64 位 ASCII 字母、数字、下划线或连字符');
+    fail(
+      'TEACHING_ID',
+      'A teaching ID must begin with a letter and contain 1–64 ASCII letters, digits, underscores, or hyphens',
+    );
   for (const key of ['title', 'leftTitle', 'rightTitle'])
     if (
       key in out &&
@@ -97,28 +105,31 @@ export function teachingAttributes(kind, attrs, fail, source = false, blockName 
         [...out[key]].length > 200 ||
         /[\r\n\x00]/.test(out[key]))
     )
-      fail('TEACHING_TITLE', '教学标题需为 1–200 字符的单行纯文字');
+      fail('TEACHING_TITLE', 'A teaching title must be single-line plain text of 1–200 characters');
   if (kind === 'component') {
     if (
       !/^[a-z][a-z0-9-]{0,63}$/.test(out.component) ||
       !/^\d+\.\d+\.\d+$/.test(out.componentVersion)
     )
-      fail('COMPONENT_VERSION', '组件名称或版本非法');
+      fail('COMPONENT_VERSION', 'Invalid component name or version');
     componentParams(out.params, fail);
   }
   if (kind === 'steps' && (!['full', 'staged'].includes(out.mode) || out.full !== true))
-    fail('TEACHING_MODE', '阶段模式需为 full/staged 且全文入口必须启用');
+    fail('TEACHING_MODE', 'Stage mode must be full/staged and the full-text entry must be enabled');
   if (kind === 'code-compare') {
     for (const key of ['leftHighlights', 'rightHighlights'])
       if (
         !/^(?:[1-9]\d*(?:,[1-9]\d*)*)?$/.test(out[key]) ||
         new Set(out[key].split(',')).size !== out[key].split(',').length
       )
-        fail('TEACHING_LINES', '重点行需为不重复的正整数，以逗号分隔');
+        fail(
+          'TEACHING_LINES',
+          'Highlighted lines must be unique positive integers separated by commas',
+        );
     if (!source)
       for (const side of ['Left', 'Right'])
         if (!/^[\w+-]*$/.test(out['language' + side]) || !out['code' + side].endsWith('\n'))
-          fail('TEACHING_CODE', '代码语言非法或缺少结尾换行');
+          fail('TEACHING_CODE', 'The code language is invalid or the trailing newline is missing');
   }
   return out;
 }
@@ -135,9 +146,9 @@ export function teachingJSON(raw, fail) {
       try {
         key = JSON.parse(token);
       } catch {
-        fail('TEACHING_ATTRIBUTES', '非法 JSON 属性');
+        fail('TEACHING_ATTRIBUTES', 'Invalid JSON property');
       }
-      if (stack.at(-1).has(key)) fail('TEACHING_ATTRIBUTES', '教学 JSON 属性重复');
+      if (stack.at(-1).has(key)) fail('TEACHING_ATTRIBUTES', 'Duplicate teaching JSON property');
       stack.at(-1).add(key);
     }
   }
@@ -145,7 +156,7 @@ export function teachingJSON(raw, fail) {
   try {
     return JSON.parse(raw);
   } catch {
-    fail('TEACHING_ATTRIBUTES', '教学属性需为合法 JSON 对象');
+    fail('TEACHING_ATTRIBUTES', 'Teaching attributes must be a valid JSON object');
   }
 }
 export function validateTeachingSerialized(serialized, fail) {
@@ -251,12 +262,17 @@ export function teachingSource(source, fail, ignored = new Set(), nonce, fences 
         !open ||
         !new RegExp('^' + open[1][0] + '{' + open[1].length + ',}[ \\t]*$').test(text(end - 1))
       )
-        fail('CODE_TABS_STRUCTURE', '每个代码版本需有完整、无容器前缀的对应围栏');
+        fail(
+          'CODE_TABS_STRUCTURE',
+          'Each code version requires a complete corresponding fence without container prefixes',
+        );
       let code = lines.slice(next + 1, end - 1).join('');
       if (tab.terminalNewline) {
-        if (!code.endsWith('\n')) fail('CODE_TABS_CODE', '末尾换行标记与代码不符');
+        if (!code.endsWith('\n'))
+          fail('CODE_TABS_CODE', 'The terminal newline marker does not match the code');
       } else {
-        if (code && !code.endsWith('\n')) fail('CODE_TABS_CODE', '代码需要显式结构分隔 LF');
+        if (code && !code.endsWith('\n'))
+          fail('CODE_TABS_CODE', 'Code requires an explicit structural LF separator');
         if (code) code = code.slice(0, -1);
       }
       replacements.set(next, marker({ rawCode: { code, language: open[2] } }));
@@ -265,7 +281,10 @@ export function teachingSource(source, fail, ignored = new Set(), nonce, fences 
     }
     while (next < lines.length && /^[ \t]*$/.test(text(next))) next++;
     if (text(next) !== ':::mbb:end')
-      fail('CODE_TABS_STRUCTURE', '代码组只能包含对应版本数量的围栏');
+      fail(
+        'CODE_TABS_STRUCTURE',
+        'A code group may contain only the corresponding number of fences',
+      );
   }
   // A controlled raw paragraph in a button is pure link text, never math or image syntax.
   for (let i = 0; i < lines.length; i++) {
@@ -280,7 +299,7 @@ export function teachingSource(source, fail, ignored = new Set(), nonce, fences 
     if (!text(begin)?.startsWith('<p>')) continue;
     let end = begin;
     while (end < lines.length && !text(end)?.endsWith('</p>')) end++;
-    if (end === lines.length) fail('ADAPTER_STRUCTURE', '按钮文字段落未闭合');
+    if (end === lines.length) fail('ADAPTER_STRUCTURE', 'The button text paragraph is unclosed');
     const html = lines
       .slice(begin, end + 1)
       .join('')
@@ -299,7 +318,7 @@ export function teachingSource(source, fail, ignored = new Set(), nonce, fences 
       if (ignored.has(index) || protectedHTML.some(([a, b]) => start >= a && start < b))
         return line;
       if (/^ {0,3}<!--mbb-teaching/.test(line))
-        fail('TEACHING_SYNTAX', '保留的内部教学标记不能作为 Markdown 输入');
+        fail('TEACHING_SYNTAX', 'Reserved internal teaching markers cannot be Markdown input');
       if (!line.startsWith(':::mbb:')) return line;
       let data;
       if (line === ':::mbb:end') data = { end: true };
@@ -308,12 +327,16 @@ export function teachingSource(source, fail, ignored = new Set(), nonce, fences 
           /^:::mbb:v1 (collapse|steps|step|code-compare|component|code-tabs|details|buttons|button|adapter) (\{[^\r\n]*\})$/.exec(
             line,
           );
-        if (!match) fail('TEACHING_SYNTAX', '教学容器需使用完整的 :::mbb:v1 名称 JSON 属性');
+        if (!match)
+          fail(
+            'TEACHING_SYNTAX',
+            'Teaching containers require a complete :::mbb:v1 name and JSON attributes',
+          );
         let attrs;
         try {
           attrs = teachingJSON(match[2], fail);
         } catch {
-          fail('TEACHING_ATTRIBUTES', '教学属性需为合法 JSON 对象');
+          fail('TEACHING_ATTRIBUTES', 'Teaching attributes must be a valid JSON object');
         }
         data = { kind: match[1], attrs: teachingAttributes(match[1], attrs, fail, true) };
       }
@@ -351,11 +374,13 @@ export function assembleTeaching(blocks, make, fail) {
       continue;
     }
     if (!data.end) {
-      if (stack.length >= 32) fail('STRUCTURE_LIMIT', '教学容器总深度不得超过 31 层');
+      if (stack.length >= 32)
+        fail('STRUCTURE_LIMIT', 'Teaching container depth must not exceed 31 levels');
       stack.push({ ...data, children: [] });
       continue;
     }
-    if (stack.length === 1) fail('TEACHING_STRUCTURE', '教学结束标记没有对应开始');
+    if (stack.length === 1)
+      fail('TEACHING_STRUCTURE', 'The teaching closing marker has no corresponding opening marker');
     const item = stack.pop();
     if (nativeAdapterKinds.has(item.kind)) {
       let attrs = nativeBlockAttributes(item.kind, item.attrs, fail);
@@ -365,7 +390,10 @@ export function assembleTeaching(blocks, make, fail) {
           !['core/paragraph', 'core/html'].includes(item.children[0].name) ||
           item.children[0].innerBlocks?.length
         )
-          fail('ADAPTER_STRUCTURE', '链接按钮必须恰好有一个受控文字段落');
+          fail(
+            'ADAPTER_STRUCTURE',
+            'A link button must contain exactly one controlled text paragraph',
+          );
         attrs.text =
           item.children[0].name === 'core/html'
             ? buttonParagraph(
@@ -381,7 +409,8 @@ export function assembleTeaching(blocks, make, fail) {
       continue;
     }
     if (item.kind === 'adapter') {
-      if (item.children.length) fail('ADAPTER_STRUCTURE', '静态适配器容器不能有正文');
+      if (item.children.length)
+        fail('ADAPTER_STRUCTURE', 'Static adapter containers must not contain body content');
       const a = adapterSourceAttributes(item.attrs, fail);
       stack.at(-1).children.push(make(a.descriptor.blockName, a.attributes, []));
       continue;
@@ -392,7 +421,7 @@ export function assembleTeaching(blocks, make, fail) {
         item.children.length !== item.attrs.tabs.length ||
         item.children.some((b) => !b.exactCode)
       )
-        fail('CODE_TABS_STRUCTURE', '代码组围栏结构不完整');
+        fail('CODE_TABS_STRUCTURE', 'The code group fence structure is incomplete');
       item.attrs.tabs = item.attrs.tabs.map((t, i) => ({
         id: t.id,
         title: t.title,
@@ -404,7 +433,7 @@ export function assembleTeaching(blocks, make, fail) {
     if (item.kind === 'code-compare') {
       const [left, right, ...body] = item.children;
       if (left?.name !== 'mbb/code' || right?.name !== 'mbb/code')
-        fail('TEACHING_CODE', '代码比较必须以两份围栏代码开始');
+        fail('TEACHING_CODE', 'A code comparison must begin with two fenced code blocks');
       Object.assign(item.attrs, {
         codeLeft: left.attributes.code,
         languageLeft: left.attributes.language || '',
@@ -415,7 +444,8 @@ export function assembleTeaching(blocks, make, fail) {
     }
     stack.at(-1).children.push(make('mbb/' + item.kind, item.attrs, item.children));
   }
-  if (stack.length !== 1) fail('TEACHING_STRUCTURE', '教学容器缺少结束标记');
+  if (stack.length !== 1)
+    fail('TEACHING_STRUCTURE', 'The teaching container closing marker is missing');
   validateTeaching(root, fail);
   return root;
 }
@@ -425,17 +455,19 @@ export function validateTeaching(blocks, fail) {
   let groups = 0;
   function walk(list, parent = '', depth = 0, collapseDepth = 0, detailsDepth = 0) {
     for (const b of list) {
-      if (depth > 32 || ++count > 10000) fail('STRUCTURE_LIMIT', '教学结构超出深度或节点数量边界');
+      if (depth > 32 || ++count > 10000)
+        fail('STRUCTURE_LIMIT', 'Teaching structure exceeds its depth or node budget');
       const kind = teachingKind(b.name),
         inner = b.innerBlocks || [];
-      if (parent === 'steps' && kind !== 'step') fail('TEACHING_STRUCTURE', '阶段组只能包含阶段');
+      if (parent === 'steps' && kind !== 'step')
+        fail('TEACHING_STRUCTURE', 'A stage group may only contain stages');
       if (kind) {
         const a = teachingAttributes(kind, b.attributes, fail, false, b.name);
         if (nativeAdapterKinds.has(kind) || kind === 'adapter') {
           if (kind === 'details' && detailsDepth >= 8)
-            fail('ADAPTER_LIMIT', '原生详情最多嵌套 8 层');
+            fail('ADAPTER_LIMIT', 'Native details are limited to 8 nested levels');
           if (a.anchor) {
-            if (ids.has(a.anchor)) fail('ADAPTER_ANCHOR', '锚点与文档 ID 重复');
+            if (ids.has(a.anchor)) fail('ADAPTER_ANCHOR', 'The anchor duplicates a document ID');
             ids.add(a.anchor);
           }
           if (
@@ -444,31 +476,36 @@ export function validateTeaching(blocks, fail) {
               inner.length > 32 ||
               inner.some((child) => child.name !== 'core/button'))
           )
-            fail('ADAPTER_STRUCTURE', '按钮组需要 1–32 个直接链接按钮');
+            fail('ADAPTER_STRUCTURE', 'A button group requires 1–32 direct link buttons');
           if (kind === 'button' && (parent !== 'buttons' || inner.length))
-            fail('ADAPTER_STRUCTURE', '链接按钮只能是按钮组直接叶节点');
+            fail('ADAPTER_STRUCTURE', 'A link button must be a direct leaf of a button group');
           if (kind === 'adapter' && inner.length)
-            fail('ADAPTER_STRUCTURE', '静态适配器不能包含嵌套区块');
+            fail('ADAPTER_STRUCTURE', 'Static adapters must not contain nested blocks');
           walk(inner, kind, depth + 1, collapseDepth, detailsDepth + (kind === 'details' ? 1 : 0));
           continue;
         }
-        if (ids.has(a.id)) fail('TEACHING_ID', '教学 ID 在文档内必须唯一');
+        if (ids.has(a.id)) fail('TEACHING_ID', 'Teaching IDs must be unique within the document');
         ids.add(a.id);
         if (kind === 'code-tabs') {
-          if (inner.length) fail('CODE_TABS_STRUCTURE', '代码组不能有嵌套正文');
+          if (inner.length)
+            fail('CODE_TABS_STRUCTURE', 'Code groups must not contain nested body content');
           for (const tab of a.tabs) {
-            if (ids.has(tab.id)) fail('TEACHING_ID', '代码版本 ID 与文档锚点重复');
+            if (ids.has(tab.id))
+              fail('TEACHING_ID', 'A code version ID duplicates a document anchor');
             ids.add(tab.id);
           }
         }
         if (kind === 'steps' && (depth || ++groups > 1 || !inner.length))
-          fail('TEACHING_STRUCTURE', '每篇文档只能有一个非空的顶层阶段组');
+          fail(
+            'TEACHING_STRUCTURE',
+            'Each document may contain only one nonempty top-level stage group',
+          );
         if (kind === 'step' && parent !== 'steps')
-          fail('TEACHING_STRUCTURE', '阶段只能作为阶段组直接子块');
+          fail('TEACHING_STRUCTURE', 'A stage must be a direct child of a stage group');
         if ((kind === 'collapse' || kind === 'step' || kind === 'component') && !inner.length)
-          fail('TEACHING_STRUCTURE', '教学正文不能为空');
+          fail('TEACHING_STRUCTURE', 'Teaching body content must not be empty');
         if (kind === 'collapse' && collapseDepth >= 3)
-          fail('TEACHING_DEPTH', '折叠内容最多嵌套三层');
+          fail('TEACHING_DEPTH', 'Collapsible content is limited to three nested levels');
         if (kind === 'code-compare')
           for (const side of ['Left', 'Right'])
             if (
@@ -477,7 +514,7 @@ export function validateTeaching(blocks, fail) {
                 .filter(Boolean)
                 .some((v) => Number(v) > a['code' + side].split('\n').length - 1)
             )
-              fail('TEACHING_LINES', '重点行超出对应代码范围');
+              fail('TEACHING_LINES', 'Highlighted lines exceed the corresponding code range');
       }
       walk(
         inner,
@@ -507,7 +544,8 @@ export function validateTeaching(blocks, fail) {
   }
   collect(blocks);
   walk(blocks);
-  if (anchors.some((id) => ids.has(id))) fail('TEACHING_ID', '教学 ID 与正文锚点冲突');
+  if (anchors.some((id) => ids.has(id)))
+    fail('TEACHING_ID', 'A teaching ID conflicts with a body anchor');
 }
 export function teachingMarkdown(b, body, fail) {
   const kind = teachingKind(b.name);
@@ -593,10 +631,10 @@ export function registerTeaching() {
         syncDraftLock();
         setError('');
       } catch (e) {
-        setError(e.message);
+        setError(E(e));
         drafts.set(clientId, {
           raw,
-          error: e.message,
+          error: E(e),
           baseline: drafts.get(clientId)?.baseline || original,
         });
         syncDraftLock();
@@ -606,18 +644,24 @@ export function registerTeaching() {
       'div',
       {},
       el(wp.components.TextareaControl, {
-        label: '参数 JSON（纯数据）',
+        label: T('Parameter JSON (data only)'),
         value: raw,
         help:
-          (error ? error + ' 输入尚未应用，文章保存已暂停。' : '') ||
+          (error ? error + T(' Input has not been applied. Article saving is paused.') : '') ||
           (drafts.has(clientId)
             ? drafts.get(clientId).baseline !== original
-              ? '已应用配置已变化；当前候选仍保留，尚未应用。保存已暂停。'
-              : '参数尚未应用，文章保存已暂停。应用或撤销后继续。'
-            : '编辑后明确应用；保存时由服务端登记 schema 校验。'),
+              ? T(
+                  'Applied configuration changed. The current candidate is preserved and unapplied. Saving is paused.',
+                )
+              : T(
+                  'Parameters are unapplied; article saving is paused. Apply or discard them to continue.',
+                )
+            : T(
+                'Explicitly apply edits. The server validates parameters against the registered schema when saving.',
+              )),
         onChange: change,
       }),
-      el(wp.components.Button, { variant: 'secondary', onClick: commit }, '应用参数'),
+      el(wp.components.Button, { variant: 'secondary', onClick: commit }, T('Apply parameters')),
       el(
         wp.components.Button,
         {
@@ -629,7 +673,7 @@ export function registerTeaching() {
             setError('');
           },
         },
-        '撤销参数输入',
+        T('Discard parameter input'),
       ),
     );
   };
@@ -642,11 +686,11 @@ export function registerTeaching() {
     wp.blocks.registerBlockType(name, {
       apiVersion: 3,
       title: {
-        component: '教学组件',
-        collapse: '折叠内容',
-        steps: '阶段导览',
-        step: '阶段',
-        'code-compare': '代码比较',
+        component: T('Teaching component'),
+        collapse: T('Collapsible content'),
+        steps: T('Stage navigation'),
+        step: T('Stage'),
+        'code-compare': T('Code comparison'),
       }[kind],
       category: 'text',
       ...(kind === 'step' ? { parent: ['mbb/steps'] } : {}),
@@ -725,34 +769,36 @@ export function registerTeaching() {
                     ...(key === 'mode'
                       ? {
                           options: [
-                            { label: '全文', value: 'full' },
-                            { label: '分阶段', value: 'staged' },
+                            { label: T('Full text'), value: 'full' },
+                            { label: T('By stage'), value: 'staged' },
                           ],
                         }
                       : {}),
                     help:
                       key === 'params' || key.startsWith('code')
-                        ? '源码必须保留末尾换行；使用下方按钮显式补上。'
+                        ? T(
+                            'Source must preserve its trailing newline. Use the button below to add it explicitly.',
+                          )
                         : undefined,
                     label: {
-                      component: '组件类型',
-                      componentVersion: '组件版本',
-                      params: '参数 JSON（纯数据，保存时验证）',
-                      id: '稳定 ID',
-                      title: '标题',
-                      open: '默认展开',
-                      previous: '上一阶段',
-                      next: '下一阶段',
-                      full: '全文模式',
-                      leftTitle: '左侧标题',
-                      rightTitle: '右侧标题',
-                      mode: '阅读模式（full / staged）',
-                      leftHighlights: '左侧重点行（逗号分隔）',
-                      rightHighlights: '右侧重点行（逗号分隔）',
-                      codeLeft: '左侧原代码',
-                      codeRight: '右侧原代码',
-                      languageLeft: '左侧语言',
-                      languageRight: '右侧语言',
+                      component: T('Component type'),
+                      componentVersion: T('Component version'),
+                      params: T('Parameter JSON (data only; verified on save)'),
+                      id: T('Stable ID'),
+                      title: T('Title'),
+                      open: T('Initially open'),
+                      previous: T('Previous stage'),
+                      next: T('Next stage'),
+                      full: T('Full-text mode'),
+                      leftTitle: T('Left title'),
+                      rightTitle: T('Right title'),
+                      mode: T('Reading mode (full / staged)'),
+                      leftHighlights: T('Left highlighted lines (comma-separated)'),
+                      rightHighlights: T('Right highlighted lines (comma-separated)'),
+                      codeLeft: T('Left original code'),
+                      codeRight: T('Right original code'),
+                      languageLeft: T('Left language'),
+                      languageRight: T('Right language'),
                     }[key],
                     ...(type === 'boolean'
                       ? { checked: !!a[key] }
@@ -789,7 +835,9 @@ export function registerTeaching() {
               disabled: (a['code' + side] || '').endsWith('\n'),
               onClick: () => setAttributes({ ['code' + side]: (a['code' + side] || '') + '\n' }),
             },
-            '为' + (side === 'Left' ? '左' : '右') + '侧源码补末尾换行',
+            T('Add a trailing newline to the ') +
+              (side === 'Left' ? T('left') : T('right')) +
+              T(' source'),
           );
         return el(
           'div',
@@ -799,10 +847,10 @@ export function registerTeaching() {
             {},
             el(
               wp.components.PanelBody,
-              { title: '教学配置', initialOpen: true },
+              { title: T('Teaching settings'), initialOpen: true },
               kind === 'component'
                 ? el(wp.components.SelectControl, {
-                    label: '登记的教学组件',
+                    label: T('Registered teaching component'),
                     value: (a.component || '') + '@' + (a.componentVersion || ''),
                     options: [
                       ...((window.MBBComponents || []).some(
@@ -812,8 +860,8 @@ export function registerTeaching() {
                         : [
                             {
                               label:
-                                '保留当前组件 ' +
-                                (a.component || '待选择') +
+                                T('Preserve current component ') +
+                                (a.component || T('Awaiting selection')) +
                                 ' ' +
                                 (a.componentVersion || ''),
                               value: (a.component || '') + '@' + (a.componentVersion || ''),
@@ -861,7 +909,7 @@ export function registerTeaching() {
                     el(
                       'div',
                       { className: 'mbb-teaching-body' },
-                      '编辑器交互预览；正文静态替代在下方编辑。',
+                      T('Interactive editor preview. Edit the static fallback body below.'),
                     ),
                   )
                 : null,
@@ -871,11 +919,11 @@ export function registerTeaching() {
             'p',
             { className: 'mbb-teaching-editor-label' },
             {
-              component: '教学组件',
-              collapse: '折叠内容',
-              steps: '阶段导览',
-              step: '阶段',
-              'code-compare': '代码比较',
+              component: T('Teaching component'),
+              collapse: T('Collapsible content'),
+              steps: T('Stage navigation'),
+              step: T('Stage'),
+              'code-compare': T('Code comparison'),
             }[kind],
           ),
           kind === 'code-compare'
@@ -897,7 +945,9 @@ export function registerTeaching() {
               ? el(
                   'p',
                   {},
-                  (a.component || '请在右侧选择教学组件') + ' ' + (a.componentVersion || ''),
+                  (a.component || T('Choose a teaching component in the sidebar')) +
+                    ' ' +
+                    (a.componentVersion || ''),
                 )
               : field('title'),
 

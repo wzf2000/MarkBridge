@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/includes/i18n.php';
 // Read old storage without loading the retired editor. codeblock_restore adapted from WP Editor.md 10.2.1, LuRenJiasWorld, GPL-3.0-or-later.
 function mbb_source_text($post)
 {
@@ -78,23 +79,35 @@ function mbb_source_target($post)
 {
     $p = is_object($post) ? $post : get_post($post);
     if (!$p || get_post_meta($p->ID, '_mbb_source_managed', true) !== 'file') {
-        return new WP_Error('source_unmanaged', '该文章没有绑定文件来源。', ['status' => 409]);
+        return new WP_Error('source_unmanaged', mbb_t('This article has no source file binding.'), [
+            'status' => 409,
+        ]);
     }
     $path = apply_filters('mbb_source_write_target', null, $p);
     if (!is_string($path) || $path === '' || !is_file($path) || is_link($path)) {
-        return new WP_Error('source_target_unavailable', '已绑定的源文件当前不可用。', [
-            'status' => 409,
-        ]);
+        return new WP_Error(
+            'source_target_unavailable',
+            mbb_t('The bound source file is currently unavailable.'),
+            [
+                'status' => 409,
+            ],
+        );
     }
     $real = realpath($path);
     if (!is_string($real) || !is_readable($real) || !is_writable($real)) {
-        return new WP_Error('source_target_unavailable', '已绑定的源文件当前不可写。', [
-            'status' => 409,
-        ]);
+        return new WP_Error(
+            'source_target_unavailable',
+            mbb_t('The bound source file is currently not writable.'),
+            [
+                'status' => 409,
+            ],
+        );
     }
     $bound = get_post_meta($p->ID, '_mbb_source_path_hash', true);
     if (!$bound || !hash_equals((string) $bound, hash('sha256', $real))) {
-        return new WP_Error('source_binding', '源文件绑定校验失败。', ['status' => 409]);
+        return new WP_Error('source_binding', mbb_t('Source binding verification failed.'), [
+            'status' => 409,
+        ]);
     }
     return $real;
 }
@@ -103,7 +116,9 @@ function mbb_source_fingerprint($path)
 {
     $contents = file_get_contents($path);
     if ($contents === false) {
-        return new WP_Error('source_read_failed', '无法读取源文件。', ['status' => 409]);
+        return new WP_Error('source_read_failed', mbb_t('The source file could not be read.'), [
+            'status' => 409,
+        ]);
     }
     return ['sha256' => hash('sha256', $contents), 'contents' => $contents];
 }
@@ -111,14 +126,22 @@ function mbb_source_fingerprint($path)
 function mbb_source_atomic_write($path, $contents)
 {
     if (!is_string($path) || !is_file($path) || is_link($path)) {
-        return new WP_Error('source_write_failed', '源文件目标不存在或不是普通文件。', [
-            'status' => 500,
-        ]);
+        return new WP_Error(
+            'source_write_failed',
+            mbb_t('The source target does not exist or is not a regular file.'),
+            [
+                'status' => 500,
+            ],
+        );
     }
     $dir = dirname($path);
     $temp = tempnam($dir, '.markbridge-');
     if ($temp === false) {
-        return new WP_Error('source_write_failed', '无法创建源文件暂存文件。', ['status' => 500]);
+        return new WP_Error(
+            'source_write_failed',
+            mbb_t('The source staging file could not be created.'),
+            ['status' => 500],
+        );
     }
     $permissions = fileperms($path);
     $mode = $permissions === false ? 0644 : $permissions & 0777;
@@ -145,7 +168,9 @@ function mbb_source_atomic_write($path, $contents)
     }
     if (!$ok || !rename($temp, $path)) {
         @unlink($temp);
-        return new WP_Error('source_write_failed', '源文件安全写入失败。', ['status' => 500]);
+        return new WP_Error('source_write_failed', mbb_t('Safe source file write failed.'), [
+            'status' => 500,
+        ]);
     }
     return true;
 }

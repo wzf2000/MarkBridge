@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/includes/i18n.php';
 // A header is a proposal. Only an explicit preview receipt can apply selected metadata.
 require_once __DIR__ . '/includes/php-converter/Converter.php';
 use MarkBridge\Probe\FrontMatter;
@@ -11,15 +12,23 @@ function mbb_frontmatter_selected($request)
         !array_is_list($selected) ||
         count($selected) > count(FrontMatter::FIELDS)
     ) {
-        return mbb_error('frontmatter_selection', '元数据选择无效。', 422);
+        return mbb_error('frontmatter_selection', mbb_t('The metadata selection is invalid.'), 422);
     }
     foreach ($selected as $key) {
         if (!is_string($key) || !in_array($key, FrontMatter::FIELDS, true)) {
-            return mbb_error('frontmatter_selection', '元数据选择含未知字段。', 422);
+            return mbb_error(
+                'frontmatter_selection',
+                mbb_t('The metadata selection contains an unknown field.'),
+                422,
+            );
         }
     }
     if (count(array_unique($selected, SORT_STRING)) !== count($selected)) {
-        return mbb_error('frontmatter_selection', '元数据选择重复。', 422);
+        return mbb_error(
+            'frontmatter_selection',
+            mbb_t('The metadata selection contains duplicates.'),
+            422,
+        );
     }
     sort($selected, SORT_STRING);
     return $selected;
@@ -71,7 +80,11 @@ function mbb_frontmatter_term_ids(string $field, array $slugs, $post)
         !is_object_in_taxonomy($type, $name) ||
         !current_user_can($taxonomy->cap->assign_terms)
     ) {
-        return mbb_error('frontmatter_permission', '无权为此文章分配分类或标签。', 403);
+        return mbb_error(
+            'frontmatter_permission',
+            mbb_t('You cannot assign categories or tags to this article.'),
+            403,
+        );
     }
     $ids = [];
     foreach ($slugs as $slug) {
@@ -79,7 +92,9 @@ function mbb_frontmatter_term_ids(string $field, array $slugs, $post)
         if (!$term || $term->slug !== $slug) {
             return mbb_error(
                 'frontmatter_term',
-                '选择的 term slug 已不存在或发生变化；不会自动创建词项。',
+                mbb_t(
+                    'A selected term slug no longer exists or changed. Terms are never created automatically.',
+                ),
                 422,
             );
         }
@@ -130,14 +145,22 @@ function mbb_frontmatter_candidate($request, $post, array $candidate)
         return $selected;
     }
     if (($request['mode'] ?? '') === 'restore' && $selected) {
-        return mbb_error('frontmatter_restore', '历史恢复不能自动应用头部元数据。', 422);
+        return mbb_error(
+            'frontmatter_restore',
+            mbb_t('Revision restoration cannot automatically apply header metadata.'),
+            422,
+        );
     }
     $proposal =
         ($request['mode'] ?? '') === 'restore'
             ? []
             : mbb_frontmatter_proposal($candidate['document']);
     if (array_diff($selected, array_keys($proposal))) {
-        return mbb_error('frontmatter_selection', '所选字段不在当前头部提案中。', 422);
+        return mbb_error(
+            'frontmatter_selection',
+            mbb_t('A selected field is not present in the current header proposal.'),
+            422,
+        );
     }
     $copy = clone $request;
     $applied = [];
@@ -158,7 +181,9 @@ function mbb_frontmatter_candidate($request, $post, array $candidate)
             if (wp_kses_post($value) !== $value) {
                 return mbb_error(
                     'frontmatter_excerpt',
-                    '摘要含会被 WordPress 改写的 HTML，未应用。',
+                    mbb_t(
+                        'The excerpt contains HTML that WordPress would rewrite and was not applied.',
+                    ),
                     422,
                 );
             }
@@ -172,7 +197,11 @@ function mbb_frontmatter_candidate($request, $post, array $candidate)
         trim($candidate['title']) === '' ||
         sanitize_text_field($candidate['title']) !== $candidate['title']
     ) {
-        return mbb_error('title', '请输入不含 HTML 的标题，或明确选择头部标题提案。', 422);
+        return mbb_error(
+            'title',
+            mbb_t('Enter a title without HTML, or explicitly select the header title proposal.'),
+            422,
+        );
     }
     $candidate = mbb_with_publication($copy, $post, $candidate);
     if (is_wp_error($candidate)) {
@@ -193,7 +222,13 @@ function mbb_frontmatter_candidate($request, $post, array $candidate)
                 $post->post_parent ?? 0,
             ) !== $slug
         ) {
-            return mbb_error('frontmatter_slug', 'slug 与已有内容冲突，未自动添加后缀。', 409);
+            return mbb_error(
+                'frontmatter_slug',
+                mbb_t(
+                    'The slug conflicts with existing content. No suffix was added automatically.',
+                ),
+                409,
+            );
         }
         $applied['slug'] = $slug;
     }
@@ -219,11 +254,15 @@ function mbb_frontmatter_candidate($request, $post, array $candidate)
             }
         } elseif ($key === 'title') {
             if (trim($value) === '' || sanitize_text_field($value) !== $value) {
-                $error = mbb_error('title', '标题会被 WordPress 改写，请修改提案。', 422);
+                $error = mbb_error(
+                    'title',
+                    mbb_t('WordPress would rewrite this title. Correct the proposal.'),
+                    422,
+                );
             }
         } elseif ($key === 'excerpt') {
             if (wp_kses_post($value) !== $value) {
-                $error = mbb_error('excerpt', '摘要含不允许的 HTML。', 422);
+                $error = mbb_error('excerpt', mbb_t('The excerpt contains disallowed HTML.'), 422);
             }
         } elseif ($key === 'status' || $key === 'featured_media') {
             $test = clone $copy;
@@ -252,7 +291,7 @@ function mbb_frontmatter_candidate($request, $post, array $candidate)
                     $post->post_parent ?? 0,
                 ) !== $resolved
             ) {
-                $error = mbb_error('slug', 'slug 与已有内容冲突。', 409);
+                $error = mbb_error('slug', mbb_t('The slug conflicts with existing content.'), 409);
             }
         }
         $rows[] = [
@@ -298,7 +337,11 @@ function mbb_frontmatter_verify_receipt($request, array $candidate)
         !preg_match('/^([A-Za-z0-9_-]+)\.([a-f0-9]{64})$/D', $receipt, $parts) ||
         !hash_equals(hash_hmac('sha256', $parts[1], wp_salt('auth')), $parts[2])
     ) {
-        return mbb_error('frontmatter_receipt', '元数据选择须重新预览后确认。', 409);
+        return mbb_error(
+            'frontmatter_receipt',
+            mbb_t('Preview the metadata selection again before confirming.'),
+            409,
+        );
     }
     $raw = base64_decode(strtr($parts[1], '-_', '+/'), true);
     $payload = is_string($raw) ? json_decode($raw, true) : null;
@@ -308,14 +351,18 @@ function mbb_frontmatter_verify_receipt($request, array $candidate)
         $payload['expires'] < time() ||
         $payload['expires'] > time() + 300
     ) {
-        return mbb_error('frontmatter_receipt', '元数据预览凭据已过期。', 409);
+        return mbb_error(
+            'frontmatter_receipt',
+            mbb_t('The metadata preview receipt expired.'),
+            409,
+        );
     }
     $expected = $candidate['frontmatter_binding'];
     $expected['expires'] = $payload['expires'];
     if (!hash_equals(mbb_component_json($expected), mbb_component_json($payload))) {
         return mbb_error(
             'frontmatter_receipt',
-            '元数据、term、候选或身份已变化，请重新预览。',
+            mbb_t('Metadata, terms, the candidate, or the identity changed. Preview again.'),
             409,
         );
     }
