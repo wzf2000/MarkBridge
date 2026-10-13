@@ -1,0 +1,31 @@
+[
+  ["<a title=\"1 > 0\">Read</a>", "<a title=\"1 > 0\">阅读</a>", true],
+  ["<a title=\"1 > 0\">Read</a>", "<a title=\"1 > 0\" onclick=\"alert(1)\">阅读</a>", false],
+  ["<a title='1 > 0'>Read</a>", "<a title='1 > 0' onmouseover='alert(1)'>阅读</a>", false],
+  [
+    "<a title='1 > 0' class=\"link\" data-label=\"A > B\">Read</a>",
+    "<a title='1 > 0' class=\"link\" data-label=\"A > B\">阅读</a>",
+    true
+  ],
+  [
+    "<a  title=\"1 > 0\"\n class=\"link\">Read</a>",
+    "<a  title=\"1 > 0\"\n class=\"link\">阅读</a>",
+    true
+  ],
+  [
+    "<a  title=\"1 > 0\"\n class=\"link\">Read</a>",
+    "<a title=\"1 > 0\"\n class=\"link\">阅读</a>",
+    false
+  ],
+  ["<a title=\"1 > 0\" id=\"fixed\">Read</a>", "<a title=\"1 > 0\" id=\"changed\">阅读</a>", false],
+  ["<a title=\"<quoted> > text\">Read</a>", "<a title=\"<quoted> > text\">阅读</a>", true],
+  ["Read <a href=\"", "阅读 <a href=\"", true],
+  ["Read <a href=\"", "阅读 <a href=\" onclick=\"alert(1)", false],
+  ["Read <a href='", "阅读 <a href='", true],
+  ["Read <a href='", "阅读 <a href=' onerror='x", false],
+  ["Read <a title=\"1 > 0\" href=\"", "阅读 <a title=\"1 > 0\" href=\"", true],
+  ["Read <a title=\"1 > 0\" href=\"", "阅读 <a title=\"1 > 0\" onclick=\"x\" href=\"", false],
+  ["\">Read</a> <a href=\"", "\">阅读</a> <a href=\"", true],
+  ["\">Read</a> <a href=\"", "\" onclick=\"x\">阅读</a> <a href=\"", false],
+  ["Read <a title=\"x\" <img>", "阅读 <a title=\"x\" <img>", false]
+]
