@@ -1,6 +1,13 @@
 <?php
 namespace MarkBridge\Probe;
 
+// Standalone CLI conversion and model tests remain supported; direct web access requires WordPress.
+if (!defined('ABSPATH')) {
+    if (PHP_SAPI !== 'cli') {
+        exit();
+    }
+}
+
 /** Closed v1 teaching grammar, shared semantics with src/teaching.js. */
 final class Teaching
 {

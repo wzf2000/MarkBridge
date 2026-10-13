@@ -66,6 +66,7 @@ async function load(page, enhance = true, body = markup()) {
   await page.setContent(
     `<meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:16px;font:16px/1.6 sans-serif}${fs.readFileSync(path.join(plugin, 'teaching.css'), 'utf8')}</style><article>${body}</article>`,
   );
+  await page.addScriptTag({ url: '/fixture-localization.js?locale=zh_CN' });
   if (enhance)
     await page.addScriptTag({ content: fs.readFileSync(path.join(plugin, 'teaching.js'), 'utf8') });
 }

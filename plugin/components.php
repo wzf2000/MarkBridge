@@ -1,4 +1,12 @@
 <?php
+
+// Standalone CLI conversion and model tests remain supported; direct web access requires WordPress.
+if (!defined('ABSPATH')) {
+    if (PHP_SAPI !== 'cli') {
+        exit();
+    }
+}
+
 require_once __DIR__ . '/includes/i18n.php';
 /** Trusted, local provider registration. Conversion remains provider-independent. */
 function mbb_component_registry(): array

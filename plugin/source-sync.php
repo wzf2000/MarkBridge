@@ -1,4 +1,12 @@
 <?php
+
+// Standalone CLI conversion and model tests remain supported; direct web access requires WordPress.
+if (!defined('ABSPATH')) {
+    if (PHP_SAPI !== 'cli') {
+        exit();
+    }
+}
+
 require_once __DIR__ . '/includes/i18n.php';
 // Read old storage without loading the retired editor. codeblock_restore adapted from WP Editor.md 10.2.1, LuRenJiasWorld, GPL-3.0-or-later.
 function mbb_source_text($post)

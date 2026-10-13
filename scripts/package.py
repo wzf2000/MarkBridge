@@ -7,6 +7,23 @@ import subprocess
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
+MAX_ARCHIVE_BYTES = 10_000_000
+
+
+def finalize_archive(candidate, archive):
+    """Validate before promotion; a rejected candidate cannot replace an existing package."""
+    try:
+        if not 0 < candidate.stat().st_size < MAX_ARCHIVE_BYTES:
+            raise RuntimeError("Plugin ZIP must be smaller than 10,000,000 bytes")
+        with zipfile.ZipFile(candidate) as bundle:
+            if bundle.testzip() is not None:
+                raise RuntimeError("Archive CRC failed")
+        if archive.exists() and archive.read_bytes() != candidate.read_bytes():
+            raise RuntimeError("Refusing to replace a different package with the same version")
+        candidate.replace(archive)
+    finally:
+        if candidate.exists():
+            candidate.unlink()
 
 
 def main():
@@ -116,13 +133,7 @@ def main():
             info.external_attr = 0o100644 << 16
             info.compress_type = zipfile.ZIP_DEFLATED
             bundle.writestr(info, path.read_bytes())
-    if archive.exists() and archive.read_bytes() != candidate.read_bytes():
-        candidate.unlink()
-        raise RuntimeError("Refusing to replace a different package with the same version")
-    candidate.replace(archive)
-    with zipfile.ZipFile(archive) as bundle:
-        if bundle.testzip() is not None:
-            raise RuntimeError("Archive CRC failed")
+    finalize_archive(candidate, archive)
     digest = hashlib.sha256(archive.read_bytes()).hexdigest()
     archive.with_suffix(".zip.sha256").write_text(digest + "  " + archive.name + "\n")
     archive.with_suffix(".manifest.json").write_bytes(manifest_bytes)

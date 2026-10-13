@@ -1,4 +1,12 @@
 <?php
+
+// Standalone CLI conversion and model tests remain supported; direct web access requires WordPress.
+if (!defined('ABSPATH')) {
+    if (PHP_SAPI !== 'cli') {
+        exit();
+    }
+}
+
 require_once __DIR__ . '/i18n.php';
 // Display preferences never participate in conversion or paired saving.
 const MBB_DISPLAY_OPTION = 'markbridge_display_preferences';
@@ -196,11 +204,11 @@ function mbb_admin_settings_preferences()
         echo '<select id="mbb-' . esc_attr($key) . '" name="preferences[' . esc_attr($key) . ']">';
         foreach (['1' => mbb_t('Enabled'), '0' => mbb_t('Close')] as $value => $text) {
             echo '<option value="' .
-                $value .
+                esc_attr($value) .
                 '" ' .
                 selected((int) $preferences[$key], (int) $value, false) .
                 '>' .
-                $text .
+                esc_html($text) .
                 '</option>';
         }
         echo '</select><p class="description">' . esc_html($description) . '</p></td></tr>';

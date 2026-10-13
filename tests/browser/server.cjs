@@ -85,7 +85,7 @@ const taskEditor = (source = '- [ ] Browser task\n- ordinary\n', options = {}) =
     '</head>',
     '<link rel="stylesheet" href="' +
       mapped('teaching.css') +
-      '"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/wp-includes/css/dashicons.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/components/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-editor/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-library/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-library/editor.min.css"><style>#task-editor{padding:90px 24px 24px;max-width:850px;margin:auto}</style></head>',
+      '"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/wp-includes/css/dashicons.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/components/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-editor/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-library/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-library/editor.min.css"><style>#task-editor{padding:90px 24px 24px;max-width:850px;margin:auto}#task-export{white-space:pre-wrap;overflow-wrap:anywhere;max-width:100%}</style></head>',
   );
   return html.replace(
     '</body>',
@@ -128,7 +128,7 @@ http
         : 'zh_CN';
     const originalEnd = response.end.bind(response);
     response.end = (body, ...rest) => {
-      if (typeof body === 'string' && /<html\b/i.test(body)) {
+      if (typeof body === 'string' && /<!doctype html>|<html\b/i.test(body)) {
         // Explicit synthetic catalogs; this does not model WordPress's real user/site locale selection.
         body = body.replace(
           /(<script\b[^>]*src=["'][^"']*(?:\/plugin\/|markdown-block-bridge\/kernel)[^"']*["'][^>]*>)/g,
@@ -144,7 +144,7 @@ http
       const data = locale === 'zh_CN' ? jed : {};
       const boot = `(() => { const data=${JSON.stringify(data)};window.MBB_UI_LOCALE=${JSON.stringify(locale)};window.wp=window.wp||{};if(window.wp.i18n?.setLocaleData)window.wp.i18n.setLocaleData(data,'markbridge');else window.wp.i18n={__(text,domain){return domain==='markbridge'?(data[text]?.[0]??text):text;},_n(single,plural,count,domain){return domain==='markbridge'?(data[single]?.[0]??(count===1?single:plural)):(count===1?single:plural);}};})();`;
       return response
-        .writeHead(200, { 'Content-Type': 'application/javascript' })
+        .writeHead(200, { 'Content-Type': 'application/javascript; charset=utf-8' })
         .end(boot + '\n' + fs.readFileSync(path.join(plugin, 'i18n.js'), 'utf8'));
     }
 

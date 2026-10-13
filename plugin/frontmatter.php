@@ -1,4 +1,12 @@
 <?php
+
+// Standalone CLI conversion and model tests remain supported; direct web access requires WordPress.
+if (!defined('ABSPATH')) {
+    if (PHP_SAPI !== 'cli') {
+        exit();
+    }
+}
+
 require_once __DIR__ . '/includes/i18n.php';
 // A header is a proposal. Only an explicit preview receipt can apply selected metadata.
 require_once __DIR__ . '/includes/php-converter/Converter.php';

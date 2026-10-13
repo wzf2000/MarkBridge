@@ -277,9 +277,7 @@ test('mock REST: rejected preview cannot save, and diff markup stays inert with 
   await page.getByRole('button', { name: '编辑现有文档' }).click();
   await page.locator('#mbb-source').fill(`first\n${payload}\nlast`);
   await page.locator('#mbb-review').click();
-  await expect(page.locator('#mbb-dialog [role="status"]').first()).toContainText(
-    'Preview rejected',
-  );
+  await expect(page.locator('#mbb-dialog > p[role="status"]')).toContainText('Preview rejected');
   await expect(page.locator('#mbb-save')).toBeDisabled();
   expect(saves).toBe(0);
   rejectPreview = false;

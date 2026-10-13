@@ -632,7 +632,7 @@ export function InlineMathEdit({ contentRef, value, onChange, onFocus, isVisible
       { tex, mathML: object.innerHTML || '', attributes: object.attributes, inline: true },
       root.ownerDocument,
     );
-    if (problem) return setNativeError(problem);
+    if (problem) return setNativeError(T(problem));
     const signature = valueSignature(current);
     const start = current.start;
     const end = current.end;
@@ -648,12 +648,12 @@ export function InlineMathEdit({ contentRef, value, onChange, onFocus, isVisible
     if (epoch !== nativeEpoch.current) return;
     if (structureProblem) {
       setNativeBusy(false);
-      return setNativeError(structureProblem);
+      return setNativeError(T(structureProblem));
     }
     const renderingProblem = await verifyRenderedMath(tex, false, root.ownerDocument);
     if (epoch !== nativeEpoch.current) return;
     setNativeBusy(false);
-    if (renderingProblem) return setNativeError(renderingProblem);
+    if (renderingProblem) return setNativeError(T(renderingProblem));
     const latest = valueRef.current;
     if (
       !root.isConnected ||

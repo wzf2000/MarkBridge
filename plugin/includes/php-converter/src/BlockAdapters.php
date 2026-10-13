@@ -1,6 +1,13 @@
 <?php
 namespace MarkBridge\Probe;
 
+// Standalone CLI conversion and model tests remain supported; direct web access requires WordPress.
+if (!defined('ABSPATH')) {
+    if (PHP_SAPI !== 'cli') {
+        exit();
+    }
+}
+
 /** Closed native adaptation and trusted pure-data static rendering. No WP dependencies. */
 final class BlockAdapters
 {

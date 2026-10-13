@@ -43,7 +43,7 @@ export function registerNativeMathConversion() {
               },
               document,
             );
-      if (problem) return setError(problem);
+      if (problem) return setError(T(problem));
       const epoch = ++requestEpoch.current;
       setError('');
       setBusy(true);
@@ -56,12 +56,12 @@ export function registerNativeMathConversion() {
       if (!active.current || epoch !== requestEpoch.current) return;
       if (structureProblem) {
         setBusy(false);
-        return setError(structureProblem);
+        return setError(T(structureProblem));
       }
       const renderingProblem = await verifyRenderedMath(tex, true, document);
       if (!active.current || epoch !== requestEpoch.current) return;
       setBusy(false);
-      if (renderingProblem) return setError(renderingProblem);
+      if (renderingProblem) return setError(T(renderingProblem));
       const current = registry.select('core/block-editor').getBlock(props.clientId);
       if (
         !current ||

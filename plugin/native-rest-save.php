@@ -1,4 +1,12 @@
 <?php
+
+// Standalone CLI conversion and model tests remain supported; direct web access requires WordPress.
+if (!defined('ABSPATH')) {
+    if (PHP_SAPI !== 'cli') {
+        exit();
+    }
+}
+
 require_once __DIR__ . '/includes/i18n.php';
 // Keep a managed document paired while the normal WordPress REST controller saves all fields.
 function mbb_native_pre_insert($prepared, $request)

@@ -24,12 +24,13 @@ README 说明产品范围和最短开发入口；本页按用途区分持续有�
 - [原生区块与静态适配接口](BLOCK-ADAPTERS.md)：未发行候选的详情、链接按钮及受信静态叶子合同。
 - [验证范围](VALIDATION.md)：实际环境、通过检查与保留边界。
 - [发布流程](RELEASING.md)：版本、检查、安装包和 GitHub Release 的对应关系。
+- [发行渠道](DISTRIBUTION.md)：通用安装包、WordPress.org 提交准备与独立可选 GitHub 更新器。
 - [参与开发](../CONTRIBUTING.md)：目录、格式和验证命令。
 - [Wiki 维护](WIKI.md)：同步范围、预览、初始化与冲突处理。
 
 ## ACTIVE
 
-- [通用作者工作流与发行渠道完善](plans/active/AUTHOR-WORKFLOW-2.0.md)：按顺序实施八个旧候选，本地恢复、Front Matter、图片导入、多语言代码页签、文章导出、三方合并与原生／静态适配、本地化已完成，当前实施发行渠道准备；仅本地和隔离验收。
+- [通用作者工作流与发行渠道完善](plans/completed/AUTHOR-WORKFLOW-2.0.md)：八阶段及多语言代码页签已完成实现和隔离功能验收，综合候选未发行；主包／可选更新器及市场审阅边界见发行渠道说明。
 
 - [多语言代码页签](plans/completed/MULTI-LANGUAGE-CODE-TABS.md)：资源导入之后的阶段 3A；已完成隔离验收并归档，未发行。
 

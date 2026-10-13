@@ -102,6 +102,8 @@ GPL-3.0-or-later。第三方组件许可见仓库声明。
 
 def verify_bundle(directory, version, sha):
     archive = directory / f"markbridge-{version}.zip"
+    if not 0 < archive.stat().st_size < 10_000_000:
+        raise ValueError("Plugin ZIP must be smaller than 10,000,000 bytes")
     manifest_path = directory / f"markbridge-{version}.manifest.json"
     checksum = directory / f"markbridge-{version}.zip.sha256"
     digest = hashlib.sha256(archive.read_bytes()).hexdigest()

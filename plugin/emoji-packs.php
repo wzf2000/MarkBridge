@@ -274,7 +274,7 @@ function mbb_emoji_page()
         wp_die('Forbidden', '', ['response' => 403]);
     }
     $message = '';
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         check_admin_referer('markbridge-emoji');
         try {
             $operation = sanitize_key($_POST['operation'] ?? '');
@@ -282,7 +282,9 @@ function mbb_emoji_page()
             if ($operation === 'import') {
                 $upload = $_FILES['pack_zip'] ?? [];
                 if (
+                    !is_array($upload) ||
                     ($upload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK ||
+                    !is_string($upload['tmp_name'] ?? null) ||
                     !is_uploaded_file($upload['tmp_name'])
                 ) {
                     throw new RuntimeException('Please upload a ZIP data pack.');

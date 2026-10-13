@@ -1,4 +1,12 @@
 <?php
+
+// Standalone CLI conversion and model tests remain supported; direct web access requires WordPress.
+if (!defined('ABSPATH')) {
+    if (PHP_SAPI !== 'cli') {
+        exit();
+    }
+}
+
 // Standalone model tests and pure conversions keep the English fallback.
 function mbb_t(string $message): string
 {
@@ -19,6 +27,7 @@ function mbb_t(string $message): string
         }
     }
     try {
+        // phpcs:ignore WordPress.WP.I18n.NonSingularStringLiteralText -- Shared project msgids are extracted and validated by build-localization; diagnostics require this variable boundary.
         $translated = __($message, 'markbridge');
         return mbb_safe_translation($message, $translated) ? $translated : $message;
     } finally {
@@ -33,7 +42,7 @@ function mbb_safe_translation(string $source, $translated): bool
     if (
         !is_string($translated) ||
         strlen($translated) > 32768 ||
-        !mb_check_encoding($translated, 'UTF-8') ||
+        preg_match('//u', $translated) !== 1 ||
         preg_match('/[\x00-\x08\x0b\x0c\x0e-\x1f]/', $translated)
     ) {
         return false;

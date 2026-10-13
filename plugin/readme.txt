@@ -12,7 +12,11 @@ Markdown and WordPress blocks, saved and restored together.
 == Description ==
 MarkBridge provides paired Markdown/block editing, previews, revisions, local MathJax rendering and Markdown comments.
 
-New installations use the bundled PHP converter with PHP 8.2+, DOM and mbstring on WordPress 7.1.x. No Node.js runtime or subprocess is required for supported content. Existing non-empty runtime settings retain Node until an administrator explicitly switches; unsupported environments or content are rejected without fallback. This readme applies to version 1.9.0-rc.1. For installation packages, see GitHub Releases.
+New installations use the bundled PHP converter with PHP 8.2+, DOM and mbstring on WordPress 7.1.x. No Node.js runtime or subprocess is required for supported content. Existing non-empty runtime settings retain Node until an administrator explicitly switches; unsupported environments or content are rejected without fallback.
+
+This readme applies to the unpublished 2.0.0-rc.1 review candidate. It is not a WordPress.org submission or a stable release. Download reviewed installation packages from GitHub Releases; source archives are not installation packages. Chinese and English interface text follows the WordPress user language in the editor and the site language for readers.
+
+Core Markdown editing does not call an external service. Local recovery is off until an author explicitly enables browser storage; it is not encrypted or a server backup. Optional ZIP images use normal WordPress media storage: a draft or private article does not make the media URL private. Bound-file writeback requires separate trusted server configuration. A GitHub updater, if chosen, is a separate plugin requiring explicit consent; it is not included in this package.
 
 == Installation ==
 1. Confirm WordPress 7.1.x, PHP 8.2+, DOM and mbstring.
@@ -20,6 +24,12 @@ New installations use the bundled PHP converter with PHP 8.2+, DOM and mbstring 
 3. Import a test Markdown draft, preview, save and reopen. Existing Node installations should review the upgrade guide before changing their backend.
 
 == Changelog ==
+
+= 2.0.0-rc.1 =
+Local recovery, bounded Front Matter proposals, safe image ZIP import, multilingual code tabs, saved Markdown/ZIP export, signed-baseline three-way merge, native details/link buttons, trusted static block adapters and English/Chinese interfaces. Includes the earlier fold/stage/code comparison and trusted teaching component candidates. Unpublished candidate; review the validation guide before considering an upgrade.
+
+= 1.9.0-rc.1 =
+Local teaching candidate: structured reading, code comparison, trusted component interfaces and lifecycle/budget protection. Not a published release.
 
 = 1.4.0 =
 Actionable conversion locations, managed-editor compatibility hints, content-scoped presentation assets and real WordPress CI for both converters.

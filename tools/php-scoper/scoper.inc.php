@@ -6,6 +6,7 @@ return [
     'prefix' => 'MarkBridge\\Vendor\\ConverterV1',
     'php-version' => '8.2',
     'exclude-namespaces' => ['MarkBridge\\Probe'],
+    'exclude-constants' => ['ABSPATH'],
     'expose-global-classes' => false,
     'expose-global-functions' => false,
     'expose-global-constants' => false,

@@ -77,7 +77,9 @@ test('trusted static editor applies required pure fields and pending/invalid JSO
   await expect(wrapper).toBeVisible();
   await params.fill('{bad');
   await page.getByRole('button', { name: 'Export', exact: true }).click();
-  await expect(page.locator('#task-export')).toContainText('ERROR: 参数尚未应用');
+  await expect(page.locator('#task-export')).toHaveText(
+    'ERROR: Parameters have not been applied. Apply or discard the parameter input before saving.',
+  );
   await canvas.getByRole('button', { name: '应用参数', exact: true }).click();
   await expect(wrapper.getByRole('alert')).toBeVisible();
   expect(

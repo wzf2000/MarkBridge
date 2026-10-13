@@ -224,7 +224,12 @@ jobs:
           python3 -m unittest discover -s tests -p 'test_ci_locales.py'
 
       - name: Test manual release guards
-        run: python3 -m unittest discover -s tests -p 'test_release_workflow.py'
+        run: |
+          python3 -m unittest discover -s tests -p 'test_release_workflow.py'
+          python3 -m unittest discover -s tests -p 'test_package_limits.py'
+          python3 -m unittest discover -s tests -p 'test_package_source.py'
+          python3 -m unittest discover -s tests -p 'test_vendor_resources.py'
+          php -d disable_functions=mb_check_encoding tests/i18n-bootstrap.php
 
       - name: Build and verify release package
         run: |

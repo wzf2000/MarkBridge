@@ -104,6 +104,7 @@ jobs:
           for name in expected:
               assert hashlib.sha256((root / name).read_bytes()).hexdigest() == proof['files'][name]
           archive = root / f'markbridge-{version}.zip'
+          assert 0 < archive.stat().st_size < 10_000_000
           assert (root / f'markbridge-{version}.zip.sha256').read_text() == f"{proof['files'][archive.name]}  {archive.name}\n"
           manifest_bytes = (root / f'markbridge-{version}.manifest.json').read_bytes()
           manifest = json.loads(manifest_bytes)

@@ -1,4 +1,5 @@
 (() => {
+  const T = (message) => globalThis.MBBI18n?.t(message) ?? message;
   const config = window.MBB_PRESENTATION;
   if (!config) return;
   window.MBB_EMOJI_MANUAL = true;

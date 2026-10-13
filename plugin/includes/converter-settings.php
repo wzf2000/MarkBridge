@@ -1,4 +1,12 @@
 <?php
+
+// Standalone CLI conversion and model tests remain supported; direct web access requires WordPress.
+if (!defined('ABSPATH')) {
+    if (PHP_SAPI !== 'cli') {
+        exit();
+    }
+}
+
 require_once __DIR__ . '/i18n.php';
 // Backend and Node directory are one atomic option; legacy settings remain untouched.
 const MBB_CONVERTER_OPTION = 'mbb_converter_settings';
@@ -169,7 +177,7 @@ function mbb_converter_candidate_diagnostics($backend, $diagnostics)
         echo '<tr><th>' .
             esc_html($check['label']) .
             '</th><td>' .
-            ($check['ok'] ? mbb_t('Passed') : mbb_t('Failed')) .
+            esc_html($check['ok'] ? mbb_t('Passed') : mbb_t('Failed')) .
             '</td><td>' .
             esc_html($check['message']) .
             '</td></tr>';

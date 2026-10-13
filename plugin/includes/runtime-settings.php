@@ -1,4 +1,12 @@
 <?php
+
+// Standalone CLI conversion and model tests remain supported; direct web access requires WordPress.
+if (!defined('ABSPATH')) {
+    if (PHP_SAPI !== 'cli') {
+        exit();
+    }
+}
+
 require_once __DIR__ . '/i18n.php';
 // Runtime configuration, compatibility checks and administrator-only diagnostics.
 require_once __DIR__ . '/conversion-backends.php';
@@ -698,7 +706,7 @@ function mbb_runtime_settings_page()
     echo mbb_t('<h2>Diagnostics</h2><table class="widefat striped"><tbody>');
     foreach ($diagnostics['checks'] as $check) {
         echo '<tr><th>' . esc_html($check['label']) . '</th><td>';
-        echo $check['ok'] ? mbb_t('Passed') : mbb_t('Failed');
+        echo esc_html($check['ok'] ? mbb_t('Passed') : mbb_t('Failed'));
         echo '</td><td>' . esc_html($check['message']) . '</td></tr>';
     }
     echo '</tbody></table>';

@@ -1,4 +1,12 @@
 <?php
+
+// Standalone CLI conversion and model tests remain supported; direct web access requires WordPress.
+if (!defined('ABSPATH')) {
+    if (PHP_SAPI !== 'cli') {
+        exit();
+    }
+}
+
 // Frontend enhancement never changes stored markup or paragraph identity.
 add_action('init', static function () {
     $schemas = json_decode(

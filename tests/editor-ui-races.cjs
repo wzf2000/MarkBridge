@@ -125,9 +125,14 @@ const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
       assert.equal(el('#mbb-source').readOnly, false);
       assert.equal(el('#mbb-conflict').hidden, true);
       assert.equal(el('#mbb-save').disabled, true);
-      if (phase === 'cleanup')
-        assert.match(el('#mbb-dialog > p[role=status]').textContent, /已保存确认的候选/);
-      else assert.match(el('#mbb-dialog > p[role=status]').textContent, /新输入已保留/);
+      assert.equal(
+        el('#mbb-dialog > p[role=status]').textContent,
+        phase === 'cleanup'
+          ? 'The confirmed candidate was saved, but subsequent local recovery cleanup did not complete. Current input is preserved. Preview again or download it.'
+          : phase === 'preview'
+            ? 'The earlier candidate preview did not complete. New input is preserved. Preview the differences again.'
+            : 'The earlier candidate was not confirmed as saved. New input is preserved. Preview the differences again.',
+      );
       held = false;
       await el('#mbb-review').onclick();
       const fresh = requests.filter((request) => request.endpoint === 'preview').at(-1).body;

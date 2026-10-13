@@ -1,4 +1,12 @@
 <?php
+
+// Standalone CLI conversion and model tests remain supported; direct web access requires WordPress.
+if (!defined('ABSPATH')) {
+    if (PHP_SAPI !== 'cli') {
+        exit();
+    }
+}
+
 require_once __DIR__ . '/includes/i18n.php';
 // Administrator-only, read-only extension status. Never expose local resource paths.
 function mbb_component_diagnostics(): array

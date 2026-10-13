@@ -1,7 +1,24 @@
 const assert = require('node:assert/strict');
 const { execFileSync } = require('node:child_process');
+const path = require('node:path');
+const Module = require('node:module');
+const { buildSync } = require('esbuild');
 (async () => {
-  const { planMerge, resolveMerge, mergeMetadata } = await import('../src/merge.js');
+  // Use the same JSON-aware bundling as the product; native Node ESM is not the source entry.
+  const filename = path.join(__dirname, 'merge-model.cjs');
+  const compiled = new Module(filename, module);
+  compiled.filename = filename;
+  compiled.paths = module.paths;
+  const bundle = buildSync({
+    entryPoints: [path.join(__dirname, '../src/merge.js')],
+    bundle: true,
+    platform: 'node',
+    format: 'cjs',
+    write: false,
+    logLevel: 'silent',
+  });
+  compiled._compile(bundle.outputFiles[0].text, filename);
+  const { planMerge, resolveMerge, mergeMetadata } = compiled.exports;
   const auto = (a, b, c, expected) => {
     const plan = planMerge(a, b, c);
     assert.deepEqual(plan.conflicts, []);

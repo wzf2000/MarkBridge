@@ -1,4 +1,12 @@
 <?php
+
+// Standalone CLI conversion and model tests remain supported; direct web access requires WordPress.
+if (!defined('ABSPATH')) {
+    if (PHP_SAPI !== 'cli') {
+        exit();
+    }
+}
+
 // Direct database observations distinguish a rollback from an ambiguous COMMIT acknowledgement.
 // Never include these snapshots in API responses or persistent recovery storage.
 function mbb_save_database_snapshot(int $id): array

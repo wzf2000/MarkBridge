@@ -1,4 +1,12 @@
 <?php
+
+// Standalone CLI conversion and model tests remain supported; direct web access requires WordPress.
+if (!defined('ABSPATH')) {
+    if (PHP_SAPI !== 'cli') {
+        exit();
+    }
+}
+
 require_once __DIR__ . '/includes/i18n.php';
 // Trusted PHP registrations describe static content only. Article/REST data cannot register adapters.
 require_once __DIR__ . '/includes/php-converter/Converter.php';

@@ -14,6 +14,7 @@ async function load(page, enhance = true) {
   await page.setContent(
     `<meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:16px;font:16px/1.6 sans-serif}${style}</style>${fixture()}`,
   );
+  await page.addScriptTag({ url: '/fixture-localization.js?locale=zh_CN' });
   if (enhance) await page.addScriptTag({ content: script });
 }
 test('teaching retains nodes, reveals deep anchors, restores history and prints all content', async ({

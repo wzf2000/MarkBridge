@@ -204,7 +204,12 @@ test('real WordPress iframe canvas exposes parent inspector interactive preview 
   await json.fill('{"value":');
   await page.getByRole('button', { name: '应用参数', exact: true }).click();
   await page.locator('#export-tasks').click();
-  await expect(page.locator('#task-export')).toContainText('ERROR: 参数尚未应用');
+  await expect(page.locator('#task-export')).toHaveText(
+    'ERROR: Parameters have not been applied. Apply or discard the parameter input before saving.',
+  );
+  // The synthetic output must not enlarge the mobile layout viewport or misalign pointer targets.
+  expect(await page.evaluate(() => innerWidth)).toBe(page.viewportSize().width);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.evaluate(() => taskRegistry.dispatch('core/block-editor').clearSelectedBlock());
   await page.evaluate(() =>
     taskRegistry.dispatch('core/block-editor').selectBlock(taskBlocks[0].clientId),
