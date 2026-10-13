@@ -73,6 +73,11 @@ const taskEditor = (source = '- [ ] Browser task\n- ordinary\n', options = {}) =
   if (!wpRuntime) return null;
   let html = fs.readFileSync(path.join(wpRuntime, 'run/worker-bootstrap.html'), 'utf8');
   html = html.replaceAll('http://markbridge.invalid', '');
+  if (options.converterOnly)
+    html = html.replace(
+      '<script src="/wp-content/plugins/markdown-block-bridge/kernel.js">',
+      '<script>window.MBB_CONVERTER_ONLY=true;</script><script src="/wp-content/plugins/markdown-block-bridge/kernel.js">',
+    );
   html = html.replace(
     '</head>',
     '<link rel="stylesheet" href="' +
@@ -146,6 +151,47 @@ http
       return response
         .writeHead(200, { 'Content-Type': 'text/html' })
         .end(editor.replace('</head>', setup + '</head>'));
+    }
+    if (pathname === '/recovery-editor') {
+      const query = new URL(request.url, 'http://localhost').searchParams;
+      const isNew = query.has('new'),
+        sourceManaged = query.has('source');
+      let html = taskEditor('# Original\n\nOriginal body.\n', { converterOnly: isNew });
+      if (!html) return response.writeHead(404).end();
+      if (query.has('sidebar'))
+        html = html.replace(
+          '</body>',
+          '<aside class="interface-complementary-area editor-sidebar" style="position:fixed;right:0;top:64px;bottom:0;width:min(320px,90vw);z-index:90;background:#fff;border-left:1px solid #888">Synthetic open editor sidebar</aside></body>',
+        );
+      html = html.replace(
+        'const e = wp.element.createElement;',
+        `
+window.MBB_EDITOR={root:location.origin+'/wp-json/mbb/v1/',nonce:'synthetic-nonce-not-for-storage',postId:${isNew ? 0 : 12},newPost:${isNew},canPublish:true,
+recovery:{schema:1,siteKey:'a'.repeat(64),userKey:'b'.repeat(64)},
+state:${isNew ? 'null' : `{post_id:12,expected:'baseline-1',title:'Original',post_status:'draft',featured_media:0,source_managed:${sourceManaged},source_write_available:false,source_sha256:${sourceManaged ? "'f'.repeat(64)" : 'null'},document:{documentId:'RECOVERY',source:'# Original\\n\\nOriginal body.\\n',serialized:wp.blocks.serialize(MBB.toBlocks('# Original\\n\\nOriginal body.\\n'))}}`}};
+window.MBB_REVISIONS={open(){}};window.MBB_MATH_CONFIG={front:false};
+window.recoveryFields={title:'Original',status:${isNew ? "'auto-draft'" : "'draft'"},featured_media:0};window.recoveryOriginalSerialized=wp.blocks.serialize(MBB.toBlocks('# Original\\n\\nOriginal body.\\n'));window.nativeDirty=false;window.recoveryLocks=[];
+const subscribers=new Set();window.recoveryNotify=()=>subscribers.forEach(fn=>fn());
+const select=wp.data.select.bind(wp.data),dispatch=wp.data.dispatch.bind(wp.data),subscribe=wp.data.subscribe.bind(wp.data);wp.data={...wp.data};
+wp.data.select=name=>name==='core/editor'?{getCurrentPostId:()=>12,getEditedPostAttribute:key=>recoveryFields[key],getEditedPostContent:()=>wp.blocks.serialize(window.taskBlocks||[]),isEditedPostDirty:()=>nativeDirty}:name==='core/block-editor'?{getBlocks:()=>window.taskBlocks||[]}:select(name);
+wp.data.dispatch=name=>name==='core/editor'?{editPost:attrs=>{Object.assign(recoveryFields,attrs);window.nativeDirty=true;recoveryNotify();},lockPostSaving:key=>recoveryLocks.push(key),lockPostAutosaving:key=>recoveryLocks.push(key)}:name==='core/block-editor'?{resetBlocks:blocks=>taskRegistry.dispatch('core/block-editor').resetBlocks(blocks)}:dispatch(name);
+wp.data.subscribe=fn=>{subscribers.add(fn);const original=subscribe(fn);return()=>{subscribers.delete(fn);original();};};
+const middlewares=[];window.nativePosts=[];
+wp.apiFetch=options=>middlewares.reduceRight((next,fn)=>opts=>fn(opts,next),async opts=>{nativePosts.push(opts);const result=await fetch('/wp-json/mbb/v1/mock-native-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(opts.data)});if(!result.ok)throw await result.json();return result.json();})(options);
+wp.apiFetch.use=fn=>middlewares.push(fn);
+const e = wp.element.createElement;`,
+      );
+      html = html.replace(
+        'window.taskBlocks = blocks;',
+        'window.taskBlocks = blocks;wp.element.useEffect(()=>{window.nativeDirty=wp.blocks.serialize(blocks)!==(MBB_EDITOR.state?.document.serialized||window.recoveryOriginalSerialized);window.recoveryNotify();},[blocks]);',
+      );
+      html = html.replace(
+        '</body>',
+        `<style>#mbb-new,#fixture-native-save{position:fixed;top:12px;z-index:60;padding:8px}#mbb-new{left:12px}#fixture-native-save{right:12px}</style><div style="position:relative;z-index:30"><button id="mbb-new">新 Markdown 草稿</button><button id="fixture-native-save">Fixture native save</button></div>
+<link rel="stylesheet" href="${mapped('editor-ui.css')}"><script src="${mapped('math.js')}"></script><script src="${mapped('editor-ui.js')}"></script><script src="${mapped('local-recovery.js')}"></script>
+<script>document.getElementById('fixture-native-save').onclick=async()=>{await wp.apiFetch({path:'/wp/v2/posts/12',method:'POST',data:{content:wp.blocks.serialize(taskBlocks),title:recoveryFields.title,status:recoveryFields.status==='auto-draft'?'draft':recoveryFields.status}});window.nativeDirty=false;recoveryNotify();};</script></body>`,
+      );
+      return response.writeHead(200, { 'Content-Type': 'text/html' }).end(html);
     }
     if (pathname === '/editor') {
       const size = Number(

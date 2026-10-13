@@ -244,18 +244,35 @@ try {
         'Future minimum version was usable',
     );
     $candidate = $provider;
-    $candidate['minMarkBridge'] = '1.9.0-dev.1';
+    preg_match(
+        '/^ \* Version: ([^ \r\n]+)/m',
+        file_get_contents(dirname(__DIR__) . '/plugin/markdown-block-bridge.php'),
+        $headerVersion,
+    );
+    $currentVersion = $headerVersion[1];
+    $baseVersion = explode('-', $currentVersion, 2)[0];
+    $candidate['minMarkBridge'] = str_contains($currentVersion, '-')
+        ? $baseVersion . '-dev.1'
+        : $currentVersion;
     registry_assert(
         markbridge_register_teaching_component('candidate', $candidate) &&
             mbb_component_registry()['candidate']['status'] === 'available',
-        'Current candidate was incompatible with itself',
+        'Current core rejected its same-base candidate floor',
     );
     $stable = $provider;
-    $stable['minMarkBridge'] = '1.9.0';
+    $stable['minMarkBridge'] = $baseVersion;
     registry_assert(
         markbridge_register_teaching_component('stable-only', $stable) &&
-            mbb_component_registry()['stable-only']['status'] === 'version-incompatible',
+            mbb_component_registry()['stable-only']['status'] ===
+                (str_contains($currentVersion, '-') ? 'version-incompatible' : 'available'),
         'Candidate claimed stable compatibility',
+    );
+    $lowerStable = $provider;
+    $lowerStable['minMarkBridge'] = '1.9.0';
+    registry_assert(
+        markbridge_register_teaching_component('lower-stable', $lowerStable) &&
+            mbb_component_registry()['lower-stable']['status'] === 'available',
+        'Current core rejected the supported lower stable version',
     );
     foreach (mbb_component_budget_limits() as $key => $max) {
         foreach ([0, -1, $max + 1, '1', 1.0] as $badValue) {

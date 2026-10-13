@@ -31,6 +31,10 @@ class WP_REST_Request implements ArrayAccess
     {
         return $this->body;
     }
+    public function has_param($key)
+    {
+        return array_key_exists($key, $this->data);
+    }
     public function set_header($name, $value) {}
     public function offsetExists($offset): bool
     {

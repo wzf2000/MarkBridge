@@ -1323,4 +1323,4 @@ export function register() {
   installInlineMathDecorations();
   registerNativeMathConversion();
 }
-register();
+if (typeof window === 'undefined' || window.MBB_CONVERTER_ONLY !== true) register();

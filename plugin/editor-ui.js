@@ -11,6 +11,10 @@
     busy = false;
   let dialog, source, title, docId, publication, status, diff, preview, save, reviewButton;
   let conflictPanel, conflictSummary, conflictDiff, conflictAdopt, conflictDownload;
+  let recoveryRecord = null,
+    recoveryVerify = null,
+    recoveryRebased = false,
+    recoveryApply;
   const el = (tag, attrs = {}, text = '') => {
     const n = document.createElement(tag);
     Object.entries(attrs).forEach(([k, v]) => n.setAttribute(k, v));
@@ -32,6 +36,11 @@
   async function api(route, data) {
     if (data && window.MarkBridgeParameterDrafts?.pending())
       throw Error('参数尚未应用；请应用或撤销参数输入后保存。');
+    const session = epoch;
+    const requestId =
+      Number(data?.post_id ?? new URL(cfg.url(route)).searchParams.get('post_id') ?? cfg.postId) ||
+      0;
+    const recoveryTicket = window.MarkBridgeLocalRecovery?.ticket(requestId);
     const response = await fetch(cfg.url(route), {
       method: data ? 'POST' : 'GET',
       headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': cfg.nonce },
@@ -39,6 +48,13 @@
     });
     const json = await response.json().catch(() => ({}));
     if (!response.ok) {
+      if ([401, 403].includes(response.status) && epoch === session)
+        window.MarkBridgeLocalRecovery?.denied(
+          json.code,
+          response.status,
+          requestId,
+          recoveryTicket,
+        );
       const error = Error(
         `${json.message || '请求失败'}（${json.code || 'HTTP'} / ${response.status}）`,
       );
@@ -53,6 +69,34 @@
     candidate = null;
     candidateSource = null;
     if (save) save.disabled = true;
+    if (recoveryApply) recoveryApply.disabled = true;
+    window.MarkBridgeLocalRecovery?.changed(
+      recoveryRecord?.kind === 'blocks' && !recoveryRecord.context.postId ? 'blocks' : 'markdown',
+      recoverySnapshot,
+    );
+  }
+  function recoverySnapshot(closing = false) {
+    if (!loaded || (!closing && !dialog?.open) || mode === 'blocks') return null;
+    const newBlocks = recoveryRecord?.kind === 'blocks' && !recoveryRecord.context.postId;
+    return {
+      kind: newBlocks ? 'blocks' : 'markdown',
+      postId: base?.post_id || 0,
+      expected:
+        recoveryRecord && !recoveryRebased
+          ? recoveryRecord.context.expected
+          : base?.expected || null,
+      sourceDigest:
+        recoveryRecord && !recoveryRebased
+          ? recoveryRecord.context.sourceDigest
+          : base?.source_sha256 || null,
+      payload: {
+        content: newBlocks ? recoveryRecord.payload.content : source.value,
+        title: title.value,
+        documentId: docId.value,
+        status: publication.value,
+        featuredMedia: request().featured_media,
+      },
+    };
   }
   function describeError(error) {
     const label = window.MBB?.formatLocation?.(error.location);
@@ -65,7 +109,16 @@
   function controls() {
     dialog.querySelectorAll('button,input,textarea,select').forEach((b) => (b.disabled = busy));
     save.disabled =
-      busy || !!conflict || !candidate || (base?.source_managed && !base?.source_write_available);
+      busy ||
+      !!conflict ||
+      !candidate ||
+      (recoveryRecord?.kind === 'blocks' && recoveryRecord.context.postId > 0) ||
+      (base?.source_managed && !base?.source_write_available);
+    if (recoveryApply) {
+      recoveryApply.hidden =
+        recoveryRecord?.kind !== 'blocks' || recoveryRecord.context.postId === 0;
+      recoveryApply.disabled = busy || !!conflict || !candidate || !!base?.source_managed;
+    }
     reviewButton.disabled = busy || !loaded || (!!conflict && !conflict.adopted);
     if (conflict) {
       conflictAdopt.disabled = busy || !conflict.latest;
@@ -81,7 +134,7 @@
       title.readOnly = true;
       publication.disabled = true;
     } else {
-      source.readOnly = false;
+      source.readOnly = recoveryRecord?.kind === 'blocks' && !recoveryRecord.context.postId;
       title.readOnly = false;
     }
   }
@@ -92,20 +145,32 @@
       post_id: base?.post_id || 0,
       documentId: docId.value,
       title: title.value,
-      expected: base?.expected || null,
+      expected:
+        recoveryRecord && !recoveryRebased
+          ? recoveryRecord.context.expected
+          : base?.expected || null,
       mode,
       post_status: publication.value,
-      source_sha256: base?.source_sha256 || null,
-      featured_media:
-        Number(base?.post_id) === Number(cfg.postId)
+      source_sha256:
+        recoveryRecord && !recoveryRebased
+          ? recoveryRecord.context.sourceDigest
+          : base?.source_sha256 || null,
+      featured_media: recoveryRecord
+        ? recoveryRecord.payload.featuredMedia
+        : Number(base?.post_id) === Number(cfg.postId)
           ? (wp.data.select('core/editor').getEditedPostAttribute('featured_media') ??
             base?.featured_media ??
             0)
           : (base?.featured_media ?? 0),
       source: mode === 'blocks' ? null : source.value,
+      ...(recoveryRecord?.kind === 'blocks' && !recoveryRecord.context.postId
+        ? { new_blocks_original: recoveryRecord.payload.content }
+        : {}),
       serialized:
         mode === 'blocks'
-          ? wp.blocks.serialize(wp.data.select('core/block-editor').getBlocks())
+          ? recoveryRecord?.kind === 'blocks'
+            ? recoveryRecord.payload.content
+            : wp.blocks.serialize(wp.data.select('core/block-editor').getBlocks())
           : null,
     };
   }
@@ -353,6 +418,7 @@
   function adoptConflict() {
     if (busy || !conflict?.latest) return;
     base = conflict.latest;
+    if (recoveryRecord) recoveryRebased = true;
     conflict.latest = null;
     conflict = null;
     conflictPanel.hidden = true;
@@ -372,6 +438,7 @@
     let payload;
     try {
       payload = request();
+      if (recoveryRecord) await recoveryVerify();
       const result = await api('preview', payload);
       if (!active(session)) return;
       if (version !== serial) {
@@ -415,10 +482,29 @@
           publication.selectedOptions[0].textContent +
           '。请检查差异和预览后确认。',
       );
+      if (recoveryRecord?.kind === 'blocks')
+        message(
+          recoveryRecord.context.postId === 0
+            ? '新文章区块候选已校验；请确认标题、文档 ID 和差异，再明确创建 Markdown 与区块成对保存的托管草稿。'
+            : base?.source_managed
+              ? '本地区块候选仅供预览；来源文章仍须经源文件流程保存，不会解除保存限制。'
+              : '本地区块候选校验通过；确认后只恢复到当前编辑器，尚不保存到站点。',
+        );
     } catch (e) {
       if (!active(session)) return;
-      if (isConflict(e) && payload) enterConflict(e, payload, payload.source ?? null);
-      else message(describeError(e), true);
+      if (isConflict(e) && payload) {
+        let markdown = payload.source ?? null;
+        if (recoveryRecord?.kind === 'blocks') {
+          try {
+            markdown = window.MBB.toMarkdown(wp.blocks.parse(payload.serialized), {
+              origin: 'markdown_import',
+            });
+          } catch {
+            /* Keep the original serialized candidate downloadable when conversion refuses it. */
+          }
+        }
+        enterConflict(e, payload, markdown);
+      } else message(describeError(e), true);
     } finally {
       if (active(session)) {
         busy = false;
@@ -432,10 +518,14 @@
     const payload = candidate,
       markdown = candidateSource,
       session = epoch;
+    const savedKind = recoveryRecord?.kind || (payload.mode === 'blocks' ? 'blocks' : 'markdown');
+    const recoveryTicket = window.MarkBridgeLocalRecovery?.ticket(base?.post_id || 0, savedKind);
     busy = true;
     controls();
     message('正在保存两种表示……');
     try {
+      if (recoveryRecord)
+        await recoveryVerify({ expected: payload.expected, sourceDigest: payload.source_sha256 });
       const result = await api(base?.source_managed ? 'source-save' : 'save', payload);
       if (!active(session)) return;
       message(
@@ -444,6 +534,20 @@
           : base?.source_managed
             ? '已安全写回源文件，并同时保存 Markdown 和区块。'
             : '已同时保存 Markdown 和区块。',
+      );
+      await window.MarkBridgeLocalRecovery?.saved(
+        result.post_id || base?.post_id || 0,
+        {
+          kind: recoveryRecord?.kind || (payload.mode === 'blocks' ? 'blocks' : 'markdown'),
+          payload: {
+            content: payload.new_blocks_original || payload.serialized || payload.source,
+            title: payload.title,
+            documentId: payload.documentId,
+            status: payload.post_status,
+            featuredMedia: payload.featured_media,
+          },
+        },
+        recoveryTicket,
       );
       window.location.assign(result.editor_url);
     } catch (e) {
@@ -465,12 +569,16 @@
   function build() {
     dialog = el('dialog', { id: 'mbb-dialog', 'aria-label': 'Markdown 与区块编辑' });
     dialog.addEventListener('close', () => {
+      const snapshot = recoverySnapshot(true);
+      if (snapshot) window.MarkBridgeLocalRecovery?.changed(snapshot.kind, () => snapshot);
       epoch++;
       busy = false;
       candidate = null;
       candidateSource = null;
       conflict = null;
       loaded = false;
+      recoveryRecord = recoveryVerify = null;
+      recoveryRebased = false;
     });
     const header = el('div', { class: 'mbb-dialog-header' });
     header.append(el('h2', {}, 'Markdown 与区块编辑'));
@@ -564,7 +672,54 @@
     reviewButton.onclick = review;
     save = el('button', { type: 'button', id: 'mbb-save' }, '确认保存双格式');
     save.onclick = persist;
-    actions.append(reviewButton, save);
+    recoveryApply = el(
+      'button',
+      { type: 'button', id: 'mbb-recovery-apply' },
+      '恢复到当前区块（不保存）',
+    );
+    recoveryApply.hidden = true;
+    recoveryApply.onclick = async () => {
+      if (
+        busy ||
+        !candidate ||
+        recoveryRecord?.kind !== 'blocks' ||
+        !recoveryRecord.context.postId ||
+        base?.source_managed
+      )
+        return;
+      const session = epoch,
+        record = recoveryRecord;
+      busy = true;
+      controls();
+      try {
+        await recoveryVerify({
+          expected: candidate.expected,
+          sourceDigest: candidate.source_sha256,
+        });
+        if (!active(session) || recoveryRecord !== record) return;
+        if (recoveryRebased && Number(base.post_id) === Number(cfg.postId)) {
+          // Only explicit conflict adoption + a verified preview authorizes this baseline update.
+          cfg.state = structuredClone(base);
+        }
+        const parsed = wp.blocks.parse(record.payload.content);
+        if (!parsed.length && record.payload.content.trim()) throw Error('候选无法恢复为区块。');
+        wp.data.dispatch('core/block-editor').resetBlocks(parsed);
+        wp.data.dispatch('core/editor').editPost({
+          title: record.payload.title,
+          status: record.payload.status,
+          featured_media: record.payload.featuredMedia,
+        });
+        dialog.close();
+      } catch (error) {
+        if (active(session)) message(describeError(error), true);
+      } finally {
+        if (active(session)) {
+          busy = false;
+          controls();
+        }
+      }
+    };
+    actions.append(reviewButton, save, recoveryApply);
     dialog.append(actions);
     status = el('p', { role: 'status' });
     diff = el('section', { 'aria-label': '修改差异' });
@@ -614,6 +769,8 @@
     candidate = null;
     candidateSource = null;
     conflict = null;
+    recoveryRecord = recoveryVerify = null;
+    recoveryRebased = false;
     version++;
     source.value = '';
     title.value = '';
@@ -681,6 +838,7 @@
       diff.replaceChildren();
       preview.srcdoc = '';
       loaded = true;
+      window.MarkBridgeLocalRecovery?.setPost(base?.post_id || 0);
       message(
         base?.source_managed
           ? sourceReadFailed
@@ -722,6 +880,7 @@
         return next(options);
       if (!options.data || typeof options.data !== 'object' || Array.isArray(options.data))
         throw { code: 'mbb_request', message: '无法验证此保存请求，请重新打开编辑器后重试。' };
+      const recoveryTicket = window.MarkBridgeLocalRecovery?.ticket(Number(cfg.postId), 'blocks');
       const result = await next({
         ...options,
         data: { ...options.data, mbb_expected: cfg.state.expected },
@@ -734,11 +893,64 @@
         if (Number.isInteger(data.featured_media)) cfg.state.featured_media = data.featured_media;
         if (cfg.state.document && typeof data.content?.raw === 'string')
           cfg.state.document.serialized = data.content.raw;
+        await window.MarkBridgeLocalRecovery?.saved(
+          Number(data.id) || Number(cfg.postId),
+          {
+            kind: 'blocks',
+            payload: {
+              content: data.content?.raw || options.data.content,
+              title: data.title?.raw ?? options.data.title ?? cfg.state.title,
+              status: data.status ?? options.data.status ?? cfg.state.post_status,
+              documentId: cfg.state.document?.documentId || '',
+              featuredMedia: Number(
+                data.featured_media ?? options.data.featured_media ?? cfg.state.featured_media ?? 0,
+              ),
+            },
+          },
+          recoveryTicket,
+        );
       }
       return result;
     });
     return true;
   }
+  window.MarkBridgeEditorRecovery = {
+    snapshot: recoverySnapshot,
+    async restore(record, verify) {
+      await verify();
+      if (dialog?.open) dialog.close();
+      await open(record.context.postId, record.kind === 'blocks' ? 'blocks' : 'markdown');
+      if (!loaded || !dialog?.open) throw Error('无法打开本地恢复预览。');
+      await verify();
+      recoveryRecord = record;
+      recoveryVerify = verify;
+      title.value = record.payload.title;
+      docId.value = record.payload.documentId;
+      publication.value = record.payload.status;
+      source.value = record.kind === 'markdown' ? record.payload.content : '';
+      mode = record.kind === 'blocks' ? 'blocks' : 'markdown';
+      if (record.kind === 'blocks' && !record.context.postId) {
+        const parsed = wp.blocks.parse(record.payload.content);
+        const markdown = window.MBB.toMarkdown(parsed, { origin: 'markdown_import' });
+        const verified = window.MBB.importDocument(markdown, record.payload.documentId);
+        if (verified.serialized !== record.payload.content)
+          throw Error('新原生区块无法精确往返；候选未创建，可下载保留原区块。');
+        source.value = markdown;
+        mode = 'markdown';
+      }
+      source.hidden = mode === 'blocks';
+      invalidate();
+      await review();
+    },
+    cancel() {
+      if (recoveryRecord) {
+        source.value = title.value = docId.value = '';
+        preview.srcdoc = '';
+        diff.replaceChildren();
+        dialog.close();
+      }
+    },
+  };
   function setup() {
     document.querySelector('#mbb-new')?.addEventListener('click', () => open(0));
     document

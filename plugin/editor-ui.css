@@ -269,3 +269,50 @@
   color: #b32d2e;
   font-weight: 600;
 }
+
+#mbb-local-recovery {
+  position: fixed;
+  right: 12px;
+  bottom: 88px;
+  z-index: 1000;
+  width: min(420px, calc(100vw - 24px));
+  max-height: min(65vh, 600px);
+  overflow: auto;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid #c3c4c7;
+  border-radius: 4px;
+  max-width: 100%;
+  box-sizing: border-box;
+  font: 14px/1.5 system-ui;
+  box-shadow: 0 2px 10px #0002;
+}
+@media (max-width: 600px) {
+  #mbb-local-recovery {
+    bottom: 100px;
+    max-height: min(65dvh, calc(100dvh - 220px));
+  }
+}
+#mbb-local-recovery summary {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 600;
+}
+#mbb-local-recovery p {
+  max-width: 75ch;
+}
+#mbb-local-recovery button {
+  margin: 4px;
+}
+.mbb-recovery-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+.mbb-recovery-row span {
+  flex: 1 1 200px;
+}

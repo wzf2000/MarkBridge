@@ -125,16 +125,19 @@ jobs:
           wp_test eval-file tests/teaching-save.php
           wp_test eval-file tests/provider-save.php
           wp_test eval-file tests/php-backend-save.php
+          wp_test eval-file tests/recovery-save.php
           php -d disable_functions=exec,shell_exec,system,passthru,proc_open,popen,pcntl_exec \
             "$RUNNER_TEMP/markbridge-downloads/wp-cli-2.12.0.phar" --path="$MARKBRIDGE_TEST_WORDPRESS_ROOT" eval-file tests/native-rest-save.php
           wp_test eval-file tests/ci-backend.php node
           wp_test eval-file tests/native-rest-save.php
           wp_test eval-file tests/teaching-save.php
           wp_test eval-file tests/provider-save.php
+          wp_test eval-file tests/recovery-save.php
           wp_test eval-file tests/ci-backend.php php
           wp_test eval-file tests/native-rest-save.php
           wp_test eval-file tests/teaching-save.php
           wp_test eval-file tests/provider-save.php
+          wp_test eval-file tests/recovery-save.php
 
       - name: Check formatting
         env:
@@ -185,6 +188,7 @@ jobs:
         run: |
           php tests/admin-settings.php
           php tests/conversion-errors.php
+          php tests/local-recovery.php
 
       - name: Check release sources and PHP syntax
         run: python3 scripts/check_release.py
@@ -282,3 +286,4 @@ jobs:
         run: |
           php tests/admin-settings.php
           php tests/conversion-errors.php
+          php tests/local-recovery.php

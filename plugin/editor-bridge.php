@@ -270,6 +270,20 @@ function mbb_candidate($r)
     if (!$p && $mode === 'blocks') {
         return mbb_error('origin', '新文档请先导入Markdown。', 422);
     }
+    $originalBlocks = $r['new_blocks_original'];
+    if (
+        $r->has_param('new_blocks_original') &&
+        ($p ||
+            $mode !== 'markdown' ||
+            !is_string($originalBlocks) ||
+            strlen($originalBlocks) > 262144)
+    ) {
+        return mbb_error(
+            'recovery_shape',
+            '新原生区块候选必须以有界 Markdown 导入，且保留原区块形状。',
+            422,
+        );
+    }
     $title = $r['title'] ?? ($p ? $p->post_title : '');
     if (!is_string($title) || !trim($title) || sanitize_text_field($title) !== $title) {
         return mbb_error('title', '请输入不含HTML的标题。', 422);
@@ -303,6 +317,13 @@ function mbb_candidate($r)
     ]);
     if (is_wp_error($doc)) {
         return $doc;
+    }
+    if ($r->has_param('new_blocks_original') && !hash_equals($doc['serialized'], $originalBlocks)) {
+        return mbb_error(
+            'recovery_shape',
+            '原生区块无法精确往返为 Markdown，候选未创建；请下载保留或调整区块。',
+            422,
+        );
     }
     if ($p && str_contains($p->post_content, '<!-- wp:mbb/component ')) {
         $trusted = mbb_convert([
@@ -914,11 +935,11 @@ add_action('admin_menu', function () {
 });
 function mbb_enqueue_ui()
 {
-    if (!current_user_can('edit_posts')) {
+    $id = absint($_GET['post'] ?? 0);
+    if (!current_user_can('edit_posts') && (!$id || !current_user_can('edit_post', $id))) {
         return;
     }
     $screen = get_current_screen();
-    $id = absint($_GET['post'] ?? 0);
     $tool = $screen && $screen->id === 'tools_page_mbb-editor';
     if ($id && !current_user_can('edit_post', $id)) {
         return;
@@ -948,6 +969,7 @@ function mbb_enqueue_ui()
         'root' => rest_url('mbb/v1'),
         'nonce' => wp_create_nonce('wp_rest'),
         'postId' => $tool ? 0 : $id,
+        'newPost' => $new_post && !$tool,
         'canPublish' => current_user_can(
             $id && get_post_type($id) === 'page' ? 'publish_pages' : 'publish_posts',
         ),
@@ -961,7 +983,15 @@ function mbb_enqueue_ui()
             ),
         ),
         'sourceFontSize' => mbb_display_preferences()['source_font_size'],
+        'recovery' => mbb_recovery_config(),
     ]);
+    wp_enqueue_script(
+        'mbb-local-recovery',
+        plugins_url(mbb_asset('local-recovery.js'), __FILE__),
+        ['mbb-editor-ui'],
+        substr(hash_file('sha256', __DIR__ . '/local-recovery.js'), 0, 12),
+        true,
+    );
     wp_enqueue_style(
         'mbb-editor-ui',
         plugins_url(mbb_asset('editor-ui.css'), __FILE__),
@@ -979,4 +1009,5 @@ add_action('admin_enqueue_scripts', 'mbb_enqueue_ui');
 add_action('enqueue_block_editor_assets', 'mbb_enqueue_ui');
 add_action('admin_footer-post-new.php', 'mbb_enqueue_ui');
 
+require_once __DIR__ . '/local-recovery.php';
 require_once __DIR__ . '/lifecycle.php';
