@@ -44,6 +44,7 @@ require_once __DIR__ . '/Footnotes.php';
 require_once __DIR__ . '/DisplayBoundaries.php';
 require_once __DIR__ . '/CodeWhitespace.php';
 require_once __DIR__ . '/Teaching.php';
+require_once __DIR__ . '/FrontMatter.php';
 
 final class ConversionError extends \RuntimeException
 {
@@ -66,6 +67,7 @@ final class Converter
     private int $nodes = 0;
     private bool $legacyTasks = false;
     private bool $legacyFootnotes = false;
+    private bool $legacyFrontMatter = false;
     private bool $markdownInline = false;
     private bool $sourceLocations = true;
 
@@ -129,41 +131,46 @@ final class Converter
             throw new ConversionError('DOCUMENT_ID', 'A nonempty documentId is required');
         }
         try {
-            foreach (
-                [[false, false], [true, true], [false, true]]
-                as [$legacyTasks, $legacyFootnotes]
-            ) {
-                $this->legacyTasks = $legacyTasks;
-                $this->legacyFootnotes = $legacyFootnotes;
-                try {
-                    // Snapshot admission intentionally does not call the editing
-                    // reverse path: historical pairs may be non-editable today.
-                    $candidate = $this->serializeAll($this->markdownBlocks($source));
-                    $this->input($candidate);
-                    $snapshotKind = $legacyFootnotes ? 'legacy' : 'current';
-                    $matches = $candidate === $serialized;
-                    if (!$matches) {
-                        // A fixed historical renderer operates only on our
-                        // complete authorized output, never on client bytes.
-                        $historical = self::htmlTextGtV1($candidate);
-                        $this->input($historical);
-                        $matches = $historical === $serialized;
-                        $snapshotKind .= ':html-text-gt-v1';
+            foreach ([false, true] as $legacyFrontMatter) {
+                $this->legacyFrontMatter = $legacyFrontMatter;
+                foreach (
+                    [[false, false], [true, true], [false, true]]
+                    as [$legacyTasks, $legacyFootnotes]
+                ) {
+                    $this->legacyTasks = $legacyTasks;
+                    $this->legacyFootnotes = $legacyFootnotes;
+                    try {
+                        // Snapshot admission intentionally does not call the editing
+                        // reverse path: historical pairs may be non-editable today.
+                        $candidate = $this->serializeAll($this->markdownBlocks($source));
+                        $this->input($candidate);
+                        $snapshotKind =
+                            $legacyFootnotes || $legacyFrontMatter ? 'legacy' : 'current';
+                        $matches = $candidate === $serialized;
+                        if (!$matches) {
+                            // A fixed historical renderer operates only on our
+                            // complete authorized output, never on client bytes.
+                            $historical = self::htmlTextGtV1($candidate);
+                            $this->input($historical);
+                            $matches = $historical === $serialized;
+                            $snapshotKind .= ':html-text-gt-v1';
+                        }
+                        if ($matches) {
+                            return [
+                                'ok' => true,
+                                'source' => $source,
+                                'serialized' => $serialized,
+                                'documentId' => $documentId,
+                                'snapshot_kind' => $snapshotKind,
+                            ];
+                        }
+                    } catch (ConversionError $error) {
+                        // Only an exact complete snapshot can use a historical variant.
                     }
-                    if ($matches) {
-                        return [
-                            'ok' => true,
-                            'source' => $source,
-                            'serialized' => $serialized,
-                            'documentId' => $documentId,
-                            'snapshot_kind' => $snapshotKind,
-                        ];
-                    }
-                } catch (ConversionError $error) {
-                    // Only an exact complete snapshot can use a historical variant.
                 }
             }
         } finally {
+            $this->legacyFrontMatter = false;
             $this->legacyTasks = false;
             $this->legacyFootnotes = false;
             $this->markdownInline = false;
@@ -211,10 +218,14 @@ final class Converter
     {
         $this->markdownInline = false;
         $original = $source;
+        $front = $this->legacyFrontMatter ? null : FrontMatter::parse($source);
+        if ($front) {
+            $source = $front['body'];
+        }
         try {
             $source = DisplayBoundaries::normalize($source);
         } catch (ConversionError $error) {
-            if (!$reportSource) {
+            if (!$reportSource || $front) {
                 $error->location = '';
             }
             throw $error;
@@ -337,7 +348,13 @@ final class Converter
             }
             $blocks[] = $this->block('mbb/footnotes', [], $notes);
         }
-        return Teaching::assemble($blocks);
+        $blocks = Teaching::assemble($blocks);
+        return $front
+            ? array_merge(
+                [$this->block('mbb/frontmatter', ['version' => 1, 'raw' => $front['raw']])],
+                $blocks,
+            )
+            : $blocks;
     }
 
     private function block(
@@ -860,6 +877,13 @@ final class Converter
         $attrs = $block['attrs'];
         $children = $this->serializeAll($block['children']);
         $content = $block['content'];
+        if ($name === 'mbb/frontmatter') {
+            return '<!-- wp:mbb/frontmatter ' .
+                self::commentJson($attrs) .
+                " -->\n" .
+                FrontMatter::HTML .
+                "\n<!-- /wp:mbb/frontmatter -->";
+        }
         if (($kind = Teaching::kind($name)) !== null) {
             $html =
                 '<div id="' .
@@ -1108,8 +1132,11 @@ final class Converter
         if (!is_array($attrs) || (array_is_list($attrs) && $attrs !== [])) {
             throw new ConversionError('BLOCK_ATTRIBUTES', 'Block attributes must be an object');
         }
-        if (Teaching::kind($name) !== null && isset($match[2])) {
+        if ((Teaching::kind($name) !== null || $name === 'mbb/frontmatter') && isset($match[2])) {
             $attrs = Teaching::json($match[2]);
+        }
+        if ($name === 'mbb/frontmatter' && ($attrs['version'] ?? null) === 1.0) {
+            $attrs['version'] = 1;
         }
         $this->validateAttrs($name, $attrs);
         $position += strlen($match[0]);
@@ -1570,6 +1597,15 @@ final class Converter
     {
         if ($depth === 0) {
             Teaching::validate($blocks);
+            FrontMatter::validate($blocks);
+            if (($blocks[0]['name'] ?? '') === 'mbb/frontmatter') {
+                $raw = $blocks[0]['attrs']['raw'];
+                return $raw .
+                    (count($blocks) > 1
+                        ? (str_ends_with($raw, "\n") ? "\n" : "\n\n") .
+                            $this->decodeAll(array_slice($blocks, 1), 0)
+                        : '');
+            }
         }
         if ($depth === 0) {
             $notes = array_keys(
@@ -1636,6 +1672,15 @@ final class Converter
         $attrs = $block['attrs'];
         $children = $block['children'];
         $raw = $block['raw'];
+        if ($name === 'mbb/frontmatter') {
+            if ($children !== [] || $raw !== FrontMatter::HTML) {
+                throw new ConversionError(
+                    'FRONTMATTER_STRUCTURE',
+                    'Invalid FrontMatter carrier HTML',
+                );
+            }
+            return $attrs['raw'];
+        }
         if (Teaching::kind($name) !== null) {
             return Teaching::markdown($block, $this->decodeAll($children, $depth + 1));
         }

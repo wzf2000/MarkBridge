@@ -1,4 +1,11 @@
 import {
+  parseFrontmatter,
+  validateFrontmatter,
+  validateFrontmatterSerialized,
+  registerFrontmatter,
+} from './frontmatter.js';
+export { parseFrontmatter, frontmatterFields } from './frontmatter.js';
+import {
   validateTeachingSerialized,
   teachingSource,
   teachingMarker,
@@ -676,16 +683,22 @@ function blocksFromSource(
   legacyTasks = false,
   legacyFootnotes = false,
   reportSource = true,
+  legacyFrontmatter = false,
 ) {
   // Legacy normalization adds newlines; its generated line map is not a source location.
   checkSource(source);
   let normalized = source;
+  let removedHeader = false;
   try {
-    normalized = displayBoundaries(source);
-    return parseSource(source, legacyTasks, legacyFootnotes, normalized);
+    const front = legacyFrontmatter ? null : parseFrontmatter(source, fail);
+    const body = front ? front.body : source;
+    removedHeader = !!front;
+    normalized = displayBoundaries(body);
+    const blocks = parseSource(body, legacyTasks, legacyFootnotes, normalized);
+    return front ? [make('mbb/frontmatter', { version: 1, raw: front.raw }), ...blocks] : blocks;
   } catch (error) {
     if (
-      (!reportSource || normalized !== source) &&
+      (!reportSource || removedHeader || normalized !== source) &&
       error instanceof ConversionError &&
       /^line:/.test(error.location)
     )
@@ -693,8 +706,13 @@ function blocksFromSource(
     throw error;
   }
 }
-export function toBlocks(source, legacyTasks = false, legacyFootnotes = false) {
-  return blocksFromSource(source, legacyTasks, legacyFootnotes);
+export function toBlocks(
+  source,
+  legacyTasks = false,
+  legacyFootnotes = false,
+  legacyFrontmatter = false,
+) {
+  return blocksFromSource(source, legacyTasks, legacyFootnotes, true, legacyFrontmatter);
 }
 function textMD(text) {
   return text
@@ -787,6 +805,15 @@ function taskItemMarkdown(item, at, includeInner = true) {
     : first;
 }
 function rawMarkdown(blocks, path = 'blocks') {
+  if (path === 'blocks' && blocks[0]?.name === 'mbb/frontmatter') {
+    const raw = blocks[0].attributes.raw;
+    return (
+      raw +
+      (blocks.length > 1
+        ? (raw.endsWith('\n') ? '\n' : '\n\n') + rawMarkdown(blocks.slice(1), 'blocks')
+        : '')
+    );
+  }
   if (path === 'blocks' && blocks.filter((b) => b.name === 'mbb/footnotes').length > 1)
     fail('FOOTNOTE_STRUCTURE', '一篇文档只能有一个脚注定义区');
   if (
@@ -945,6 +972,7 @@ export function toMarkdown(blocks, context) {
   if (context?.origin !== 'markdown_import')
     fail('ORIGIN_REQUIRED', '只有明确Markdown来源文档允许反向转换');
   validateTeaching(blocks, fail);
+  validateFrontmatter(blocks, fail);
   const result = rawMarkdown(blocks);
   checkSource(result);
   // Fail closed if formatting, attributes, nesting, or inline constructs would be lost.
@@ -1005,18 +1033,22 @@ export function importDocument(source, documentId) {
   };
 }
 function snapshotKind(source, serialized) {
-  for (const [legacyTasks, legacyFootnotes] of [
-    [false, false],
-    [true, true],
-    [false, true],
-  ]) {
-    try {
-      if (api().serialize(toBlocks(source, legacyTasks, legacyFootnotes)) === serialized)
-        return legacyFootnotes ? 'legacy' : 'current';
-    } catch (_error) {
-      // Only an exact complete block snapshot can use the historical parser.
+  for (const legacyFrontmatter of [false, true])
+    for (const [legacyTasks, legacyFootnotes] of [
+      [false, false],
+      [true, true],
+      [false, true],
+    ]) {
+      try {
+        if (
+          api().serialize(toBlocks(source, legacyTasks, legacyFootnotes, legacyFrontmatter)) ===
+          serialized
+        )
+          return legacyFootnotes || legacyFrontmatter ? 'legacy' : 'current';
+      } catch (_error) {
+        // Only an exact complete block snapshot can use the historical parser.
+      }
     }
-  }
   return null;
 }
 export function importPairedDocument(source, serialized, documentId) {
@@ -1052,6 +1084,7 @@ export function exportDocument(document, serialized) {
   if (kind === 'legacy' && canonical(serialized) === canonical(document.serialized))
     return document.source;
   validateTeachingSerialized(serialized, fail);
+  validateFrontmatterSerialized(serialized, fail);
   const blocks = api().parse(serialized);
   const normalized = toMarkdown(blocks, document);
   return canonical(serialized) === canonical(document.serialized) ? document.source : normalized;
@@ -1100,6 +1133,7 @@ function MathPreview({ tex, display = false }) {
   );
 }
 export function register() {
+  registerFrontmatter();
   registerTeaching();
   registerFootnotes();
   const el = wp.element.createElement;

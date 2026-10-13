@@ -59,6 +59,8 @@ const { JSDOM, VirtualConsole } = require(path.join(ROOT, 'node_modules/jsdom'))
         return w.MBB.importPairedDocument(item.source, item.serialized, item.documentId);
       const source =
         item.mode === 'blocks' ? w.MBB.exportDocument(item.base, item.serialized) : item.source;
+      if (item.mode === 'blocks' && source === item.base.source)
+        return w.MBB.importPairedDocument(source, item.base.serialized, item.documentId);
       return w.MBB.importDocument(source, item.documentId);
     };
     let document;

@@ -11,6 +11,12 @@
     busy = false;
   let dialog, source, title, docId, publication, status, diff, preview, save, reviewButton;
   let conflictPanel, conflictSummary, conflictDiff, conflictAdopt, conflictDownload;
+  let frontmatterPanel,
+    frontmatterRows,
+    frontmatterWrite,
+    frontmatterAuthority = null,
+    frontmatterRaw = null;
+  const frontmatterSelected = new Set();
   let recoveryRecord = null,
     recoveryVerify = null,
     recoveryRebased = false,
@@ -70,6 +76,7 @@
     candidateSource = null;
     if (save) save.disabled = true;
     if (recoveryApply) recoveryApply.disabled = true;
+    renderFrontmatter();
     window.MarkBridgeLocalRecovery?.changed(
       recoveryRecord?.kind === 'blocks' && !recoveryRecord.context.postId ? 'blocks' : 'markdown',
       recoverySnapshot,
@@ -137,6 +144,13 @@
       source.readOnly = recoveryRecord?.kind === 'blocks' && !recoveryRecord.context.postId;
       title.readOnly = false;
     }
+    frontmatterPanel
+      ?.querySelectorAll('input[data-available]')
+      .forEach(
+        (input) => (input.disabled = busy || source.readOnly || input.dataset.available !== 'true'),
+      );
+    if (frontmatterWrite)
+      frontmatterWrite.disabled = busy || !loaded || mode === 'blocks' || source.readOnly;
   }
   const active = (serial) => dialog.open && epoch === serial;
   const isConflict = (error) => ['conflict', 'source_conflict'].includes(error.code);
@@ -157,7 +171,7 @@
           : base?.source_sha256 || null,
       featured_media: recoveryRecord
         ? recoveryRecord.payload.featuredMedia
-        : Number(base?.post_id) === Number(cfg.postId)
+        : Number(base?.post_id || 0) === Number(cfg.postId)
           ? (wp.data.select('core/editor').getEditedPostAttribute('featured_media') ??
             base?.featured_media ??
             0)
@@ -166,6 +180,10 @@
       ...(recoveryRecord?.kind === 'blocks' && !recoveryRecord.context.postId
         ? { new_blocks_original: recoveryRecord.payload.content }
         : {}),
+      frontmatter_selected:
+        recoveryRecord?.kind === 'blocks' && recoveryRecord.context.postId > 0
+          ? []
+          : [...frontmatterSelected],
       serialized:
         mode === 'blocks'
           ? recoveryRecord?.kind === 'blocks'
@@ -173,6 +191,155 @@
             : wp.blocks.serialize(wp.data.select('core/block-editor').getBlocks())
           : null,
     };
+  }
+  function currentMetadata() {
+    return (
+      base?.frontmatter_current || {
+        title: base?.title ?? title?.value ?? '',
+        excerpt: '',
+        slug: '',
+        status: base?.post_status ?? publication?.value ?? 'draft',
+        categories: [],
+        tags: [],
+        featured_media: base?.featured_media ?? request().featured_media,
+      }
+    );
+  }
+  function renderFrontmatter(authority = null) {
+    if (!frontmatterPanel || !source) return;
+    let parsed;
+    try {
+      const raw =
+        mode === 'blocks'
+          ? (recoveryRecord?.kind === 'blocks'
+              ? wp.blocks.parse(recoveryRecord.payload.content)
+              : wp.data.select('core/block-editor')?.getBlocks?.())[0]?.attributes?.raw || ''
+          : source.value;
+      parsed = window.MBB?.parseFrontmatter(raw, (code, message) => {
+        throw Error(message);
+      });
+    } catch (error) {
+      frontmatterRows.replaceChildren(el('p', { role: 'alert' }, error.message));
+      frontmatterSelected.clear();
+      frontmatterAuthority = null;
+      return;
+    }
+    if ((parsed?.raw || '') !== frontmatterRaw) {
+      frontmatterRaw = parsed?.raw || '';
+      frontmatterAuthority = null;
+    }
+    if (authority) frontmatterAuthority = authority;
+    const proposal = parsed?.proposal || {};
+    for (const key of frontmatterSelected) if (!(key in proposal)) frontmatterSelected.delete(key);
+    const current = frontmatterAuthority?.current || currentMetadata();
+    const fields =
+      frontmatterAuthority?.fields ||
+      Object.entries(proposal).map(([field, value]) => ({
+        field,
+        before: current[field],
+        proposal: value,
+        resolved: null,
+        available: !(
+          field === 'status' &&
+          ['publish', 'private'].includes(value) &&
+          !cfg.canPublish
+        ),
+        reason: '权限与解析值将在服务器预览中复核。',
+      }));
+    frontmatterRows.replaceChildren();
+    if (!fields.length)
+      frontmatterRows.append(el('p', {}, '没有版本化元数据提案；旧无版本头继续作为正文。'));
+    const labels = {
+      title: '标题',
+      excerpt: '摘要',
+      slug: 'slug',
+      status: '状态',
+      categories: '分类 slugs',
+      tags: '标签 slugs',
+      featured_media: '特色图片',
+    };
+    for (const original of fields) {
+      const row =
+        recoveryRecord?.kind === 'blocks' && recoveryRecord.context.postId > 0
+          ? {
+              ...original,
+              available: false,
+              reason:
+                '本地区块恢复只还原候选，头部提案保留；需要应用元数据请通过编辑桥另行预览确认。',
+            }
+          : original;
+      const line = el('div', { 'data-frontmatter-field': row.field, class: 'mbb-frontmatter-row' });
+      const label = el('label', {}, ' 应用 ' + labels[row.field]);
+      const input = el('input', {
+        type: 'checkbox',
+        id: 'mbb-frontmatter-' + row.field,
+        'data-available': String(row.available),
+      });
+      input.checked = frontmatterSelected.has(row.field);
+      input.disabled = busy || !row.available;
+      input.onchange = () => {
+        if (input.checked) frontmatterSelected.add(row.field);
+        else frontmatterSelected.delete(row.field);
+        invalidate();
+        controls();
+      };
+      label.prepend(input);
+      line.append(label);
+      line.append(
+        el('div', { 'data-role': 'before' }, '当前：' + JSON.stringify(row.before)),
+        el('div', { 'data-role': 'proposal' }, '提案：' + JSON.stringify(row.proposal)),
+      );
+      if (row.resolved !== null)
+        line.append(
+          el('div', { 'data-role': 'resolved' }, '应用值：' + JSON.stringify(row.resolved)),
+        );
+      if (row.reason) line.append(el('p', { class: 'mbb-frontmatter-reason' }, row.reason));
+      frontmatterRows.append(line);
+    }
+  }
+  async function writeCurrentMetadata() {
+    if (busy || !loaded || mode === 'blocks' || source.readOnly) return;
+    const session = epoch,
+      serial = version;
+    busy = true;
+    controls();
+    try {
+      let metadata = currentMetadata();
+      if (base?.post_id) {
+        const fresh = await api('document?post_id=' + base.post_id);
+        if (!active(session) || version !== serial) return;
+        if (fresh.expected !== base.expected)
+          throw Error('当前文章已变化，请先处理版本冲突；头部未修改。');
+        metadata = fresh.frontmatter_current;
+        base.frontmatter_current = structuredClone(metadata);
+        if (Number(base.post_id) === Number(cfg.postId) && cfg.state?.expected === base.expected)
+          cfg.state.frontmatter_current = structuredClone(metadata);
+      }
+      const old = MBB.parseFrontmatter(source.value, (code, message) => {
+        throw Error(message);
+      });
+      const lines = ['---', 'markbridge: 1'];
+      for (const key of MBB.frontmatterFields)
+        if (Object.hasOwn(metadata, key) && !(key === 'title' && !metadata[key].trim()))
+          lines.push(key + ': ' + JSON.stringify(metadata[key]));
+      const raw = lines.join('\n') + '\n---\n';
+      MBB.parseFrontmatter(raw, (code, message) => {
+        throw Error(message);
+      });
+      source.value = raw + (old ? old.body : '\n' + source.value);
+      mode = 'markdown';
+      frontmatterSelected.clear();
+      frontmatterAuthority = null;
+      invalidate();
+      message('当前元数据已写入头部候选，尚未保存；请重新预览，来源文章仍须经源文件写回流程。');
+    } catch (error) {
+      if (active(session)) message(describeError(error), true);
+    } finally {
+      if (active(session)) {
+        busy = false;
+        controls();
+      }
+    }
   }
   // Unique-line anchors split long documents without allocating a line-count squared table.
   // Small gaps use LCS for readable edits; large repeated gaps remain bounded replacements.
@@ -445,6 +612,8 @@
         message('内容已变化，请重新查看差异。');
         return;
       }
+      renderFrontmatter(result.frontmatter);
+      payload.frontmatter_receipt = result.frontmatter_receipt;
       const rendered = await MBB_MATH.preview(result.html);
       if (!active(session)) return;
       if (version !== serial) {
@@ -452,11 +621,11 @@
         return;
       }
       save.textContent =
-        payload.post_status === 'publish'
+        result.post_status === 'publish'
           ? '确认公开发布'
-          : payload.post_status === 'private'
+          : result.post_status === 'private'
             ? '确认私密发布'
-            : payload.post_status === 'pending'
+            : result.post_status === 'pending'
               ? '确认提交审核'
               : '确认保存草稿';
       showDiff(result.before, result.document.source);
@@ -479,7 +648,9 @@
       conflictPanel.hidden = true;
       message(
         '校验通过；目标状态：' +
-          publication.selectedOptions[0].textContent +
+          ({ draft: '草稿', pending: '待审核', publish: '公开发布', private: '私密发布' }[
+            result.post_status
+          ] || publication.selectedOptions[0].textContent) +
           '。请检查差异和预览后确认。',
       );
       if (recoveryRecord?.kind === 'blocks')
@@ -667,6 +838,23 @@
       invalidate();
     };
     dialog.append(source);
+    frontmatterPanel = el('section', {
+      id: 'mbb-frontmatter',
+      'aria-label': 'FrontMatter 元数据提案',
+    });
+    frontmatterPanel.append(
+      el('h3', {}, 'FrontMatter 元数据提案'),
+      el('p', {}, '默认不应用。逐项选择后须重新预览；取消选择不会改写当前文章设置或头部。'),
+    );
+    frontmatterRows = el('div', { id: 'mbb-frontmatter-fields' });
+    frontmatterWrite = el(
+      'button',
+      { type: 'button', id: 'mbb-frontmatter-from-current' },
+      '将当前元数据写入头部',
+    );
+    frontmatterWrite.onclick = writeCurrentMetadata;
+    frontmatterPanel.append(frontmatterRows, frontmatterWrite);
+    dialog.append(frontmatterPanel);
     const actions = el('div', { class: 'mbb-actions' });
     reviewButton = el('button', { type: 'button', id: 'mbb-review' }, '查看差异与预览');
     reviewButton.onclick = review;
@@ -772,6 +960,9 @@
     recoveryRecord = recoveryVerify = null;
     recoveryRebased = false;
     version++;
+    frontmatterSelected.clear();
+    frontmatterAuthority = null;
+    frontmatterRaw = null;
     source.value = '';
     title.value = '';
     docId.value = '';
@@ -782,12 +973,30 @@
     controls();
     message('正在读取服务器版本……');
     try {
-      const freshBase = id
+      let freshBase = id
         ? id === cfg.postId
           ? structuredClone(cfg.state)
           : await api('document?post_id=' + id)
         : null;
       if (!active(serial)) return;
+      if (id && id === cfg.postId && freshBase?.expected) {
+        try {
+          const server = await api('document?post_id=' + id);
+          if (!active(serial)) return;
+          // Native saves return a new fingerprint, but not necessarily the full source/metadata.
+          // A GET may fill that same snapshot; it never adopts another editor's baseline.
+          if (server.expected === freshBase.expected) {
+            freshBase = server;
+            cfg.state = structuredClone(server);
+          }
+        } catch (error) {
+          if (!active(serial)) return;
+          // Preserve the existing read-only stored-source fallback on transport failures.
+          // Authentication/permission failures must never open the cached private snapshot.
+          if (!freshBase.source_managed || error.status) throw error;
+          freshBase.source_write_available = false;
+        }
+      }
       base = freshBase;
       source.value = base?.document.source || '';
       let sourceReadFailed = false;
@@ -796,6 +1005,8 @@
           let fresh = await api('source?post_id=' + id);
           if (!active(serial)) return;
           if (fresh.expected !== base.expected) {
+            if (id === cfg.postId)
+              throw Error('当前文章已变化，请先处理版本冲突；保留原版本基线。');
             const current = await api('document?post_id=' + id);
             if (!active(serial)) return;
             fresh = await api('source?post_id=' + id);
@@ -838,6 +1049,7 @@
       diff.replaceChildren();
       preview.srcdoc = '';
       loaded = true;
+      renderFrontmatter();
       window.MarkBridgeLocalRecovery?.setPost(base?.post_id || 0);
       message(
         base?.source_managed
@@ -959,11 +1171,17 @@
     if (!Number(cfg.postId)) {
       if (/\/post-new\.php$/.test(window.location.pathname)) {
         const install = () => {
+          const compact = window.matchMedia?.('(max-width: 782px)').matches ?? innerWidth <= 782;
           const toolbar = document.querySelector(
-            '.edit-post-header-toolbar, .edit-post-header__settings',
+            '.edit-post-header-toolbar, .editor-header__toolbar, .edit-post-header__settings',
           );
-          if (!toolbar) return false;
-          if (document.querySelector('#mbb-new-post')) return true;
+          const target = compact ? document.body : toolbar;
+          if (!target) return false;
+          const existing = document.querySelector('#mbb-new-post');
+          if (existing) {
+            if (existing.parentElement !== target) target.append(existing);
+            return true;
+          }
           const button = el(
             'button',
             {
@@ -986,7 +1204,7 @@
           };
           // Keep Gutenberg's document tools (add block, undo, redo) together;
           // the import action follows them as a secondary, clearly separated action.
-          toolbar.append(button);
+          target.append(button);
           return true;
         };
         if (!install()) {
@@ -996,6 +1214,7 @@
           }, 100);
         }
         const observer = new MutationObserver(() => install());
+        window.addEventListener('resize', install);
         observer.observe(document.body, { childList: true, subtree: true });
       }
       return;

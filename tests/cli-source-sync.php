@@ -131,6 +131,10 @@ function update_post_meta($id, $key, $value)
     $meta[$id][$key] = $value;
     return true;
 }
+function wp_get_object_terms(...$args)
+{
+    return [];
+}
 function get_post_thumbnail_id($id)
 {
     return 0;

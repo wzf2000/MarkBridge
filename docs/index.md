@@ -28,7 +28,7 @@ README 说明产品范围和最短开发入口；本页按用途区分持续有�
 
 ## ACTIVE
 
-- [通用作者工作流与发行渠道完善](plans/active/AUTHOR-WORKFLOW-2.0.md)：按顺序实施八个旧候选，本地恢复已完成，当前 Front Matter；仅本地和隔离验收。
+- [通用作者工作流与发行渠道完善](plans/active/AUTHOR-WORKFLOW-2.0.md)：按顺序实施八个旧候选，本地恢复与 Front Matter 已完成，当前图片导入；仅本地和隔离验收。
 
 1.5–1.9 教学综合候选已完成本地开发与隔离验收，等待统一审查。
 

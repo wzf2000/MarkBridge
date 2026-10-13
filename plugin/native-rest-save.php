@@ -165,6 +165,17 @@ function mbb_native_rest_update($result, $server, $request)
     if (!in_array($request->get_method(), ['POST', 'PUT', 'PATCH'], true)) {
         return mbb_error('paired_save_required', '此文档只能通过原生文章更新保存。', 403);
     }
+    if (
+        ($request['frontmatter_selected'] ?? []) !== [] ||
+        $request->has_param('frontmatter_receipt') ||
+        $request->has_param('frontmatter_applied')
+    ) {
+        return mbb_error(
+            'frontmatter_native',
+            '原生保存只保留头部提案；应用元数据请在编辑桥中逐项选择、预览并确认。',
+            422,
+        );
+    }
     $expected = $request->get_param('mbb_expected');
     if (!is_string($expected) || !preg_match('/^[a-f0-9]{64}$/', $expected)) {
         return mbb_error('expected_required', '缺少当前文档版本，请重新载入后保存。', 409);

@@ -46,6 +46,11 @@ class Request
     }
 }
 function add_action(...$args) {}
+// These synthetic recovery fixtures have no assigned taxonomy terms.
+function wp_get_object_terms($post, $taxonomy, $args)
+{
+    return [];
+}
 function add_filter(...$args) {}
 function is_user_logged_in()
 {

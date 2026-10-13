@@ -2,6 +2,9 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
+const fixturePort = Number(process.env.MARKBRIDGE_TEST_BROWSER_PORT || 8765);
+if (!Number.isInteger(fixturePort) || fixturePort < 1024 || fixturePort > 65535)
+  throw Error('MARKBRIDGE_TEST_BROWSER_PORT must be a local unprivileged port.');
 
 const plugin = process.env.MARKBRIDGE_TEST_PLUGIN_ROOT
   ? fs.realpathSync(process.env.MARKBRIDGE_TEST_PLUGIN_ROOT)
@@ -152,12 +155,22 @@ http
         .writeHead(200, { 'Content-Type': 'text/html' })
         .end(editor.replace('</head>', setup + '</head>'));
     }
-    if (pathname === '/recovery-editor') {
+    if (pathname === '/recovery-editor' || pathname === '/wp-admin/post-new.php') {
       const query = new URL(request.url, 'http://localhost').searchParams;
       const isNew = query.has('new'),
         sourceManaged = query.has('source');
       let html = taskEditor('# Original\n\nOriginal body.\n', { converterOnly: isNew });
       if (!html) return response.writeHead(404).end();
+      if (query.has('header'))
+        html = html.replace(
+          '</body>',
+          `<style>
+.fixture-editor-header{position:fixed;top:46px;left:0;right:0;height:64px;background:white;border-bottom:1px solid #888;z-index:90;display:flex;align-items:center}
+.fixture-editor-header .edit-post-header-toolbar{display:flex;align-items:center;gap:8px}
+.fixture-editor-header .editor-header__settings{margin-left:auto;display:flex;align-items:center;gap:12px;background:white;height:100%}
+@media(max-width:782px){.fixture-editor-header .edit-post-header-toolbar{width:100px;flex-shrink:0;overflow:hidden}.fixture-editor-header .editor-header__settings{position:absolute;left:100px;right:0;top:0}}
+</style><header class="editor-header fixture-editor-header"><div class="edit-post-header-toolbar"><button>Add</button><button>List</button></div><div class="editor-header__settings"><button class="editor-header__post-preview-button">Preview</button><button>Publish</button></div></header></body>`,
+        );
       if (query.has('sidebar'))
         html = html.replace(
           '</body>',
@@ -361,4 +374,4 @@ const e = wp.element.createElement;`,
     });
     fs.createReadStream(file).pipe(response);
   })
-  .listen(8765, '127.0.0.1');
+  .listen(fixturePort, '127.0.0.1');

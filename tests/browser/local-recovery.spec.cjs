@@ -60,15 +60,38 @@ async function fixture(page, options = {}) {
       });
     }
     if (name === 'document') {
+      const serialized = await page.evaluate(
+        (source) => MBB.importDocument(source, 'RECOVERY').serialized,
+        original,
+      );
+      const title = state.expected === 'baseline-1' ? 'Original' : 'Server changed';
       return route.fulfill({
         json: {
           post_id: 12,
           expected: state.expected,
-          title: state.expected === 'baseline-1' ? 'Original' : 'Server changed',
+          title,
           post_status: 'draft',
+          featured_media: 0,
+          frontmatter_current: {
+            title,
+            excerpt: '',
+            slug: '',
+            status: 'draft',
+            categories: [],
+            tags: [],
+            featured_media: 0,
+          },
           source_managed: !!options.source,
           source_write_available: false,
-          document: { documentId: 'RECOVERY', source: original, serialized: '' },
+          source_sha256: options.source ? 'f'.repeat(64) : null,
+          document: {
+            schema: 1,
+            converter: '0.2.0',
+            origin: 'markdown_import',
+            documentId: 'RECOVERY',
+            source: original,
+            serialized,
+          },
         },
       });
     }
