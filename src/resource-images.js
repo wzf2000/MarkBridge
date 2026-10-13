@@ -1,5 +1,5 @@
 // Only operate on a converter-validated serialized snapshot, never arbitrary Markdown.
-export function rewriteSerializedImageURLs(serialized, mappings, fail) {
+export function rewriteSerializedImageURLs(serialized, mappings, fail, portable = false) {
   if (!Array.isArray(mappings) || mappings.length > 256)
     fail('RESOURCE_MAP', '图片映射最多 256 种引用、32 个目标');
   const replacements = new Map();
@@ -14,7 +14,11 @@ export function rewriteSerializedImageURLs(serialized, mappings, fail) {
       [...item.to].length > 4096 ||
       /[\uD800-\uDFFF\x00]/u.test(item.from + item.to) ||
       replacements.has(item.from) ||
-      !/^(?:https?:\/\/[^\s<>"'\\]+|mbb-import\/[a-f0-9]{64})$/.test(item.to)
+      !(
+        portable
+          ? /^images\/[a-f0-9]{64}\.(?:png|jpg|gif|webp)$/
+          : /^(?:https?:\/\/[^\s<>"'\\]+|mbb-import\/[a-f0-9]{64})$/
+      ).test(item.to)
     )
       fail('RESOURCE_MAP', '图片映射非法或重复');
     replacements.set(item.from, { url: item.to, count: 0 });
@@ -46,6 +50,12 @@ export function rewriteSerializedImageURLs(serialized, mappings, fail) {
           const mapped = replacements.get(decode(double ?? single ?? plain));
           if (!mapped) return attr;
           mapped.count++;
+          if (portable) {
+            const start = attr.indexOf('=') + 1;
+            const prefix = attr.slice(0, start) + attr.slice(start).match(/^\s*/)[0];
+            const quote = double !== undefined ? '"' : single !== undefined ? "'" : '';
+            return prefix + quote + mapped.url + quote;
+          }
           return name + '="' + escape(mapped.url) + '"';
         },
       );

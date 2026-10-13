@@ -4,6 +4,7 @@
   left: 12px;
   right: auto;
   width: max-content;
+  max-width: calc(100vw - 24px);
   box-sizing: border-box;
   flex-wrap: wrap;
   z-index: 30;
@@ -253,6 +254,11 @@
   max-width: 100%;
   white-space: normal;
 }
+#mbb-toolbar > span,
+#mbb-toolbar > details {
+  min-width: 0;
+  max-width: 100%;
+}
 
 .mbb-capabilities {
   position: relative;
@@ -285,10 +291,13 @@
 #mbb-local-recovery {
   position: fixed;
   right: 12px;
-  bottom: 88px;
+  bottom: var(--mbb-author-controls-clearance, 88px);
   z-index: 1000;
   width: min(420px, calc(100vw - 24px));
-  max-height: min(65vh, 600px);
+  max-height: max(
+    48px,
+    min(65dvh, 600px, calc(100dvh - var(--mbb-author-controls-clearance, 88px) - 58px))
+  );
   overflow: auto;
   padding: 8px 12px;
   background: #fff;
@@ -298,12 +307,6 @@
   box-sizing: border-box;
   font: 14px/1.5 system-ui;
   box-shadow: 0 2px 10px #0002;
-}
-@media (max-width: 600px) {
-  #mbb-local-recovery {
-    bottom: 100px;
-    max-height: min(65dvh, calc(100dvh - 220px));
-  }
 }
 #mbb-local-recovery summary {
   position: sticky;
@@ -366,4 +369,32 @@
 #mbb-resource-list {
   padding-left: 20px;
   overflow-wrap: anywhere;
+}
+
+#mbb-export-dialog {
+  box-sizing: border-box;
+  width: min(900px, calc(100vw - 24px));
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  border: 1px solid #c3c4c7;
+  border-radius: 12px;
+  padding: 20px;
+}
+#mbb-export-dialog::backdrop {
+  background: rgb(0 0 0 / 45%);
+}
+#mbb-export-dialog button,
+#mbb-export-dialog select {
+  margin: 4px;
+  max-width: 100%;
+  white-space: normal;
+}
+#mbb-export-dialog ul {
+  overflow-wrap: anywhere;
+}
+#mbb-export-projected-source {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 240px;
+  font-family: monospace;
 }

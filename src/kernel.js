@@ -6,6 +6,7 @@ import {
 } from './frontmatter.js';
 export { parseFrontmatter, frontmatterFields } from './frontmatter.js';
 import { rewriteSerializedImageURLs } from './resource-images.js';
+import { portableImageSource } from './portable-images.js';
 import {
   validateTeachingSerialized,
   teachingSource,
@@ -1040,6 +1041,17 @@ export function rewriteDocumentImages(base, mappings) {
   const serialized = rewriteSerializedImageURLs(verified.serialized, mappings, fail);
   if (serialized === verified.serialized) return verified;
   return importDocument(exportDocument(verified, serialized), base.documentId);
+}
+export function portableDocumentImages(base, mappings) {
+  exportDocument(base, base?.serialized);
+  const verified = importPairedDocument(base.source, base.serialized, base.documentId);
+  const expected = rewriteSerializedImageURLs(verified.serialized, mappings, fail, true);
+  if (!mappings.length) return verified;
+  const source = portableImageSource(verified.source, mappings, fail);
+  const result = importDocument(source, base.documentId);
+  if (result.serialized !== expected)
+    fail('EXPORT_PROJECTION', '图片引用无法在保留正文其他字节的前提下可靠投影');
+  return result;
 }
 function snapshotKind(source, serialized) {
   for (const legacyFrontmatter of [false, true])

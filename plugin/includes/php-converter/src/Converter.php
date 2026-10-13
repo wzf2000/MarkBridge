@@ -46,6 +46,7 @@ require_once __DIR__ . '/CodeWhitespace.php';
 require_once __DIR__ . '/Teaching.php';
 require_once __DIR__ . '/FrontMatter.php';
 require_once __DIR__ . '/ResourceImages.php';
+require_once __DIR__ . '/PortableImages.php';
 
 final class ConversionError extends \RuntimeException
 {
@@ -79,6 +80,23 @@ final class Converter
         return $serialized === $verified['serialized']
             ? $verified
             : $this->fromMarkdown($this->fromBlocks($serialized)['source']);
+    }
+    public function portableImages(array $base, array $mappings): array
+    {
+        $verified = $this->restorePair($base['source'], $base['serialized'], $base['documentId']);
+        $expected = ResourceImages::rewrite($verified['serialized'], $mappings, true);
+        if (!$mappings) {
+            return $verified;
+        }
+        $result = $this->fromMarkdown(PortableImages::source($verified['source'], $mappings));
+        if ($result['serialized'] !== $expected) {
+            throw new ConversionError(
+                'EXPORT_PROJECTION',
+                'Image projection cannot preserve the complete document',
+            );
+        }
+        $result['documentId'] = $base['documentId'];
+        return $result;
     }
 
     public function fromMarkdown(string $source): array

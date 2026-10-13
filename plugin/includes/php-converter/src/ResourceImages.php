@@ -28,8 +28,11 @@ final class ResourceImages
         }
         return $urls;
     }
-    public static function rewrite(string $serialized, array $mappings): string
-    {
+    public static function rewrite(
+        string $serialized,
+        array $mappings,
+        bool $portable = false,
+    ): string {
         if (!array_is_list($mappings) || count($mappings) > 256) {
             throw new ConversionError('RESOURCE_MAP', 'Invalid image mapping');
         }
@@ -47,7 +50,9 @@ final class ResourceImages
                 mb_strlen($item['to'], 'UTF-8') > 4096 ||
                 isset($map[$item['from']]) ||
                 !preg_match(
-                    '~^(?:https?://[^\s<>"\'\\\\]+|mbb-import/[a-f0-9]{64})$~D',
+                    $portable
+                        ? '~^images/[a-f0-9]{64}\.(?:png|jpg|gif|webp)$~D'
+                        : '~^(?:https?://[^\s<>"\'\\\\]+|mbb-import/[a-f0-9]{64})$~D',
                     $item['to'],
                 )
             ) {
@@ -60,13 +65,13 @@ final class ResourceImages
         }
         $result = preg_replace_callback(
             self::TOKENS,
-            static function ($tag) use (&$map) {
+            static function ($tag) use (&$map, $portable) {
                 if (!preg_match('/^<img\b/i', $tag[0])) {
                     return $tag[0];
                 }
                 return preg_replace_callback(
                     self::ATTRIBUTES,
-                    static function ($src) use (&$map) {
+                    static function ($src) use (&$map, $portable) {
                         if (strtolower(trim($src[1])) !== 'src' || count($src) < 3) {
                             return $src[0];
                         }
@@ -81,6 +86,15 @@ final class ResourceImages
                             return $src[0];
                         }
                         $map[$value]['count']++;
+                        if ($portable) {
+                            preg_match('/^.*?=\s*/s', $src[0], $prefix);
+                            $quote = substr($src[0], strlen($prefix[0]), 1);
+                            $quoted = $quote === '"' || $quote === "'";
+                            return $prefix[0] .
+                                ($quoted ? $quote : '') .
+                                $map[$value]['url'] .
+                                ($quoted ? $quote : '');
+                        }
                         return $src[1] .
                             '="' .
                             htmlspecialchars($map[$value]['url'], ENT_QUOTES | ENT_HTML5, 'UTF-8') .

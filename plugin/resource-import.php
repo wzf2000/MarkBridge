@@ -256,6 +256,7 @@ function mbb_resource_extract(string $archive, string $dir): array
     $seen = [];
     $images = [];
     $markdown = null;
+    $sidecar = null;
     $expanded = 0;
     try {
         if ($zip->numFiles < 1 || $zip->numFiles > 100) {
@@ -287,16 +288,25 @@ function mbb_resource_extract(string $archive, string $dir): array
             }
             $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
             $is_md = in_array($ext, ['md', 'markdown'], true);
-            if (!$is_md && !in_array($ext, ['png', 'jpg', 'jpeg', 'gif', 'webp'], true)) {
+            $is_sidecar = $name === 'markbridge-export.json';
+            if (
+                !$is_md &&
+                !$is_sidecar &&
+                !in_array($ext, ['png', 'jpg', 'jpeg', 'gif', 'webp'], true)
+            ) {
                 mbb_resource_throw(
                     'resource_type',
                     'ZIP 只接受一个 Markdown 文稿及 PNG/JPEG/GIF/WebP',
                 );
             }
-            if (($is_md && $markdown !== null) || (!$is_md && count($images) >= 32)) {
+            if (
+                ($is_md && $markdown !== null) ||
+                ($is_sidecar && $sidecar !== null) ||
+                (!$is_md && !$is_sidecar && count($images) >= 32)
+            ) {
                 mbb_resource_throw('resource_entries', 'ZIP 只能有一个文稿和最多 32 张图片');
             }
-            $limit = $is_md ? 262144 : 8388608;
+            $limit = $is_md || $is_sidecar ? 262144 : 8388608;
             if ($stat['size'] > $limit || $stat['size'] + $expanded > 33554432) {
                 mbb_resource_throw('resource_size', 'ZIP 声明的展开大小超限');
             }
@@ -343,7 +353,10 @@ function mbb_resource_extract(string $archive, string $dir): array
                 mbb_resource_throw('resource_zip', 'ZIP 项 CRC 校验失败');
             }
             $sha = hash_file('sha256', $file);
-            if ($is_md) {
+            if ($is_sidecar) {
+                $sidecar = file_get_contents($file);
+                unlink($file);
+            } elseif ($is_md) {
                 $source = file_get_contents($file);
                 if (!mb_check_encoding($source, 'UTF-8') || str_contains($source, "\0")) {
                     mbb_resource_throw('resource_markdown', 'Markdown 必须是有界 UTF-8 文本');
@@ -371,11 +384,130 @@ function mbb_resource_extract(string $archive, string $dir): array
         if ($markdown === null) {
             mbb_resource_throw('resource_markdown', 'ZIP 必须包含一个 Markdown 文稿');
         }
+        if ($sidecar !== null) {
+            mbb_resource_export_sidecar($sidecar, $markdown, $images);
+        }
         return ['markdown' => $markdown, 'images' => $images, 'expandedBytes' => $expanded];
     } finally {
         $zip->close();
     }
 }
+function mbb_resource_export_sidecar(string $raw, array $markdown, array $images): void
+{
+    try {
+        $typed = json_decode($raw, false, 32, JSON_THROW_ON_ERROR);
+        if (
+            !($typed instanceof stdClass) ||
+            !(($typed->document ?? null) instanceof stdClass) ||
+            !(($typed->metadata ?? null) instanceof stdClass) ||
+            !is_array($typed->resources ?? null) ||
+            !is_array($typed->metadata->categories ?? null) ||
+            !is_array($typed->metadata->tags ?? null)
+        ) {
+            throw new RuntimeException();
+        }
+        foreach ($typed->resources as $entry) {
+            if (!($entry instanceof stdClass)) {
+                throw new RuntimeException();
+            }
+        }
+        $value = \MarkBridge\Probe\Teaching::json($raw);
+        $keys = static function (array $value, array $expected): bool {
+            $actual = array_keys($value);
+            sort($actual);
+            sort($expected);
+            return $actual === $expected;
+        };
+        if (
+            !$keys($value, ['schema', 'kind', 'document', 'resources', 'metadata']) ||
+            $value['schema'] !== 1 ||
+            $value['kind'] !== 'markbridge-portable' ||
+            !is_array($value['document']) ||
+            !is_array($value['resources']) ||
+            !array_is_list($value['resources']) ||
+            !is_array($value['metadata'])
+        ) {
+            throw new RuntimeException();
+        }
+        $doc = $value['document'];
+        if (
+            !$keys($doc, ['path', 'representation', 'originalSourceSha256', 'bytes', 'sha256']) ||
+            $doc['path'] !== $markdown['path'] ||
+            $doc['representation'] !== 'portable' ||
+            !is_string($doc['originalSourceSha256']) ||
+            !preg_match('/^[a-f0-9]{64}$/D', $doc['originalSourceSha256']) ||
+            $doc['bytes'] !== $markdown['bytes'] ||
+            $doc['sha256'] !== $markdown['sha256'] ||
+            count($value['resources']) !== count($images)
+        ) {
+            throw new RuntimeException();
+        }
+        $seen = [];
+        foreach ($value['resources'] as $resource) {
+            if (
+                !is_array($resource) ||
+                !$keys($resource, ['path', 'mime', 'bytes', 'sha256', 'width', 'height']) ||
+                !is_string($resource['path']) ||
+                !preg_match('~^images/[a-f0-9]{64}\.(?:png|jpg|gif|webp)$~D', $resource['path']) ||
+                isset($seen[$resource['path']])
+            ) {
+                throw new RuntimeException();
+            }
+            $seen[$resource['path']] = true;
+            $found = false;
+            foreach ($images as $image) {
+                if ($image['path'] === $resource['path']) {
+                    foreach (['mime', 'bytes', 'sha256', 'width', 'height'] as $field) {
+                        if ($resource[$field] !== $image[$field]) {
+                            throw new RuntimeException();
+                        }
+                    }
+                    $found = true;
+                }
+            }
+            if (!$found) {
+                throw new RuntimeException();
+            }
+        }
+        $metadata = $value['metadata'];
+        if (!$keys($metadata, ['title', 'excerpt', 'slug', 'categories', 'tags'])) {
+            throw new RuntimeException();
+        }
+        foreach (['title' => 2000, 'excerpt' => 8192, 'slug' => 2000] as $field => $max) {
+            if (
+                !is_string($metadata[$field]) ||
+                !mb_check_encoding($metadata[$field], 'UTF-8') ||
+                str_contains($metadata[$field], "\0") ||
+                strlen($metadata[$field]) > $max
+            ) {
+                throw new RuntimeException();
+            }
+        }
+        foreach (['categories', 'tags'] as $field) {
+            if (
+                !is_array($metadata[$field]) ||
+                !array_is_list($metadata[$field]) ||
+                count($metadata[$field]) > 100
+            ) {
+                throw new RuntimeException();
+            }
+            foreach ($metadata[$field] as $slug) {
+                if (
+                    !is_string($slug) ||
+                    !mb_check_encoding($slug, 'UTF-8') ||
+                    str_contains($slug, "\0") ||
+                    strlen($slug) > 2000
+                ) {
+                    throw new RuntimeException();
+                }
+            }
+        }
+        // Metadata is descriptive only. Never return or apply it as a write proposal.
+    } catch (Throwable $error) {
+        mbb_resource_throw('resource_sidecar', '导出侧清单字段、正文或图片摘要不一致，未导入');
+    }
+}
+
 function mbb_resource_scope($r): array
 {
     $id = absint($r['post_id']);

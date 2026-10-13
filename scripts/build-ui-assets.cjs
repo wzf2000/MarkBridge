@@ -29,6 +29,7 @@ asset('emoji.js');
 asset('presentation-loader.js');
 asset('editor-ui.js');
 asset('resource-ui.js');
+asset('export-ui.js');
 asset('local-recovery.js');
 asset('editor-ui.css');
 asset('math.css');

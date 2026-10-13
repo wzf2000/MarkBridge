@@ -4,6 +4,7 @@ require_once __DIR__ . '/includes/conversion-backends.php';
 require_once __DIR__ . '/frontmatter.php';
 require_once __DIR__ . '/resource-import.php';
 require_once __DIR__ . '/save-commit.php';
+require_once __DIR__ . '/export.php';
 function mbb_managed($id)
 {
     return get_post_meta($id, '_mbb_origin', true) === 'markdown_import' &&
@@ -1098,7 +1099,9 @@ add_action('admin_menu', function () {
                         (int) $p->ID .
                         '">Markdown 编辑</button> <button class="button mbb-history" data-post="' .
                         (int) $p->ID .
-                        '">历史版本 / 恢复</button></li>';
+                        '">历史版本 / 恢复</button> <button class="button mbb-export" data-post="' .
+                        (int) $p->ID .
+                        '">导出已保存文章</button></li>';
                 }
             }
             echo '</ul><nav aria-label="文档分页">';
@@ -1175,7 +1178,15 @@ function mbb_enqueue_ui()
         'sourceFontSize' => mbb_display_preferences()['source_font_size'],
         'recovery' => mbb_recovery_config(),
         'resources' => mbb_resource_config(),
+        'exports' => mbb_export_config(),
     ]);
+    wp_enqueue_script(
+        'mbb-export-ui',
+        plugins_url(mbb_asset('export-ui.js'), __FILE__),
+        ['mbb-editor-ui'],
+        substr(hash_file('sha256', __DIR__ . '/export-ui.js'), 0, 12),
+        true,
+    );
     wp_enqueue_script(
         'mbb-local-recovery',
         plugins_url(mbb_asset('local-recovery.js'), __FILE__),

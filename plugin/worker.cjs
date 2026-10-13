@@ -55,7 +55,7 @@ const { JSDOM, VirtualConsole } = require(path.join(ROOT, 'node_modules/jsdom'))
       } else vm.runInContext(s.textContent, dom.getInternalVMContext(), { timeout: 5000 });
     }
     const convert = (item) => {
-      if (item.mode === 'resource_images') {
+      if (item.mode === 'resource_images' || item.mode === 'portable_images') {
         if (
           !item.base ||
           item.base.documentId !== item.documentId ||
@@ -63,7 +63,9 @@ const { JSDOM, VirtualConsole } = require(path.join(ROOT, 'node_modules/jsdom'))
           item.base.origin !== 'markdown_import'
         )
           throw Error('DOCUMENT_MODEL');
-        return w.MBB.rewriteDocumentImages(item.base, item.mappings);
+        return item.mode === 'portable_images'
+          ? w.MBB.portableDocumentImages(item.base, item.mappings)
+          : w.MBB.rewriteDocumentImages(item.base, item.mappings);
       }
       if (item.mode === 'paired_restore')
         return w.MBB.importPairedDocument(item.source, item.serialized, item.documentId);
