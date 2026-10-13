@@ -30,7 +30,7 @@ README 说明产品范围和最短开发入口；本页按用途区分持续有�
 
 - [通用作者工作流与发行渠道完善](plans/active/AUTHOR-WORKFLOW-2.0.md)：按顺序实施八个旧候选，本地恢复、Front Matter 与图片导入已完成，当前插入多语言代码页签；仅本地和隔离验收。
 
-- [多语言代码页签](plans/active/MULTI-LANGUAGE-CODE-TABS.md)：资源导入之后立即实施的阶段 3A；尚未完成，仅隔离验收。
+- [多语言代码页签](plans/completed/MULTI-LANGUAGE-CODE-TABS.md)：资源导入之后的阶段 3A；已完成隔离验收并归档，未发行。
 
 1.5–1.9 教学综合候选已完成本地开发与隔离验收，等待统一审查。
 

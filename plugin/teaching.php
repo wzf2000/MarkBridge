@@ -5,7 +5,7 @@ add_action('init', static function () {
         file_get_contents(__DIR__ . '/includes/php-converter/block-capabilities.json'),
         true,
     );
-    foreach (['collapse', 'steps', 'step', 'code-compare', 'component'] as $kind) {
+    foreach (['collapse', 'steps', 'step', 'code-compare', 'component', 'code-tabs'] as $kind) {
         $attrs = [];
         foreach ($schemas['mbb/' . $kind] as $key => $type) {
             $attrs[$key] = ['type' => $type === 'integer' ? 'number' : $type];
@@ -58,7 +58,13 @@ add_filter(
             return $html;
         }
         $kind = substr($name, 4);
-        if (!in_array($kind, ['collapse', 'steps', 'step', 'code-compare', 'component'], true)) {
+        if (
+            !in_array(
+                $kind,
+                ['collapse', 'steps', 'step', 'code-compare', 'component', 'code-tabs'],
+                true,
+            )
+        ) {
             return $html;
         }
         if (!is_admin()) {
@@ -78,6 +84,9 @@ add_filter(
                 'rightHighlights',
             ]),
         );
+        if ($kind === 'code-tabs') {
+            $config = array_intersect_key($attrs, array_flip(['defaultTab', 'tabs']));
+        }
         if ($kind === 'component') {
             $paramsConsistent = true;
             if (
@@ -148,7 +157,7 @@ add_action(
             if (
                 is_object($post) &&
                 preg_match(
-                    '/<!-- wp:mbb\/(collapse|steps|step|code-compare|component)\b/',
+                    '/<!-- wp:mbb\/(collapse|steps|step|code-compare|component|code-tabs)\b/',
                     $post->post_content ?? '',
                 )
             ) {

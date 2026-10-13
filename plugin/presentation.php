@@ -117,6 +117,30 @@ function mbb_enqueue_footnote_assets()
     );
 }
 
+function mbb_code_languages()
+{
+    static $languages = null;
+    if ($languages !== null) {
+        return $languages;
+    }
+    $languages = ['text', 'plain', 'plaintext', 'none'];
+    $components = json_decode(file_get_contents(__DIR__ . '/vendor/prism/components.json'), true);
+    foreach ($components['languages'] ?? [] as $id => $entry) {
+        if (
+            !preg_match('/^[a-z0-9_-]{1,64}$/D', $id) ||
+            !is_file(__DIR__ . '/vendor/prism/components/prism-' . $id . '.min.js')
+        ) {
+            continue;
+        }
+        $languages[] = $id;
+        foreach ((array) ($entry['alias'] ?? []) as $alias) {
+            if (is_string($alias) && preg_match('/^[a-z0-9_+-]{1,64}$/D', $alias)) {
+                $languages[] = $alias;
+            }
+        }
+    }
+    return array_values(array_unique($languages));
+}
 function mbb_detect_presentation($html)
 {
     if (is_admin() || !is_string($html)) {
@@ -196,6 +220,7 @@ add_action(
                     'codeScripts' => $scripts,
                     'codeStyles' => $styles,
                     'languages' => $base . 'prism/components/',
+                    'codeLanguages' => mbb_code_languages(),
                     'lineNumbers' => $preferences['code_line_numbers'],
                     'lineNumberStyle' => $preferences['code_line_numbers']
                         ? mbb_code_line_number_css()

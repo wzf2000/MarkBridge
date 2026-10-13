@@ -901,7 +901,38 @@ final class Converter
                 '" class="wp-block-mbb-' .
                 $kind .
                 '">';
-            if ($kind === 'code-compare') {
+            if ($kind === 'code-tabs') {
+                foreach ($attrs['tabs'] as $tab) {
+                    $html .=
+                        '<div id="' .
+                        self::attribute($tab['id']) .
+                        '" class="mbb-code-tab"><p data-mbb-generated="" class="mbb-code-tab-title">' .
+                        self::elementText(
+                            $tab['title'] !== ''
+                                ? $tab['title']
+                                : ($tab['language'] !== ''
+                                    ? $tab['language']
+                                    : '代码'),
+                        ) .
+                        '</p><pre><code' .
+                        ($tab['language'] === ''
+                            ? ''
+                            : ' class="language-' . self::attribute($tab['language']) . '"') .
+                        '>' .
+                        self::elementText($tab['code']) .
+                        '</code></pre></div>';
+                }
+                $html .= '</div>';
+                return '<!-- wp:' .
+                    $name .
+                    ' ' .
+                    self::commentJson($attrs) .
+                    " -->\n" .
+                    $html .
+                    "\n<!-- /wp:" .
+                    $name .
+                    ' -->';
+            } elseif ($kind === 'code-compare') {
                 foreach (['Left', 'Right'] as $side) {
                     $lang = $attrs['language' . $side];
                     $html .=

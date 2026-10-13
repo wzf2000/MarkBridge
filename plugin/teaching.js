@@ -1,5 +1,6 @@
 (() => {
   const groups = new Map();
+  const codeGroups = new Map();
   const annotationBudgets = new WeakMap();
   const config = (node) => {
     try {
@@ -28,6 +29,8 @@
       typeof target === 'string' ? document.getElementById(target.replace(/^#/, '')) : target;
     if (!(node instanceof Element)) return false;
     for (let p = node; p; p = p.parentElement) {
+      if (p.classList.contains('mbb-code-tab'))
+        codeGroups.get(p.parentElement)?.select(p, false, false);
       if (p.dataset.mbbTeaching === 'collapse') {
         const body = child(p, '.mbb-teaching-body');
         if (body) body.hidden = false;
@@ -50,6 +53,7 @@
   });
   function snapshot() {
     return {
+      tabs: [...codeGroups].map(([node, group]) => ({ id: node.id, ...group.state() })),
       groups: [...groups].map(([node, controller]) => ({ id: node.id, ...controller.state() })),
       collapse: [...document.querySelectorAll('[data-mbb-teaching="collapse"]')].map((node) => ({
         id: node.id,
@@ -68,6 +72,8 @@
   function restore(state) {
     const value = state?.mbbTeaching;
     if (!value) return;
+    for (const item of value.tabs || [])
+      codeGroups.get(document.getElementById(item.id))?.restore(item);
     for (const item of value.groups || []) {
       const node = document.getElementById(item.id);
       groups.get(node)?.restore(item);
@@ -101,6 +107,156 @@
       const node = document.getElementById(id);
       if (node && revealTarget(node)) node.scrollIntoView({ block: 'start' });
     }
+  }
+  function codeTabs(node, options) {
+    if (!options || typeof options !== 'object' || Array.isArray(options)) return false;
+    const panels = [...node.children].filter((n) => n.classList.contains('mbb-code-tab'));
+    const values = options.tabs;
+    if (
+      !Array.isArray(values) ||
+      !panels.length ||
+      panels.length > 8 ||
+      panels.length !== values.length ||
+      values.some(
+        (t, i) =>
+          !t ||
+          Array.isArray(t) ||
+          typeof t !== 'object' ||
+          Object.keys(t).length !== 4 ||
+          Object.keys(t).some((k) => !['id', 'title', 'language', 'code'].includes(k)) ||
+          typeof t.id !== 'string' ||
+          !/^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(t.id) ||
+          typeof t.title !== 'string' ||
+          [...t.title].length > 200 ||
+          /[\r\n\0\uD800-\uDFFF]/u.test(t.title) ||
+          typeof t.language !== 'string' ||
+          !/^[A-Za-z0-9_+-]{0,64}$/.test(t.language) ||
+          typeof t.code !== 'string' ||
+          /[\0\uD800-\uDFFF]/u.test(t.code) ||
+          new TextEncoder().encode(t.code).length > 65536 ||
+          t.id !== panels[i].id,
+      ) ||
+      values.reduce((n, t) => n + new TextEncoder().encode(t.code).length, 0) > 131072 ||
+      new Set(values.map((t) => t.id)).size !== values.length ||
+      !values.some((t) => t.id === options.defaultTab)
+    )
+      return false;
+    let current = values.findIndex((t) => t.id === options.defaultTab),
+      full = false;
+    const controls = generated(),
+      list = document.createElement('div');
+    list.className = 'mbb-code-tabs-list';
+    list.setAttribute('role', 'tablist');
+    list.setAttribute('aria-label', '代码版本');
+    const tabs = panels.map((panel, index) => {
+      const tab = button(values[index].title || values[index].language || '代码', () =>
+        select(panel, true),
+      );
+      let suffix = 0;
+      do {
+        tab.id = 'mbb-tab-control-' + node.id + '-' + index + '-' + suffix++;
+      } while (document.getElementById(tab.id));
+      tab.setAttribute('role', 'tab');
+      tab.setAttribute('aria-controls', panel.id);
+      panel.setAttribute('role', 'tabpanel');
+      panel.setAttribute('aria-labelledby', tab.id);
+      tab.addEventListener('keydown', (event) => {
+        let next = index;
+        if (event.key === 'ArrowRight') next = (index + 1) % panels.length;
+        else if (event.key === 'ArrowLeft') next = (index + panels.length - 1) % panels.length;
+        else if (event.key === 'Home') next = 0;
+        else if (event.key === 'End') next = panels.length - 1;
+        else return;
+        event.preventDefault();
+        select(panels[next], true);
+        tabs[next].focus();
+      });
+      const copyControls = generated(),
+        copy = button('复制 ' + tab.textContent, async () => {
+          try {
+            await navigator.clipboard.writeText(values[index].code);
+            copy.textContent = '已复制 ' + tab.textContent;
+          } catch {
+            let area = copyControls.querySelector('textarea');
+            if (!area) {
+              area = document.createElement('textarea');
+              area.readOnly = true;
+              area.setAttribute('aria-label', '代码文本手动复制（换行可能规范化）');
+              copyControls.append(area);
+            }
+            area.value = values[index].code;
+            area.focus();
+            area.select();
+            copy.textContent = '手动复制可能规范化换行；下载原代码保留字节';
+          }
+        });
+      const download = button('下载原代码 ' + tab.textContent, () => {
+        const blob = new Blob([values[index].code], {
+            type: 'text/plain;charset=utf-8',
+            endings: 'transparent',
+          }),
+          url = URL.createObjectURL(blob),
+          a = document.createElement('a');
+        a.href = url;
+        a.download = values[index].id + '.txt';
+        a.hidden = true;
+        document.body.append(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      });
+      copyControls.append(copy, download);
+      panel.append(copyControls);
+      list.append(tab);
+      return tab;
+    });
+    function update(notify = true) {
+      panels.forEach((panel, i) => {
+        panel.hidden = !full && i !== current;
+        tabs[i].setAttribute('aria-selected', String(i === current));
+        tabs[i].tabIndex = i === current ? 0 : -1;
+      });
+      all.setAttribute('aria-pressed', String(full));
+      if (notify) change();
+    }
+    function select(panel, push, notify = true) {
+      const index = panels.indexOf(panel);
+      if (index < 0) return;
+      current = index;
+      full = false;
+      update(notify);
+      if (push) record(false, '#' + encodeURIComponent(panel.id));
+    }
+    const all = button('显示全部代码版本', () => {
+        full = true;
+        update();
+        record();
+      }),
+      single = button('返回页签阅读', () => {
+        full = false;
+        update();
+        record();
+      });
+    controls.append(list, all, single);
+    node.prepend(controls);
+    codeGroups.set(node, {
+      select,
+      all: () => {
+        full = true;
+        update();
+      },
+      state: () => ({ current: values[current].id, full }),
+      restore: (item) => {
+        const index = values.findIndex((t) => t.id === item.current);
+        if (index >= 0 && typeof item.full === 'boolean') {
+          current = index;
+          full = item.full;
+          update();
+        }
+      },
+    });
+    update();
+    return true;
   }
   function compare(node, options) {
     const panes = ['left', 'right'].map((side) => child(node, '.mbb-compare-' + side));
@@ -273,6 +429,8 @@
                 ?.querySelector('button')
                 ?.setAttribute('aria-expanded', 'true');
             }
+            for (const group of article.querySelectorAll('[data-mbb-teaching=code-tabs]'))
+              codeGroups.get(group)?.all();
             change();
             record();
           });
@@ -340,6 +498,19 @@
         update();
       } else if (kind === 'code-compare') {
         if (!compare(node, options)) continue;
+      } else if (kind === 'code-tabs') {
+        try {
+          if (!codeTabs(node, options)) continue;
+        } catch {
+          codeGroups.delete(node);
+          for (const panel of node.querySelectorAll('.mbb-code-tab')) {
+            panel.hidden = false;
+            panel.removeAttribute('role');
+            panel.removeAttribute('aria-labelledby');
+          }
+          for (const control of node.querySelectorAll('.mbb-teaching-controls')) control.remove();
+          continue;
+        }
       }
       node.dataset.mbbEnhanced = 'true';
     }

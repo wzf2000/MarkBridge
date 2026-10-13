@@ -67,6 +67,17 @@
         Prism.languages.text = Prism.languages.plaintext = Prism.languages.plain = {};
         Prism.languages.sh = Prism.languages.shell = {};
         Prism.plugins.autoloader.languages_path = config.languages;
+        if (!Prism.mbbCodeTabsHook) {
+          Prism.mbbCodeTabsHook = true;
+          Prism.hooks.add('complete', ({ element }) => {
+            if (!element.closest('.wp-block-mbb-code-tabs')) return;
+            const wrapper = element.closest('.code-toolbar');
+            for (const toolbar of wrapper?.querySelectorAll(':scope > .toolbar') || [])
+              toolbar.remove();
+            for (const rows of element.querySelectorAll('.line-numbers-rows'))
+              rows.dataset.mbbGenerated = '';
+          });
+        }
       })().catch((error) => {
         codeAssets = null;
         throw error;
@@ -75,12 +86,25 @@
     for (const block of blocks) {
       if (!block.isConnected || highlighted.get(block) === codeSignature(block)) continue;
       if (
+        block.closest('.wp-block-mbb-code-tabs') &&
+        !(config.codeLanguages || ['text', 'plain', 'plaintext', 'none']).includes(
+          Prism.util.getLanguage(block),
+        )
+      )
+        block.className = block.className
+          .split(/\s+/)
+          .filter((name) => !/^lang(?:uage)?-/i.test(name))
+          .concat('language-text')
+          .join(' ');
+      if (
         !/(?:^|\s)lang(?:uage)?-\S+/.test(block.className) &&
         !/(?:^|\s)lang(?:uage)?-\S+/.test(block.parentElement.className)
       )
         block.classList.add('language-text');
       if (config.lineNumbers) block.parentElement.classList.add('line-numbers');
       Prism.highlightElement(block);
+      for (const numbers of block.querySelectorAll('.line-numbers-rows'))
+        numbers.dataset.mbbGenerated = '';
       highlighted.set(block, codeSignature(block));
     }
   };

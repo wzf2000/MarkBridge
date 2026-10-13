@@ -226,6 +226,7 @@ function mbb_html_allowed($blocks)
             'mbb/steps',
             'mbb/step',
             'mbb/code-compare',
+            'mbb/code-tabs',
         ];
         foreach ($blocks as $b) {
             if ($b['blockName'] === null && trim($b['innerHTML']) === '') {
@@ -409,6 +410,7 @@ function mbb_kses_plain_block_sources($text, $allowed = 'post', $protocols = [])
                     'mbb/code' => ['code'],
                     'mbb/math' => ['tex'],
                     'mbb/code-compare' => ['codeLeft', 'codeRight', 'leftTitle', 'rightTitle'],
+                    'mbb/code-tabs' => ['tabs'],
                     'mbb/collapse' => ['title'],
                     'mbb/steps' => ['title'],
                     'mbb/step' => ['title'],
@@ -419,7 +421,10 @@ function mbb_kses_plain_block_sources($text, $allowed = 'post', $protocols = [])
                 if (
                     isset($attrs[$field]) &&
                     (is_string($attrs[$field]) ||
-                        ($b['blockName'] === 'mbb/component' && $field === 'params'))
+                        ($b['blockName'] === 'mbb/component' && $field === 'params') ||
+                        ($b['blockName'] === 'mbb/code-tabs' &&
+                            $field === 'tabs' &&
+                            is_array($attrs[$field])))
                 ) {
                     $plain[$field] = $attrs[$field];
                     $attrs[$field] = '';

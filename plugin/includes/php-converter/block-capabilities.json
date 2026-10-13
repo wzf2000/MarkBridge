@@ -76,5 +76,11 @@
   "mbb/frontmatter": {
     "version": "integer",
     "raw": "string"
+  },
+  "mbb/code-tabs": {
+    "id": "string",
+    "defaultTab": "string",
+    "tabs": "array",
+    "version": "integer"
   }
 }

@@ -5,6 +5,7 @@ namespace MarkBridge\Probe;
 final class Teaching
 {
     public const SCHEMAS = [
+        'code-tabs' => ['id' => 'string', 'defaultTab' => 'string', 'tabs' => 'array'],
         'component' => [
             'id' => 'string',
             'component' => 'string',
@@ -65,6 +66,9 @@ final class Teaching
         foreach ($schema as $key => $type) {
             $out[$key] = $attrs[$key];
         }
+        if ($kind === 'code-tabs') {
+            $out['tabs'] = self::tabs($out, $source);
+        }
         if (!preg_match('/^[A-Za-z][A-Za-z0-9_-]{0,63}$/D', $out['id'])) {
             self::fail('TEACHING_ID', 'Invalid stable teaching ID');
         }
@@ -119,6 +123,76 @@ final class Teaching
             }
         }
         return $out;
+    }
+    private static function tabs(array $attrs, bool $source): array
+    {
+        $keys = $source ? ['id', 'title', 'terminalNewline'] : ['id', 'title', 'language', 'code'];
+        if (
+            !array_is_list($attrs['tabs']) ||
+            count($attrs['tabs']) < 1 ||
+            count($attrs['tabs']) > 8
+        ) {
+            self::fail('CODE_TABS_STRUCTURE', 'Code groups require 1–8 versions');
+        }
+        $ids = [];
+        $bytes = 0;
+        $tabs = [];
+        foreach ($attrs['tabs'] as $tab) {
+            if (
+                !is_array($tab) ||
+                count($tab) !== count($keys) ||
+                array_diff(array_keys($tab), $keys)
+            ) {
+                self::fail('CODE_TABS_ATTRIBUTES', 'Incomplete or unknown version fields');
+            }
+            if (
+                !is_string($tab['id']) ||
+                !preg_match('/^[A-Za-z][A-Za-z0-9_-]{0,63}$/D', $tab['id']) ||
+                isset($ids[$tab['id']])
+            ) {
+                self::fail('TEACHING_ID', 'Invalid or duplicate version ID');
+            }
+            $ids[$tab['id']] = true;
+            if (
+                !is_string($tab['title']) ||
+                !mb_check_encoding($tab['title'], 'UTF-8') ||
+                mb_strlen($tab['title']) > 200 ||
+                preg_match('/[\r\n\x00]/', $tab['title'])
+            ) {
+                self::fail(
+                    'TEACHING_TITLE',
+                    'Version title must be empty or at most 200 single-line characters',
+                );
+            }
+            if ($source) {
+                if (!is_bool($tab['terminalNewline'])) {
+                    self::fail('CODE_TABS_ATTRIBUTES', 'Terminal newline must be boolean');
+                }
+            } else {
+                if (
+                    !is_string($tab['language']) ||
+                    !preg_match('/^[A-Za-z0-9_+-]{0,64}$/D', $tab['language'])
+                ) {
+                    self::fail('CODE_INFO', 'Unsafe or overlong code language');
+                }
+                if (
+                    !is_string($tab['code']) ||
+                    !mb_check_encoding($tab['code'], 'UTF-8') ||
+                    str_contains($tab['code'], "\0")
+                ) {
+                    self::fail('CODE_TABS_CODE', 'Code must be UTF-8 without NUL');
+                }
+                $bytes += strlen($tab['code']);
+                if (strlen($tab['code']) > 65536 || $bytes > 131072) {
+                    self::fail('CODE_TABS_LIMIT', 'Code version/group exceeds 64/128 KiB');
+                }
+            }
+            $tabs[] = array_combine($keys, array_map(static fn($key) => $tab[$key], $keys));
+        }
+        if (!isset($ids[$attrs['defaultTab']])) {
+            self::fail('CODE_TABS_DEFAULT', 'Default version must reference a group member');
+        }
+        return $tabs;
     }
     public static function params(mixed $value): void
     {
@@ -252,6 +326,15 @@ final class Teaching
         }
 
         $object = json_decode($raw, false, 32, JSON_THROW_ON_ERROR);
+        $tabObject = is_object($object) && isset($object->attrs) ? $object->attrs : $object;
+        if (is_object($tabObject) && property_exists($tabObject, 'tabs')) {
+            if (
+                !is_array($tabObject->tabs) ||
+                array_filter($tabObject->tabs, static fn($tab) => !($tab instanceof \stdClass))
+            ) {
+                self::fail('CODE_TABS_ATTRIBUTES', 'Versions must be a JSON array of objects');
+            }
+        }
         $attrs = json_decode($raw, true, 32, JSON_THROW_ON_ERROR);
         if (
             is_object($object) &&
@@ -276,15 +359,36 @@ final class Teaching
         );
         $document = (new \League\CommonMark\Parser\MarkdownParser($environment))->parse($source);
         $ignored = [];
+        $fences = [];
+        $inlineBlocks = [];
         $nodes = 0;
-        $walk = function ($node, $depth = 0) use (&$walk, &$ignored, &$nodes) {
+        $walk = function ($node, $depth = 0) use (
+            &$walk,
+            &$ignored,
+            &$nodes,
+            &$fences,
+            &$inlineBlocks,
+        ) {
             if (++$nodes > Converter::MAX_NODES || $depth > Converter::MAX_DEPTH) {
                 self::fail('STRUCTURE_LIMIT', 'Teaching boundary AST exceeds structural limits');
+            }
+            if ($node instanceof \League\CommonMark\Extension\CommonMark\Node\Inline\Code) {
+                for ($parent = $node->parent(); $parent; $parent = $parent->parent()) {
+                    if (method_exists($parent, 'getStartLine')) {
+                        $inlineBlocks[$parent->getStartLine() - 1] = $parent->getEndLine();
+                        break;
+                    }
+                }
             }
             if (
                 $node instanceof \League\CommonMark\Extension\CommonMark\Node\Block\FencedCode ||
                 $node instanceof \League\CommonMark\Extension\CommonMark\Node\Block\IndentedCode
             ) {
+                if (
+                    $node instanceof \League\CommonMark\Extension\CommonMark\Node\Block\FencedCode
+                ) {
+                    $fences[$node->getStartLine() - 1] = $node->getEndLine();
+                }
                 for ($line = $node->getStartLine(); $line <= $node->getEndLine(); $line++) {
                     $ignored[$line - 1] = true;
                 }
@@ -295,21 +399,186 @@ final class Teaching
             }
         };
         $walk($document);
-        preg_match_all(
-            '/<(pre|code)\b[^>]*>[\s\S]*?<\/\1>/i',
-            $source,
-            $matches,
-            PREG_OFFSET_CAPTURE,
-        );
+        preg_match_all('/[^\r\n]*(?:\r\n|\r|\n|$)/', $source, $rawLines);
+        $rawLines = $rawLines[0];
+        if (end($rawLines) === '') {
+            array_pop($rawLines);
+        }
+        $text = static fn($i) => isset($rawLines[$i]) ? rtrim($rawLines[$i], "\r\n") : null;
+        $marker = static fn($data) => '<!--mbb-teaching ' .
+            $nonce .
+            ':' .
+            bin2hex(self::encode($data)) .
+            '-->';
+        $offsets = [];
+        $cursor = 0;
+        foreach ($rawLines as $raw) {
+            $offsets[] = $cursor;
+            $cursor += strlen($raw);
+        }
+        $inlineLiterals = [];
+        foreach ($inlineBlocks as $start => $end) {
+            $begin = $offsets[$start];
+            $raw = substr($source, $begin, ($offsets[$end] ?? strlen($source)) - $begin);
+            preg_match_all('/`+/', $raw, $runs, PREG_OFFSET_CAPTURE);
+            $runs = $runs[0];
+            foreach ($runs as $i => [$ticks, $at]) {
+                if (isset($skipUntil) && $i <= $skipUntil) {
+                    continue;
+                }
+                $slashes = 0;
+                for ($p = $at - 1; $p >= 0 && $raw[$p] === '\\'; $p--) {
+                    $slashes++;
+                }
+                if ($slashes % 2) {
+                    continue;
+                }
+                for ($j = $i + 1; $j < count($runs); $j++) {
+                    if (strlen($runs[$j][0]) === strlen($ticks)) {
+                        $inlineLiterals[] = [
+                            $begin + $at,
+                            $begin + $runs[$j][1] + strlen($runs[$j][0]),
+                        ];
+                        $skipUntil = $j;
+                        break;
+                    }
+                }
+            }
+            unset($skipUntil);
+        }
+        preg_match_all('/<(pre|code)\b[^>]*>/i', $source, $matches, PREG_OFFSET_CAPTURE);
         $protected = [];
-        foreach ($matches[0] as [$text, $start]) {
-            $protected[] = [$start, $start + strlen($text)];
+        $consumed = 0;
+        $closes = ['pre' => [], 'code' => []];
+        preg_match_all('/<\/(pre|code)>/i', $source, $closing, PREG_OFFSET_CAPTURE);
+        foreach ($closing[0] as $i => [$literal, $at]) {
+            $closes[strtolower($closing[1][$i][0])][] = [$at, $at + strlen($literal)];
+        }
+        foreach ($matches[0] as $index => [$html, $start]) {
+            if ($start < $consumed) {
+                continue;
+            }
+            $lo = 0;
+            $hi = count($offsets);
+            while ($lo < $hi) {
+                $mid = intdiv($lo + $hi, 2);
+                if ($offsets[$mid] <= $start) {
+                    $lo = $mid + 1;
+                } else {
+                    $hi = $mid;
+                }
+            }
+            $inline = false;
+            foreach ($inlineLiterals as [$a, $b]) {
+                if ($start >= $a && $start < $b) {
+                    $inline = true;
+                }
+            }
+            if (
+                isset($ignored[$lo - 1]) ||
+                str_starts_with($text($lo - 1) ?? '', ':::mbb:') ||
+                $inline
+            ) {
+                continue;
+            }
+            $after = $start + strlen($html);
+            $ends = $closes[strtolower($matches[1][$index][0])];
+            $left = 0;
+            $right = count($ends);
+            while ($left < $right) {
+                $mid = intdiv($left + $right, 2);
+                if ($ends[$mid][0] < $after) {
+                    $left = $mid + 1;
+                } else {
+                    $right = $mid;
+                }
+            }
+            if (!isset($ends[$left])) {
+                continue;
+            }
+            $consumed = $ends[$left][1];
+            $protected[] = [$start, $consumed];
+        }
+        $replacements = [];
+        foreach ($rawLines as $i => $line) {
+            $protectedLine = false;
+            foreach ($protected as [$a, $b]) {
+                if ($offsets[$i] >= $a && $offsets[$i] < $b) {
+                    $protectedLine = true;
+                }
+            }
+            if (
+                $protectedLine ||
+                isset($ignored[$i]) ||
+                !preg_match('/^:::mbb:v1 code-tabs (\{[^\r\n]*\})$/D', $text($i), $match)
+            ) {
+                continue;
+            }
+            $a = self::attrs('code-tabs', self::json($match[1]), true);
+            $next = $i + 1;
+            foreach ($a['tabs'] as $tab) {
+                while ($next < count($rawLines) && preg_match('/^[ \t]*$/D', $text($next))) {
+                    $next++;
+                }
+                $end = $fences[$next] ?? null;
+                if (
+                    !$end ||
+                    !preg_match(
+                        '/^(`{3,}|~{3,})[ \t]*([A-Za-z0-9_+-]{0,64})[ \t]*$/D',
+                        $text($next),
+                        $open,
+                    ) ||
+                    !preg_match(
+                        '/^' .
+                            preg_quote($open[1][0], '/') .
+                            '{' .
+                            strlen($open[1]) .
+                            ',}[ \t]*$/D',
+                        $text($end - 1),
+                    )
+                ) {
+                    self::fail(
+                        'CODE_TABS_STRUCTURE',
+                        'Each version requires a complete fence without container prefixes',
+                    );
+                }
+                $code = implode('', array_slice($rawLines, $next + 1, $end - $next - 2));
+                if ($tab['terminalNewline']) {
+                    if (!str_ends_with($code, "\n")) {
+                        self::fail('CODE_TABS_CODE', 'Terminal newline does not match code');
+                    }
+                } else {
+                    if ($code !== '' && !str_ends_with($code, "\n")) {
+                        self::fail('CODE_TABS_CODE', 'Code requires an explicit structural LF');
+                    }
+                    if ($code !== '') {
+                        $code = substr($code, 0, -1);
+                    }
+                }
+                $replacements[$next] = $marker([
+                    'rawCode' => ['code' => $code, 'language' => $open[2]],
+                ]);
+                for ($j = $next + 1; $j < $end; $j++) {
+                    $replacements[$j] = '';
+                }
+                $next = $end;
+            }
+            while ($next < count($rawLines) && preg_match('/^[ \t]*$/D', $text($next))) {
+                $next++;
+            }
+            if ($text($next) !== ':::mbb:end') {
+                self::fail('CODE_TABS_STRUCTURE', 'Only matching fenced versions are allowed');
+            }
         }
         $offset = 0;
-        $lines = explode("\n", $source);
+        $lines = array_map(static fn($line) => rtrim($line, "\r\n"), $rawLines);
         foreach ($lines as $index => &$line) {
             $start = $offset;
-            $offset += strlen($line) + 1;
+            $offset += strlen($rawLines[$index]);
+            if (array_key_exists($index, $replacements)) {
+                $line = $replacements[$index];
+                continue;
+            }
             $skip = isset($ignored[$index]);
             foreach ($protected as [$a, $b]) {
                 if ($start >= $a && $start < $b) {
@@ -330,7 +599,7 @@ final class Teaching
             } else {
                 if (
                     !preg_match(
-                        '/^:::mbb:v1 (collapse|steps|step|code-compare|component) (\{.*\})$/D',
+                        '/^:::mbb:v1 (collapse|steps|step|code-compare|component|code-tabs) (\{.*\})$/D',
                         $line,
                         $m,
                     )
@@ -375,6 +644,14 @@ final class Teaching
                 continue;
             }
             $data = $b['marker'];
+            if (isset($data['rawCode'])) {
+                $stack[$i]['children'][] = [
+                    'name' => 'mbb/code',
+                    'attrs' => $data['rawCode'],
+                    'exactCode' => true,
+                ];
+                continue;
+            }
             if (!isset($data['end'])) {
                 if (count($stack) >= 32) {
                     self::fail('STRUCTURE_LIMIT', 'Teaching nesting exceeds the structural limit');
@@ -387,6 +664,28 @@ final class Teaching
             }
             $item = array_pop($stack);
             $item['attrs']['version'] = 1;
+            if ($item['kind'] === 'code-tabs') {
+                if (count($item['children']) !== count($item['attrs']['tabs'])) {
+                    self::fail('CODE_TABS_STRUCTURE', 'Mismatched code version count');
+                }
+                foreach ($item['attrs']['tabs'] as $index => &$tab) {
+                    $child = $item['children'][$index];
+                    if (!($child['exactCode'] ?? false)) {
+                        self::fail(
+                            'CODE_TABS_STRUCTURE',
+                            'Code version is not a complete original fence',
+                        );
+                    }
+                    $tab = [
+                        'id' => $tab['id'],
+                        'title' => $tab['title'],
+                        'language' => $child['attrs']['language'],
+                        'code' => $child['attrs']['code'],
+                    ];
+                }
+                unset($tab);
+                $item['children'] = [];
+            }
             if ($item['kind'] === 'code-compare') {
                 $left = $item['children'][0] ?? null;
                 $right = $item['children'][1] ?? null;
@@ -446,6 +745,23 @@ final class Teaching
                         self::fail('TEACHING_ID', 'Duplicate teaching ID');
                     }
                     $ids[$a['id']] = true;
+                    if ($kind === 'code-tabs') {
+                        if ($inner !== []) {
+                            self::fail(
+                                'CODE_TABS_STRUCTURE',
+                                'Code groups cannot have child blocks',
+                            );
+                        }
+                        foreach ($a['tabs'] as $tab) {
+                            if (isset($ids[$tab['id']])) {
+                                self::fail(
+                                    'TEACHING_ID',
+                                    'Code version conflicts with a document ID',
+                                );
+                            }
+                            $ids[$tab['id']] = true;
+                        }
+                    }
                     if ($kind === 'steps' && ($depth !== 0 || ++$groups > 1 || $inner === [])) {
                         self::fail(
                             'TEACHING_STRUCTURE',
@@ -519,6 +835,40 @@ final class Teaching
     {
         $kind = self::kind($block['name']);
         $a = self::attrs($kind, $block['attrs']);
+        if ($kind === 'code-tabs') {
+            $tabs = [];
+            $codes = [];
+            foreach ($a['tabs'] as $tab) {
+                $terminal = str_ends_with($tab['code'], "\n");
+                $tabs[] = [
+                    'id' => $tab['id'],
+                    'title' => $tab['title'],
+                    'terminalNewline' => $terminal,
+                ];
+                preg_match_all('/`+/', $tab['code'], $runs);
+                $length = 3;
+                foreach ($runs[0] as $run) {
+                    $length = max($length, strlen($run) + 1);
+                }
+                $fence = str_repeat('`', $length);
+                $codes[] =
+                    $fence .
+                    $tab['language'] .
+                    "\n" .
+                    $tab['code'] .
+                    ($terminal ? '' : "\n") .
+                    $fence;
+            }
+            return ':::mbb:v1 code-tabs ' .
+                self::encode([
+                    'id' => $a['id'],
+                    'defaultTab' => $a['defaultTab'],
+                    'tabs' => $tabs,
+                ]) .
+                "\n\n" .
+                implode("\n\n", $codes) .
+                "\n\n:::mbb:end";
+        }
         $attrs = [];
         foreach (self::SCHEMAS[$kind] as $key => $type) {
             $attrs[$key] = $a[$key];

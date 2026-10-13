@@ -5,6 +5,66 @@
   margin-block: 1.25rem;
   scroll-margin-top: 5rem;
 }
+.wp-block-mbb-code-tabs {
+  margin-block: 1.25rem;
+  padding: 1rem;
+  border: 1px solid #8886;
+  border-radius: 8px;
+  min-width: 0;
+}
+.mbb-code-tab {
+  min-width: 0;
+  scroll-margin-top: 5rem;
+}
+.mbb-code-tab-title {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.wp-block-mbb-code-tabs .mbb-teaching-controls,
+.mbb-code-tabs-list {
+  min-width: 0;
+  max-inline-size: 100%;
+}
+.wp-block-mbb-code-tabs button,
+.mbb-code-tabs-editor [role='tab'] {
+  min-width: 0;
+  max-inline-size: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.mbb-code-tab pre {
+  max-width: 100%;
+  overflow: auto;
+  tab-size: 4;
+}
+.mbb-code-tabs-list,
+.mbb-code-tabs-editor [role='tablist'] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.mbb-code-tabs-list [aria-selected='true'],
+.mbb-code-tabs-editor [aria-selected='true'] {
+  background: #2271b120;
+  border-bottom: 3px solid #2271b1;
+}
+.mbb-code-tabs-editor button {
+  font: inherit;
+  padding: 0.4rem 0.6rem;
+  margin: 0.25rem;
+}
+@media print {
+  .mbb-code-tab[hidden] {
+    display: block !important;
+  }
+  .mbb-code-tab pre {
+    white-space: pre-wrap;
+    overflow: visible;
+  }
+  .mbb-code-tab pre code {
+    white-space: pre-wrap;
+  }
+}
 .mbb-teaching-title {
   font-weight: 700;
 }

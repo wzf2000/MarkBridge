@@ -7,7 +7,7 @@
     "build:php": "composer install --working-dir=tools/php-scoper --no-dev --no-interaction --no-plugins --no-scripts --prefer-dist --optimize-autoloader && composer install --working-dir=plugin/includes/php-converter --no-dev --no-interaction --no-plugins --no-scripts --prefer-dist --optimize-autoloader && node scripts/scope-php-converter.cjs",
     "format": "node scripts/format.cjs",
     "format:check": "node scripts/format.cjs --check",
-    "test": "node tests/kernel.cjs && node tests/r10-04.cjs && node tests/task-lists.cjs && node tests/footnotes.cjs && node tests/conversion-diagnostics.cjs && node tests/teaching.cjs && node tests/components.cjs && php tests/component-registry.php && node tests/local-recovery.cjs && php tests/local-recovery.php && node tests/frontmatter.cjs && php tests/frontmatter.php && node tests/resource-import.cjs && php tests/resource-import.php",
+    "test": "node tests/kernel.cjs && node tests/r10-04.cjs && node tests/task-lists.cjs && node tests/footnotes.cjs && node tests/conversion-diagnostics.cjs && node tests/teaching.cjs && node tests/components.cjs && php tests/component-registry.php && node tests/local-recovery.cjs && php tests/local-recovery.php && node tests/frontmatter.cjs && php tests/frontmatter.php && node tests/resource-import.cjs && php tests/resource-import.php && node tests/code-tabs.cjs && php tests/code-tabs.php",
     "test:browser": "npm run build && playwright test",
     "check": "npm run format:check && npm run build && python3 scripts/check_release.py",
     "package": "python3 scripts/package.py"

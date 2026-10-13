@@ -17,6 +17,30 @@
     frontmatterWrite,
     frontmatterAuthority = null,
     frontmatterRaw = null;
+  let rawSource = null,
+    sourceDisplay = '',
+    sourceNotice = null,
+    normalizedSourceEOL = false;
+  function sourceEOLNotice() {
+    if (!sourceNotice) return;
+    const untouchedCR = typeof rawSource === 'string' && /\r/.test(rawSource);
+    sourceNotice.hidden = source.hidden || (!untouchedCR && !normalizedSourceEOL);
+    sourceNotice.textContent = untouchedCR
+      ? '原文含 CR/CRLF。上传、切换和未编辑预览保留原字节；实际编辑此原文框会按浏览器规范化整篇原文的换行，代码中的换行也可能变化。'
+      : '已实际编辑原文框，后续以浏览器输入框的换行为准；请在差异预览中核对代码。';
+  }
+  function setSource(value) {
+    rawSource = value;
+    source.value = value;
+    sourceDisplay = source.value;
+    normalizedSourceEOL = false;
+    sourceEOLNotice();
+  }
+  function readSource() {
+    return typeof rawSource === 'string' && source.value === sourceDisplay
+      ? rawSource
+      : source.value;
+  }
   const frontmatterSelected = new Set();
   let resources = null;
   let recoveryRecord = null,
@@ -107,7 +131,7 @@
           ? recoveryRecord.context.sourceDigest
           : base?.source_sha256 || null,
       payload: {
-        content: newBlocks ? recoveryRecord.payload.content : source.value,
+        content: newBlocks ? recoveryRecord.payload.content : readSource(),
         title: title.value,
         documentId: docId.value,
         status: publication.value,
@@ -125,6 +149,7 @@
     status.className = error ? 'mbb-error' : 'mbb-status';
   }
   function controls() {
+    sourceEOLNotice();
     dialog.querySelectorAll('button,input,textarea,select').forEach((b) => (b.disabled = busy));
     save.disabled =
       busy ||
@@ -201,7 +226,7 @@
             base?.featured_media ??
             0)
           : (base?.featured_media ?? 0),
-      source: mode === 'blocks' ? null : source.value,
+      source: mode === 'blocks' ? null : readSource(),
       ...(recoveryRecord?.kind === 'blocks' && !recoveryRecord.context.postId
         ? { new_blocks_original: recoveryRecord.payload.content }
         : {}),
@@ -240,7 +265,7 @@
           ? (recoveryRecord?.kind === 'blocks'
               ? wp.blocks.parse(recoveryRecord.payload.content)
               : wp.data.select('core/block-editor')?.getBlocks?.())[0]?.attributes?.raw || ''
-          : source.value;
+          : readSource();
       parsed = window.MBB?.parseFrontmatter(raw, (code, message) => {
         throw Error(message);
       });
@@ -341,7 +366,7 @@
         if (Number(base.post_id) === Number(cfg.postId) && cfg.state?.expected === base.expected)
           cfg.state.frontmatter_current = structuredClone(metadata);
       }
-      const old = MBB.parseFrontmatter(source.value, (code, message) => {
+      const old = MBB.parseFrontmatter(readSource(), (code, message) => {
         throw Error(message);
       });
       const lines = ['---', 'markbridge: 1'];
@@ -352,7 +377,7 @@
       MBB.parseFrontmatter(raw, (code, message) => {
         throw Error(message);
       });
-      source.value = raw + (old ? old.body : '\n' + source.value);
+      setSource(raw + (old ? old.body : '\n' + readSource()));
       mode = 'markdown';
       frontmatterSelected.clear();
       frontmatterAuthority = null;
@@ -792,6 +817,9 @@
     dialog = el('dialog', { id: 'mbb-dialog', 'aria-label': 'Markdown 与区块编辑' });
     dialog.addEventListener('close', () => {
       const snapshot = recoverySnapshot(true);
+      rawSource = null;
+      sourceDisplay = '';
+      normalizedSourceEOL = false;
       if (snapshot) window.MarkBridgeLocalRecovery?.changed(snapshot.kind, () => snapshot);
       resources?.reset();
       if (preview) preview.srcdoc = '';
@@ -876,13 +904,18 @@
         message('文件过大。', true);
         return;
       }
-      const serial = epoch;
+      const serial = epoch,
+        inputVersion = version;
       busy = true;
       controls();
       try {
         const value = await f.text();
         if (!active(serial)) return;
-        source.value = value;
+        if (version !== inputVersion) {
+          message('上传期间的新输入已保留；未用迟到文件覆盖候选。');
+          return;
+        }
+        setSource(value);
         resources?.reset(true, true);
         source.hidden = false;
         mode = 'upload';
@@ -916,7 +949,7 @@
         controls();
       },
       replaceSource: (value) => {
-        source.value = value;
+        setSource(value);
         source.hidden = false;
         mode = 'upload';
       },
@@ -937,10 +970,16 @@
         : NaN;
     if ([14, 16, 18].includes(sourceFontSize)) source.style.fontSize = sourceFontSize + 'px';
     source.oninput = () => {
+      normalizedSourceEOL ||= typeof rawSource === 'string' && /\r/.test(rawSource);
+      rawSource = null;
+      sourceDisplay = source.value;
+      sourceEOLNotice();
       mode = 'markdown';
       invalidate();
     };
-    dialog.append(source);
+    sourceNotice = el('p', { id: 'mbb-source-eol', role: 'note', class: 'mbb-source-eol' });
+    sourceNotice.hidden = true;
+    dialog.append(source, sourceNotice);
     frontmatterPanel = el('section', {
       id: 'mbb-frontmatter',
       'aria-label': 'FrontMatter 元数据提案',
@@ -1067,7 +1106,7 @@
     frontmatterAuthority = null;
     frontmatterRaw = null;
     resources?.reset();
-    source.value = '';
+    setSource('');
     title.value = '';
     docId.value = '';
     diff.replaceChildren();
@@ -1102,7 +1141,7 @@
         }
       }
       base = freshBase;
-      source.value = base?.document.source || '';
+      setSource(base?.document.source || '');
       let sourceReadFailed = false;
       if (base?.source_managed) {
         try {
@@ -1121,7 +1160,7 @@
           }
           base.expected = fresh.expected;
           base.source_sha256 = fresh.source_sha256;
-          source.value = fresh.source;
+          setSource(fresh.source);
         } catch (e) {
           if (!active(serial)) return;
           base.source_write_available = false;
@@ -1146,7 +1185,7 @@
           title: wp.data.select('core/editor').getEditedPostAttribute('title'),
         });
         if (!active(serial)) return;
-        source.value = converted.document.source;
+        setSource(converted.document.source);
         title.value = converted.title;
       }
       source.hidden = selectedMode === 'blocks';
@@ -1233,18 +1272,47 @@
   window.MarkBridgeEditorRecovery = {
     snapshot: recoverySnapshot,
     async restore(record, verify) {
+      const invocation = epoch,
+        invocationVersion = version;
+      const cancelled = () => {
+        throw Error('编辑会话或输入已变化，本地恢复未应用；当前内容已保留。');
+      };
       await verify();
-      if (dialog?.open) dialog.close();
+      if (epoch !== invocation || version !== invocationVersion) cancelled();
+      if (dialog?.open) {
+        // close is queued by the browser; finish our own close before opening another session.
+        const closing = epoch;
+        const closed = new Promise((resolve) =>
+          dialog.addEventListener('close', resolve, { once: true }),
+        );
+        dialog.close();
+        await closed;
+        if (epoch !== closing + 1 || version !== invocationVersion || dialog.open) cancelled();
+      }
+      const opening = epoch + 1;
       await open(record.context.postId, record.kind === 'blocks' ? 'blocks' : 'markdown');
-      if (!loaded || !dialog?.open) throw Error('无法打开本地恢复预览。');
+      if (
+        !active(opening) ||
+        !loaded ||
+        Number(base?.post_id || 0) !== Number(record.context.postId)
+      )
+        cancelled();
+      const openingVersion = version;
       await verify();
+      if (
+        !active(opening) ||
+        !loaded ||
+        version !== openingVersion ||
+        Number(base?.post_id || 0) !== Number(record.context.postId)
+      )
+        cancelled();
       recoveryRecord = record;
       resources?.restore(record.payload.requiresResources);
       recoveryVerify = verify;
       title.value = record.payload.title;
       docId.value = record.payload.documentId;
       publication.value = record.payload.status;
-      source.value = record.kind === 'markdown' ? record.payload.content : '';
+      setSource(record.kind === 'markdown' ? record.payload.content : '');
       mode = record.kind === 'blocks' ? 'blocks' : 'markdown';
       if (record.kind === 'blocks' && !record.context.postId) {
         const parsed = wp.blocks.parse(record.payload.content);
@@ -1252,7 +1320,7 @@
         const verified = window.MBB.importDocument(markdown, record.payload.documentId);
         if (verified.serialized !== record.payload.content)
           throw Error('新原生区块无法精确往返；候选未创建，可下载保留原区块。');
-        source.value = markdown;
+        setSource(markdown);
         mode = 'markdown';
       }
       source.hidden = mode === 'blocks';
@@ -1261,7 +1329,8 @@
     },
     cancel() {
       if (recoveryRecord) {
-        source.value = title.value = docId.value = '';
+        setSource('');
+        title.value = docId.value = '';
         preview.srcdoc = '';
         diff.replaceChildren();
         dialog.close();

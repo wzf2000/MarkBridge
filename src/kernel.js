@@ -659,13 +659,14 @@ function parseSource(
     }
   }
   const ignoredTeaching = new Set();
-  for (const token of boundaryMD.parse(normalized, {}))
+  const teachingFences = boundaryMD.parse(normalized, {});
+  for (const token of teachingFences)
     if (['fence', 'code_block'].includes(token.type) && token.map)
       for (let line = token.map[0]; line < token.map[1]; line++) ignoredTeaching.add(line);
   const teachingNonce = [...crypto.getRandomValues(new Uint8Array(16))]
     .map((value) => value.toString(16).padStart(2, '0'))
     .join('');
-  normalized = teachingSource(normalized, fail, ignoredTeaching, teachingNonce);
+  normalized = teachingSource(normalized, fail, ignoredTeaching, teachingNonce, teachingFences);
   const env = {};
   const tokens = (legacyFootnotes ? legacyMD : md).parse(normalized, env);
   if (legacyFootnotes && Object.keys(env.references || {}).some((x) => x.startsWith('^')))

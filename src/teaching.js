@@ -1,6 +1,8 @@
 import { componentParams } from './component-data.js';
+import { codeTabsAttributes, codeTabsMarkdown, registerCodeTabs } from './code-tabs.js';
 // Versioned teaching syntax has a closed schema. Bodies use the ordinary parser.
 export const teachingSchemas = {
+  'code-tabs': { id: 'string', defaultTab: 'string', tabs: 'object' },
   component: { id: 'string', component: 'string', componentVersion: 'string', params: 'object' },
   collapse: { id: 'string', title: 'string', open: 'boolean' },
   steps: {
@@ -46,6 +48,7 @@ export function teachingAttributes(kind, attrs, fail, source = false) {
   if (Object.values(attrs).some((v) => typeof v === 'string' && /[\uD800-\uDFFF]/u.test(v)))
     fail('TEACHING_ATTRIBUTES', '教学属性必须为有效 Unicode');
   const out = Object.fromEntries(Object.keys(schema).map((key) => [key, attrs[key]]));
+  if (kind === 'code-tabs') out.tabs = codeTabsAttributes(out, source, fail);
   if (!/^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(out.id))
     fail('TEACHING_ID', '教学 ID 需为字母开头的 1–64 位 ASCII 字母、数字、下划线或连字符');
   for (const key of ['title', 'leftTitle', 'rightTitle'])
@@ -111,21 +114,131 @@ export function teachingJSON(raw, fail) {
 }
 export function validateTeachingSerialized(serialized, fail) {
   for (const m of serialized.matchAll(
-    /<!-- wp:mbb\/(collapse|steps|step|code-compare|component)(?: (\{[\s\S]*?\}))? -->/g,
+    /<!-- wp:mbb\/(collapse|steps|step|code-compare|component|code-tabs)(?: (\{[\s\S]*?\}))? -->/g,
   ))
     teachingAttributes(m[1], teachingJSON(m[2] || '{}', fail), fail);
 }
-export function teachingSource(source, fail, ignored = new Set(), nonce) {
-  const protectedHTML = [...source.matchAll(/<(pre|code)\b[^>]*>[\s\S]*?<\/\1>/gi)].map((m) => [
-    m.index,
-    m.index + m[0].length,
-  ]);
+export function teachingSource(source, fail, ignored = new Set(), nonce, fences = []) {
+  const lines = source.match(/[^\r\n]*(?:\r\n|\r|\n|$)/g) || [];
+  if (lines.at(-1) === '') lines.pop();
+  const text = (i) => lines[i]?.replace(/[\r\n]+$/, '');
+  const marker = (data) =>
+    '<!--mbb-teaching ' +
+    nonce +
+    ':' +
+    [...new TextEncoder().encode(JSON.stringify(data))]
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('') +
+    '-->';
+  const replacements = new Map();
+  const offsets = [];
+  let cursor = 0;
+  for (const line of lines) {
+    offsets.push(cursor);
+    cursor += line.length;
+  }
+  const inlineLiterals = [];
+  for (const token of fences) {
+    if (
+      token.type !== 'inline' ||
+      !token.map ||
+      !token.children?.some((t) => t.type === 'code_inline')
+    )
+      continue;
+    const begin = offsets[token.map[0]],
+      raw = source.slice(begin, offsets[token.map[1]] ?? source.length),
+      runs = [...raw.matchAll(/`+/g)];
+    for (let i = 0; i < runs.length; i++) {
+      let slashes = 0;
+      for (let p = runs[i].index - 1; p >= 0 && raw[p] === '\\'; p--) slashes++;
+      if (slashes % 2) continue;
+      let end = -1;
+      for (let j = i + 1; j < runs.length; j++)
+        if (runs[j][0].length === runs[i][0].length) {
+          end = j;
+          break;
+        }
+      if (end < 0) continue;
+      inlineLiterals.push([begin + runs[i].index, begin + runs[end].index + runs[end][0].length]);
+      i = end;
+    }
+  }
+  const protectedHTML = [];
+  let consumed = 0;
+  const closes = { pre: [], code: [] };
+  for (const close of source.matchAll(/<\/(pre|code)>/gi))
+    closes[close[1].toLowerCase()].push([close.index, close.index + close[0].length]);
+  for (const m of source.matchAll(/<(pre|code)\b[^>]*>/gi)) {
+    if (m.index < consumed) continue;
+    let lo = 0,
+      hi = offsets.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >>> 1;
+      if (offsets[mid] <= m.index) lo = mid + 1;
+      else hi = mid;
+    }
+    if (
+      ignored.has(lo - 1) ||
+      text(lo - 1)?.startsWith(':::mbb:') ||
+      inlineLiterals.some(([a, b]) => m.index >= a && m.index < b)
+    )
+      continue;
+    const after = m.index + m[0].length,
+      ends = closes[m[1].toLowerCase()];
+    let left = 0,
+      right = ends.length;
+    while (left < right) {
+      const mid = (left + right) >>> 1;
+      if (ends[mid][0] < after) left = mid + 1;
+      else right = mid;
+    }
+    if (!ends[left]) continue;
+    consumed = ends[left][1];
+    protectedHTML.push([m.index, consumed]);
+  }
+  const ranges = new Map(
+    fences.filter((t) => t.type === 'fence' && t.map).map((t) => [t.map[0], t.map[1]]),
+  );
+  for (let i = 0; i < lines.length; i++) {
+    if (ignored.has(i) || protectedHTML.some(([a, b]) => offsets[i] >= a && offsets[i] < b))
+      continue;
+    const match = /^:::mbb:v1 code-tabs (\{[^\r\n]*\})$/.exec(text(i));
+    if (!match) continue;
+    const a = teachingAttributes('code-tabs', teachingJSON(match[1], fail), fail, true);
+    let next = i + 1;
+    for (const tab of a.tabs) {
+      while (next < lines.length && /^[ \t]*$/.test(text(next))) next++;
+      const end = ranges.get(next),
+        open = /^(`{3,}|~{3,})[ \t]*([A-Za-z0-9_+-]{0,64})[ \t]*$/.exec(text(next));
+      if (
+        !end ||
+        !open ||
+        !new RegExp('^' + open[1][0] + '{' + open[1].length + ',}[ \\t]*$').test(text(end - 1))
+      )
+        fail('CODE_TABS_STRUCTURE', '每个代码版本需有完整、无容器前缀的对应围栏');
+      let code = lines.slice(next + 1, end - 1).join('');
+      if (tab.terminalNewline) {
+        if (!code.endsWith('\n')) fail('CODE_TABS_CODE', '末尾换行标记与代码不符');
+      } else {
+        if (code && !code.endsWith('\n')) fail('CODE_TABS_CODE', '代码需要显式结构分隔 LF');
+        if (code) code = code.slice(0, -1);
+      }
+      replacements.set(next, marker({ rawCode: { code, language: open[2] } }));
+      for (let line = next + 1; line < end; line++) replacements.set(line, '');
+      next = end;
+    }
+    while (next < lines.length && /^[ \t]*$/.test(text(next))) next++;
+    if (text(next) !== ':::mbb:end')
+      fail('CODE_TABS_STRUCTURE', '代码组只能包含对应版本数量的围栏');
+  }
   let offset = 0;
   return source
-    .split('\n')
-    .map((line, index) => {
+    .match(/[^\r\n]*(?:\r\n|\r|\n|$)/g)
+    .map((raw, index) => {
+      const line = raw.replace(/[\r\n]+$/, '');
       const start = offset;
-      offset += line.length + 1;
+      offset += raw.length;
+      if (replacements.has(index)) return replacements.get(index);
       if (ignored.has(index) || protectedHTML.some(([a, b]) => start >= a && start < b))
         return line;
       if (/^ {0,3}<!--mbb-teaching/.test(line))
@@ -135,7 +248,9 @@ export function teachingSource(source, fail, ignored = new Set(), nonce) {
       if (line === ':::mbb:end') data = { end: true };
       else {
         const match =
-          /^:::mbb:v1 (collapse|steps|step|code-compare|component) (\{[^\r\n]*\})$/.exec(line);
+          /^:::mbb:v1 (collapse|steps|step|code-compare|component|code-tabs) (\{[^\r\n]*\})$/.exec(
+            line,
+          );
         if (!match) fail('TEACHING_SYNTAX', '教学容器需使用完整的 :::mbb:v1 名称 JSON 属性');
         let attrs;
         try {
@@ -168,6 +283,10 @@ export function assembleTeaching(blocks, make, fail) {
       continue;
     }
     const data = b.teachingMarker;
+    if (data.rawCode) {
+      stack.at(-1).children.push({ name: 'mbb/code', attributes: data.rawCode, exactCode: true });
+      continue;
+    }
     if (!data.end) {
       if (stack.length >= 32) fail('STRUCTURE_LIMIT', '教学容器总深度不得超过 31 层');
       stack.push({ ...data, children: [] });
@@ -176,6 +295,20 @@ export function assembleTeaching(blocks, make, fail) {
     if (stack.length === 1) fail('TEACHING_STRUCTURE', '教学结束标记没有对应开始');
     const item = stack.pop();
     item.attrs.version = 1;
+    if (item.kind === 'code-tabs') {
+      if (
+        item.children.length !== item.attrs.tabs.length ||
+        item.children.some((b) => !b.exactCode)
+      )
+        fail('CODE_TABS_STRUCTURE', '代码组围栏结构不完整');
+      item.attrs.tabs = item.attrs.tabs.map((t, i) => ({
+        id: t.id,
+        title: t.title,
+        language: item.children[i].attributes.language,
+        code: item.children[i].attributes.code,
+      }));
+      item.children = [];
+    }
     if (item.kind === 'code-compare') {
       const [left, right, ...body] = item.children;
       if (left?.name !== 'mbb/code' || right?.name !== 'mbb/code')
@@ -208,6 +341,13 @@ export function validateTeaching(blocks, fail) {
         const a = teachingAttributes(kind, b.attributes, fail);
         if (ids.has(a.id)) fail('TEACHING_ID', '教学 ID 在文档内必须唯一');
         ids.add(a.id);
+        if (kind === 'code-tabs') {
+          if (inner.length) fail('CODE_TABS_STRUCTURE', '代码组不能有嵌套正文');
+          for (const tab of a.tabs) {
+            if (ids.has(tab.id)) fail('TEACHING_ID', '代码版本 ID 与文档锚点重复');
+            ids.add(tab.id);
+          }
+        }
         if (kind === 'steps' && (depth || ++groups > 1 || !inner.length))
           fail('TEACHING_STRUCTURE', '每篇文档只能有一个非空的顶层阶段组');
         if (kind === 'step' && parent !== 'steps')
@@ -253,6 +393,7 @@ export function validateTeaching(blocks, fail) {
 export function teachingMarkdown(b, body, fail) {
   const kind = teachingKind(b.name);
   const a = teachingAttributes(kind, b.attributes, fail);
+  if (kind === 'code-tabs') return codeTabsMarkdown(a);
   const attrs = Object.fromEntries(Object.keys(teachingSchemas[kind]).map((key) => [key, a[key]]));
   const code = (side) => {
     const value = a['code' + side];
@@ -271,6 +412,7 @@ export function teachingMarkdown(b, body, fail) {
   );
 }
 export function registerTeaching() {
+  if (!wp.blocks.getBlockType('mbb/code-tabs')) registerCodeTabs();
   const el = wp.element.createElement;
   const drafts = new Map();
   const syncDraftLock = () => {
@@ -353,6 +495,7 @@ export function registerTeaching() {
   };
 
   for (const [kind, schema] of Object.entries(teachingSchemas)) {
+    if (kind === 'code-tabs') continue;
     const name = 'mbb/' + kind;
     if (wp.blocks.getBlockType(name)) continue;
     wp.blocks.registerBlockType(name, {
