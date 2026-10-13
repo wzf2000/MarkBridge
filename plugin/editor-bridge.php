@@ -2,6 +2,8 @@
 // Paired document storage, validation and capability-checked editing endpoints.
 require_once __DIR__ . '/includes/conversion-backends.php';
 require_once __DIR__ . '/frontmatter.php';
+require_once __DIR__ . '/resource-import.php';
+require_once __DIR__ . '/save-commit.php';
 function mbb_managed($id)
 {
     return get_post_meta($id, '_mbb_origin', true) === 'markdown_import' &&
@@ -260,6 +262,9 @@ function mbb_candidate($r)
         return mbb_error('conflict', '文章已有新修改，请重新载入后合并。');
     }
     if ($mode === 'restore') {
+        if ($r->has_param('resource_import') || $r->has_param('resource_receipt')) {
+            return mbb_error('resource_mode', '历史恢复不能导入新的 ZIP 资源。', 422);
+        }
         $revision = mbb_revision_candidate($r, $p);
         return is_wp_error($revision) ? $revision : mbb_frontmatter_candidate($r, $p, $revision);
     }
@@ -345,12 +350,20 @@ function mbb_candidate($r)
     if (!mbb_html_allowed(parse_blocks($doc['serialized']))) {
         return mbb_error('html_policy', '内容不符合服务器HTML白名单，未保存。', 422);
     }
-    return mbb_frontmatter_candidate($r, $p, [
+    $candidate = mbb_frontmatter_candidate($r, $p, [
         'document' => $doc,
         'title' => $title,
         'post_id' => $id,
         'expected' => $p ? mbb_token($p) : null,
     ]);
+    if (is_wp_error($candidate)) {
+        return $candidate;
+    }
+    try {
+        return mbb_resource_plan($r, $candidate);
+    } catch (Throwable $e) {
+        return mbb_resource_error($e);
+    }
 }
 function mbb_preview($r)
 {
@@ -365,7 +378,12 @@ function mbb_preview($r)
         ? mbb_frontmatter_receipt($c['frontmatter_binding'])
         : null;
     unset($c['frontmatter_binding']);
-    $c['html'] = mbb_render_footnotes(do_blocks($c['document']['serialized']));
+    $receipt_request = clone $r;
+    $receipt_request['frontmatter_receipt'] = $c['frontmatter_receipt'];
+    $c['resource_receipt'] = mbb_resource_receipt($receipt_request, $c);
+    $c['html'] = mbb_render_footnotes(
+        do_blocks(($c['resource_plan']['projectedDocument'] ?? $c['document'])['serialized']),
+    );
     return $c;
 }
 // Code/TeX attributes are plain text. The rendered HTML still passes normal KSES.
@@ -519,6 +537,7 @@ function mbb_save($r, $cli_source_path = null)
     if (!$lock || !flock($lock, LOCK_EX | LOCK_NB)) {
         return mbb_error('busy', '另一个保存正在进行，请稍后重试。');
     }
+    $resource_context = null;
     try {
         if ($id) {
             clean_post_cache($id);
@@ -545,6 +564,11 @@ function mbb_save($r, $cli_source_path = null)
         if (is_wp_error($receipt)) {
             return $receipt;
         }
+        try {
+            $resource_context = mbb_resource_verify($r, $c);
+        } catch (Throwable $e) {
+            return mbb_resource_error($e);
+        }
         $doc = $c['document'];
         if ($cli_source_sync) {
             clean_post_cache($id);
@@ -558,6 +582,15 @@ function mbb_save($r, $cli_source_path = null)
         }
         $source_backup = null;
         $source_target = null;
+        try {
+            $database_baseline = mbb_save_database_snapshot((int) $id);
+        } catch (Throwable $error) {
+            return mbb_error(
+                'save_state_unavailable',
+                '无法核对数据库保存基线；未写入文章或源文件。',
+                500,
+            );
+        }
         if ($p && get_post_meta($id, '_mbb_source_managed', true) === 'file') {
             if ($cli_source_sync) {
                 if (!hash_equals((string) ($r['expected'] ?? ''), mbb_token($p))) {
@@ -603,10 +636,12 @@ function mbb_save($r, $cli_source_path = null)
         $GLOBALS['mbb_frontmatter_revision_ids'] = [];
         $transaction_started = false;
         $transaction_attempted = false;
+        $commit_attempted = false;
         $raw_source_filters = [];
         try {
             if (
                 $p &&
+                !$resource_context &&
                 $p->post_content === $doc['serialized'] &&
                 $p->post_content_filtered === $doc['source'] &&
                 $p->post_title === $c['title'] &&
@@ -621,10 +656,20 @@ function mbb_save($r, $cli_source_path = null)
                 throw new RuntimeException('无法开启保存事务');
             }
             $transaction_started = true;
+            if ($resource_context) {
+                $GLOBALS['mbb_paired_save'] = false;
+                $GLOBALS['mbb_pair_identity'] = null;
+                // Attachment writes never inherit the main article's paired-save identity.
+                $c = mbb_resource_media($resource_context, $r, $c);
+                $doc = $c['document'];
+            }
             $GLOBALS['mbb_paired_save'] = true;
             $GLOBALS['mbb_pair_identity'] = $docId;
             $raw_source_filters = mbb_raw_source_filters($raw_source_filters);
             add_filter('safe_style_css', 'mbb_safe_css');
+            if ($resource_context && !$p) {
+                $term_cache['category'] = [(int) get_option('default_category')];
+            }
             foreach (['categories' => 'category', 'tags' => 'post_tag'] as $key => $taxonomy) {
                 if (array_key_exists($key, $c['frontmatter_applied'])) {
                     $old = $p ? wp_get_object_terms($p->ID, $taxonomy, ['fields' => 'ids']) : [];
@@ -633,7 +678,11 @@ function mbb_save($r, $cli_source_path = null)
                     }
                     $term_cache[$taxonomy] = array_values(
                         array_unique(
-                            array_merge(array_map('intval', $old), $c['frontmatter_applied'][$key]),
+                            array_merge(
+                                $term_cache[$taxonomy] ?? [],
+                                array_map('intval', $old),
+                                $c['frontmatter_applied'][$key],
+                            ),
                         ),
                     );
                 }
@@ -721,6 +770,16 @@ function mbb_save($r, $cli_source_path = null)
                 throw new RuntimeException('保存后内容核验失败');
             }
             $after_revision = mbb_pair_snapshot($id, $revision_floor);
+            if ($resource_context) {
+                $GLOBALS['mbb_paired_save'] = false;
+                $GLOBALS['mbb_pair_identity'] = null;
+                try {
+                    mbb_resource_link($resource_context, $id);
+                } finally {
+                    $GLOBALS['mbb_paired_save'] = true;
+                    $GLOBALS['mbb_pair_identity'] = $docId;
+                }
+            }
             if (
                 !empty($c['revision_id']) &&
                 !update_metadata(
@@ -732,6 +791,7 @@ function mbb_save($r, $cli_source_path = null)
             ) {
                 throw new RuntimeException('恢复来源记录失败');
             }
+            $commit_attempted = true;
             if ($wpdb->query('COMMIT') === false) {
                 throw new RuntimeException('事务提交失败');
             }
@@ -742,15 +802,19 @@ function mbb_save($r, $cli_source_path = null)
             } catch (Throwable $rollback_error) {
                 $rollback_ok = false;
             }
-            $source_restored = true;
-            if ($source_target && $source_backup !== null) {
-                try {
-                    $source_restored = !is_wp_error(
-                        mbb_source_atomic_write($source_target, $source_backup),
-                    );
-                } catch (Throwable $source_error) {
-                    $source_restored = false;
-                }
+            $rollback_certain =
+                $rollback_ok &&
+                (!$commit_attempted || mbb_save_rollback_confirmed((int) $id, $database_baseline));
+            $source_restored = !$source_target || $source_backup === null || $rollback_certain;
+            $resources_restored =
+                !$resource_context || mbb_resource_compensate($resource_context, $rollback_certain);
+            if ($source_target && $source_backup !== null && $rollback_certain) {
+                $source_restored = mbb_save_restore_source(
+                    $p,
+                    $source_target,
+                    $doc['source'],
+                    $source_backup,
+                );
             }
             // Cache hooks cannot prevent either rollback attempt. IDs are collected during revision creation.
             try {
@@ -759,7 +823,7 @@ function mbb_save($r, $cli_source_path = null)
                         wp_cache_delete($revision_id, 'posts');
                         wp_cache_delete($revision_id, 'post_meta');
                     }
-                    if ($c['frontmatter_applied']) {
+                    if ($c['frontmatter_applied'] || $resource_context) {
                         foreach ($term_cache as $taxonomy => $term_ids) {
                             clean_term_cache($term_ids, $taxonomy);
                         }
@@ -775,11 +839,18 @@ function mbb_save($r, $cli_source_path = null)
                     wp_cache_delete($id, $taxonomy . '_relationships');
                 }
             }
-            if ($c['frontmatter_applied'] && is_int($id)) {
+            if (($c['frontmatter_applied'] || $resource_context) && is_int($id)) {
                 wp_cache_delete($id, 'posts');
                 wp_cache_delete($id, 'post_meta');
                 wp_cache_set_posts_last_changed();
                 wp_cache_set_terms_last_changed();
+            }
+            if ($commit_attempted && !$rollback_certain) {
+                return mbb_error(
+                    'commit_uncertain',
+                    '提交结果无法可靠确认；已保留当前源稿、媒体和导入记录，请重新核对文章，勿重复导入。',
+                    500,
+                );
             }
             if (!$rollback_ok) {
                 return mbb_error(
@@ -793,6 +864,13 @@ function mbb_save($r, $cli_source_path = null)
             if (!$source_restored) {
                 return mbb_error('source_restore_failed', '数据库已回滚，但源文件未能回退。', 500);
             }
+            if (!$resources_restored) {
+                return mbb_error(
+                    'resource_cleanup_failed',
+                    '数据库已回退，但本次新增媒体未能全部清理，请核对导入状态。',
+                    500,
+                );
+            }
             return $transaction_started
                 ? mbb_error('save_failed', '保存未完成，已回滚。', 500)
                 : mbb_error('transaction', '保存事务未开启，源文件已回退；原文未保存。', 500);
@@ -804,6 +882,9 @@ function mbb_save($r, $cli_source_path = null)
             $GLOBALS['mbb_source_web_write'] = false;
             unset($GLOBALS['mbb_frontmatter_revision_ids']);
         }
+        if ($resource_context) {
+            mbb_resource_complete($resource_context);
+        }
         return array_merge(mbb_state($id), [
             'noop' => false,
             'before_revision' => $before_revision,
@@ -811,6 +892,9 @@ function mbb_save($r, $cli_source_path = null)
             'restored_from' => $c['revision_id'] ?? null,
         ]);
     } finally {
+        if ($resource_context) {
+            mbb_resource_release($resource_context);
+        }
         flock($lock, LOCK_UN);
         fclose($lock);
     }
@@ -1046,9 +1130,16 @@ function mbb_enqueue_ui()
         return;
     }
     wp_enqueue_script(
+        'mbb-resource-ui',
+        plugins_url(mbb_asset('resource-ui.js'), __FILE__),
+        [],
+        substr(hash_file('sha256', __DIR__ . '/resource-ui.js'), 0, 12),
+        true,
+    );
+    wp_enqueue_script(
         'mbb-editor-ui',
         plugins_url(mbb_asset('editor-ui.js'), __FILE__),
-        ['wp-data', 'wp-blocks', 'wp-api-fetch', 'mbb-math'],
+        ['wp-data', 'wp-blocks', 'wp-api-fetch', 'mbb-math', 'mbb-resource-ui'],
         substr(hash_file('sha256', __DIR__ . '/editor-ui.js'), 0, 12),
         true,
     );
@@ -1078,6 +1169,7 @@ function mbb_enqueue_ui()
         ),
         'sourceFontSize' => mbb_display_preferences()['source_font_size'],
         'recovery' => mbb_recovery_config(),
+        'resources' => mbb_resource_config(),
     ]);
     wp_enqueue_script(
         'mbb-local-recovery',

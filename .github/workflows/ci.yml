@@ -68,7 +68,7 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
           coverage: none
-          extensions: dom, libxml, mbstring, mysqli
+          extensions: dom, libxml, mbstring, mysqli, zip, intl, gd, posix
           tools: composer:v2
 
       - name: Set up Python
@@ -127,6 +127,7 @@ jobs:
           wp_test eval-file tests/php-backend-save.php
           wp_test eval-file tests/recovery-save.php
           wp_test eval-file tests/frontmatter-save.php
+          wp_test eval-file tests/resource-import-save.php
           php -d disable_functions=exec,shell_exec,system,passthru,proc_open,popen,pcntl_exec \
             "$RUNNER_TEMP/markbridge-downloads/wp-cli-2.12.0.phar" --path="$MARKBRIDGE_TEST_WORDPRESS_ROOT" eval-file tests/native-rest-save.php
           wp_test eval-file tests/ci-backend.php node
@@ -135,12 +136,14 @@ jobs:
           wp_test eval-file tests/provider-save.php
           wp_test eval-file tests/recovery-save.php
           wp_test eval-file tests/frontmatter-save.php
+          wp_test eval-file tests/resource-import-save.php
           wp_test eval-file tests/ci-backend.php php
           wp_test eval-file tests/native-rest-save.php
           wp_test eval-file tests/teaching-save.php
           wp_test eval-file tests/provider-save.php
           wp_test eval-file tests/recovery-save.php
           wp_test eval-file tests/frontmatter-save.php
+          wp_test eval-file tests/resource-import-save.php
 
       - name: Check formatting
         env:
@@ -266,7 +269,7 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
           coverage: none
-          extensions: dom, libxml, mbstring
+          extensions: dom, libxml, mbstring, zip, intl, gd, posix
           tools: composer:v2
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -292,3 +295,4 @@ jobs:
           php tests/conversion-errors.php
           php tests/local-recovery.php
           php tests/frontmatter.php
+          php tests/resource-import.php

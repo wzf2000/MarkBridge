@@ -166,6 +166,9 @@ function mbb_native_rest_update($result, $server, $request)
         return mbb_error('paired_save_required', '此文档只能通过原生文章更新保存。', 403);
     }
     if (
+        $request->has_param('resource_import') ||
+        $request->has_param('resource_receipt') ||
+        $request->has_param('requires_resources') ||
         ($request['frontmatter_selected'] ?? []) !== [] ||
         $request->has_param('frontmatter_receipt') ||
         $request->has_param('frontmatter_applied')
@@ -196,6 +199,9 @@ function mbb_native_rest_update($result, $server, $request)
         return mbb_error('busy', '另一个保存正在进行，请稍后重试。');
     }
     $started = false;
+    $attempted = false;
+    $commit_attempted = false;
+    $database_baseline = null;
     $response = null;
     $revisions = [];
     $term_ids = [];
@@ -208,8 +214,11 @@ function mbb_native_rest_update($result, $server, $request)
         }
     };
     try {
+        $database_baseline = mbb_save_database_snapshot($id);
+        $attempted = true;
         if ($wpdb->query('START TRANSACTION') === false) {
-            return mbb_error('transaction', '无法开启保存事务。', 500);
+            $response = mbb_error('transaction', '无法开启保存事务。', 500);
+            throw new RuntimeException('Transaction start rejected');
         }
         $started = true;
         $row = $wpdb->get_var(
@@ -267,6 +276,7 @@ function mbb_native_rest_update($result, $server, $request)
             throw new RuntimeException('源版本历史保存失败');
         }
         $saved_revision = mbb_pair_snapshot($id, $revision_floor);
+        $commit_attempted = true;
         if ($wpdb->query('COMMIT') === false) {
             throw new RuntimeException('事务提交失败');
         }
@@ -281,7 +291,23 @@ function mbb_native_rest_update($result, $server, $request)
         }
         return $response;
     } catch (Throwable $error) {
-        if ($started && $wpdb->query('ROLLBACK') === false) {
+        try {
+            $rollback_ok = !$attempted || $wpdb->query('ROLLBACK') !== false;
+        } catch (Throwable $rollback_error) {
+            $rollback_ok = false;
+        }
+        if (
+            $commit_attempted &&
+            (!$rollback_ok || !mbb_save_rollback_confirmed($id, $database_baseline))
+        ) {
+            mbb_native_clear_rollback_cache($id, $revisions, $term_ids);
+            return mbb_error(
+                'commit_uncertain',
+                '提交结果无法可靠确认，请重新核对文章，勿直接重复保存。',
+                500,
+            );
+        }
+        if (!$rollback_ok) {
             return mbb_error('rollback_failed', '保存失败且无法回滚，请联系管理员。', 500);
         }
         mbb_native_clear_rollback_cache($id, $revisions, $term_ids);

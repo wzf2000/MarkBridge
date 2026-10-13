@@ -5,6 +5,7 @@ import {
   registerFrontmatter,
 } from './frontmatter.js';
 export { parseFrontmatter, frontmatterFields } from './frontmatter.js';
+import { rewriteSerializedImageURLs } from './resource-images.js';
 import {
   validateTeachingSerialized,
   teachingSource,
@@ -1031,6 +1032,13 @@ export function importDocument(source, documentId) {
     source,
     serialized: api().serialize(blocks),
   };
+}
+export function rewriteDocumentImages(base, mappings) {
+  exportDocument(base, base?.serialized); // Apply the same closed document-model validation as block edits.
+  const verified = importPairedDocument(base.source, base.serialized, base.documentId);
+  const serialized = rewriteSerializedImageURLs(verified.serialized, mappings, fail);
+  if (serialized === verified.serialized) return verified;
+  return importDocument(exportDocument(verified, serialized), base.documentId);
 }
 function snapshotKind(source, serialized) {
   for (const legacyFrontmatter of [false, true])

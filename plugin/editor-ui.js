@@ -8,7 +8,8 @@
     version = 0,
     epoch = 0,
     loaded = false,
-    busy = false;
+    busy = false,
+    saving = false;
   let dialog, source, title, docId, publication, status, diff, preview, save, reviewButton;
   let conflictPanel, conflictSummary, conflictDiff, conflictAdopt, conflictDownload;
   let frontmatterPanel,
@@ -17,6 +18,7 @@
     frontmatterAuthority = null,
     frontmatterRaw = null;
   const frontmatterSelected = new Set();
+  let resources = null;
   let recoveryRecord = null,
     recoveryVerify = null,
     recoveryRebased = false,
@@ -39,19 +41,27 @@
     if (query) for (const [k, v] of new URLSearchParams(query)) u.searchParams.set(k, v);
     return u.toString();
   };
-  async function api(route, data) {
-    if (data && window.MarkBridgeParameterDrafts?.pending())
+  async function api(route, data, method = data ? 'POST' : 'GET', signal, raw = false) {
+    if (data && method !== 'DELETE' && window.MarkBridgeParameterDrafts?.pending())
       throw Error('参数尚未应用；请应用或撤销参数输入后保存。');
     const session = epoch;
     const requestId =
-      Number(data?.post_id ?? new URL(cfg.url(route)).searchParams.get('post_id') ?? cfg.postId) ||
-      0;
+      Number(
+        (data instanceof FormData ? data.get('post_id') : data?.post_id) ??
+          new URL(cfg.url(route)).searchParams.get('post_id') ??
+          cfg.postId,
+      ) || 0;
     const recoveryTicket = window.MarkBridgeLocalRecovery?.ticket(requestId);
     const response = await fetch(cfg.url(route), {
-      method: data ? 'POST' : 'GET',
-      headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': cfg.nonce },
-      ...(data ? { body: JSON.stringify(data) } : {}),
+      method,
+      headers: {
+        ...(data instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
+        'X-WP-Nonce': cfg.nonce,
+      },
+      ...(data ? { body: data instanceof FormData ? data : JSON.stringify(data) } : {}),
+      ...(signal ? { signal } : {}),
     });
+    if (raw && response.ok) return response;
     const json = await response.json().catch(() => ({}));
     if (!response.ok) {
       if ([401, 403].includes(response.status) && epoch === session)
@@ -102,6 +112,7 @@
         documentId: docId.value,
         status: publication.value,
         featuredMedia: request().featured_media,
+        ...(resources?.requirements() ? { requiresResources: resources.requirements() } : {}),
       },
     };
   }
@@ -119,6 +130,7 @@
       busy ||
       !!conflict ||
       !candidate ||
+      (resources && !resources.ready()) ||
       (recoveryRecord?.kind === 'blocks' && recoveryRecord.context.postId > 0) ||
       (base?.source_managed && !base?.source_write_available);
     if (recoveryApply) {
@@ -126,7 +138,8 @@
         recoveryRecord?.kind !== 'blocks' || recoveryRecord.context.postId === 0;
       recoveryApply.disabled = busy || !!conflict || !candidate || !!base?.source_managed;
     }
-    reviewButton.disabled = busy || !loaded || (!!conflict && !conflict.adopted);
+    reviewButton.disabled =
+      busy || !loaded || resources?.pending() || (!!conflict && !conflict.adopted);
     if (conflict) {
       conflictAdopt.disabled = busy || !conflict.latest;
       conflictDownload.disabled = busy || typeof conflict.markdown !== 'string';
@@ -151,6 +164,18 @@
       );
     if (frontmatterWrite)
       frontmatterWrite.disabled = busy || !loaded || mode === 'blocks' || source.readOnly;
+    if (loaded && !source.readOnly) {
+      source.disabled = false;
+      title.disabled = false;
+      publication.disabled = false;
+    }
+    dialog.querySelector('[aria-label="关闭编辑桥"]').disabled = false;
+    resources?.render(source.readOnly || mode === 'blocks' || !!base?.source_managed, busy);
+    if (mode === 'blocks' || !!base?.source_managed)
+      dialog.querySelector('#mbb-upload').accept = '.md,.markdown,text/markdown,text/plain';
+    else
+      dialog.querySelector('#mbb-upload').accept =
+        '.md,.markdown,.zip,text/markdown,text/plain,application/zip';
   }
   const active = (serial) => dialog.open && epoch === serial;
   const isConflict = (error) => ['conflict', 'source_conflict'].includes(error.code);
@@ -190,6 +215,7 @@
             ? recoveryRecord.payload.content
             : wp.blocks.serialize(wp.data.select('core/block-editor').getBlocks())
           : null,
+      ...(resources?.request() || {}),
     };
   }
   function currentMetadata() {
@@ -614,6 +640,7 @@
       }
       renderFrontmatter(result.frontmatter);
       payload.frontmatter_receipt = result.frontmatter_receipt;
+      payload.resource_receipt = result.resource_receipt;
       const rendered = await MBB_MATH.preview(result.html);
       if (!active(session)) return;
       if (version !== serial) {
@@ -628,10 +655,15 @@
             : result.post_status === 'pending'
               ? '确认提交审核'
               : '确认保存草稿';
-      showDiff(result.before, result.document.source);
+      showDiff(
+        result.before,
+        result.resource_plan?.projectedDocument.source || result.document.source,
+      );
       // Fragment-only links otherwise inherit the parent URL in a srcdoc frame.
       const previewContent = document.createElement('template');
       previewContent.innerHTML = rendered;
+      await resources?.preview(result, previewContent.content);
+      if (!active(session) || version !== serial) return;
       for (const link of previewContent.content.querySelectorAll('a[href^="#"]'))
         link.setAttribute('href', 'about:srcdoc' + link.getAttribute('href'));
       preview.srcdoc =
@@ -688,10 +720,12 @@
     if (busy || !candidate) return;
     const payload = candidate,
       markdown = candidateSource,
-      session = epoch;
+      session = epoch,
+      savedVersion = version,
+      savedResources = resources?.requirements();
     const savedKind = recoveryRecord?.kind || (payload.mode === 'blocks' ? 'blocks' : 'markdown');
     const recoveryTicket = window.MarkBridgeLocalRecovery?.ticket(base?.post_id || 0, savedKind);
-    busy = true;
+    busy = saving = true;
     controls();
     message('正在保存两种表示……');
     try {
@@ -716,11 +750,28 @@
             documentId: payload.documentId,
             status: payload.post_status,
             featuredMedia: payload.featured_media,
+            ...(savedResources ? { requiresResources: savedResources } : {}),
           },
         },
         recoveryTicket,
       );
-      window.location.assign(result.editor_url);
+      if (!active(session)) return; // Recovery authorization/locks may outlive this dialog target.
+      if (version === savedVersion) {
+        resources?.reset(false);
+        window.location.assign(result.editor_url);
+      } else {
+        // The response acknowledges A. Later edits B are still an unsaved candidate.
+        resources?.reset(false, true);
+        base = result;
+        docId.value = result.document.documentId;
+        docId.readOnly = true;
+        window.MarkBridgeLocalRecovery?.setPost(result.post_id);
+        candidate = candidateSource = null;
+        invalidate();
+        message(
+          '已保存确认的候选；保存期间的新输入仍保留、尚未保存。图片若仍引用原 ZIP 路径，请重新上传后预览。',
+        );
+      }
     } catch (e) {
       if (!active(session)) return;
       if (isConflict(e)) enterConflict(e, payload, markdown);
@@ -731,7 +782,7 @@
       }
     } finally {
       if (active(session)) {
-        busy = false;
+        busy = saving = false;
         controls();
         if (conflict && !conflict.adopted && !conflict.latest) refreshConflict();
       }
@@ -742,8 +793,10 @@
     dialog.addEventListener('close', () => {
       const snapshot = recoverySnapshot(true);
       if (snapshot) window.MarkBridgeLocalRecovery?.changed(snapshot.kind, () => snapshot);
+      resources?.reset();
+      if (preview) preview.srcdoc = '';
       epoch++;
-      busy = false;
+      busy = saving = false;
       candidate = null;
       candidateSource = null;
       conflict = null;
@@ -787,15 +840,38 @@
     publication.onchange = invalidate;
     stateLabel.append(publication);
     dialog.append(stateLabel);
-    const upload = el('label', {}, '上传 Markdown 文件 ');
+    const upload = el('label', {}, '上传 Markdown 或图片资源 ZIP ');
     const file = el('input', {
       type: 'file',
-      accept: '.md,.markdown,text/markdown,text/plain',
+      accept: '.md,.markdown,.zip,text/markdown,text/plain,application/zip',
       id: 'mbb-upload',
     });
     file.onchange = async () => {
       const f = file.files[0];
       if (!f) return;
+      if (/\.zip$/i.test(f.name)) {
+        const uploadSession = epoch;
+        if (mode === 'blocks' || base?.source_managed || source.readOnly) {
+          message('此入口不能导入 ZIP 新媒体；正文和来源保存规则保持不变。', true);
+          return;
+        }
+        if (!docId.value) {
+          docId.value =
+            'Zip' +
+            Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) =>
+              b.toString(16).padStart(2, '0'),
+            ).join('');
+          invalidate();
+        }
+        try {
+          await resources.prepare(f);
+        } catch (error) {
+          if (active(uploadSession)) message(describeError(error), true);
+        }
+        if (active(uploadSession)) controls();
+        file.value = '';
+        return;
+      }
       if (f.size > 1500000) {
         message('文件过大。', true);
         return;
@@ -807,6 +883,7 @@
         const value = await f.text();
         if (!active(serial)) return;
         source.value = value;
+        resources?.reset(true, true);
         source.hidden = false;
         mode = 'upload';
         invalidate();
@@ -822,6 +899,32 @@
     };
     upload.append(file);
     dialog.append(upload);
+    const resourcePanel = el('section', { id: 'mbb-resources', 'aria-label': '图片资源导入' });
+    dialog.append(resourcePanel);
+    resources = window.MarkBridgeResources?.create({
+      panel: resourcePanel,
+      api,
+      cfg,
+      scope: () => ({
+        post_id: base?.post_id || 0,
+        documentId: docId.value,
+        expected: base?.expected || null,
+      }),
+      stamp: () => version,
+      changed: () => {
+        invalidate();
+        controls();
+      },
+      replaceSource: (value) => {
+        source.value = value;
+        source.hidden = false;
+        mode = 'upload';
+      },
+      message,
+      clearPreview: () => {
+        if (preview) preview.srcdoc = '';
+      },
+    });
     source = el('textarea', {
       id: 'mbb-source',
       'aria-label': 'Markdown 原文',
@@ -963,6 +1066,7 @@
     frontmatterSelected.clear();
     frontmatterAuthority = null;
     frontmatterRaw = null;
+    resources?.reset();
     source.value = '';
     title.value = '';
     docId.value = '';
@@ -1135,6 +1239,7 @@
       if (!loaded || !dialog?.open) throw Error('无法打开本地恢复预览。');
       await verify();
       recoveryRecord = record;
+      resources?.restore(record.payload.requiresResources);
       recoveryVerify = verify;
       title.value = record.payload.title;
       docId.value = record.payload.documentId;

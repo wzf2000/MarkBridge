@@ -28,14 +28,15 @@ README 说明产品范围和最短开发入口；本页按用途区分持续有�
 
 ## ACTIVE
 
-- [通用作者工作流与发行渠道完善](plans/active/AUTHOR-WORKFLOW-2.0.md)：按顺序实施八个旧候选，本地恢复与 Front Matter 已完成，当前图片导入；仅本地和隔离验收。
+- [通用作者工作流与发行渠道完善](plans/active/AUTHOR-WORKFLOW-2.0.md)：按顺序实施八个旧候选，本地恢复、Front Matter 与图片导入已完成，当前插入多语言代码页签；仅本地和隔离验收。
+
+- [多语言代码页签](plans/active/MULTI-LANGUAGE-CODE-TABS.md)：资源导入之后立即实施的阶段 3A；尚未完成，仅隔离验收。
 
 1.5–1.9 教学综合候选已完成本地开发与隔离验收，等待统一审查。
 
 ## DEFERRED
 
 - 八个旧候选已转入上述活动计划；额外范围按后续明确需求排期。
-- [多语言代码页签](plans/deferred/MULTI-LANGUAGE-CODE-TABS.md)：作者维护多语言版本、读者页签切换；仅登记，不打断八项开发，尚未实现。
 
 ## HISTORICAL
 

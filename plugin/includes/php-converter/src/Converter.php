@@ -45,6 +45,7 @@ require_once __DIR__ . '/DisplayBoundaries.php';
 require_once __DIR__ . '/CodeWhitespace.php';
 require_once __DIR__ . '/Teaching.php';
 require_once __DIR__ . '/FrontMatter.php';
+require_once __DIR__ . '/ResourceImages.php';
 
 final class ConversionError extends \RuntimeException
 {
@@ -70,6 +71,15 @@ final class Converter
     private bool $legacyFrontMatter = false;
     private bool $markdownInline = false;
     private bool $sourceLocations = true;
+
+    public function rewriteImages(array $base, array $mappings): array
+    {
+        $verified = $this->restorePair($base['source'], $base['serialized'], $base['documentId']);
+        $serialized = ResourceImages::rewrite($verified['serialized'], $mappings);
+        return $serialized === $verified['serialized']
+            ? $verified
+            : $this->fromMarkdown($this->fromBlocks($serialized)['source']);
+    }
 
     public function fromMarkdown(string $source): array
     {

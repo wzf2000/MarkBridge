@@ -431,7 +431,7 @@ test('modeled REST: reopening never adopts a different fingerprint from a metada
     documentId: state.document.documentId,
   });
   await page.locator('#mbb-markdown').click();
-  await expect(page.locator('#mbb-dialog [role=status]').first()).toContainText(
+  await expect(page.locator('#mbb-dialog > p[role=status]')).toContainText(
     'Synthetic baseline changed',
   );
   expect(await page.evaluate(() => MBB_EDITOR.state.expected)).toBe('baseline-1');

@@ -400,7 +400,7 @@ test('source files stay preview-only and inactive/deleted articles never apply o
   await page.getByRole('button', { name: '恢复候选并查看差异', exact: true }).click();
   await expect(page.locator('#mbb-recovery-apply')).toBeDisabled();
   await expect(page.locator('#mbb-save')).toBeDisabled();
-  await expect(page.locator('#mbb-dialog [role=status]').first()).toContainText('仅供预览');
+  await expect(page.locator('#mbb-dialog > p[role=status]')).toContainText('仅供预览');
   expect(await page.evaluate(() => recoveryLocks)).toContain('mbb-paired-save');
   await page.locator('#mbb-dialog button[aria-label="关闭编辑桥"]').click();
   state.active = 'inactive';

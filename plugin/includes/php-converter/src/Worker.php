@@ -84,6 +84,7 @@ final class Worker
                 );
                 break;
             case 'blocks':
+            case 'resource_images':
                 $base = $request['base'] ?? null;
                 if (
                     !is_array($base) ||
@@ -107,6 +108,13 @@ final class Worker
                     self::string($base, 'serialized'),
                     $documentId,
                 );
+                if ($request['mode'] === 'resource_images') {
+                    if (!is_array($request['mappings'] ?? null)) {
+                        throw new ConversionError('RESOURCE_MAP', 'Image mapping must be a list');
+                    }
+                    $result = $converter->rewriteImages($base, $request['mappings']);
+                    break;
+                }
                 $serialized = self::string($request, 'serialized');
                 if ($converter->equivalentSerialized($serialized, $verified['serialized'])) {
                     $result = $verified;

@@ -38,7 +38,40 @@
     typeof value.sourceManaged === 'boolean' &&
     typeof value.sourceWriteAvailable === 'boolean';
   const validPayload = (value, type) => {
-    if (!exact(value, ['content', 'title', 'documentId', 'status', 'featuredMedia'])) return false;
+    const fields = ['content', 'title', 'documentId', 'status', 'featuredMedia'];
+    if (Object.hasOwn(value || {}, 'requiresResources')) {
+      const requirements = value.requiresResources;
+      const path = (s) =>
+        typeof s === 'string' &&
+        s.length > 0 &&
+        new TextEncoder().encode(s).length <= 1024 &&
+        s === s.normalize('NFC') &&
+        !/[\u0000-\u001f\u007f\\:]/u.test(s) &&
+        !/%(?:2f|5c|00|2e)/i.test(s) &&
+        s
+          .split('/')
+          .every(
+            (p) =>
+              p &&
+              p !== '.' &&
+              p !== '..' &&
+              p === p.replace(/^ +| +$/g, '') &&
+              !p.endsWith('.') &&
+              Array.from(p).length <= 200,
+          );
+      if (
+        !requirements ||
+        Object.keys(requirements).sort().join(',') !== 'basePath,paths,schema' ||
+        requirements.schema !== 1 ||
+        !path(requirements.basePath) ||
+        !Array.isArray(requirements.paths) ||
+        requirements.paths.length > 32 ||
+        !requirements.paths.every(path)
+      )
+        return false;
+      fields.push('requiresResources');
+    }
+    if (!exact(value, fields)) return false;
     return (
       kind(type) &&
       typeof value.content === 'string' &&
@@ -682,7 +715,8 @@
       b &&
       ['content', 'title', 'documentId', 'status', 'featuredMedia'].every(
         (key) => a[key] === b[key],
-      );
+      ) &&
+      JSON.stringify(a.requiresResources ?? null) === JSON.stringify(b.requiresResources ?? null);
     const serial = epoch;
     clearTimeout(timers.get(savedRecord.kind));
     timers.delete(savedRecord.kind);

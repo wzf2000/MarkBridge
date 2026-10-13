@@ -4,6 +4,7 @@ define('WP_CLI', true);
 // This fixture supplies a Node worker stub, not a PHP dependency installation.
 define('MARKBRIDGE_CONVERTER_BACKEND', 'node');
 define('ABSPATH', '/isolated-markbridge-test/');
+define('ARRAY_A', 'ARRAY_A');
 
 class WP_Error
 {
@@ -55,12 +56,39 @@ class WP_REST_Request implements ArrayAccess
 }
 class TestDB
 {
+    public $posts = 'posts';
+    public $postmeta = 'postmeta';
+    public $term_relationships = 'term_relationships';
     public $last_error = '';
     public $queries = [];
     public function query($sql)
     {
         $this->queries[] = $sql;
         return 1;
+    }
+    public function prepare($sql, ...$args)
+    {
+        return vsprintf($sql, $args);
+    }
+    public function get_row($sql, $format)
+    {
+        return (array) $GLOBALS['post'];
+    }
+    public function get_results($sql, $format)
+    {
+        if (str_contains($sql, 'term_relationships')) {
+            return [];
+        }
+        $rows = [];
+        $meta = $GLOBALS['meta'][7];
+        ksort($meta);
+        foreach ($meta as $key => $value) {
+            $rows[] = [
+                'meta_key' => $key,
+                'meta_value' => is_string($value) ? $value : serialize($value),
+            ];
+        }
+        return $rows;
     }
 }
 $wpdb = new TestDB();
