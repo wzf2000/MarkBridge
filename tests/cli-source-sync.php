@@ -5,6 +5,18 @@ define('WP_CLI', true);
 define('MARKBRIDGE_CONVERTER_BACKEND', 'node');
 define('ABSPATH', '/isolated-markbridge-test/');
 define('ARRAY_A', 'ARRAY_A');
+function home_url($path = '')
+{
+    return 'http://cli-model.invalid' . $path;
+}
+function get_current_blog_id()
+{
+    return 1;
+}
+function wp_salt($scheme)
+{
+    return 'synthetic-cli-binding-salt';
+}
 
 class WP_Error
 {

@@ -398,3 +398,38 @@
   min-height: 240px;
   font-family: monospace;
 }
+
+.mbb-merge-versions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.mbb-merge-versions label {
+  min-width: 0;
+}
+.mbb-merge-versions textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 180px;
+  font-family: monospace;
+}
+.mbb-merge-hunk {
+  border: 1px solid #c3c4c7;
+  padding: 12px;
+  margin: 12px 0;
+}
+.mbb-merge-hunk pre {
+  max-height: 220px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.mbb-merge-choices select,
+.mbb-conflict-metadata select {
+  max-width: 100%;
+}
+@media (max-width: 600px) {
+  .mbb-merge-versions {
+    grid-template-columns: 1fr;
+  }
+}

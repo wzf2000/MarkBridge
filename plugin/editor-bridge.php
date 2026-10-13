@@ -5,6 +5,7 @@ require_once __DIR__ . '/frontmatter.php';
 require_once __DIR__ . '/resource-import.php';
 require_once __DIR__ . '/save-commit.php';
 require_once __DIR__ . '/export.php';
+require_once __DIR__ . '/merge.php';
 function mbb_managed($id)
 {
     return get_post_meta($id, '_mbb_origin', true) === 'markdown_import' &&
@@ -63,6 +64,7 @@ function mbb_token($p)
             is_sticky($p->ID),
             $taxonomies,
             $metadata,
+            mbb_binding_projection($p),
         ]),
     );
 }

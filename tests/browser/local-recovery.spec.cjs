@@ -298,6 +298,8 @@ test('old baseline keeps its draft and requires explicit conflict adoption follo
   await expect(page.locator('#mbb-conflict')).toBeVisible();
   await expect(page.locator('#mbb-recovery-apply')).toBeDisabled();
   expect(state.previews.at(-1).expected).toBe('baseline-1');
+  await expect(page.locator('#mbb-conflict-adopt')).toBeDisabled();
+  await page.locator('.mbb-conflict-metadata select[data-field=title]').selectOption('mine');
   await page.locator('#mbb-conflict-adopt').click();
   await expect(page.locator('#mbb-recovery-apply')).toBeDisabled();
   await page.locator('#mbb-review').click();

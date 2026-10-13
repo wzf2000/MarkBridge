@@ -7,6 +7,7 @@ import {
 export { parseFrontmatter, frontmatterFields } from './frontmatter.js';
 import { rewriteSerializedImageURLs } from './resource-images.js';
 import { portableImageSource } from './portable-images.js';
+export { MergeError, planMerge, resolveMerge, mergeMetadata } from './merge.js';
 import {
   validateTeachingSerialized,
   teachingSource,

@@ -76,6 +76,10 @@ function get_current_blog_id()
 {
     return 1;
 }
+function wp_salt($scheme)
+{
+    return 'synthetic-recovery-binding-salt';
+}
 function absint($value)
 {
     return abs((int) $value);

@@ -11,6 +11,10 @@
     busy = false,
     saving = false;
   let dialog, source, title, docId, publication, status, diff, preview, save, reviewButton;
+  let opening = null,
+    openingReason = '',
+    featuredOverride = null;
+  let mergePanel, mergeOpen, mergeAdopt, mergeRows, mergeStatus, mergeViews;
   let conflictPanel, conflictSummary, conflictDiff, conflictAdopt, conflictDownload;
   let frontmatterPanel,
     frontmatterRows,
@@ -166,8 +170,14 @@
     reviewButton.disabled =
       busy || !loaded || resources?.pending() || (!!conflict && !conflict.adopted);
     if (conflict) {
-      conflictAdopt.disabled = busy || !conflict.latest;
+      conflictAdopt.disabled = busy || !conflict.latest || !!conflict.merge;
       conflictDownload.disabled = busy || typeof conflict.markdown !== 'string';
+      if (conflict.manualMetadata)
+        conflictAdopt.disabled ||= Object.keys(conflict.manualMetadata).some(
+          (key) => !conflict.metadataChoices?.[key],
+        );
+      mergeOpen.disabled = busy || !opening || typeof conflict.markdown !== 'string';
+      mergeAdopt.disabled = busy || !mergeReady();
     }
     if (conflict && !conflict.adopted) {
       source.readOnly = true;
@@ -219,13 +229,16 @@
         recoveryRecord && !recoveryRebased
           ? recoveryRecord.context.sourceDigest
           : base?.source_sha256 || null,
-      featured_media: recoveryRecord
-        ? recoveryRecord.payload.featuredMedia
-        : Number(base?.post_id || 0) === Number(cfg.postId)
-          ? (wp.data.select('core/editor').getEditedPostAttribute('featured_media') ??
-            base?.featured_media ??
-            0)
-          : (base?.featured_media ?? 0),
+      featured_media:
+        featuredOverride !== null
+          ? featuredOverride
+          : recoveryRecord
+            ? recoveryRecord.payload.featuredMedia
+            : Number(base?.post_id || 0) === Number(cfg.postId)
+              ? (wp.data.select('core/editor').getEditedPostAttribute('featured_media') ??
+                base?.featured_media ??
+                0)
+              : (base?.featured_media ?? 0),
       source: mode === 'blocks' ? null : readSource(),
       ...(recoveryRecord?.kind === 'blocks' && !recoveryRecord.context.postId
         ? { new_blocks_original: recoveryRecord.payload.content }
@@ -384,7 +397,7 @@
       invalidate();
       message('当前元数据已写入头部候选，尚未保存；请重新预览，来源文章仍须经源文件写回流程。');
     } catch (error) {
-      if (active(session)) message(describeError(error), true);
+      if (active(session) && version === serial) message(describeError(error), true);
     } finally {
       if (active(session)) {
         busy = false;
@@ -578,6 +591,284 @@
     link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
+  const mergeFields = ['title', 'post_status', 'featured_media'];
+  function mergeCandidate(value = conflict) {
+    return {
+      source: value.markdown,
+      title: value.payload.title,
+      post_status: value.payload.post_status,
+      featured_media: value.payload.featured_media,
+    };
+  }
+  function openingMatchesDisplay(value, snapshot, displayedSource) {
+    return (
+      !!value &&
+      value.expected === snapshot.expected &&
+      value.document?.source === displayedSource &&
+      ['source', 'serialized', 'documentId', 'schema', 'converter', 'origin'].every(
+        (key) => value.document?.[key] === snapshot.document?.[key],
+      ) &&
+      mergeFields.every((key) => value[key] === snapshot[key]) &&
+      value.source_managed === !!snapshot.source_managed &&
+      value.source_sha256 === (snapshot.source_sha256 ?? null)
+    );
+  }
+  async function acquireOpening(session, serial = version, preserveDisplay = false) {
+    opening = null;
+    openingReason = '';
+    if (!base?.post_id || recoveryRecord) {
+      openingReason = '恢复候选或新文章没有本会话的可信打开基线；可手动比较。';
+      return;
+    }
+    const held = base;
+    try {
+      const value = await api('merge/open', {
+        schema: 1,
+        post_id: held.post_id,
+        expected: held.expected,
+      });
+      if (!active(session) || version !== serial || base !== held) return;
+      if (
+        value.schema !== 1 ||
+        value.expected !== held.expected ||
+        value.claims?.post !== held.post_id ||
+        !value.signature ||
+        !value.document
+      )
+        throw Error('服务器未返回完整的可信打开基线');
+      if (preserveDisplay && !openingMatchesDisplay(value, held, readSource()))
+        throw Error('最终展示的正文、元数据或来源指纹与签名基线不一致');
+      opening = value;
+      if (preserveDisplay) return;
+      base.document = value.document;
+      base.title = value.title;
+      base.post_status = value.post_status;
+      base.featured_media = value.featured_media;
+    } catch (error) {
+      if (!active(session) || version !== serial || base !== held) return;
+      openingReason = error.message + '；自动三方合并不可用，原候选可下载并手动比较。';
+    }
+  }
+  function metadataChoices(baseMeta, mine, latest, target, onChange, choices = {}) {
+    const result = baseMeta
+      ? MBB.mergeMetadata(baseMeta, mine, latest, choices)
+      : {
+          conflicts: mergeFields
+            .filter((key) => mine[key] !== latest[key])
+            .map((key) => ({ key, mine: mine[key], latest: latest[key] })),
+        };
+    for (const row of result.conflicts) {
+      const label = el(
+        'label',
+        {},
+        { title: '标题', post_status: '保存状态', featured_media: '特色图片 ID' }[row.key],
+      );
+      label.append(el('p', {}, `我的候选：${row.mine}；服务器最新版：${row.latest}`));
+      const select = el('select', {
+        'data-field': row.key,
+        'aria-label': `合并${{ title: '标题', post_status: '状态', featured_media: '特色图片' }[row.key]}`,
+      });
+      select.append(
+        el('option', { value: '' }, '请选择'),
+        el('option', { value: 'mine' }, '采用我的候选'),
+        el('option', { value: 'latest' }, '采用服务器最新版'),
+      );
+      if (baseMeta) select.append(el('option', { value: 'base' }, '采用打开时版本'));
+      select.value = choices[row.key] || '';
+      select.onchange = () => {
+        choices[row.key] = select.value;
+        onChange();
+      };
+      label.append(select);
+      target.append(label);
+    }
+    return result;
+  }
+  function mergeReady() {
+    if (!conflict?.merge) return false;
+    try {
+      MBB.resolveMerge(conflict.merge.plan, conflict.merge.choices);
+      return (
+        MBB.mergeMetadata(
+          opening,
+          mergeCandidate(),
+          conflict.merge.latest,
+          conflict.merge.metadataChoices,
+        ).conflicts.length === 0
+      );
+    } catch {
+      return false;
+    }
+  }
+  function resetMerge() {
+    if (mergePanel) mergePanel.hidden = true;
+    if (mergeRows) mergeRows.replaceChildren();
+    if (conflict) conflict.merge = null;
+  }
+  async function prepareMerge() {
+    if (busy || !conflict || !opening || typeof conflict.markdown !== 'string') return;
+    const current = conflict,
+      session = epoch,
+      serial = version,
+      signedA = opening;
+    const mine = mergeCandidate(current);
+    busy = true;
+    controls();
+    mergePanel.hidden = false;
+    mergeRows.replaceChildren();
+    mergeStatus.textContent = '正在重新核验打开时基线与服务器最新版……';
+    try {
+      const latest = await api('merge/latest', {
+        schema: 1,
+        post_id: current.payload.post_id,
+        opening: signedA,
+        candidate: mine,
+      });
+      if (!active(session) || version !== serial || conflict !== current || opening !== signedA)
+        return;
+      if (!latest.document || latest.claims?.post !== current.payload.post_id || !latest.signature)
+        throw Error('服务器最新版签名不完整');
+      const plan = MBB.planMerge(signedA.document.source, mine.source, latest.document.source);
+      current.merge = { plan, latest, choices: {}, metadataChoices: {}, mine, opening: signedA };
+      mergeViews.base.value = signedA.document.source;
+      mergeViews.mine.value = mine.source;
+      mergeViews.latest.value = latest.document.source;
+      for (const hunk of plan.conflicts) {
+        const row = el('section', { class: 'mbb-merge-hunk' });
+        row.append(
+          el(
+            'h4',
+            {},
+            `正文冲突 ${hunk.id}（打开时第 ${hunk.line} 行${hunk.ambiguous ? '；重复结构无法可靠定位' : ''}）`,
+          ),
+        );
+        for (const [key, name] of [
+          ['base', '打开时版本'],
+          ['mine', '我的候选'],
+          ['latest', '服务器最新版'],
+        ])
+          row.append(el('pre', {}, name + '\n' + hunk[key]));
+        const select = el('select', { 'data-hunk': hunk.id, 'aria-label': '正文冲突 ' + hunk.id });
+        select.append(
+          el('option', { value: '' }, '请选择此冲突'),
+          el('option', { value: 'mine' }, '采用我的候选'),
+          el('option', { value: 'latest' }, '采用服务器最新版'),
+          el('option', { value: 'base' }, '采用打开时版本'),
+        );
+        select.onchange = () => {
+          current.merge.choices[hunk.id] = select.value;
+          controls();
+        };
+        row.append(select);
+        mergeRows.append(row);
+      }
+      metadataChoices(signedA, mine, latest, mergeRows, controls, current.merge.metadataChoices);
+      mergeStatus.textContent = plan.conflicts.length
+        ? '请逐项选择全部正文和元数据冲突。采用只生成未保存候选，仍须重新预览与保存。'
+        : '独立正文变化已组合。未修改的元数据采用服务器最新版；重叠元数据仍须明确选择。';
+    } catch (error) {
+      if (active(session) && version === serial && conflict === current) {
+        current.merge = null;
+        mergeStatus.textContent = error.message + '。当前候选未丢弃，请下载或手动比较。';
+      }
+    } finally {
+      if (active(session) && version === serial && conflict === current) {
+        busy = false;
+        controls();
+      }
+    }
+  }
+  async function adoptMerge() {
+    if (busy || !mergeReady()) return;
+    const current = conflict,
+      record = current.merge,
+      session = epoch,
+      serial = version;
+    const text = MBB.resolveMerge(record.plan, record.choices),
+      metadata = MBB.mergeMetadata(
+        record.opening,
+        record.mine,
+        record.latest,
+        record.metadataChoices,
+      ).values;
+    let oldHeader;
+    try {
+      oldHeader =
+        MBB.parseFrontmatter(record.mine.source, (code, message) => {
+          throw Error(message);
+        })?.raw ?? null;
+    } catch {
+      oldHeader = undefined;
+    }
+    busy = true;
+    controls();
+    try {
+      const result = await api('merge/adopt', {
+        schema: 1,
+        post_id: current.payload.post_id,
+        opening: record.opening,
+        latest: record.latest,
+        candidate: record.mine,
+        source: text,
+      });
+      if (
+        !active(session) ||
+        version !== serial ||
+        conflict !== current ||
+        current.merge !== record
+      )
+        return;
+      if (
+        result.saved !== false ||
+        result.newbase?.post_id !== current.payload.post_id ||
+        result.newbase.expected !== record.latest.expected ||
+        result.document?.source !== text
+      )
+        throw Error('服务器未返回正确的未保存合并候选');
+      base = result.newbase;
+      setSource(text);
+      source.hidden = false;
+      mode = 'markdown';
+      title.value = metadata.title;
+      publication.value = metadata.post_status;
+      featuredOverride = metadata.featured_media;
+      const newHeader =
+        MBB.parseFrontmatter(text, (code, message) => {
+          throw Error(message);
+        })?.raw ?? null;
+      const headerChanged = oldHeader !== newHeader;
+      if (headerChanged) frontmatterSelected.clear();
+      frontmatterAuthority = null;
+      recoveryRebased = !!recoveryRecord;
+      conflict = null;
+      conflictPanel.hidden = true;
+      resetMerge();
+      // C is a verified, signed opening baseline for the next conflict; never manufacture A from B.
+      opening = null;
+      openingReason = '采用合并候选后须重新获取打开时基线。';
+      invalidate();
+      const adoptionVersion = version;
+      await acquireOpening(session, adoptionVersion);
+      if (!active(session) || version !== adoptionVersion) return;
+      message(
+        '合并候选尚未保存。请核对标题、状态、特色图片与 FrontMatter 提案，再重新查看差异与预览。' +
+          (headerChanged
+            ? '头部提案已变化，原元数据选择已重置，请重新选择。'
+            : '原头部选择已保留，仍须重新预览获取新凭据。'),
+      );
+    } catch (error) {
+      if (active(session) && version === serial && conflict === current) {
+        current.merge = null;
+        mergeStatus.textContent = error.message + '；原候选仍可下载，请重新核对最新版。';
+      }
+    } finally {
+      if (active(session)) {
+        busy = false;
+        controls();
+      }
+    }
+  }
+
   async function refreshConflict() {
     if (busy || !conflict) return;
     const current = conflict,
@@ -602,16 +893,34 @@
         latestSource = fresh.source;
       }
       current.latest = latest;
+      current.metadataChoices = {};
+      const metadataPanel = el('section', { class: 'mbb-conflict-metadata' });
+      const mineMeta = {
+        title: current.payload.title,
+        post_status: current.payload.post_status,
+        featured_media: current.payload.featured_media,
+      };
+      const meta = metadataChoices(
+        null,
+        mineMeta,
+        latest,
+        metadataPanel,
+        controls,
+        current.metadataChoices,
+      );
+      current.manualMetadata = Object.fromEntries(meta.conflicts.map((row) => [row.key, true]));
       conflictSummary.textContent =
         `服务器标题：${latest.title}；状态：${latest.post_status}。` +
         `你的标题：${current.payload.title}；状态：${current.payload.post_status}。` +
-        '当前候选暂时锁定以保持比较准确。选择继续后可编辑，仍须重新预览全部差异并明确保存；不会自动合并。';
+        '当前候选暂时锁定以保持比较准确。手动继续须先明确选择不同的标题、状态与特色图片，仍须重新预览。' +
+        (opening ? '' : openingReason);
       if (typeof current.markdown === 'string')
         showDiff(latestSource, current.markdown, conflictDiff);
       else
         conflictDiff.replaceChildren(
           el('p', {}, '区块候选尚无成功生成的 Markdown；保留当前区块，请先核对标题和状态。'),
         );
+      conflictDiff.prepend(metadataPanel);
     } catch (error) {
       if (!active(serial) || conflict !== current) return;
       current.latest = null;
@@ -628,6 +937,7 @@
     candidate = null;
     candidateSource = null;
     conflict = { payload, markdown, latest: null };
+    resetMerge();
     conflictPanel.hidden = false;
     conflictDiff.replaceChildren();
     conflictSummary.textContent = `${error.message}。正在读取最新版以供比较。`;
@@ -635,10 +945,22 @@
   }
   function adoptConflict() {
     if (busy || !conflict?.latest) return;
+    if (Object.keys(conflict.manualMetadata || {}).some((key) => !conflict.metadataChoices?.[key]))
+      return;
+    const metadata = {};
+    for (const key of mergeFields)
+      metadata[key] =
+        conflict.metadataChoices?.[key] === 'mine' ? conflict.payload[key] : conflict.latest[key];
     base = conflict.latest;
+    title.value = metadata.title;
+    publication.value = metadata.post_status;
+    featuredOverride = metadata.featured_media;
+    opening = null;
+    openingReason = '手动采用的基线尚未重新签名；后续冲突可继续手动比较。';
     if (recoveryRecord) recoveryRebased = true;
     conflict.latest = null;
     conflict = null;
+    resetMerge();
     conflictPanel.hidden = true;
     invalidate();
     message('已保留你的修改并以服务器最新版继续；请重新预览全部差异，再明确保存。');
@@ -656,7 +978,10 @@
     let payload;
     try {
       payload = request();
-      if (recoveryRecord) await recoveryVerify();
+      if (recoveryRecord) {
+        await recoveryVerify();
+        if (!active(session) || version !== serial) return;
+      }
       const result = await api('preview', payload);
       if (!active(session)) return;
       if (version !== serial) {
@@ -720,9 +1045,13 @@
         );
     } catch (e) {
       if (!active(session)) return;
+      if (version !== serial) {
+        message('先前候选的预览未完成；新输入已保留，请重新查看差异。');
+        return;
+      }
       if (isConflict(e) && payload) {
         let markdown = payload.source ?? null;
-        if (recoveryRecord?.kind === 'blocks') {
+        if (payload.mode === 'blocks') {
           try {
             markdown = window.MBB.toMarkdown(wp.blocks.parse(payload.serialized), {
               origin: 'markdown_import',
@@ -750,6 +1079,7 @@
       savedResources = resources?.requirements();
     const savedKind = recoveryRecord?.kind || (payload.mode === 'blocks' ? 'blocks' : 'markdown');
     const recoveryTicket = window.MarkBridgeLocalRecovery?.ticket(base?.post_id || 0, savedKind);
+    let savedResult = null;
     busy = saving = true;
     controls();
     message('正在保存两种表示……');
@@ -758,6 +1088,7 @@
         await recoveryVerify({ expected: payload.expected, sourceDigest: payload.source_sha256 });
       const result = await api(base?.source_managed ? 'source-save' : 'save', payload);
       if (!active(session)) return;
+      savedResult = result;
       message(
         result.noop
           ? '内容未变，无需重复写入。'
@@ -792,13 +1123,33 @@
         docId.readOnly = true;
         window.MarkBridgeLocalRecovery?.setPost(result.post_id);
         candidate = candidateSource = null;
+        opening = null;
         invalidate();
+        const baselineVersion = version;
+        await acquireOpening(session, baselineVersion);
+        if (!active(session) || version !== baselineVersion) return;
         message(
           '已保存确认的候选；保存期间的新输入仍保留、尚未保存。图片若仍引用原 ZIP 路径，请重新上传后预览。',
         );
       }
     } catch (e) {
       if (!active(session)) return;
+      if (savedResult) {
+        // A server save acknowledgement remains true even if later local cleanup fails.
+        base = savedResult;
+        opening = null;
+        resources?.reset(false, true);
+        invalidate();
+        message(
+          '已保存确认的候选；后续本地恢复清理未完成。当前输入仍保留，请重新预览或下载。',
+          true,
+        );
+        return;
+      }
+      if (version !== savedVersion) {
+        message('先前候选未获保存确认；新输入已保留，请重新查看差异。', true);
+        return;
+      }
       if (isConflict(e)) enterConflict(e, payload, markdown);
       else {
         message(describeError(e), true);
@@ -828,6 +1179,10 @@
       candidate = null;
       candidateSource = null;
       conflict = null;
+      opening = null;
+      openingReason = '';
+      featuredOverride = null;
+      resetMerge();
       loaded = false;
       recoveryRecord = recoveryVerify = null;
       recoveryRebased = false;
@@ -922,7 +1277,7 @@
         invalidate();
         message('文件已读取，尚未保存。请先查看差异。');
       } catch (error) {
-        if (active(serial)) message(describeError(error), true);
+        if (active(serial) && version === inputVersion) message(describeError(error), true);
       } finally {
         if (active(serial)) {
           busy = false;
@@ -1018,15 +1373,21 @@
       )
         return;
       const session = epoch,
-        record = recoveryRecord;
+        record = recoveryRecord,
+        reviewed = candidate,
+        appliedVersion = version;
       busy = true;
       controls();
       try {
         await recoveryVerify({
-          expected: candidate.expected,
-          sourceDigest: candidate.source_sha256,
+          expected: reviewed.expected,
+          sourceDigest: reviewed.source_sha256,
         });
         if (!active(session) || recoveryRecord !== record) return;
+        if (version !== appliedVersion || candidate !== reviewed) {
+          message('恢复校验期间的新输入已保留，请重新预览后再恢复区块。');
+          return;
+        }
         if (recoveryRebased && Number(base.post_id) === Number(cfg.postId)) {
           // Only explicit conflict adoption + a verified preview authorizes this baseline update.
           cfg.state = structuredClone(base);
@@ -1041,7 +1402,7 @@
         });
         dialog.close();
       } catch (error) {
-        if (active(session)) message(describeError(error), true);
+        if (active(session) && version === appliedVersion) message(describeError(error), true);
       } finally {
         if (active(session)) {
           busy = false;
@@ -1084,7 +1445,40 @@
     );
     conflictAdopt.onclick = adoptConflict;
     conflictActions.append(refresh, conflictDownload, conflictAdopt);
-    conflictPanel.append(conflictSummary, conflictActions, conflictDiff);
+    mergeOpen = el('button', { type: 'button', id: 'mbb-merge-open' }, '准备三方合并');
+    mergeOpen.onclick = prepareMerge;
+    conflictActions.append(mergeOpen);
+    mergePanel = el('section', { id: 'mbb-merge-panel', 'aria-label': '三方合并候选' });
+    mergePanel.hidden = true;
+    mergePanel.append(
+      el(
+        'p',
+        {},
+        '仅生成未保存候选。围栏、FrontMatter 与完整教学容器按整体比较；无法定位的重复结构需明确选择。候选换行与末尾空白保持原字节。',
+      ),
+    );
+    const versions = el('div', { class: 'mbb-merge-versions' });
+    mergeViews = {};
+    for (const [key, name] of [
+      ['base', '打开时版本'],
+      ['mine', '我的候选'],
+      ['latest', '服务器最新版'],
+    ]) {
+      const label = el('label', {}, name);
+      mergeViews[key] = el('textarea', {
+        id: 'mbb-merge-' + key,
+        readonly: '',
+        'aria-label': name,
+      });
+      label.append(mergeViews[key]);
+      versions.append(label);
+    }
+    mergeStatus = el('p', { role: 'status' });
+    mergeRows = el('div', { class: 'mbb-merge-choices' });
+    mergeAdopt = el('button', { type: 'button', id: 'mbb-merge-adopt' }, '采用未保存合并候选');
+    mergeAdopt.onclick = adoptMerge;
+    mergePanel.append(versions, mergeStatus, mergeRows, mergeAdopt);
+    conflictPanel.append(conflictSummary, conflictActions, conflictDiff, mergePanel);
     dialog.append(status, conflictPanel, diff, preview);
     document.body.append(dialog);
   }
@@ -1101,7 +1495,13 @@
     conflict = null;
     recoveryRecord = recoveryVerify = null;
     recoveryRebased = false;
+    opening = null;
+    openingReason = '';
+    featuredOverride = null;
+    resetMerge();
     version++;
+    const loadingVersion = version,
+      stillOpening = () => active(serial) && version === loadingVersion;
     frontmatterSelected.clear();
     frontmatterAuthority = null;
     frontmatterRaw = null;
@@ -1121,11 +1521,11 @@
           ? structuredClone(cfg.state)
           : await api('document?post_id=' + id)
         : null;
-      if (!active(serial)) return;
+      if (!stillOpening()) return;
       if (id && id === cfg.postId && freshBase?.expected) {
         try {
           const server = await api('document?post_id=' + id);
-          if (!active(serial)) return;
+          if (!stillOpening()) return;
           // Native saves return a new fingerprint, but not necessarily the full source/metadata.
           // A GET may fill that same snapshot; it never adopts another editor's baseline.
           if (server.expected === freshBase.expected) {
@@ -1133,7 +1533,7 @@
             cfg.state = structuredClone(server);
           }
         } catch (error) {
-          if (!active(serial)) return;
+          if (!stillOpening()) return;
           // Preserve the existing read-only stored-source fallback on transport failures.
           // Authentication/permission failures must never open the cached private snapshot.
           if (!freshBase.source_managed || error.status) throw error;
@@ -1141,19 +1541,21 @@
         }
       }
       base = freshBase;
+      await acquireOpening(serial);
+      if (!stillOpening()) return;
       setSource(base?.document.source || '');
       let sourceReadFailed = false;
       if (base?.source_managed) {
         try {
           let fresh = await api('source?post_id=' + id);
-          if (!active(serial)) return;
+          if (!stillOpening()) return;
           if (fresh.expected !== base.expected) {
             if (id === cfg.postId)
               throw Error('当前文章已变化，请先处理版本冲突；保留原版本基线。');
             const current = await api('document?post_id=' + id);
-            if (!active(serial)) return;
+            if (!stillOpening()) return;
             fresh = await api('source?post_id=' + id);
-            if (!active(serial)) return;
+            if (!stillOpening()) return;
             if (fresh.expected !== current.expected)
               throw Error('读取期间文章再次变化，请重新打开编辑器');
             base = current;
@@ -1162,9 +1564,19 @@
           base.source_sha256 = fresh.source_sha256;
           setSource(fresh.source);
         } catch (e) {
-          if (!active(serial)) return;
+          if (!stillOpening()) return;
           base.source_write_available = false;
           sourceReadFailed = true;
+        }
+        if (sourceReadFailed) {
+          opening = null;
+          openingReason = '来源读取未完成，自动三方合并不可用；当前文字保留供手动比较。';
+        } else if (!openingMatchesDisplay(opening, base, readSource())) {
+          // The tool screen may have followed a concurrent source save from A to C.
+          // Never retain A while presenting C as the unchanged local candidate.
+          opening = null;
+          await acquireOpening(serial, loadingVersion, true);
+          if (!stillOpening()) return;
         }
       }
       mode = selectedMode;
@@ -1174,7 +1586,12 @@
           : base?.title || '';
       docId.value = base?.document.documentId || '';
       docId.readOnly = !!base;
-      publication.value = base?.post_status || 'draft';
+      publication.value =
+        (id > 0 && id === cfg.postId && !base?.source_managed
+          ? wp.data.select('core/editor').getEditedPostAttribute('status')
+          : null) ||
+        base?.post_status ||
+        'draft';
       if (id && id === cfg.postId && selectedMode === 'markdown' && !base?.source_managed) {
         const current = wp.blocks.serialize(wp.data.select('core/block-editor').getBlocks());
         const converted = await api('preview', {
@@ -1184,7 +1601,7 @@
           serialized: current,
           title: wp.data.select('core/editor').getEditedPostAttribute('title'),
         });
-        if (!active(serial)) return;
+        if (!stillOpening()) return;
         setSource(converted.document.source);
         title.value = converted.title;
       }
@@ -1206,9 +1623,9 @@
             : '编辑或上传 Markdown，再检查差异。',
       );
     } catch (e) {
-      if (active(serial)) message(describeError(e), true);
+      if (stillOpening()) message(describeError(e), true);
     } finally {
-      if (active(serial)) {
+      if (stillOpening()) {
         busy = false;
         controls();
       }
@@ -1289,10 +1706,10 @@
         await closed;
         if (epoch !== closing + 1 || version !== invocationVersion || dialog.open) cancelled();
       }
-      const opening = epoch + 1;
+      const restorationEpoch = epoch + 1;
       await open(record.context.postId, record.kind === 'blocks' ? 'blocks' : 'markdown');
       if (
-        !active(opening) ||
+        !active(restorationEpoch) ||
         !loaded ||
         Number(base?.post_id || 0) !== Number(record.context.postId)
       )
@@ -1300,13 +1717,15 @@
       const openingVersion = version;
       await verify();
       if (
-        !active(opening) ||
+        !active(restorationEpoch) ||
         !loaded ||
         version !== openingVersion ||
         Number(base?.post_id || 0) !== Number(record.context.postId)
       )
         cancelled();
       recoveryRecord = record;
+      opening = null;
+      openingReason = '本地恢复记录没有可信的打开时签名基线，需手动比较，不能冒充三方合并基线。';
       resources?.restore(record.payload.requiresResources);
       recoveryVerify = verify;
       title.value = record.payload.title;
