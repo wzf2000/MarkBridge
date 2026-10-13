@@ -17,6 +17,7 @@ if (!defined('ABSPATH')) {
 }
 require_once __DIR__ . '/includes/runtime-settings.php';
 require_once __DIR__ . '/includes/admin-settings.php';
+require_once __DIR__ . '/block-adapters.php';
 require_once __DIR__ . '/components.php';
 require_once __DIR__ . '/teaching.php';
 
@@ -54,12 +55,8 @@ add_action('wp_enqueue_scripts', function () {
         wp_enqueue_script('mbb-math');
     }
 });
-add_action('enqueue_block_editor_assets', function () {
-    $newPost =
-        basename($_SERVER['PHP_SELF'] ?? '') === 'post-new.php' && current_user_can('edit_posts');
-    if (!mbb_managed(absint($_GET['post'] ?? 0)) && !$newPost) {
-        return;
-    }
+function mbb_enqueue_kernel(bool $converterOnly = false): void
+{
     $file = __DIR__ . '/kernel.js';
     wp_enqueue_script(
         'mbb-kernel',
@@ -73,14 +70,23 @@ add_action('enqueue_block_editor_assets', function () {
             'wp-rich-text',
             'wp-hooks',
             'mbb-math',
-            'mbb-components',
+            ...$converterOnly ? [] : ['mbb-components'],
         ],
         substr(hash_file('sha256', $file), 0, 12),
         true,
     );
-    if ($newPost) {
+    if ($converterOnly) {
         wp_add_inline_script('mbb-kernel', 'window.MBB_CONVERTER_ONLY=true;', 'before');
     }
+    mbb_enqueue_block_adapter_snapshot();
+}
+add_action('enqueue_block_editor_assets', function () {
+    $newPost =
+        basename($_SERVER['PHP_SELF'] ?? '') === 'post-new.php' && current_user_can('edit_posts');
+    if (!mbb_managed(absint($_GET['post'] ?? 0)) && !$newPost) {
+        return;
+    }
+    mbb_enqueue_kernel($newPost);
 });
 add_filter(
     'allowed_block_types_all',

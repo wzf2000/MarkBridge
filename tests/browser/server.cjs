@@ -289,6 +289,22 @@ const e = wp.element.createElement;`,
         .writeHead(html ? 200 : 404, { 'Content-Type': 'text/html' })
         .end(html || 'Core runtime required');
     }
+    if (pathname === '/adapters-editor') {
+      const adapters = JSON.parse(
+        fs.readFileSync(path.join(__dirname, '../fixtures/block-adapters.json'), 'utf8'),
+      );
+      let html = taskEditor(adapters.native[0] + '\n' + adapters.native[1], { iframe: true });
+      if (html)
+        html = html.replace(
+          '<script src="/wp-content/plugins/markdown-block-bridge/kernel.js">',
+          '<script>window.MBB_ADAPTERS=' +
+            JSON.stringify(adapters.descriptors).replaceAll('<', '\\u003c') +
+            ';</script><script src="/wp-content/plugins/markdown-block-bridge/kernel.js">',
+        );
+      return response
+        .writeHead(html ? 200 : 404, { 'Content-Type': 'text/html' })
+        .end(html || 'Core runtime required');
+    }
     if (pathname === '/teaching-editor') {
       const source =
         ':::mbb:v1 collapse {"id":"edit-fold","title":"可编辑折叠","open":false}\n\nExisting teaching body.\n\n:::mbb:end\n\n:::mbb:v1 code-compare {"id":"edit-compare","leftTitle":"左代码","rightTitle":"右代码","leftHighlights":"","rightHighlights":""}\n\n```js\nleft();\n```\n\n```python\nright()\n```\n\nExplanation.\n\n:::mbb:end\n';

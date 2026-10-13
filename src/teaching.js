@@ -1,7 +1,23 @@
+import {
+  nativeAdapterKind,
+  nativeAdapterName,
+  nativeAdapterKinds,
+  nativeAttributes,
+  nativeBlockAttributes,
+  buttonText,
+  buttonParagraph,
+  staticAdapterKind,
+  staticAdapterAttributes,
+  adapterSourceAttributes,
+} from './block-adapters.js';
 import { componentParams } from './component-data.js';
 import { codeTabsAttributes, codeTabsMarkdown, registerCodeTabs } from './code-tabs.js';
 // Versioned teaching syntax has a closed schema. Bodies use the ordinary parser.
 export const teachingSchemas = {
+  details: { summary: 'string', showContent: 'boolean' },
+  buttons: {},
+  button: { url: 'string' },
+  adapter: { name: 'string', version: 'string', attrs: 'object' },
   'code-tabs': { id: 'string', defaultTab: 'string', tabs: 'object' },
   component: { id: 'string', component: 'string', componentVersion: 'string', params: 'object' },
   collapse: { id: 'string', title: 'string', open: 'boolean' },
@@ -29,8 +45,28 @@ export const sourceFields = {
   languageRight: 'string',
 };
 export const teachingKind = (name) =>
-  name?.startsWith('mbb/') && Object.hasOwn(teachingSchemas, name.slice(4)) ? name.slice(4) : null;
-export function teachingAttributes(kind, attrs, fail, source = false) {
+  nativeAdapterKind(name) ||
+  (staticAdapterKind(name) ? 'adapter' : null) ||
+  (name?.startsWith('mbb/') && Object.hasOwn(teachingSchemas, name.slice(4))
+    ? name.slice(4)
+    : null);
+export function teachingAttributes(kind, attrs, fail, source = false, blockName = null) {
+  if (nativeAdapterKinds.has(kind)) return nativeAttributes(kind, attrs, fail, source);
+  if (kind === 'adapter') {
+    if (source) {
+      const a = adapterSourceAttributes(attrs, fail);
+      return {
+        name: a.descriptor.name,
+        version: a.descriptor.version,
+        attrs: Object.fromEntries(
+          Object.keys(a.descriptor.attributes).map((key) => [key, a.attributes[key]]),
+        ),
+      };
+    }
+    const d = staticAdapterKind(blockName);
+    if (!d) fail('ADAPTER_VERSION', '静态适配器缺失或版本不兼容');
+    return staticAdapterAttributes(d, attrs, fail);
+  }
   const schema = {
     ...teachingSchemas[kind],
     ...(!source ? { version: 'number' } : {}),
@@ -231,6 +267,27 @@ export function teachingSource(source, fail, ignored = new Set(), nonce, fences 
     if (text(next) !== ':::mbb:end')
       fail('CODE_TABS_STRUCTURE', '代码组只能包含对应版本数量的围栏');
   }
+  // A controlled raw paragraph in a button is pure link text, never math or image syntax.
+  for (let i = 0; i < lines.length; i++) {
+    if (
+      ignored.has(i) ||
+      protectedHTML.some(([a, b]) => offsets[i] >= a && offsets[i] < b) ||
+      !/^:::mbb:v1 button /.test(text(i))
+    )
+      continue;
+    let begin = i + 1;
+    while (/^[ \t]*$/.test(text(begin) || '') && begin < lines.length) begin++;
+    if (!text(begin)?.startsWith('<p>')) continue;
+    let end = begin;
+    while (end < lines.length && !text(end)?.endsWith('</p>')) end++;
+    if (end === lines.length) fail('ADAPTER_STRUCTURE', '按钮文字段落未闭合');
+    const html = lines
+      .slice(begin, end + 1)
+      .join('')
+      .replace(/[\r\n]+$/, '');
+    replacements.set(begin, marker({ rawButton: buttonParagraph(html, fail) }));
+    for (let n = begin + 1; n <= end; n++) replacements.set(n, '');
+  }
   let offset = 0;
   return source
     .match(/[^\r\n]*(?:\r\n|\r|\n|$)/g)
@@ -248,7 +305,7 @@ export function teachingSource(source, fail, ignored = new Set(), nonce, fences 
       if (line === ':::mbb:end') data = { end: true };
       else {
         const match =
-          /^:::mbb:v1 (collapse|steps|step|code-compare|component|code-tabs) (\{[^\r\n]*\})$/.exec(
+          /^:::mbb:v1 (collapse|steps|step|code-compare|component|code-tabs|details|buttons|button|adapter) (\{[^\r\n]*\})$/.exec(
             line,
           );
         if (!match) fail('TEACHING_SYNTAX', '教学容器需使用完整的 :::mbb:v1 名称 JSON 属性');
@@ -283,6 +340,12 @@ export function assembleTeaching(blocks, make, fail) {
       continue;
     }
     const data = b.teachingMarker;
+    if (Object.hasOwn(data, 'rawButton')) {
+      stack
+        .at(-1)
+        .children.push(make('core/paragraph', { content: buttonText(data.rawButton, fail) }));
+      continue;
+    }
     if (data.rawCode) {
       stack.at(-1).children.push({ name: 'mbb/code', attributes: data.rawCode, exactCode: true });
       continue;
@@ -294,6 +357,35 @@ export function assembleTeaching(blocks, make, fail) {
     }
     if (stack.length === 1) fail('TEACHING_STRUCTURE', '教学结束标记没有对应开始');
     const item = stack.pop();
+    if (nativeAdapterKinds.has(item.kind)) {
+      let attrs = nativeBlockAttributes(item.kind, item.attrs, fail);
+      if (item.kind === 'button') {
+        if (
+          item.children.length !== 1 ||
+          !['core/paragraph', 'core/html'].includes(item.children[0].name) ||
+          item.children[0].innerBlocks?.length
+        )
+          fail('ADAPTER_STRUCTURE', '链接按钮必须恰好有一个受控文字段落');
+        attrs.text =
+          item.children[0].name === 'core/html'
+            ? buttonParagraph(
+                item.children[0].innerContent?.join('') ??
+                  item.children[0].attributes.content ??
+                  item.children[0].originalContent,
+                fail,
+              )
+            : buttonText(item.children[0].attributes.content, fail);
+        item.children = [];
+      }
+      stack.at(-1).children.push(make(nativeAdapterName(item.kind), attrs, item.children));
+      continue;
+    }
+    if (item.kind === 'adapter') {
+      if (item.children.length) fail('ADAPTER_STRUCTURE', '静态适配器容器不能有正文');
+      const a = adapterSourceAttributes(item.attrs, fail);
+      stack.at(-1).children.push(make(a.descriptor.blockName, a.attributes, []));
+      continue;
+    }
     item.attrs.version = 1;
     if (item.kind === 'code-tabs') {
       if (
@@ -331,14 +423,35 @@ export function validateTeaching(blocks, fail) {
   const ids = new Set();
   let count = 0;
   let groups = 0;
-  function walk(list, parent = '', depth = 0, collapseDepth = 0) {
+  function walk(list, parent = '', depth = 0, collapseDepth = 0, detailsDepth = 0) {
     for (const b of list) {
       if (depth > 32 || ++count > 10000) fail('STRUCTURE_LIMIT', '教学结构超出深度或节点数量边界');
       const kind = teachingKind(b.name),
         inner = b.innerBlocks || [];
       if (parent === 'steps' && kind !== 'step') fail('TEACHING_STRUCTURE', '阶段组只能包含阶段');
       if (kind) {
-        const a = teachingAttributes(kind, b.attributes, fail);
+        const a = teachingAttributes(kind, b.attributes, fail, false, b.name);
+        if (nativeAdapterKinds.has(kind) || kind === 'adapter') {
+          if (kind === 'details' && detailsDepth >= 8)
+            fail('ADAPTER_LIMIT', '原生详情最多嵌套 8 层');
+          if (a.anchor) {
+            if (ids.has(a.anchor)) fail('ADAPTER_ANCHOR', '锚点与文档 ID 重复');
+            ids.add(a.anchor);
+          }
+          if (
+            kind === 'buttons' &&
+            (!inner.length ||
+              inner.length > 32 ||
+              inner.some((child) => child.name !== 'core/button'))
+          )
+            fail('ADAPTER_STRUCTURE', '按钮组需要 1–32 个直接链接按钮');
+          if (kind === 'button' && (parent !== 'buttons' || inner.length))
+            fail('ADAPTER_STRUCTURE', '链接按钮只能是按钮组直接叶节点');
+          if (kind === 'adapter' && inner.length)
+            fail('ADAPTER_STRUCTURE', '静态适配器不能包含嵌套区块');
+          walk(inner, kind, depth + 1, collapseDepth, detailsDepth + (kind === 'details' ? 1 : 0));
+          continue;
+        }
         if (ids.has(a.id)) fail('TEACHING_ID', '教学 ID 在文档内必须唯一');
         ids.add(a.id);
         if (kind === 'code-tabs') {
@@ -366,7 +479,13 @@ export function validateTeaching(blocks, fail) {
             )
               fail('TEACHING_LINES', '重点行超出对应代码范围');
       }
-      walk(inner, kind || b.name, depth + 1, collapseDepth + (kind === 'collapse' ? 1 : 0));
+      walk(
+        inner,
+        kind || b.name,
+        depth + 1,
+        collapseDepth + (kind === 'collapse' ? 1 : 0),
+        detailsDepth,
+      );
     }
   }
   const anchors = [];
@@ -392,7 +511,28 @@ export function validateTeaching(blocks, fail) {
 }
 export function teachingMarkdown(b, body, fail) {
   const kind = teachingKind(b.name);
-  const a = teachingAttributes(kind, b.attributes, fail);
+  const a = teachingAttributes(kind, b.attributes, fail, false, b.name);
+  if (nativeAdapterKinds.has(kind) || kind === 'adapter') {
+    const header =
+      kind === 'adapter'
+        ? {
+            name: staticAdapterKind(b.name).name,
+            version: a.mbbAdapterVersion,
+            attrs: Object.fromEntries(
+              Object.keys(staticAdapterKind(b.name).attributes).map((key) => [key, a[key]]),
+            ),
+          }
+        : Object.fromEntries(Object.entries(a).filter(([key]) => key !== 'text'));
+    return (
+      ':::mbb:v1 ' +
+      kind +
+      ' ' +
+      JSON.stringify(header) +
+      '\n\n' +
+      body.trimEnd() +
+      '\n\n:::mbb:end'
+    );
+  }
   if (kind === 'code-tabs') return codeTabsMarkdown(a);
   const attrs = Object.fromEntries(Object.keys(teachingSchemas[kind]).map((key) => [key, a[key]]));
   const code = (side) => {
@@ -495,6 +635,7 @@ export function registerTeaching() {
   };
 
   for (const [kind, schema] of Object.entries(teachingSchemas)) {
+    if (nativeAdapterKinds.has(kind) || kind === 'adapter') continue;
     if (kind === 'code-tabs') continue;
     const name = 'mbb/' + kind;
     if (wp.blocks.getBlockType(name)) continue;

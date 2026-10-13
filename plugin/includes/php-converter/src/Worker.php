@@ -12,6 +12,7 @@ final class Worker
     public static function convert(array $request): array
     {
         try {
+            BlockAdapters::configure($request['blockAdapters'] ?? '[]');
             if (($request['mode'] ?? null) === 'batch') {
                 $items = $request['items'] ?? null;
                 if (!is_array($items) || !array_is_list($items) || count($items) > 5) {
@@ -20,8 +21,12 @@ final class Worker
                 $results = [];
                 foreach ($items as $item) {
                     $result =
-                        is_array($item) && ($item['mode'] ?? null) !== 'batch'
-                            ? self::convert($item)
+                        is_array($item) &&
+                        ($item['mode'] ?? null) !== 'batch' &&
+                        !array_key_exists('blockAdapters', $item)
+                            ? self::convert(
+                                $item + ['blockAdapters' => $request['blockAdapters'] ?? '[]'],
+                            )
                             : [
                                 'ok' => false,
                                 'code' => 'REQUEST',

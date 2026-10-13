@@ -2,6 +2,7 @@
 // Paired document storage, validation and capability-checked editing endpoints.
 require_once __DIR__ . '/includes/conversion-backends.php';
 require_once __DIR__ . '/frontmatter.php';
+require_once __DIR__ . '/block-adapters.php';
 require_once __DIR__ . '/resource-import.php';
 require_once __DIR__ . '/save-commit.php';
 require_once __DIR__ . '/export.php';
@@ -172,7 +173,12 @@ function mbb_convert($input)
             503,
         );
     }
+    $adapter_digest = mbb_block_adapter_digest();
+    $input['blockAdapters'] = mbb_block_adapter_snapshot();
     $result = mbb_converter_dispatch($input);
+    if (!hash_equals($adapter_digest, mbb_block_adapter_digest())) {
+        return mbb_error('adapter_conflict', '转换期间静态区块登记已变化，原候选未写入。');
+    }
     if (is_wp_error($result)) {
         return $result;
     }
@@ -216,6 +222,10 @@ function mbb_html_allowed($blocks)
             'core/image',
             'core/html',
             'core/more',
+            'core/details',
+            'core/buttons',
+            'core/button',
+            ...mbb_block_adapter_names(),
             'mbb/list',
             'mbb/list-item',
             'mbb/task-item',
@@ -252,6 +262,25 @@ function mbb_html_allowed($blocks)
     }
 }
 function mbb_candidate($r)
+{
+    $digest = mbb_block_adapter_digest();
+    $candidate = mbb_candidate_current($r);
+    if (!is_wp_error($candidate)) {
+        // Dependency inspection can invoke the real block_parser_class filter.
+        // Keep the entry snapshot and compare only after every preparation/parse step.
+        $candidate['adapter_digest'] = mbb_document_has_adapters(
+            $candidate['document']['serialized'],
+        )
+            ? $digest
+            : null;
+        $candidate['_adapter_registry_digest'] = $digest;
+    }
+    if (!hash_equals($digest, mbb_block_adapter_digest())) {
+        return mbb_error('adapter_conflict', '候选准备期间静态登记已变化，请重新预览。');
+    }
+    return $candidate;
+}
+function mbb_candidate_current($r)
 {
     if (strlen((string) $r->get_body()) > 2000000) {
         return mbb_error('size', '请求过大。', 413);
@@ -388,6 +417,13 @@ function mbb_preview($r)
     $c['html'] = mbb_render_footnotes(
         do_blocks(($c['resource_plan']['projectedDocument'] ?? $c['document'])['serialized']),
     );
+    if (!hash_equals($c['_adapter_registry_digest'], mbb_block_adapter_digest())) {
+        return mbb_error(
+            'adapter_conflict',
+            '预览生成期间静态登记已变化，候选未写入；请重新预览。',
+        );
+    }
+    unset($c['_adapter_registry_digest']);
     return $c;
 }
 // Code/TeX attributes are plain text. The rendered HTML still passes normal KSES.
@@ -418,6 +454,9 @@ function mbb_kses_plain_block_sources($text, $allowed = 'post', $protocols = [])
                     'mbb/steps' => ['title'],
                     'mbb/step' => ['title'],
                 ][$b['blockName']] ?? [];
+            if (in_array($b['blockName'], mbb_block_adapter_names(), true)) {
+                $fields = array_keys($b['attrs']);
+            }
             $plain = [];
             $attrs = $b['attrs'];
             foreach ($fields as $field) {
@@ -567,6 +606,10 @@ function mbb_save($r, $cli_source_path = null)
         $c = mbb_candidate($r);
         if (is_wp_error($c)) {
             return $c;
+        }
+        $adapter_confirm = mbb_block_adapter_confirm($r, $c);
+        if (is_wp_error($adapter_confirm)) {
+            return $adapter_confirm;
         }
         $receipt = mbb_frontmatter_verify_receipt($r, $c);
         if (is_wp_error($receipt)) {
@@ -798,6 +841,9 @@ function mbb_save($r, $cli_source_path = null)
                 )
             ) {
                 throw new RuntimeException('恢复来源记录失败');
+            }
+            if (is_wp_error(mbb_block_adapter_confirm($r, $c))) {
+                throw new RuntimeException('静态区块登记在保存期间变化');
             }
             $commit_attempted = true;
             if ($wpdb->query('COMMIT') === false) {
@@ -1139,6 +1185,9 @@ function mbb_enqueue_ui()
     if (!$tool && (!$post_screen || (!$new_post && !mbb_managed($id)))) {
         return;
     }
+    if ($tool) {
+        mbb_enqueue_kernel(true);
+    }
     wp_enqueue_script(
         'mbb-resource-ui',
         plugins_url(mbb_asset('resource-ui.js'), __FILE__),
@@ -1149,7 +1198,7 @@ function mbb_enqueue_ui()
     wp_enqueue_script(
         'mbb-editor-ui',
         plugins_url(mbb_asset('editor-ui.js'), __FILE__),
-        ['wp-data', 'wp-blocks', 'wp-api-fetch', 'mbb-math', 'mbb-resource-ui'],
+        ['wp-data', 'wp-blocks', 'wp-api-fetch', 'mbb-math', 'mbb-resource-ui', 'mbb-kernel'],
         substr(hash_file('sha256', __DIR__ . '/editor-ui.js'), 0, 12),
         true,
     );
@@ -1171,11 +1220,14 @@ function mbb_enqueue_ui()
         'state' => $tool || $new_post ? null : mbb_state($id),
         'footnoteStyle' => file_get_contents(__DIR__ . '/footnotes.css'),
         'teachingStyle' => file_get_contents(__DIR__ . '/teaching.css'),
-        'supportedBlocks' => array_keys(
-            json_decode(
-                file_get_contents(__DIR__ . '/includes/php-converter/block-capabilities.json'),
-                true,
+        'supportedBlocks' => array_merge(
+            array_keys(
+                json_decode(
+                    file_get_contents(__DIR__ . '/includes/php-converter/block-capabilities.json'),
+                    true,
+                ),
             ),
+            mbb_block_adapter_names(),
         ),
         'sourceFontSize' => mbb_display_preferences()['source_font_size'],
         'recovery' => mbb_recovery_config(),

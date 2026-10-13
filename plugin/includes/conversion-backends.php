@@ -55,6 +55,7 @@ function mbb_php_converter_diagnostics($smoke = false)
         'Footnotes.php',
         'DisplayBoundaries.php',
         'CodeWhitespace.php',
+        'BlockAdapters.php',
         'composer.json',
         'composer.lock',
         'scoped/autoload.php',
@@ -64,6 +65,7 @@ function mbb_php_converter_diagnostics($smoke = false)
         'scoped/src/Footnotes.php',
         'scoped/src/DisplayBoundaries.php',
         'scoped/src/CodeWhitespace.php',
+        'scoped/src/BlockAdapters.php',
         'scoped/vendor/composer/installed.json',
     ];
     foreach ($required as $name) {

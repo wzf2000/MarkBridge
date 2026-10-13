@@ -56,6 +56,7 @@ function mbb_sync_write($id, $source, $title = null, $source_path = null, $statu
             'source' => $source,
             'title' => $title ?? $p->post_title,
             'post_status' => $status ?? $p->post_status,
+            'adapter_digest' => mbb_block_adapter_digest(),
         ]),
     );
     $r->set_header('Content-Type', 'application/json');

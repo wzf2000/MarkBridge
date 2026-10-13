@@ -6,9 +6,20 @@ export function portableImageSource(source, mappings, fail) {
     for (let n = start; n < end; n++) if (!/[\r\n]/.test(chars[n])) chars[n] = ' ';
   };
   let offset = 0,
-    fence = null;
-  for (const raw of source.match(/[^\n]*\n|[^\n]+$/g) || []) {
-    const line = raw.replace(/\r?\n$/, '');
+    fence = null,
+    button = false,
+    paragraph = false;
+  for (const raw of source.match(/[^\r\n]*(?:\r\n|\r|\n)|[^\r\n]+$/g) || []) {
+    const line = raw.replace(/(?:\r\n|\r|\n)$/, '');
+    if (button) {
+      mask(offset, offset + raw.length);
+      if (line.startsWith('<p>')) paragraph = true;
+      if (paragraph && line.endsWith('</p>')) paragraph = false;
+      else if (!paragraph && line === ':::mbb:end') button = false;
+      offset += raw.length;
+      continue;
+    }
+    if (/^:::mbb:v1 button /.test(line)) button = true;
     const opening = line.match(/^ {0,3}(`{3,}|~{3,})(.*)$/);
     if (fence) {
       mask(offset, offset + raw.length);

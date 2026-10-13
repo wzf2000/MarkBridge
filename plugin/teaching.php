@@ -54,6 +54,17 @@ add_filter(
     'render_block',
     static function ($html, $block) {
         $name = $block['blockName'] ?? '';
+        if ($name === 'core/details' && empty($block['attrs']['name'])) {
+            if (!is_admin()) {
+                mbb_enqueue_teaching_assets();
+            }
+            return preg_replace(
+                '/^(\s*)<details\b/',
+                '$1<details data-mbb-teaching="native-details"',
+                $html,
+                1,
+            );
+        }
         if (!str_starts_with($name, 'mbb/')) {
             return $html;
         }

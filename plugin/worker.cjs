@@ -54,6 +54,7 @@ const { JSDOM, VirtualConsole } = require(path.join(ROOT, 'node_modules/jsdom'))
         });
       } else vm.runInContext(s.textContent, dom.getInternalVMContext(), { timeout: 5000 });
     }
+    w.MBB.configureBlockAdapters(data.blockAdapters ?? '[]');
     const convert = (item) => {
       if (item.mode === 'resource_images' || item.mode === 'portable_images') {
         if (
@@ -80,6 +81,14 @@ const { JSDOM, VirtualConsole } = require(path.join(ROOT, 'node_modules/jsdom'))
       if (!Array.isArray(data.items) || data.items.length > 5) throw Error('BATCH_LIMIT');
       document = data.items.map((item) => {
         try {
+          if (
+            !item ||
+            typeof item !== 'object' ||
+            Array.isArray(item) ||
+            item.mode === 'batch' ||
+            Object.prototype.hasOwnProperty.call(item, 'blockAdapters')
+          )
+            throw new w.MBB.ConversionError('REQUEST', 'Invalid batch item');
           return { ok: true, document: convert(item) };
         } catch (e) {
           return {

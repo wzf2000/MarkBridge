@@ -31,6 +31,7 @@
     for (let p = node; p; p = p.parentElement) {
       if (p.classList.contains('mbb-code-tab'))
         codeGroups.get(p.parentElement)?.select(p, false, false);
+      if (p.matches('details.wp-block-details')) p.open = true;
       if (p.dataset.mbbTeaching === 'collapse') {
         const body = child(p, '.mbb-teaching-body');
         if (body) body.hidden = false;
@@ -53,6 +54,10 @@
   });
   function snapshot() {
     return {
+      details: [...document.querySelectorAll('details.wp-block-details[id]')].map((node) => ({
+        id: node.id,
+        open: node.open,
+      })),
       tabs: [...codeGroups].map(([node, group]) => ({ id: node.id, ...group.state() })),
       groups: [...groups].map(([node, controller]) => ({ id: node.id, ...controller.state() })),
       collapse: [...document.querySelectorAll('[data-mbb-teaching="collapse"]')].map((node) => ({
@@ -72,6 +77,10 @@
   function restore(state) {
     const value = state?.mbbTeaching;
     if (!value) return;
+    for (const item of value.details || []) {
+      const node = document.getElementById(item.id);
+      if (node?.matches('details.wp-block-details')) node.open = !!item.open;
+    }
     for (const item of value.tabs || [])
       codeGroups.get(document.getElementById(item.id))?.restore(item);
     for (const item of value.groups || []) {
@@ -385,7 +394,11 @@
       if (node.dataset.mbbEnhanced) continue;
       const kind = node.dataset.mbbTeaching,
         options = config(node);
-      if (kind === 'collapse') {
+      if (kind === 'native-details') {
+        if (!node.matches('details.wp-block-details')) continue;
+        node.addEventListener('toggle', change);
+        child(node, 'summary')?.addEventListener('click', () => setTimeout(() => record(), 0));
+      } else if (kind === 'collapse') {
         const body = child(node, '.mbb-teaching-body'),
           title = child(node, '.mbb-teaching-title');
         if (!body || !title) continue;
@@ -422,6 +435,8 @@
             full = true;
             update();
             const article = node.closest('article,.mbb-document') || node;
+            for (const detail of article.querySelectorAll('details.wp-block-details'))
+              detail.open = true;
             for (const fold of article.querySelectorAll('[data-mbb-teaching=collapse]')) {
               const foldBody = child(fold, '.mbb-teaching-body');
               if (foldBody) foldBody.hidden = false;
@@ -515,6 +530,19 @@
       node.dataset.mbbEnhanced = 'true';
     }
   }
+  let printedDetails = null;
+  window.addEventListener('beforeprint', () => {
+    if (printedDetails) return;
+    printedDetails = [...document.querySelectorAll('details.wp-block-details')].map((node) => ({
+      node,
+      open: node.open,
+    }));
+    for (const item of printedDetails) item.node.open = true;
+  });
+  window.addEventListener('afterprint', () => {
+    for (const item of printedDetails || []) if (item.node.isConnected) item.node.open = item.open;
+    printedDetails = null;
+  });
   init();
   restore(history.state);
   hash();

@@ -44,6 +44,7 @@ require_once __DIR__ . '/Footnotes.php';
 require_once __DIR__ . '/DisplayBoundaries.php';
 require_once __DIR__ . '/CodeWhitespace.php';
 require_once __DIR__ . '/Teaching.php';
+require_once __DIR__ . '/BlockAdapters.php';
 require_once __DIR__ . '/FrontMatter.php';
 require_once __DIR__ . '/ResourceImages.php';
 require_once __DIR__ . '/PortableImages.php';
@@ -912,6 +913,44 @@ final class Converter
                 FrontMatter::HTML .
                 "\n<!-- /wp:mbb/frontmatter -->";
         }
+        if (($native = BlockAdapters::kind($name)) !== null) {
+            $a = BlockAdapters::nativeAttrs($native, $attrs);
+            $comment = [];
+            if ($native === 'details' && $a['showContent']) {
+                $comment['showContent'] = true;
+            }
+            if (isset($a['anchor'])) {
+                $comment['anchor'] = $a['anchor'];
+            }
+            if ($native === 'buttons' && isset($a['layout'])) {
+                $comment['layout'] = $a['layout'];
+            }
+            $html = BlockAdapters::nativeHtml($native, $attrs, $children);
+            $short = substr($name, 5);
+            return '<!-- wp:' .
+                $short .
+                ($comment ? ' ' . self::commentJson($comment) : '') .
+                " -->\n" .
+                $html .
+                "\n<!-- /wp:" .
+                $short .
+                ' -->';
+        }
+        if (($descriptor = BlockAdapters::descriptor($name, true)) !== null) {
+            if ($children) {
+                throw new ConversionError('ADAPTER_STRUCTURE', '静态适配器不能有子区块');
+            }
+            $a = BlockAdapters::leafAttrs($descriptor, $attrs);
+            return '<!-- wp:' .
+                $name .
+                ' ' .
+                self::commentJson($a) .
+                " -->\n" .
+                BlockAdapters::html($descriptor, $a) .
+                "\n<!-- /wp:" .
+                $name .
+                ' -->';
+        }
         if (($kind = Teaching::kind($name)) !== null) {
             $html =
                 '<div id="' .
@@ -1230,13 +1269,16 @@ final class Converter
                     throw new ConversionError('BLOCK_SYNTAX', 'Mismatched block closing comment');
                 }
                 $position += strlen($close[0]);
-                return [
+                $block = [
                     'name' => $name,
                     'attrs' => $attrs,
                     'children' => $children,
                     'raw' => trim($raw),
                     'path' => $path,
                 ];
+                return BlockAdapters::kind($name) !== null
+                    ? BlockAdapters::decodeNative($block)
+                    : $block;
             }
             $index = count($children);
             $children[] = $this->parseOne(
@@ -1261,6 +1303,10 @@ final class Converter
             32,
             JSON_THROW_ON_ERROR,
         );
+        if (($descriptor = BlockAdapters::descriptor($name, true)) !== null) {
+            BlockAdapters::leafAttrs($descriptor, $attrs);
+            return;
+        }
         if (!array_key_exists($name, $schemas)) {
             throw new ConversionError('UNSUPPORTED_BLOCK', 'Unsupported block: ' . $name);
         }
@@ -1740,8 +1786,28 @@ final class Converter
             }
             return $attrs['raw'];
         }
+        if (($descriptor = BlockAdapters::descriptor($name, true)) !== null) {
+            if (
+                $children ||
+                $this->canonical($raw) !==
+                    $this->canonical(
+                        BlockAdapters::html(
+                            $descriptor,
+                            BlockAdapters::leafAttrs($descriptor, $attrs),
+                        ),
+                    )
+            ) {
+                throw new ConversionError('ADAPTER_STRUCTURE', '静态适配器 HTML 与登记模板不一致');
+            }
+            return Teaching::markdown($block, '');
+        }
         if (Teaching::kind($name) !== null) {
-            return Teaching::markdown($block, $this->decodeAll($children, $depth + 1));
+            return Teaching::markdown(
+                $block,
+                $name === 'core/button'
+                    ? '<p>' . BlockAdapters::buttonText($attrs['text']) . '</p>'
+                    : $this->decodeAll($children, $depth + 1),
+            );
         }
         switch ($name) {
             case 'core/html':
@@ -2461,7 +2527,12 @@ final class Converter
                     $error->code !== 801 ||
                     !in_array(
                         trim($error->message),
-                        ['Tag figure invalid', 'Tag section invalid'],
+                        [
+                            'Tag figure invalid',
+                            'Tag section invalid',
+                            'Tag details invalid',
+                            'Tag summary invalid',
+                        ],
                         true,
                     )
                 ) {

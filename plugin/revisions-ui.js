@@ -132,6 +132,7 @@
         expected_revision: v.expected_revision,
       };
       const result = await api('preview', payload);
+      payload.adapter_digest = result.adapter_digest;
       candidate = payload;
       diff.replaceChildren();
       diff.append(el('p', {}, `标题：${result.before_title} → ${result.title}`));

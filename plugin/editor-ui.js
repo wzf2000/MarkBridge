@@ -989,6 +989,7 @@
         return;
       }
       renderFrontmatter(result.frontmatter);
+      payload.adapter_digest = result.adapter_digest;
       payload.frontmatter_receipt = result.frontmatter_receipt;
       payload.resource_receipt = result.resource_receipt;
       const rendered = await MBB_MATH.preview(result.html);

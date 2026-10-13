@@ -15,10 +15,27 @@ final class PortableImages
                 $length,
             );
         };
-        preg_match_all('/[^\n]*\n|[^\n]+$/', $source, $lines, PREG_OFFSET_CAPTURE);
+        preg_match_all('/[^\r\n]*(?:\r\n|\r|\n)|[^\r\n]+$/', $source, $lines, PREG_OFFSET_CAPTURE);
         $fence = null;
+        $button = false;
+        $paragraph = false;
         foreach ($lines[0] as [$raw, $offset]) {
-            $line = preg_replace('/\r?\n$/', '', $raw);
+            $line = preg_replace('/(?:\r\n|\r|\n)$/', '', $raw);
+            if ($button) {
+                $mask($offset, strlen($raw));
+                if (str_starts_with($line, '<p>')) {
+                    $paragraph = true;
+                }
+                if ($paragraph && str_ends_with($line, '</p>')) {
+                    $paragraph = false;
+                } elseif (!$paragraph && $line === ':::mbb:end') {
+                    $button = false;
+                }
+                continue;
+            }
+            if (str_starts_with($line, ':::mbb:v1 button ')) {
+                $button = true;
+            }
             preg_match('/^ {0,3}(`{3,}|~{3,})(.*)$/', $line, $opening);
             if ($fence) {
                 $mask($offset, strlen($raw));

@@ -82,5 +82,25 @@
     "defaultTab": "string",
     "tabs": "array",
     "version": "integer"
+  },
+  "core/details": {
+    "summary": "string",
+    "showContent": "boolean",
+    "anchor": "string",
+    "name": "string"
+  },
+  "core/buttons": {
+    "anchor": "string",
+    "layout": "array"
+  },
+  "core/button": {
+    "anchor": "string",
+    "url": "string",
+    "title": "string",
+    "text": "string",
+    "linkTarget": "string",
+    "rel": "string",
+    "tagName": "string",
+    "type": "string"
   }
 }

@@ -111,7 +111,10 @@
   const scan = (root) => {
     if (!root.isConnected) return;
     highlight(root).catch(() => {});
-    if (config.teachingScript && within(root, '[data-mbb-teaching]').length) {
+    if (
+      config.teachingScript &&
+      within(root, '[data-mbb-teaching],details.wp-block-details').length
+    ) {
       load(config.teachingStyle, true).catch(() => {});
       load(config.teachingScript).catch(() => {});
       if (config.componentScript) load(config.componentScript).catch(() => {});

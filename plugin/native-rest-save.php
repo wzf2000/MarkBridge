@@ -44,6 +44,9 @@ function mbb_native_pre_insert($prepared, $request)
     }
     $prepared->post_content = $candidate['document']['serialized'];
     $prepared->post_content_filtered = $candidate['document']['source'];
+    if (!hash_equals($candidate['_adapter_registry_digest'], mbb_block_adapter_digest())) {
+        return mbb_error('adapter_conflict', '原生候选准备期间静态登记已变化，请重新核对。');
+    }
     $GLOBALS['mbb_native_pair']['candidate'] = $candidate;
     return $prepared;
 }
@@ -276,6 +279,11 @@ function mbb_native_rest_update($result, $server, $request)
             throw new RuntimeException('源版本历史保存失败');
         }
         $saved_revision = mbb_pair_snapshot($id, $revision_floor);
+        $adapter_digest =
+            $GLOBALS['mbb_native_pair']['candidate']['_adapter_registry_digest'] ?? null;
+        if ($adapter_digest !== null && !hash_equals($adapter_digest, mbb_block_adapter_digest())) {
+            throw new RuntimeException('静态区块登记在保存期间变化');
+        }
         $commit_attempted = true;
         if ($wpdb->query('COMMIT') === false) {
             throw new RuntimeException('事务提交失败');

@@ -15,6 +15,9 @@ function mbb_binding_projection($p): string
                     'managed' => get_post_meta($p->ID, '_mbb_source_managed', true),
                     'llmDocument' => get_post_meta($p->ID, '_llm_document_id', true),
                     'binding' => get_post_meta($p->ID, '_mbb_source_path_hash', true),
+                    'adapters' => function_exists('mbb_block_adapter_digest')
+                        ? mbb_block_adapter_digest()
+                        : hash('sha256', '[]'),
                 ],
                 JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
             ),

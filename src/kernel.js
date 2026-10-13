@@ -1,4 +1,14 @@
 import {
+  nativeAdapterKind,
+  buttonText,
+  staticAdapterKind,
+  configureBlockAdapters as configureAdapters,
+  adapterDescriptors,
+  registerStaticBlockAdapters,
+  validateAdaptersSerialized,
+  adapterDraftPending,
+} from './block-adapters.js';
+import {
   parseFrontmatter,
   validateFrontmatter,
   validateFrontmatterSerialized,
@@ -10,6 +20,7 @@ import { portableImageSource } from './portable-images.js';
 export { MergeError, planMerge, resolveMerge, mergeMetadata } from './merge.js';
 import {
   validateTeachingSerialized,
+  teachingJSON,
   teachingSource,
   teachingMarker,
   assembleTeaching,
@@ -37,6 +48,11 @@ export class ConversionError extends Error {
 }
 // Block names describe the implemented content mapping, never arbitrary styles.
 export const supportedBlocks = Object.keys(blockCapabilities);
+export function configureBlockAdapters(snapshot, register = true) {
+  configureAdapters(snapshot, fail);
+  if (register) registerStaticBlockAdapters(fail);
+}
+export { adapterDescriptors };
 export function formatLocation(location = '') {
   const line = /^line:(\d+)(?::(\d+))?$/.exec(location);
   if (line) return `Markdown 第 ${line[1]} 行${line[2] ? `，第 ${line[2]} 列` : '所在区块'}`;
@@ -832,10 +848,24 @@ function rawMarkdown(blocks, path = 'blocks') {
           const at = `${path}[${i}]`;
           if (b.isValid === false) fail('INVALID_BLOCK', '无效区块不能回写', at);
           const a = b.attributes;
-          if (!Object.hasOwn(blockCapabilities, b.name))
+          if (!Object.hasOwn(blockCapabilities, b.name) && !staticAdapterKind(b.name))
             fail('UNSUPPORTED_BLOCK', '此区块尚不能转换为 Markdown', at);
           const inner = b.innerBlocks || [];
-          if (teachingKind(b.name)) return teachingMarkdown(b, rawMarkdown(inner, at), fail);
+          if (teachingKind(b.name))
+            return teachingMarkdown(
+              b,
+              nativeAdapterKind(b.name) === 'button'
+                ? '<p>' +
+                    buttonText(
+                      wp.richText.RichTextData && a.text instanceof wp.richText.RichTextData
+                        ? a.text.toString()
+                        : a.text,
+                      fail,
+                    ) +
+                    '</p>'
+                : rawMarkdown(inner, at),
+              fail,
+            );
           switch (b.name) {
             case 'mbb/footnotes':
               if (
@@ -971,7 +1001,7 @@ function rawMarkdown(blocks, path = 'blocks') {
   );
 }
 export function toMarkdown(blocks, context) {
-  if (globalThis.MarkBridgeParameterDrafts?.pending())
+  if (globalThis.MarkBridgeParameterDrafts?.pending() || adapterDraftPending())
     fail('COMPONENT_DRAFT', '参数尚未应用；请应用或撤销参数输入后保存。');
   if (context?.origin !== 'markdown_import')
     fail('ORIGIN_REQUIRED', '只有明确Markdown来源文档允许反向转换');
@@ -1090,7 +1120,7 @@ export function importPairedDocument(source, serialized, documentId) {
   };
 }
 export function exportDocument(document, serialized) {
-  if (globalThis.MarkBridgeParameterDrafts?.pending())
+  if (globalThis.MarkBridgeParameterDrafts?.pending() || adapterDraftPending())
     fail('COMPONENT_DRAFT', '参数尚未应用；请应用或撤销参数输入后保存。');
   checkSource(serialized);
   checkSource(document?.serialized);
@@ -1106,9 +1136,21 @@ export function exportDocument(document, serialized) {
   if (kind === 'legacy' && canonical(serialized) === canonical(document.serialized))
     return document.source;
   validateTeachingSerialized(serialized, fail);
+  validateAdaptersSerialized(serialized, fail, teachingJSON);
   validateFrontmatterSerialized(serialized, fail);
   const blocks = api().parse(serialized);
   const normalized = toMarkdown(blocks, document);
+  if (
+    blocks.some(function adapted(b) {
+      return (
+        !!nativeAdapterKind(b.name) ||
+        !!staticAdapterKind(b.name) ||
+        (b.innerBlocks || []).some(adapted)
+      );
+    }) &&
+    canonical(serialized) !== canonical(api().serialize(blocksFromSource(normalized)))
+  )
+    fail('ROUNDTRIP', '原生适配区块序列化属性或 HTML 不能精确往返');
   return canonical(serialized) === canonical(document.serialized) ? document.source : normalized;
 }
 function MathPreview({ tex, display = false }) {
@@ -1379,4 +1421,6 @@ export function register() {
   installInlineMathDecorations();
   registerNativeMathConversion();
 }
-if (typeof window === 'undefined' || window.MBB_CONVERTER_ONLY !== true) register();
+const converterOnly = typeof window !== 'undefined' && window.MBB_CONVERTER_ONLY === true;
+if (!converterOnly) register();
+configureBlockAdapters(globalThis.MBB_ADAPTERS || [], !converterOnly);

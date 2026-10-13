@@ -252,3 +252,12 @@
 .mbb-component-params {
   display: none;
 }
+@media print {
+  details.wp-block-details::details-content {
+    content-visibility: visible !important;
+    display: block !important;
+  }
+  details.wp-block-details > :not(summary) {
+    display: block !important;
+  }
+}

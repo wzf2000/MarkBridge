@@ -5,6 +5,10 @@ namespace MarkBridge\Probe;
 final class Teaching
 {
     public const SCHEMAS = [
+        'details' => [],
+        'buttons' => [],
+        'button' => [],
+        'adapter' => [],
         'code-tabs' => ['id' => 'string', 'defaultTab' => 'string', 'tabs' => 'array'],
         'component' => [
             'id' => 'string',
@@ -38,6 +42,12 @@ final class Teaching
     ];
     public static function kind(string $name): ?string
     {
+        if (($native = BlockAdapters::kind($name)) !== null) {
+            return $native;
+        }
+        if (BlockAdapters::descriptor($name, true)) {
+            return 'adapter';
+        }
         $kind = substr($name, 4);
         return str_starts_with($name, 'mbb/') && isset(self::SCHEMAS[$kind]) ? $kind : null;
     }
@@ -45,8 +55,33 @@ final class Teaching
     {
         throw new ConversionError($code, $message);
     }
-    public static function attrs(string $kind, mixed $attrs, bool $source = false): array
-    {
+    public static function attrs(
+        string $kind,
+        mixed $attrs,
+        bool $source = false,
+        ?string $blockName = null,
+    ): array {
+        if (isset(BlockAdapters::NATIVE[$kind])) {
+            return BlockAdapters::nativeAttrs($kind, $attrs, $source);
+        }
+        if ($kind === 'adapter') {
+            if ($source) {
+                $a = BlockAdapters::sourceAttrs($attrs);
+                return [
+                    'name' => $a['descriptor']['name'],
+                    'version' => $a['descriptor']['version'],
+                    'attrs' => array_intersect_key(
+                        $a['attributes'],
+                        $a['descriptor']['attributes'],
+                    ),
+                ];
+            }
+            $d = $blockName ? BlockAdapters::descriptor($blockName, true) : null;
+            if (!$d) {
+                self::fail('ADAPTER_VERSION', '静态适配器缺失或版本不兼容');
+            }
+            return BlockAdapters::leafAttrs($d, $attrs);
+        }
         $schema =
             self::SCHEMAS[$kind] +
             (!$source ? ['version' => 'integer'] : []) +
@@ -339,6 +374,7 @@ final class Teaching
         if (
             is_object($object) &&
             isset($object->attrs) &&
+            is_object($object->attrs) &&
             property_exists($object->attrs, 'params')
         ) {
             $attrs['attrs']['params'] = $object->attrs->params;
@@ -570,6 +606,41 @@ final class Teaching
                 self::fail('CODE_TABS_STRUCTURE', 'Only matching fenced versions are allowed');
             }
         }
+        // A raw controlled paragraph inside a button contains literal text, not math/image syntax.
+        foreach ($rawLines as $i => $raw) {
+            $insideHtml = false;
+            foreach ($protected as [$a, $b]) {
+                if ($offsets[$i] >= $a && $offsets[$i] < $b) {
+                    $insideHtml = true;
+                }
+            }
+            if (
+                $insideHtml ||
+                isset($ignored[$i]) ||
+                !str_starts_with($text($i) ?? '', ':::mbb:v1 button ')
+            ) {
+                continue;
+            }
+            $begin = $i + 1;
+            while ($begin < count($rawLines) && preg_match('/^[ \t]*$/D', $text($begin))) {
+                $begin++;
+            }
+            if (!str_starts_with($text($begin) ?? '', '<p>')) {
+                continue;
+            }
+            $end = $begin;
+            while ($end < count($rawLines) && !str_ends_with($text($end) ?? '', '</p>')) {
+                $end++;
+            }
+            if ($end === count($rawLines)) {
+                self::fail('ADAPTER_STRUCTURE', '按钮文字段落未闭合');
+            }
+            $html = rtrim(implode('', array_slice($rawLines, $begin, $end - $begin + 1)), "\r\n");
+            $replacements[$begin] = $marker(['rawButton' => BlockAdapters::buttonParagraph($html)]);
+            for ($n = $begin + 1; $n <= $end; $n++) {
+                $replacements[$n] = '';
+            }
+        }
         $offset = 0;
         $lines = array_map(static fn($line) => rtrim($line, "\r\n"), $rawLines);
         foreach ($lines as $index => &$line) {
@@ -599,7 +670,7 @@ final class Teaching
             } else {
                 if (
                     !preg_match(
-                        '/^:::mbb:v1 (collapse|steps|step|code-compare|component|code-tabs) (\{.*\})$/D',
+                        '/^:::mbb:v1 (collapse|steps|step|code-compare|component|code-tabs|details|buttons|button|adapter) (\{.*\})$/D',
                         $line,
                         $m,
                     )
@@ -644,6 +715,15 @@ final class Teaching
                 continue;
             }
             $data = $b['marker'];
+            if (array_key_exists('rawButton', $data)) {
+                $stack[$i]['children'][] = [
+                    'name' => 'core/paragraph',
+                    'attrs' => [],
+                    'children' => [],
+                    'content' => BlockAdapters::buttonText($data['rawButton']),
+                ];
+                continue;
+            }
             if (isset($data['rawCode'])) {
                 $stack[$i]['children'][] = [
                     'name' => 'mbb/code',
@@ -663,6 +743,50 @@ final class Teaching
                 self::fail('TEACHING_STRUCTURE', 'Unexpected teaching closing marker');
             }
             $item = array_pop($stack);
+            if (isset(BlockAdapters::NATIVE[$item['kind']])) {
+                $a = BlockAdapters::nativeAttrs($item['kind'], $item['attrs'], true);
+                if ($item['kind'] === 'details') {
+                    $a['summary'] = BlockAdapters::text($a['summary']);
+                }
+                if ($item['kind'] === 'button') {
+                    if (
+                        count($item['children']) !== 1 ||
+                        !in_array(
+                            $item['children'][0]['name'],
+                            ['core/paragraph', 'core/html'],
+                            true,
+                        ) ||
+                        ($item['children'][0]['children'] ?? []) !== []
+                    ) {
+                        self::fail('ADAPTER_STRUCTURE', '链接按钮必须恰好有一个受控文字段落');
+                    }
+                    $a['text'] =
+                        $item['children'][0]['name'] === 'core/html'
+                            ? BlockAdapters::buttonParagraph($item['children'][0]['content'] ?? '')
+                            : BlockAdapters::buttonText($item['children'][0]['content'] ?? '');
+                    $item['children'] = [];
+                }
+                $stack[count($stack) - 1]['children'][] = [
+                    'name' => BlockAdapters::NATIVE[$item['kind']],
+                    'attrs' => $a,
+                    'children' => $item['children'],
+                    'content' => '',
+                ];
+                continue;
+            }
+            if ($item['kind'] === 'adapter') {
+                if ($item['children']) {
+                    self::fail('ADAPTER_STRUCTURE', '静态适配器容器不能有正文');
+                }
+                $a = BlockAdapters::sourceAttrs($item['attrs']);
+                $stack[count($stack) - 1]['children'][] = [
+                    'name' => $a['descriptor']['blockName'],
+                    'attrs' => $a['attributes'],
+                    'children' => [],
+                    'content' => '',
+                ];
+                continue;
+            }
             $item['attrs']['version'] = 1;
             if ($item['kind'] === 'code-tabs') {
                 if (count($item['children']) !== count($item['attrs']['tabs'])) {
@@ -721,12 +845,13 @@ final class Teaching
         $ids = [];
         $groups = 0;
         $count = 0;
-        $walk = function (array $list, string $parent = '', int $depth = 0, int $collapse = 0) use (
-            &$walk,
-            &$ids,
-            &$groups,
-            &$count,
-        ): void {
+        $walk = function (
+            array $list,
+            string $parent = '',
+            int $depth = 0,
+            int $collapse = 0,
+            int $details = 0,
+        ) use (&$walk, &$ids, &$groups, &$count): void {
             foreach ($list as $b) {
                 if ($depth > 32 || ++$count > 10000) {
                     self::fail(
@@ -740,7 +865,43 @@ final class Teaching
                     self::fail('TEACHING_STRUCTURE', 'Only steps are permitted in a steps group');
                 }
                 if ($kind !== null) {
-                    $a = self::attrs($kind, $b['attrs']);
+                    $a = self::attrs($kind, $b['attrs'], false, $b['name']);
+                    if (isset(BlockAdapters::NATIVE[$kind]) || $kind === 'adapter') {
+                        if ($kind === 'details' && $details >= 8) {
+                            self::fail('ADAPTER_LIMIT', '原生详情最多嵌套 8 层');
+                        }
+                        if (isset($a['anchor'])) {
+                            if (isset($ids[$a['anchor']])) {
+                                self::fail('ADAPTER_ANCHOR', '锚点与文档 ID 重复');
+                            }
+                            $ids[$a['anchor']] = true;
+                        }
+                        if (
+                            $kind === 'buttons' &&
+                            (!$inner ||
+                                count($inner) > 32 ||
+                                array_filter(
+                                    $inner,
+                                    fn($child) => $child['name'] !== 'core/button',
+                                ))
+                        ) {
+                            self::fail('ADAPTER_STRUCTURE', '按钮组需要 1–32 个直接链接按钮');
+                        }
+                        if ($kind === 'button' && ($parent !== 'buttons' || $inner)) {
+                            self::fail('ADAPTER_STRUCTURE', '链接按钮只能是按钮组直接叶节点');
+                        }
+                        if ($kind === 'adapter' && $inner) {
+                            self::fail('ADAPTER_STRUCTURE', '静态适配器不能包含嵌套区块');
+                        }
+                        $walk(
+                            $inner,
+                            $kind,
+                            $depth + 1,
+                            $collapse,
+                            $details + ($kind === 'details' ? 1 : 0),
+                        );
+                        continue;
+                    }
                     if (isset($ids[$a['id']])) {
                         self::fail('TEACHING_ID', 'Duplicate teaching ID');
                     }
@@ -798,6 +959,7 @@ final class Teaching
                     $kind ?? $b['name'],
                     $depth + 1,
                     $collapse + ($kind === 'collapse' ? 1 : 0),
+                    $details,
                 );
             }
         };
@@ -834,7 +996,27 @@ final class Teaching
     public static function markdown(array $block, string $body): string
     {
         $kind = self::kind($block['name']);
-        $a = self::attrs($kind, $block['attrs']);
+        $a = self::attrs($kind, $block['attrs'], false, $block['name']);
+        if (isset(BlockAdapters::NATIVE[$kind]) || $kind === 'adapter') {
+            if ($kind === 'adapter') {
+                $d = BlockAdapters::descriptor($block['name'], true);
+                $header = [
+                    'name' => $d['name'],
+                    'version' => $d['version'],
+                    'attrs' => array_intersect_key($a, $d['attributes']),
+                ];
+            } else {
+                $header = $a;
+                unset($header['text']);
+            }
+            return ':::mbb:v1 ' .
+                $kind .
+                ' ' .
+                self::encode($header ?: new \stdClass()) .
+                "\n\n" .
+                rtrim($body) .
+                "\n\n:::mbb:end";
+        }
         if ($kind === 'code-tabs') {
             $tabs = [];
             $codes = [];
