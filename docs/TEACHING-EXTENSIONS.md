@@ -1,6 +1,6 @@
 # 教学扩展接口
 
-本页描述尚未发行的 2.0 开发候选，沿用 1.9 的 v1 组件合同。作者操作见[教学内容](TEACHING.md)。主插件保存教学结构、引用、参数和静态替代；算法、课程样例、Worker 与播放控制由独立受信插件提供。文章不能自行登记脚本或运行地址。
+本页描述 MarkBridge 2.0.0 的 v1 组件合同。作者操作见[教学内容](TEACHING.md)。主插件保存教学结构、引用、参数和静态替代；算法、课程样例、Worker 与播放控制由独立受信插件提供。文章不能自行登记脚本或运行地址。
 
 ## 内容与提供者
 
@@ -28,7 +28,7 @@ add_action('markbridge_register_teaching_components', static function () {
     'version' => '0.1.0',
     'title' => '数组演示',
     'protocolVersion' => 1,
-    'minMarkBridge' => '1.9.0-dev.1',
+    'minMarkBridge' => '2.0.0',
     'schema' => [
       'type' => 'object',
       'properties' => [
@@ -65,7 +65,7 @@ add_action('markbridge_register_teaching_components', static function () {
 
 资源必须是插件目录内的固定本地 `.html`，URL 与其 WordPress 插件地址一致。登记检查真实路径、可读性、大小及固定 SHA-256；浏览器在加载前再次有界读取并核对摘要。资源不写入正文，不从参数取得地址，不下载或自动安装远端提供者。缺失、超限或摘要错误时显示静态替代，管理员可修复对应扩展后重新启动。
 
-2.0 候选增加可选的布尔字段 `supportsUiLocale`，省略或 `false` 时维持原 v1 初始化字段。提供者明确设置 `true` 后，`init` 才增加 `uiLocale:'en_US'|'zh_CN'`，供扩展翻译固定界面文字；不能借此翻译算法、输入、作者静态正文或写回参数。未知语言回到英文。需要兼容旧主插件的扩展，应先检查 `function_exists('markbridge_teaching_supports_ui_locale')` 并调用能力探测，再添加此字段；旧版本仍会拒绝陌生登记字段。提供者自身维护目录和无译文回退，不共享主插件鉴权材料。
+2.0 增加可选的布尔字段 `supportsUiLocale`，省略或 `false` 时维持原 v1 初始化字段。提供者明确设置 `true` 后，`init` 才增加 `uiLocale:'en_US'|'zh_CN'`，供扩展翻译固定界面文字；不能借此翻译算法、输入、作者静态正文或写回参数。未知语言回到英文。需要兼容旧主插件的扩展，应先检查 `function_exists('markbridge_teaching_supports_ui_locale')` 并调用能力探测，再添加此字段；旧版本仍会拒绝陌生登记字段。提供者自身维护目录和无译文回退，不共享主插件鉴权材料。
 
 ## 参数 schema 的受支持范围
 

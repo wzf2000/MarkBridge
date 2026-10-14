@@ -4,7 +4,7 @@
   <a href="LICENSE"><img alt="License: GPL-3.0-or-later" src="https://img.shields.io/badge/license-GPL--3.0--or--later-818cf8"></a>
   <img alt="WordPress 7.1" src="https://img.shields.io/badge/WordPress-7.1-21759b">
   <img alt="PHP 8.2+" src="https://img.shields.io/badge/PHP-8.2%2B-777bb4">
-  <img alt="Version 1.4.0" src="https://img.shields.io/badge/version-1.4.0-818cf8">
+  <img alt="Version 2.0.0" src="https://img.shields.io/badge/version-2.0.0-818cf8">
 </p>
 
 <p align="center"><strong>用 Markdown 写作，用区块调整。保存时，让两种格式保持一致。</strong></p>
@@ -18,10 +18,11 @@ MarkBridge 把它们放回同一次编辑流程：**先转换，检查差异与�
 
 ## 你能用它做什么
 
-- **在两种编辑方式间切换。** 导入 `.md`、编辑 Markdown，或从当前区块生成 Markdown；提交前查看差异。
-- **把修订一起恢复。** Markdown 与区块成对保存、成对恢复，检测版本冲突与已知旧文件覆盖。
+- **在两种编辑方式间切换。** 导入 `.md` 或图片 ZIP、编辑 Markdown，或从当前区块生成 Markdown；提交前查看差异。
+- **保留并核对修改。** Markdown 与区块成对保存、成对恢复；可选择默认关闭的本机草稿恢复、三方合并与已保存文章导出。
 - **写公式，也看得清公式。** 自托管 MathJax；段落和块级公式可预览。前台点击公式或用键盘打开阅读弹窗，放大查看并复制 TeX；代码里的美元符号保持原样。
 - **沿用 WordPress 权限。** 支持草稿、待审核、私密、公开与特色图片，普通作者按已有权限操作。
+- **组织长文与教学内容。** 使用折叠、阶段阅读、代码对照和语言页签；受信扩展可提供教学组件与静态区块。
 - **让评论继续使用 Markdown。** 保留链接、加粗、代码和任务标记；前台提供代码高亮、复制与 Unicode 表情。
 - **接入文件工作流。** 文件来源文章可绑定可信源文件；配置受信目标后，后台可在权限和版本校验通过时预览并写回，未配置目标时保留只读查看。
 
@@ -36,7 +37,7 @@ flowchart LR
 
 ## 开始使用
 
-**本分支为未发行的开发候选，公开稳定版为 `1.4.0`。** 安装请使用对应 [Release](https://github.com/wzf2000/MarkBridge/releases) 的 ZIP；候选变化见[更新记录](CHANGELOG.md)。新安装在 WordPress 7.1.x、PHP 8.2+ 且具备 DOM／mbstring 扩展时使用包内 PHP 转换器，基础编辑不要求额外 Node 运行环境。已有 Node 配置升级后继续使用 Node；管理员可在 **设置 → MarkBridge** 选择 PHP／Node，Node 需预先准备环境并通过验证。尚未提交 WordPress.org 插件目录。
+安装请使用对应 [Release](https://github.com/wzf2000/MarkBridge/releases) 的插件 ZIP，版本变化见[更新记录](CHANGELOG.md)。新安装在 WordPress 7.1.x、PHP 8.2+ 且具备 DOM／mbstring 扩展时使用包内 PHP 转换器，基础编辑不要求额外 Node 运行环境。已有 Node 配置升级后继续使用 Node；管理员可在 **设置 → MarkBridge** 选择 PHP／Node，Node 需预先准备环境并通过验证。尚未提交 WordPress.org 插件目录。
 
 管理员先按照[安装与升级](docs/INSTALL.md)完成配置。已经能使用插件的作者，可按带截图的[快速开始](docs/GETTING-STARTED.md)完成第一篇文章：
 
@@ -45,7 +46,7 @@ flowchart LR
 3. 点击 **查看差异与预览 → 确认保存草稿**，保存后自动进入这篇文章的区块编辑器。
 4. 继续编辑并手动保存；准备发布时，在文章设置中添加 **特色图片**，再发布。有权限限制时可提交审核。
 
-上传只读取正文，不自动填写标题、上传正文图片或绑定服务器源文件。普通导入文章可直接使用 WordPress 原生保存／更新；修改 Markdown 则使用底部 **Markdown 编辑 / 上传**。
+普通 `.md` 上传读取正文；Front Matter 须逐项选择后才应用元数据，本地图片须走单独的 ZIP 导入与媒体确认流程。上传不会绑定服务器源文件。普通导入文章可直接使用 WordPress 原生保存／更新；修改 Markdown 则使用底部 **Markdown 编辑 / 上传**。
 原生区块文章继续使用 WordPress 原生编辑器。历史内容转换是单独、显式的操作，启用插件不会自动批量迁移或发布文章。
 
 ## 删除与恢复文章
@@ -65,6 +66,8 @@ flowchart LR
 | 受限 HTML、`more` 分隔               | 支持；执行 HTML 策略检查                        |
 | 正文任务列表                         | 支持已完成/未完成、混合、嵌套与多段落；前台只读 |
 | 命名脚注                             | 支持引用、重复引用和多段定义；不支持匿名脚注    |
+| 折叠、阶段、代码对照与代码页签       | 支持；具体语法见教学手册                        |
+| 原生详情与链接按钮、受信静态区块     | 支持限定表示；扩展须先登记                      |
 | 任意第三方区块                       | 暂不支持                                        |
 | 后台修改后写回已有绑定 Markdown 文件 | 配置受信目标后支持；未配置时只读                |
 
