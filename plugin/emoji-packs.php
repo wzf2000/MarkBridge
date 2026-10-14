@@ -309,7 +309,7 @@ function mbb_emoji_page($embedded = false)
         }
     }
     if (!$embedded) {
-        echo '<div class="wrap"><h1>MarkBridge</h1>';
+        echo '<div class="wrap mbb-settings"><h1>MarkBridge</h1>';
         mbb_admin_settings_navigation('emoji');
     }
     echo '<h2>' . esc_html(mbb_t('MarkBridge image emoji')) . '</h2>';

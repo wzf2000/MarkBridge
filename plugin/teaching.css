@@ -396,6 +396,7 @@
   overflow-wrap: anywhere;
 }
 .mbb-code-tab > pre,
+.mbb-code-tab > .code-toolbar > pre,
 .wp-block-mbb-code-compare pre {
   margin: 0 !important;
   border: 0;
@@ -403,9 +404,10 @@
   padding: 1rem;
   font-size: 0.85em;
   line-height: 1.7;
-  background: #88806;
+  background: #f5f6f8;
 }
-.mbb-code-tab-title[hidden] + .mbb-code-panel-tools + pre {
+.mbb-code-tab-title[hidden] + .mbb-code-panel-tools + pre,
+.mbb-code-tab-title[hidden] + .mbb-code-panel-tools + .code-toolbar > pre {
   padding-top: 2.8rem;
 }
 .mbb-code-panel-tools {
@@ -511,6 +513,7 @@
     display: none !important;
   }
   .mbb-code-tab > pre,
+  .mbb-code-tab > .code-toolbar > pre,
   .wp-block-mbb-code-compare pre {
     padding: 0.5rem;
   }

@@ -11,6 +11,23 @@ require_once __DIR__ . '/i18n.php';
 // Display preferences never participate in conversion or paired saving.
 const MBB_DISPLAY_OPTION = 'markbridge_display_preferences';
 
+add_action('admin_enqueue_scripts', static function ($hook) {
+    if (
+        in_array(
+            $hook,
+            ['settings_page_markbridge', 'settings_page_markbridge-emoji', 'settings_page_mbgu'],
+            true,
+        )
+    ) {
+        wp_enqueue_style(
+            'mbb-settings',
+            plugins_url(mbb_asset('settings.css'), dirname(__DIR__) . '/markdown-block-bridge.php'),
+            [],
+            null,
+        );
+    }
+});
+
 // Extensions supply trusted PHP renderers; this is navigation, not a second settings store.
 function mbb_admin_settings_tabs()
 {

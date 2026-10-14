@@ -161,6 +161,15 @@ function mbb_settings_submit($values)
     throw new RuntimeException('Settings handler did not terminate');
 }
 $baseline = $options;
+$styles = [];
+foreach ($actions['admin_enqueue_scripts'] ?? [] as $callback) {
+    $callback('dashboard');
+}
+mbb_settings_assert(!in_array('mbb-settings', $styles, true), 'Settings CSS leaked to dashboard');
+foreach ($actions['admin_enqueue_scripts'] ?? [] as $callback) {
+    $callback('settings_page_markbridge');
+}
+mbb_settings_assert(in_array('mbb-settings', $styles, true), 'Grouped settings CSS missing');
 mbb_settings_assert(
     array_keys(mbb_admin_settings_tabs()) === ['general', 'emoji'],
     'Core settings were not grouped',

@@ -642,7 +642,7 @@ function mbb_runtime_settings_page()
     if (!isset($tabs[$tab])) {
         $tab = 'general';
     }
-    echo '<div class="wrap"><h1>MarkBridge</h1>';
+    echo '<div class="wrap mbb-settings"><h1>MarkBridge</h1>';
     mbb_admin_settings_navigation($tab);
     if ($tab !== 'general') {
         call_user_func($tabs[$tab]['render'], true);

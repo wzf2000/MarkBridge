@@ -1,0 +1,37 @@
+.mbb-settings {
+  max-width: 1100px;
+}
+.mbb-settings .mbb-settings-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-block: 1rem 1.5rem;
+}
+.mbb-settings .mbb-settings-tabs .nav-tab {
+  float: none;
+  margin: 0;
+}
+.mbb-settings .widefat {
+  table-layout: fixed;
+}
+.mbb-settings .widefat th,
+.mbb-settings .widefat td,
+.mbb-settings p,
+.mbb-settings code {
+  overflow-wrap: anywhere;
+}
+.mbb-settings input.regular-text,
+.mbb-settings input[type='file'],
+.mbb-settings select {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+@media (max-width: 782px) {
+  .mbb-settings .widefat th,
+  .mbb-settings .widefat td {
+    padding: 8px 6px;
+  }
+  .mbb-settings code {
+    white-space: normal;
+  }
+}
