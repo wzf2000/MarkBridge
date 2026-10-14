@@ -212,6 +212,10 @@ msgid "</form><h2>Optional image resources</h2><p>Unicode emoji are used by defa
 msgstr "</form><h2>可选图片资源</h2><p>默认使用 Unicode 表情。图片包由管理员导入，基础安装不需要下载资源。</p>"
 
 #: plugin/i18n.js
+msgid "</select> <button class=\"button\" name=\"operation\" value=\"select\">Enable selected pack</button> <button class=\"button\" name=\"operation\" value=\"delete\">Delete inactive pack</button></p></form>"
+msgstr "</select> <button class=\"button\" name=\"operation\" value=\"select\">启用所选</button> <button class=\"button\" name=\"operation\" value=\"delete\">删除未启用包</button></p></form>"
+
+#: plugin/i18n.js
 msgid "</select> <button class=\"button\" name=\"operation\" value=\"select\">Enable selected pack</button> <button class=\"button\" name=\"operation\" value=\"delete\">Delete inactive pack</button></p></form></div>"
 msgstr "</select> <button class=\"button\" name=\"operation\" value=\"select\">启用所选</button> <button class=\"button\" name=\"operation\" value=\"delete\">删除未启用包</button></p></form></div>"
 
@@ -374,6 +378,10 @@ msgstr "<p>当前转换配置无效，转换将明确拒绝；不会自动选择
 #: plugin/i18n.js
 msgid "<p>These results describe the failed candidate, not the currently active backend.</p><table class=\"widefat striped\"><tbody>"
 msgstr "<p>以下结果来自失败候选，不代表当前生效方案。</p><table class=\"widefat striped\"><tbody>"
+
+#: plugin/i18n.js
+msgid "<p>Unicode is used by default; external resources are not automatically downloaded. No download source is bundled. Import only image packs with known provenance and licensing. Importing does not grant a license to use the resources.</p>"
+msgstr "<p>默认使用 Unicode，不自动下载外部资源。当前没有预置下载源；可导入具有明确来源与许可的图片数据包。导入不授予资源使用许可。</p>"
 
 #: plugin/i18n.js
 msgid "A FrontMatter header is limited to 16 KiB"
@@ -1813,6 +1821,10 @@ msgid "Full-text mode"
 msgstr "全文模式"
 
 #: plugin/i18n.js
+msgid "General settings"
+msgstr "常规设置"
+
+#: plugin/i18n.js
 msgid "HTML blocks cannot contain child blocks"
 msgstr "HTML 区块不能包含子区块"
 
@@ -1875,6 +1887,10 @@ msgstr "图片替代文字不能包含脚注标记"
 #: plugin/i18n.js
 msgid "Image blocks cannot contain child blocks"
 msgstr "图片区块不能包含子区块"
+
+#: plugin/i18n.js
+msgid "Image emoji packs"
+msgstr "图片表情包"
 
 #: plugin/i18n.js
 msgid "Image import must not change the original metadata header"
@@ -2279,6 +2295,10 @@ msgstr "手动复制可能规范化换行；下载原代码保留字节"
 #: plugin/i18n.js
 msgid "MarkBridge image emoji"
 msgstr "MarkBridge 图片表情"
+
+#: plugin/i18n.js
+msgid "MarkBridge settings sections"
+msgstr "MarkBridge 设置分类"
 
 #: plugin/i18n.js
 msgid "MarkBridge teaching extensions"

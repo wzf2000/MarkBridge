@@ -19,6 +19,14 @@ function add_filter($name, $callback, $priority = 10)
 {
     $GLOBALS['filters'][$name][] = $callback;
 }
+function apply_filters($name, $value)
+{
+    foreach ($GLOBALS['filters'][$name] ?? [] as $callback) {
+        $value = $callback($value);
+    }
+    return $value;
+}
+function mbb_emoji_page($embedded = false) {}
 function remove_filter($name, $callback, $priority = 10) {}
 function plugin_basename($file)
 {
@@ -153,6 +161,39 @@ function mbb_settings_submit($values)
     throw new RuntimeException('Settings handler did not terminate');
 }
 $baseline = $options;
+mbb_settings_assert(
+    array_keys(mbb_admin_settings_tabs()) === ['general', 'emoji'],
+    'Core settings were not grouped',
+);
+add_filter('mbb_admin_settings_tabs', static function ($tabs) {
+    $tabs['updates'] = ['label' => '<Updates>', 'render' => 'mbb_emoji_page'];
+    $tabs['bad'] = ['label' => 'Bad', 'render' => 'not_a_renderer'];
+    $tabs['../escape'] = ['label' => 'Bad key', 'render' => 'mbb_emoji_page'];
+    $tabs['private'] = [
+        'label' => 'Private',
+        'render' => 'mbb_emoji_page',
+        'capability' => 'manage_network_options',
+    ];
+    return $tabs;
+});
+mbb_settings_assert(
+    array_keys(mbb_admin_settings_tabs()) === ['general', 'emoji', 'updates'],
+    'Invalid or unauthorized settings tab was exposed',
+);
+ob_start();
+mbb_admin_settings_navigation('updates');
+$navigation = ob_get_clean();
+mbb_settings_assert(
+    str_contains($navigation, 'tab=updates') &&
+        str_contains($navigation, 'aria-current="page"') &&
+        str_contains($navigation, '&lt;Updates&gt;') &&
+        !str_contains($navigation, '../escape'),
+    'Grouped settings navigation or escaping failed',
+);
+$can_manage = false;
+mbb_settings_assert(mbb_admin_settings_tabs() === [], 'Author could access settings tabs');
+$can_manage = true;
+mbb_settings_assert($options === $baseline, 'Navigation wrote settings');
 mbb_settings_assert(mbb_display_preferences() === mbb_display_defaults(), 'Fresh defaults changed');
 $valid = [
     'source_font_size' => '18',

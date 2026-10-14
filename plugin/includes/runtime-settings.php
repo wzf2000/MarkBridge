@@ -637,6 +637,18 @@ function mbb_runtime_settings_page()
     if (!current_user_can('manage_options')) {
         wp_die(mbb_t('You cannot view MarkBridge settings.'), '', ['response' => 403]);
     }
+    $tabs = mbb_admin_settings_tabs();
+    $tab = is_string($_GET['tab'] ?? null) ? $_GET['tab'] : 'general';
+    if (!isset($tabs[$tab])) {
+        $tab = 'general';
+    }
+    echo '<div class="wrap"><h1>MarkBridge</h1>';
+    mbb_admin_settings_navigation($tab);
+    if ($tab !== 'general') {
+        call_user_func($tabs[$tab]['render'], true);
+        echo '</div>';
+        return;
+    }
     $configuration = mbb_runtime_configuration();
     $backend = mbb_converter_backend();
     // The overview always describes the active engine, never a rejected candidate.
@@ -645,7 +657,6 @@ function mbb_runtime_settings_page()
     delete_transient('mbb_converter_diagnostics_' . get_current_user_id());
     $legacy_candidate = get_transient('mbb_runtime_diagnostics_' . get_current_user_id());
     delete_transient('mbb_runtime_diagnostics_' . get_current_user_id());
-    echo '<div class="wrap"><h1>MarkBridge</h1>';
     mbb_admin_settings_overview($backend, $diagnostics);
     mbb_converter_settings_form();
     mbb_admin_settings_preferences();

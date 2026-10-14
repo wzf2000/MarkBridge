@@ -1364,5 +1364,10 @@
   "; repeated structure cannot be located reliably": "；重复结构无法可靠定位",
   ", ": "、",
   " and others": "等",
-  "Copy %1$s code": "复制%1$s代码"
+  "Copy %1$s code": "复制%1$s代码",
+  "General settings": "常规设置",
+  "Image emoji packs": "图片表情包",
+  "MarkBridge settings sections": "MarkBridge 设置分类",
+  "<p>Unicode is used by default; external resources are not automatically downloaded. No download source is bundled. Import only image packs with known provenance and licensing. Importing does not grant a license to use the resources.</p>": "<p>默认使用 Unicode，不自动下载外部资源。当前没有预置下载源；可导入具有明确来源与许可的图片数据包。导入不授予资源使用许可。</p>",
+  "</select> <button class=\"button\" name=\"operation\" value=\"select\">Enable selected pack</button> <button class=\"button\" name=\"operation\" value=\"delete\">Delete inactive pack</button></p></form>": "</select> <button class=\"button\" name=\"operation\" value=\"select\">启用所选</button> <button class=\"button\" name=\"operation\" value=\"delete\">删除未启用包</button></p></form>"
 }

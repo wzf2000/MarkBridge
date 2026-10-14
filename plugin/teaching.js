@@ -9,6 +9,38 @@
     });
   };
 
+  const languageLabel = (language) =>
+    ({
+      __proto__: null,
+      javascript: 'JavaScript',
+      js: 'JavaScript',
+      typescript: 'TypeScript',
+      ts: 'TypeScript',
+      python: 'Python',
+      py: 'Python',
+      cpp: 'C++',
+      c: 'C',
+      csharp: 'C#',
+      cs: 'C#',
+      java: 'Java',
+      ruby: 'Ruby',
+      rb: 'Ruby',
+      rust: 'Rust',
+      go: 'Go',
+      php: 'PHP',
+      swift: 'Swift',
+      kotlin: 'Kotlin',
+      sql: 'SQL',
+      html: 'HTML',
+      css: 'CSS',
+      json: 'JSON',
+      bash: 'Bash',
+      shell: 'Shell',
+      text: 'Text',
+      plaintext: 'Text',
+    })[language.toLowerCase()] ||
+    language ||
+    T('Code');
   const groups = new Map();
   const codeGroups = new Map();
   const annotationBudgets = new WeakMap();
@@ -27,6 +59,14 @@
     b.textContent = label;
     b.addEventListener('click', action);
     return b;
+  };
+  const copyIcon = (control, label) => {
+    control.classList.add('mbb-code-copy');
+    control.textContent = '';
+    control.setAttribute('aria-label', label);
+    control.title = label;
+    // CSS draws the icon; the translated accessible label remains available to assistive tools.
+    return control;
   };
   const generated = () => {
     const n = document.createElement('div');
@@ -168,9 +208,7 @@
     list.setAttribute('role', 'tablist');
     list.setAttribute('aria-label', T('Code versions'));
     const tabs = panels.map((panel, index) => {
-      const tab = button(values[index].title || values[index].language || T('Code'), () =>
-        select(panel, true),
-      );
+      const tab = button(languageLabel(values[index].language), () => select(panel, true));
       let suffix = 0;
       do {
         tab.id = 'mbb-tab-control-' + node.id + '-' + index + '-' + suffix++;
@@ -194,7 +232,9 @@
         copy = button(T('Copy ') + tab.textContent, async () => {
           try {
             await navigator.clipboard.writeText(values[index].code);
-            copy.textContent = T('Copied ') + tab.textContent;
+            copy.setAttribute('aria-label', T('Copied ') + tab.textContent);
+            copy.title = T('Copied ') + tab.textContent;
+            status.textContent = T('Copied');
           } catch {
             let area = copyControls.querySelector('textarea');
             if (!area) {
@@ -209,28 +249,18 @@
             area.value = values[index].code;
             area.focus();
             area.select();
-            copy.textContent = T(
-              'Manual copying may normalize newlines. Download the original code to preserve bytes',
-            );
+            status.textContent = T('Copy the original code manually');
           }
         });
-      const download = button(T('Download original code ') + tab.textContent, () => {
-        const blob = new Blob([values[index].code], {
-            type: 'text/plain;charset=utf-8',
-            endings: 'transparent',
-          }),
-          url = URL.createObjectURL(blob),
-          a = document.createElement('a');
-        a.href = url;
-        a.download = values[index].id + '.txt';
-        a.hidden = true;
-        document.body.append(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-      });
-      copyControls.append(copy, download);
-      panel.append(copyControls);
+      const status = document.createElement('span');
+      status.className = 'mbb-code-status';
+      status.setAttribute('role', 'status');
+      copyIcon(copy, T('Copy ') + tab.textContent);
+      copyControls.classList.add('mbb-code-panel-tools');
+      copyControls.append(copy, status);
+      const heading = panel.querySelector('.mbb-code-tab-title');
+      if (heading) heading.hidden = !values[index].title;
+      panel.insertBefore(copyControls, panel.querySelector('pre'));
       list.append(tab);
       return tab;
     });
@@ -240,7 +270,6 @@
         tabs[i].setAttribute('aria-selected', String(i === current));
         tabs[i].tabIndex = i === current ? 0 : -1;
       });
-      all.setAttribute('aria-pressed', String(full));
       if (notify) change();
     }
     function select(panel, push, notify = true) {
@@ -251,17 +280,7 @@
       update(notify);
       if (push) record(false, '#' + encodeURIComponent(panel.id));
     }
-    const all = button(T('Show all code versions'), () => {
-        full = true;
-        update();
-        record();
-      }),
-      single = button(T('Return to tabbed reading'), () => {
-        full = false;
-        update();
-        record();
-      });
-    controls.append(list, all, single);
+    controls.append(list);
     node.prepend(controls);
     codeGroups.set(node, {
       select,
@@ -325,9 +344,12 @@
         );
       const controls = generated(),
         status = document.createElement('span');
+      controls.classList.add('mbb-code-panel-tools');
+      status.className = 'mbb-code-status';
       status.setAttribute('role', 'status');
-      controls.append(
-        button(F(T('Copy %1$s code'), index === 0 ? T('Left') : T('Right')), async () => {
+      const copy = button(
+        F(T('Copy %1$s code'), index === 0 ? T('Left') : T('Right')),
+        async () => {
           try {
             await navigator.clipboard.writeText(sources[index]);
             status.textContent = T('Copied');
@@ -344,9 +366,10 @@
             fallback.select();
             status.textContent = T('Copy the original code manually');
           }
-        }),
-        status,
+        },
       );
+      copyIcon(copy, F(T('Copy %1$s code'), index === 0 ? T('Left') : T('Right')));
+      controls.append(copy, status);
       pane.insertBefore(controls, pane.querySelector('pre'));
       // Preserve every original source byte as text, including final newline.
       let displayed = Math.min(400, Math.max(0, 4000 - budget.lines), lines[index].length);
@@ -363,16 +386,22 @@
           number.setAttribute('aria-hidden', 'true');
           number.dataset.line = String(i + 1);
           number.dataset.symbol = equal[index].has(i) ? ' ' : index === 0 ? '−' : '+';
-          span.append(number, document.createTextNode(line + '\n'));
+          const source = document.createElement('span');
+          source.className = 'mbb-compare-source';
+          source.textContent = line + '\n';
+          span.append(number, source);
           return span;
         });
         if (displayed < lines[index].length)
           spans.push(document.createTextNode(lines[index].slice(displayed).join('\n') + '\n'));
         codes[index].replaceChildren(...spans);
+        highlightCompare(codes[index]);
       };
       annotate();
       const language = document.createElement('span');
-      language.textContent = codes[index].className.match(/language-([\w+-]+)/)?.[1] || 'text';
+      language.textContent = languageLabel(
+        codes[index].className.match(/language-([\w+-]+)/)?.[1] || 'text',
+      );
       controls.prepend(language);
       if (displayed < lines[index].length) {
         const expand = button(T('Annotate additional code lines'), () => {
@@ -388,15 +417,19 @@
           expand.disabled =
             displayed >= Math.min(2000, lines[index].length) || budget.lines >= 8000;
         });
-        controls.append(expand);
+        const annotationControls = generated();
+        annotationControls.classList.add('mbb-compare-annotation');
+        annotationControls.append(expand);
         const note = document.createElement('span');
         note.textContent = T(
           'Initially annotates 400 lines; at most 2000 per side, 4000 initial lines per article, and 8000 manually requested lines. Remaining source stays unchanged and fully copyable.',
         );
-        controls.append(note);
+        annotationControls.append(note);
+        pane.append(annotationControls);
       }
     });
     const legend = generated();
+    legend.classList.add('mbb-compare-legend');
     legend.textContent =
       (a.length <= 1500 && b.length <= 1500 && a.length * b.length <= 250000
         ? T('Line differences: ')
@@ -407,6 +440,40 @@
     node.append(legend);
     return true;
   }
+  function highlightCompare(code) {
+    const prism = window.Prism;
+    const language = code.className.match(/language-([\w+-]+)/)?.[1];
+    const grammar = prism?.languages[language];
+    if (!grammar) return;
+    // Tokenize the whole original code once so multiline comments/strings keep their syntax.
+    // Split encoded token spans at line boundaries without altering source text or diff wrappers.
+    const fragment = document.createElement('div');
+    fragment.innerHTML = prism.highlight(code.textContent, grammar, language);
+    const rows = [[]];
+    function split(node, ancestors = []) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const parts = node.textContent.split('\n');
+        parts.forEach((part, i) => {
+          if (i) rows.push([]);
+          let leaf = document.createTextNode(part + (i < parts.length - 1 ? '\n' : ''));
+          for (let j = ancestors.length - 1; j >= 0; j--) {
+            const wrapper = ancestors[j].cloneNode(false);
+            wrapper.append(leaf);
+            leaf = wrapper;
+          }
+          rows.at(-1).push(leaf);
+        });
+      } else for (const child of node.childNodes) split(child, [...ancestors, node]);
+    }
+    for (const node of fragment.childNodes) split(node);
+    code.querySelectorAll('.mbb-compare-source').forEach((row, i) => {
+      if (rows[i]) row.replaceChildren(...rows[i]);
+    });
+  }
+  document.addEventListener('mbb:syntax-ready', () => {
+    for (const code of document.querySelectorAll('.wp-block-mbb-code-compare pre code'))
+      highlightCompare(code);
+  });
   function init(root = document) {
     for (const node of root.querySelectorAll('[data-mbb-teaching]')) {
       if (node.dataset.mbbEnhanced) continue;
@@ -435,6 +502,8 @@
         toggle.setAttribute('aria-controls', body.id);
         body.hidden = options.open !== true;
         toggle.setAttribute('aria-expanded', String(!body.hidden));
+        controls.classList.add('mbb-collapse-controls');
+        toggle.classList.add('mbb-collapse-toggle');
         controls.append(toggle);
         node.insertBefore(controls, title);
         title.hidden = true;
@@ -444,7 +513,11 @@
         if (!steps.length) continue;
         const controls = generated(),
           status = document.createElement('span');
+        controls.classList.add('mbb-stage-controls');
+        status.className = 'mbb-stage-status';
         status.setAttribute('aria-live', 'polite');
+        const progress = document.createElement('progress');
+        progress.max = steps.length;
         let current = 0,
           full = options.mode !== 'staged';
         const prev = button(T('Previous stage'), () => select(steps[current - 1], true)),
@@ -483,9 +556,11 @@
           staged.setAttribute('aria-pressed', String(!full));
           controls.querySelector('select')?.value !== undefined &&
             (controls.querySelector('select').value = String(current));
+          progress.value = full ? steps.length : current + 1;
           status.textContent = full
             ? T('Show full text')
             : F(T('Stage %1$s / %2$s'), current + 1, steps.length);
+          progress.setAttribute('aria-label', status.textContent);
         }
         function select(step, scroll) {
           const index = steps.indexOf(step);
@@ -512,9 +587,14 @@
             }
           },
         });
-        if (options.previous) controls.append(prev);
-        if (options.next) controls.append(next);
-        controls.append(all, staged, status);
+        const modes = document.createElement('div');
+        modes.className = 'mbb-stage-modes';
+        modes.append(staged, all);
+        const navigation = document.createElement('div');
+        navigation.className = 'mbb-stage-navigation';
+        if (options.previous) navigation.append(prev);
+        if (options.next) navigation.append(next);
+        controls.append(modes, status, progress, navigation);
         const chooser = document.createElement('select');
         chooser.setAttribute('aria-label', T('Choose a stage'));
         steps.forEach((step, index) => {
@@ -528,7 +608,7 @@
           full = false;
           select(steps[Number(chooser.value)], true);
         });
-        controls.append(chooser);
+        navigation.insertBefore(chooser, next.parentNode ? next : null);
         node.insertBefore(controls, body);
         update();
       } else if (kind === 'code-compare') {

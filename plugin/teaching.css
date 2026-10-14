@@ -7,8 +7,8 @@
 }
 .wp-block-mbb-code-tabs {
   margin-block: 1.25rem;
-  padding: 1rem;
-  border: 1px solid #8886;
+  padding: 0;
+  border: 1px solid #8884;
   border-radius: 8px;
   min-width: 0;
 }
@@ -41,7 +41,7 @@
 .mbb-code-tabs-editor [role='tablist'] {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0;
 }
 .mbb-code-tabs-list [aria-selected='true'],
 .mbb-code-tabs-editor [aria-selected='true'] {
@@ -259,5 +259,302 @@
   }
   details.wp-block-details > :not(summary) {
     display: block !important;
+  }
+}
+
+/* Reading controls inherit the article palette and form a compact, consistent toolbar. */
+.mbb-stage-controls {
+  padding: 0.65rem 0.8rem;
+  border: 1px solid #8883;
+  border-radius: 10px;
+  background: #88808;
+  gap: 0.65rem 1rem;
+}
+.mbb-stage-modes,
+.mbb-stage-navigation {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+}
+.mbb-stage-modes {
+  padding: 3px;
+  border-radius: 8px;
+  background: #88812;
+}
+.mbb-stage-controls .mbb-stage-modes button {
+  border: 0;
+  border-radius: 6px;
+  padding: 0.3rem 0.7rem;
+}
+.mbb-stage-controls .mbb-stage-modes button[aria-pressed='true'] {
+  background: #fff;
+  color: #243447;
+  box-shadow: 0 1px 4px #0001;
+}
+.mbb-stage-status {
+  font-size: 0.85em;
+  font-variant-numeric: tabular-nums;
+}
+.mbb-stage-controls progress {
+  width: 5rem;
+  height: 5px;
+  accent-color: #2271b1;
+}
+.mbb-stage-navigation {
+  margin-inline-start: auto;
+}
+.mbb-stage-navigation select {
+  max-width: 16rem;
+  min-width: 0;
+  border: 1px solid #8884;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+}
+.mbb-stage-navigation button {
+  font-size: 0.85em;
+}
+.wp-block-mbb-collapse {
+  border-radius: 9px;
+  border-color: #8883;
+  padding: 0;
+  overflow: clip;
+}
+.mbb-collapse-controls {
+  margin: 0;
+}
+.mbb-teaching-controls .mbb-collapse-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  text-align: start;
+  border: 0;
+  border-radius: 0;
+  padding: 0.85rem 1rem;
+  font-weight: 600;
+}
+.mbb-collapse-toggle::before {
+  content: '';
+  flex: 0 0 0.45rem;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 150ms ease;
+}
+.mbb-collapse-toggle:dir(rtl)::before {
+  transform: rotate(135deg);
+}
+.mbb-collapse-toggle[aria-expanded='true']::before {
+  transform: rotate(45deg);
+}
+.mbb-collapse-toggle:hover {
+  background: #88808;
+}
+.mbb-collapse-toggle:focus-visible {
+  outline-offset: -3px;
+}
+.wp-block-mbb-collapse > .mbb-teaching-body {
+  padding: 0 1rem 0.7rem;
+}
+.wp-block-mbb-code-tabs > .mbb-teaching-controls {
+  margin: 0;
+  border-bottom: 1px solid #8883;
+  padding: 0 0.65rem;
+}
+.mbb-code-tabs-list {
+  gap: 0;
+}
+.mbb-code-tabs-list button {
+  border: 0;
+  border-radius: 0;
+  padding: 0.7rem 0.9rem;
+  border-bottom: 2px solid transparent;
+  font-size: 0.9em;
+  color: inherit;
+}
+.mbb-code-tabs-list [aria-selected='true'] {
+  background: transparent;
+  border-bottom: 2px solid #2271b1;
+  font-weight: 600;
+}
+.mbb-code-tab,
+.mbb-compare-left,
+.mbb-compare-right {
+  position: relative;
+}
+.mbb-code-tab-title,
+.mbb-compare-left > p,
+.mbb-compare-right > p {
+  margin: 0 !important;
+  padding: 0.75rem 6rem 0.6rem 1rem;
+  font-size: 0.95em;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.mbb-code-tab > pre,
+.wp-block-mbb-code-compare pre {
+  margin: 0 !important;
+  border: 0;
+  border-radius: 0 0 8px 8px;
+  padding: 1rem;
+  font-size: 0.85em;
+  line-height: 1.7;
+  background: #88806;
+}
+.mbb-code-tab-title[hidden] + .mbb-code-panel-tools + pre {
+  padding-top: 2.8rem;
+}
+.mbb-code-panel-tools {
+  position: absolute;
+  top: 0.5rem;
+  inset-inline-end: 0.65rem;
+  margin: 0;
+  gap: 0.55rem;
+  z-index: 1;
+  font-size: 0.8em;
+}
+.mbb-code-panel-tools > span:not(.mbb-code-status) {
+  opacity: 0.65;
+}
+.mbb-teaching-controls .mbb-code-copy {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+}
+.mbb-code-copy::before,
+.mbb-code-copy::after {
+  content: '';
+  position: absolute;
+  width: 9px;
+  height: 11px;
+  border: 1.5px solid currentColor;
+  border-radius: 2px;
+}
+.mbb-code-copy::before {
+  top: 7px;
+  left: 8px;
+  opacity: 0.5;
+}
+.mbb-code-copy::after {
+  top: 11px;
+  left: 12px;
+  background: Canvas;
+}
+.mbb-code-copy:hover {
+  background: #88815;
+}
+.mbb-code-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.mbb-code-panel-tools:has(textarea) {
+  position: static;
+  padding: 0.5rem 1rem;
+}
+.mbb-code-panel-tools textarea {
+  width: 100%;
+}
+.mbb-compare-left,
+.mbb-compare-right {
+  border: 1px solid #8883;
+  border-radius: 9px;
+  overflow: hidden;
+}
+.mbb-compare-line {
+  border-inline-start: 3px solid transparent;
+  margin-inline: -1rem;
+  padding-inline: 0.25rem 0.75rem;
+}
+.mbb-compare-line[data-mbb-diff='removed'] {
+  border-inline-start-color: #b22;
+}
+.mbb-compare-line[data-mbb-diff='added'] {
+  border-inline-start-color: #18732f;
+}
+.mbb-compare-legend {
+  font-size: 0.8em;
+  opacity: 0.7;
+  margin: 0;
+}
+@media (max-width: 700px) {
+  .mbb-stage-navigation {
+    flex-basis: 100%;
+    margin-inline-start: 0;
+  }
+  .mbb-stage-navigation select {
+    flex: 1;
+    max-width: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mbb-collapse-toggle::before {
+    transition: none;
+  }
+}
+@media print {
+  .mbb-code-tab-title[hidden] {
+    display: block !important;
+  }
+  .mbb-code-panel-tools,
+  .mbb-stage-controls,
+  .mbb-collapse-controls {
+    display: none !important;
+  }
+  .mbb-code-tab > pre,
+  .wp-block-mbb-code-compare pre {
+    padding: 0.5rem;
+  }
+  .mbb-compare-line {
+    margin-inline: 0;
+  }
+}
+
+.mbb-compare-annotation {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8em;
+  line-height: 1.5;
+}
+.mbb-compare-annotation > span {
+  opacity: 0.7;
+}
+
+.mbb-code-tabs-list [aria-selected='false'] {
+  opacity: 0.75;
+}
+.mbb-code-tabs-list button:hover,
+.mbb-code-tabs-list button:focus-visible {
+  background: #88812;
+  opacity: 1;
+}
+@media (pointer: coarse) {
+  .mbb-teaching-controls .mbb-code-copy {
+    width: 44px;
+    height: 44px;
+  }
+  .mbb-code-copy::before {
+    top: 14px;
+    left: 15px;
+  }
+  .mbb-code-copy::after {
+    top: 18px;
+    left: 19px;
+  }
+  .mbb-code-tab-title,
+  .mbb-compare-left > p,
+  .mbb-compare-right > p {
+    min-height: 60px;
+  }
+  .mbb-code-tab-title[hidden] + .mbb-code-panel-tools + pre {
+    padding-top: 3.8rem;
   }
 }

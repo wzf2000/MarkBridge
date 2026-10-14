@@ -82,7 +82,7 @@ test('static and print retain every code version; enhancement keyboard/history/r
   await page.evaluate(() =>
     history.replaceState({ ...history.state, companion: { drawer: true } }, '', location.href),
   );
-  await page.getByRole('tab', { name: 'javascript', exact: true }).focus();
+  await page.getByRole('tab', { name: 'JavaScript', exact: true }).focus();
   await page.keyboard.press('End');
   await expect(page.locator('#python')).toBeVisible();
   await expect(page).toHaveURL(/#python$/);
@@ -91,10 +91,10 @@ test('static and print retain every code version; enhancement keyboard/history/r
   await expect(page.locator('#python')).toBeHidden();
   await page.goForward();
   await expect(page.locator('#python')).toBeVisible();
-  await page.getByRole('button', { name: '显示全部代码版本' }).click();
-  await expect(page.locator('#javascript')).toBeVisible();
-  await page.goBack();
-  await expect(page.locator('#javascript')).toBeHidden();
+  await expect(page.getByRole('button', { name: '显示全部代码版本' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /下载原代码/ })).toHaveCount(0);
+  await expect(page.getByRole('tab', { name: 'Python', exact: true })).toBeVisible();
+  await expect(page.locator('#python .mbb-code-tab-title')).toHaveText('Python 版本');
   const revealed = await page.evaluate(() => ({
     ok: MarkBridgeTeaching.revealTarget('javascript'),
     same: window.original === document.getElementById('python'),
@@ -126,7 +126,7 @@ test('copy uses exact config CRLF without competing Prism copy; failed clipboard
   await expect(page.locator('#ordinary-code').locator('..').locator('.toolbar button')).toHaveCount(
     1,
   );
-  await page.getByRole('button', { name: '复制 javascript', exact: true }).click();
+  await page.getByRole('button', { name: '复制 JavaScript', exact: true }).click();
   expect(await page.evaluate(() => window.copied)).toBe(tabs[0].code);
   await page.evaluate(() =>
     Object.defineProperty(navigator, 'clipboard', {
@@ -138,16 +138,11 @@ test('copy uses exact config CRLF without competing Prism copy; failed clipboard
       },
     }),
   );
-  await page.getByRole('button', { name: '已复制 javascript', exact: true }).click();
+  await page.getByRole('button', { name: '已复制 JavaScript', exact: true }).click();
   await expect(
     page.getByRole('textbox', { name: '代码文本手动复制（换行可能规范化）' }),
   ).toHaveValue(tabs[0].code.replaceAll('\r\n', '\n'));
-  const pendingDownload = page.waitForEvent('download');
-  await page.getByRole('button', { name: '下载原代码 javascript', exact: true }).click();
-  const download = await pendingDownload;
-  expect(fs.readFileSync(await download.path()).equals(Buffer.from(tabs[0].code, 'utf8'))).toBe(
-    true,
-  );
+  await expect(page.getByRole('button', { name: /下载原代码/ })).toHaveCount(0);
   expect(await page.locator('article').evaluate((n) => n.scrollWidth <= n.clientWidth + 1)).toBe(
     true,
   );
@@ -198,7 +193,7 @@ test('actual core iframe code-tabs editor preserves CRLF until editing and perfo
   await expect(editor).toBeVisible();
   const source = canvas.getByRole('textbox', { name: '当前版本原代码', exact: true });
   await expect(source).toHaveValue(tabs[0].code.replaceAll('\r\n', '\n'));
-  await canvas.getByRole('tab', { name: 'Python 版本' }).click();
+  await canvas.getByRole('tab', { name: 'Python', exact: true }).click();
   await expect(source).toHaveValue(tabs[1].code);
   const id = page.getByRole('textbox', { name: '版本稳定 ID', exact: true });
   await id.fill('');
@@ -212,7 +207,7 @@ test('actual core iframe code-tabs editor preserves CRLF until editing and perfo
       ),
     )
     .toBe('edited python');
-  await canvas.getByRole('tab', { name: 'javascript', exact: true }).click();
+  await canvas.getByRole('tab', { name: 'JavaScript', exact: true }).click();
   expect(
     await page.evaluate(
       () => taskRegistry.select('core/block-editor').getBlock(tabsId).attributes.tabs[0].code,

@@ -41,10 +41,26 @@
   const highlighted = new WeakMap();
   const codeSignature = (node) => node.textContent + '\0' + window.Prism?.util?.getLanguage(node);
   let codeAssets;
+  const compareLanguages = new Map();
+  const prepareComparison = (block) => {
+    const language = Prism.util.getLanguage(block);
+    if (!compareLanguages.has(language)) {
+      const grammar = Prism.languages[language];
+      const prepared = grammar
+        ? Promise.resolve()
+        : new Promise((resolve, reject) => {
+            Prism.plugins.autoloader.loadLanguages(language, resolve, reject);
+          });
+      compareLanguages.set(language, prepared);
+      prepared
+        .then(() => document.dispatchEvent(new CustomEvent('mbb:syntax-ready')))
+        .catch(() => {});
+    }
+  };
   const highlight = async (root) => {
     const blocks = within(root, 'pre code').filter(
       (node) =>
-        !node.closest('.wp-block-mbb-math,.wp-block-mbb-code-compare,[contenteditable]') &&
+        !node.closest('.wp-block-mbb-math,[contenteditable]') &&
         !node.classList.contains('mbb-tex'),
     );
     if (!blocks.length) return;
@@ -71,7 +87,7 @@
         if (!Prism.mbbCodeTabsHook) {
           Prism.mbbCodeTabsHook = true;
           Prism.hooks.add('complete', ({ element }) => {
-            if (!element.closest('.wp-block-mbb-code-tabs')) return;
+            if (!element.closest('.wp-block-mbb-code-tabs,.wp-block-mbb-code-compare')) return;
             const wrapper = element.closest('.code-toolbar');
             for (const toolbar of wrapper?.querySelectorAll(':scope > .toolbar') || [])
               toolbar.remove();
@@ -87,7 +103,7 @@
     for (const block of blocks) {
       if (!block.isConnected || highlighted.get(block) === codeSignature(block)) continue;
       if (
-        block.closest('.wp-block-mbb-code-tabs') &&
+        block.closest('.wp-block-mbb-code-tabs,.wp-block-mbb-code-compare') &&
         !(config.codeLanguages || ['text', 'plain', 'plaintext', 'none']).includes(
           Prism.util.getLanguage(block),
         )
@@ -102,6 +118,12 @@
         !/(?:^|\s)lang(?:uage)?-\S+/.test(block.parentElement.className)
       )
         block.classList.add('language-text');
+      if (block.closest('.wp-block-mbb-code-compare')) {
+        // Its renderer preserves diff rows while distributing whole-source Prism tokens.
+        highlighted.set(block, codeSignature(block));
+        prepareComparison(block);
+        continue;
+      }
       if (config.lineNumbers) block.parentElement.classList.add('line-numbers');
       block.parentElement.setAttribute('data-prismjs-copy', T('Copy'));
       block.parentElement.setAttribute('data-prismjs-copy-success', T('Copied'));

@@ -11,6 +11,50 @@ require_once __DIR__ . '/i18n.php';
 // Display preferences never participate in conversion or paired saving.
 const MBB_DISPLAY_OPTION = 'markbridge_display_preferences';
 
+// Extensions supply trusted PHP renderers; this is navigation, not a second settings store.
+function mbb_admin_settings_tabs()
+{
+    $tabs = apply_filters('mbb_admin_settings_tabs', [
+        'general' => ['label' => mbb_t('General settings'), 'render' => null],
+        'emoji' => ['label' => mbb_t('Image emoji packs'), 'render' => 'mbb_emoji_page'],
+    ]);
+    $visible = [];
+    foreach (is_array($tabs) ? $tabs : [] as $key => $tab) {
+        if (
+            !is_string($key) ||
+            !preg_match('/\A[a-z][a-z0-9-]{0,31}\z/D', $key) ||
+            !is_array($tab) ||
+            !is_string($tab['label'] ?? null) ||
+            !is_string($tab['capability'] ?? 'manage_options') ||
+            ($key !== 'general' && !is_callable($tab['render'] ?? null)) ||
+            !current_user_can($tab['capability'] ?? 'manage_options')
+        ) {
+            continue;
+        }
+        $visible[$key] = $tab;
+    }
+    return $visible;
+}
+
+function mbb_admin_settings_navigation($active = 'general')
+{
+    echo '<nav class="nav-tab-wrapper mbb-settings-tabs" aria-label="' .
+        esc_attr(mbb_t('MarkBridge settings sections')) .
+        '">';
+    foreach (mbb_admin_settings_tabs() as $key => $tab) {
+        echo '<a class="nav-tab' .
+            ($active === $key ? ' nav-tab-active' : '') .
+            '" href="' .
+            esc_url(admin_url('options-general.php?page=markbridge&tab=' . $key)) .
+            '"' .
+            ($active === $key ? ' aria-current="page"' : '') .
+            '>' .
+            esc_html($tab['label']) .
+            '</a>';
+    }
+    echo '</nav>';
+}
+
 function mbb_display_defaults()
 {
     return [

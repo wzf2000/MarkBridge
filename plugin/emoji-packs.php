@@ -259,16 +259,22 @@ function mbb_emoji_config()
     }
     return $images;
 }
-add_action('admin_menu', function () {
-    add_options_page(
-        mbb_t('MarkBridge image emoji'),
-        mbb_t('MarkBridge image emoji'),
-        'manage_options',
-        'markbridge-emoji',
-        'mbb_emoji_page',
-    );
-});
-function mbb_emoji_page()
+add_action(
+    'admin_menu',
+    function () {
+        add_options_page(
+            mbb_t('MarkBridge image emoji'),
+            mbb_t('MarkBridge image emoji'),
+            'manage_options',
+            'markbridge-emoji',
+            'mbb_emoji_page',
+        );
+        // Retain the old registered URL, but present one MarkBridge settings entry.
+        remove_submenu_page('options-general.php', 'markbridge-emoji');
+    },
+    30,
+);
+function mbb_emoji_page($embedded = false)
 {
     if (!current_user_can('manage_options')) {
         wp_die('Forbidden', '', ['response' => 403]);
@@ -302,8 +308,13 @@ function mbb_emoji_page()
             $message = $error->getMessage();
         }
     }
+    if (!$embedded) {
+        echo '<div class="wrap"><h1>MarkBridge</h1>';
+        mbb_admin_settings_navigation('emoji');
+    }
+    echo '<h2>' . esc_html(mbb_t('MarkBridge image emoji')) . '</h2>';
     echo mbb_t(
-        '<div class="wrap"><h1>MarkBridge image emoji</h1><p>Unicode is used by default; external resources are not automatically downloaded. No download source is bundled. Import only image packs with known provenance and licensing. Importing does not grant a license to use the resources.</p>',
+        '<p>Unicode is used by default; external resources are not automatically downloaded. No download source is bundled. Import only image packs with known provenance and licensing. Importing does not grant a license to use the resources.</p>',
     );
     echo '<p>' . esc_html($message) . '</p><form method="post" enctype="multipart/form-data">';
     wp_nonce_field('markbridge-emoji');
@@ -322,6 +333,9 @@ function mbb_emoji_page()
             '</option>';
     }
     echo mbb_t(
-        '</select> <button class="button" name="operation" value="select">Enable selected pack</button> <button class="button" name="operation" value="delete">Delete inactive pack</button></p></form></div>',
+        '</select> <button class="button" name="operation" value="select">Enable selected pack</button> <button class="button" name="operation" value="delete">Delete inactive pack</button></p></form>',
     );
+    if (!$embedded) {
+        echo '</div>';
+    }
 }

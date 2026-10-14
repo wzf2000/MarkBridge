@@ -212,6 +212,10 @@ msgid "</form><h2>Optional image resources</h2><p>Unicode emoji are used by defa
 msgstr ""
 
 #: plugin/i18n.js
+msgid "</select> <button class=\"button\" name=\"operation\" value=\"select\">Enable selected pack</button> <button class=\"button\" name=\"operation\" value=\"delete\">Delete inactive pack</button></p></form>"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "</select> <button class=\"button\" name=\"operation\" value=\"select\">Enable selected pack</button> <button class=\"button\" name=\"operation\" value=\"delete\">Delete inactive pack</button></p></form></div>"
 msgstr ""
 
@@ -373,6 +377,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "<p>These results describe the failed candidate, not the currently active backend.</p><table class=\"widefat striped\"><tbody>"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "<p>Unicode is used by default; external resources are not automatically downloaded. No download source is bundled. Import only image packs with known provenance and licensing. Importing does not grant a license to use the resources.</p>"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1813,6 +1821,10 @@ msgid "Full-text mode"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "General settings"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "HTML blocks cannot contain child blocks"
 msgstr ""
 
@@ -1874,6 +1886,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Image blocks cannot contain child blocks"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Image emoji packs"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2278,6 +2294,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "MarkBridge image emoji"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "MarkBridge settings sections"
 msgstr ""
 
 #: plugin/i18n.js

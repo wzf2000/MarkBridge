@@ -1,5 +1,37 @@
 import { translate as T, format as F } from './i18n.js';
 // Code tabs contain inert source text only. Markdown metadata never duplicates the fence language.
+const languageLabel = (language) =>
+  ({
+    __proto__: null,
+    javascript: 'JavaScript',
+    js: 'JavaScript',
+    typescript: 'TypeScript',
+    ts: 'TypeScript',
+    python: 'Python',
+    py: 'Python',
+    cpp: 'C++',
+    c: 'C',
+    csharp: 'C#',
+    cs: 'C#',
+    java: 'Java',
+    ruby: 'Ruby',
+    rb: 'Ruby',
+    rust: 'Rust',
+    go: 'Go',
+    php: 'PHP',
+    swift: 'Swift',
+    kotlin: 'Kotlin',
+    sql: 'SQL',
+    html: 'HTML',
+    css: 'CSS',
+    json: 'JSON',
+    bash: 'Bash',
+    shell: 'Shell',
+    text: 'Text',
+    plaintext: 'Text',
+  })[language.toLowerCase()] ||
+  language ||
+  T('Code');
 const displayLabel = (tab) => tab.title || tab.language || T('Code');
 export const tabsLabel = (tab) => tab.title || tab.language || '代码';
 export function codeTabsAttributes(attrs, source, fail) {
@@ -219,7 +251,7 @@ export function registerCodeTabs() {
                   event.currentTarget.parentElement.children[next].focus();
                 },
               },
-              displayLabel(t),
+              languageLabel(t.language || ''),
             ),
           ),
         ),
