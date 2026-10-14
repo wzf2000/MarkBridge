@@ -34,7 +34,7 @@
 
 ## 可选 GitHub 更新器
 
-GitHub 更新采用独立的 `MarkBridge GitHub Updater` 插件，主包不附带、不下载、不自动启用。管理员先安装并启用主插件，再单独安装更新器，在 **设置 → MarkBridge GitHub updates** 明确同意并开启固定仓库稳定版检查；默认关闭。
+GitHub 更新采用独立的 `MarkBridge GitHub Updater` 插件，主包不附带、不下载、不自动启用。管理员先安装并启用主插件，再单独安装更新器，在 **设置 → MarkBridge → GitHub 更新** 明确同意并开启固定仓库稳定版检查；默认关闭。未启用主插件时，更新器保留独立设置入口。
 
 开启后只检查 `wzf2000/MarkBridge` 的稳定最新版，接管主插件自身的更新候选，其他插件不受影响。下载必须同时验证版本、固定资产 URL、SHA-256、ZIP CRC、包内外清单和全部文件，随后交给 WordPress 原生升级器。检查不等于安装，GitHub 候选禁止自动升级；关闭后清理本适配器的缓存并恢复原生渠道，已打开的旧 GitHub 升级请求会明确拒绝。
 
