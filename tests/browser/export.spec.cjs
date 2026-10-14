@@ -99,6 +99,7 @@ async function fixture(
     },
     { plain, unavailable },
   );
+  await page.locator('#mbb-more > summary').click();
   return { requests, cancelled, release: () => release?.() };
 }
 test('exact Markdown download and both REST URL forms leave unsaved native input untouched', async ({
@@ -178,22 +179,24 @@ test('concurrent save rejection keeps edited text and requires renewed export co
   expect(await page.evaluate(() => recoveryFields.title)).toBe('UNSAVED TITLE');
 });
 
-test('recovery clears the measured wrapped toolbar through expansion and viewport changes', async ({
+test('explicit recovery clears the compact toolbar through expansion and viewport changes', async ({
   page,
 }) => {
   await fixture(page);
+  await expect(page.locator('#mbb-local-recovery')).toBeHidden();
+  await page.locator('#mbb-recovery-open').click();
   await expect(page.locator('#mbb-local-recovery')).toBeVisible();
   const separated = () =>
     page.evaluate(() => {
       const bar = document.querySelector('#mbb-toolbar').getBoundingClientRect();
       const panel = document.querySelector('#mbb-local-recovery').getBoundingClientRect();
-      const button = document.querySelector('#mbb-export-open').getBoundingClientRect();
+      const button = document.querySelector('#mbb-markdown').getBoundingClientRect();
       const hit = document.elementFromPoint(
         button.x + button.width / 2,
         button.y + button.height / 2,
       );
       return (
-        panel.bottom <= bar.top - 7 && panel.top >= 0 && Boolean(hit?.closest('#mbb-export-open'))
+        panel.bottom <= bar.top - 7 && panel.top >= 0 && Boolean(hit?.closest('#mbb-markdown'))
       );
     });
   // Narrow the real toolbar to reproduce actual mobile rows; no pointer-event override.
@@ -201,18 +204,18 @@ test('recovery clears the measured wrapped toolbar through expansion and viewpor
     node.style.width = Math.min(300, innerWidth - 24) + 'px';
   });
   await expect.poll(separated).toBe(true);
-  await page.locator('#mbb-local-recovery summary').click();
   await expect(page.locator('#mbb-local-recovery')).toHaveAttribute('open', '');
   await expect.poll(separated).toBe(true);
   const original = page.viewportSize();
   await page.setViewportSize({ width: Math.min(original.width, 390), height: 650 });
   await expect.poll(separated).toBe(true);
-  await page.locator('#mbb-export-open').evaluate((node) => {
+  await page.locator('#mbb-markdown').evaluate((node) => {
     node.style.paddingBlock = '20px';
   });
   await expect.poll(separated).toBe(true);
   await page.locator('#mbb-local-recovery summary').click();
-  await expect.poll(separated).toBe(true);
+  await expect(page.locator('#mbb-local-recovery')).toBeHidden();
+  await page.locator('#mbb-more > summary').click();
   await page.locator('#mbb-export-open').click();
   await expect(page.locator('#mbb-export-dialog')).toBeVisible();
   await page.locator('#mbb-export-cancel').click();

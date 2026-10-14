@@ -360,6 +360,10 @@ msgid "<p>Active configuration source: "
 msgstr ""
 
 #: plugin/i18n.js
+msgid "<p>Current backend: "
+msgstr ""
+
+#: plugin/i18n.js
 msgid "<p>MARKBRIDGE_CONVERTER_BACKEND is defined. The backend is server-managed and cannot be overridden here.</p>"
 msgstr ""
 
@@ -1086,6 +1090,10 @@ msgid "Comment was not saved: "
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Compatibility and advanced runtime settings"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Completed"
 msgstr ""
 
@@ -1171,6 +1179,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Container must contain only its declared child blocks"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Content preview"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1543,6 +1555,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Exclusive details groups are not supported"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Execution completed. The recorded trace is ready for playback."
 msgstr ""
 
 #: plugin/i18n.js
@@ -2484,6 +2500,10 @@ msgid "Missing table header"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "More"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "More block must use its default exact marker"
 msgstr ""
 
@@ -2914,6 +2934,10 @@ msgid "Preview the metadata selection again before confirming."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Preview, then confirm the source write"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Previous stage"
 msgstr ""
 
@@ -3219,7 +3243,15 @@ msgid "Safe staging requires POSIX process identity checks"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Save after checking the preview"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Save as "
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Save directly; both formats stay in sync"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3244,6 +3276,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Saving failed and rollback was unavailable. Contact an administrator."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Scroll horizontally to read long lines. Focus the code and use the arrow keys."
 msgstr ""
 
 #: plugin/i18n.js
@@ -3301,6 +3337,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Some interrupted media could not be cleaned. Try later"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Source and differences"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3443,6 +3483,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Step must be a direct child of steps"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Synchronize horizontal scrolling"
 msgstr ""
 
 #: plugin/i18n.js
@@ -5344,6 +5388,10 @@ msgid "Verify and save"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Verify and save Node directory"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Verifying component resources…"
 msgstr ""
 
@@ -5377,6 +5425,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Versions must be a JSON array of objects"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "View differences"
 msgstr ""
 
 #: plugin/i18n.js

@@ -360,6 +360,10 @@ msgid "<p>Active configuration source: "
 msgstr "<p>有效配置来源："
 
 #: plugin/i18n.js
+msgid "<p>Current backend: "
+msgstr "<p>当前后端："
+
+#: plugin/i18n.js
 msgid "<p>MARKBRIDGE_CONVERTER_BACKEND is defined. The backend is server-managed and cannot be overridden here.</p>"
 msgstr "<p>MARKBRIDGE_CONVERTER_BACKEND 已定义，转换方案由服务器管理；后台不能覆盖。</p>"
 
@@ -1086,6 +1090,10 @@ msgid "Comment was not saved: "
 msgstr "评论未保存："
 
 #: plugin/i18n.js
+msgid "Compatibility and advanced runtime settings"
+msgstr "兼容与高级运行环境设置"
+
+#: plugin/i18n.js
 msgid "Completed"
 msgstr "已完成"
 
@@ -1172,6 +1180,10 @@ msgstr "请确认原媒体 URL 可能公开的风险，并重新预览资源变�
 #: plugin/i18n.js
 msgid "Container must contain only its declared child blocks"
 msgstr "容器只能包含声明的子区块"
+
+#: plugin/i18n.js
+msgid "Content preview"
+msgstr "正文预览"
 
 #: plugin/i18n.js
 msgid "Conversion backend"
@@ -1544,6 +1556,10 @@ msgstr "摘要"
 #: plugin/i18n.js
 msgid "Exclusive details groups are not supported"
 msgstr "互斥详情组尚不支持"
+
+#: plugin/i18n.js
+msgid "Execution completed. The recorded trace is ready for playback."
+msgstr "执行已结束，可回放已记录的轨迹。"
 
 #: plugin/i18n.js
 msgid "Execution exceeded its time budget and was terminated."
@@ -2484,6 +2500,10 @@ msgid "Missing table header"
 msgstr "缺少表头"
 
 #: plugin/i18n.js
+msgid "More"
+msgstr "更多"
+
+#: plugin/i18n.js
 msgid "More block must use its default exact marker"
 msgstr "more 区块必须使用默认精确标记"
 
@@ -2914,6 +2934,10 @@ msgid "Preview the metadata selection again before confirming."
 msgstr "元数据选择须重新预览后确认。"
 
 #: plugin/i18n.js
+msgid "Preview, then confirm the source write"
+msgstr "先预览，再确认写回"
+
+#: plugin/i18n.js
 msgid "Previous stage"
 msgstr "上一阶段"
 
@@ -3219,8 +3243,16 @@ msgid "Safe staging requires POSIX process identity checks"
 msgstr "安全暂存需要 POSIX 运行身份检查"
 
 #: plugin/i18n.js
+msgid "Save after checking the preview"
+msgstr "检查预览后保存"
+
+#: plugin/i18n.js
 msgid "Save as "
 msgstr "保存为 "
+
+#: plugin/i18n.js
+msgid "Save directly; both formats stay in sync"
+msgstr "可直接保存，双格式同步"
 
 #: plugin/i18n.js
 msgid "Save display settings"
@@ -3245,6 +3277,10 @@ msgstr "保存未完成，已回滚。"
 #: plugin/i18n.js
 msgid "Saving failed and rollback was unavailable. Contact an administrator."
 msgstr "保存失败且无法回滚，请联系管理员。"
+
+#: plugin/i18n.js
+msgid "Scroll horizontally to read long lines. Focus the code and use the arrow keys."
+msgstr "长行可横向滚动；聚焦代码后可使用方向键。"
 
 #: plugin/i18n.js
 msgid "Separator must be empty"
@@ -3302,6 +3338,10 @@ msgstr "历史解析器不支持简单任务列表"
 #: plugin/i18n.js
 msgid "Some interrupted media could not be cleaned. Try later"
 msgstr "中断媒体未能全部清理，请稍后重试"
+
+#: plugin/i18n.js
+msgid "Source and differences"
+msgstr "源稿与差异"
 
 #: plugin/i18n.js
 msgid "Source and serialized snapshot do not match"
@@ -3444,6 +3484,10 @@ msgstr "状态"
 #: plugin/i18n.js
 msgid "Step must be a direct child of steps"
 msgstr "阶段必须为阶段组直接子块"
+
+#: plugin/i18n.js
+msgid "Synchronize horizontal scrolling"
+msgstr "联动横向滚动"
 
 #: plugin/i18n.js
 msgid "Table blocks cannot contain child blocks"
@@ -5344,6 +5388,10 @@ msgid "Verify and save"
 msgstr "验证并保存"
 
 #: plugin/i18n.js
+msgid "Verify and save Node directory"
+msgstr "验证并保存 Node 目录"
+
+#: plugin/i18n.js
 msgid "Verifying component resources…"
 msgstr "正在验证组件资源…"
 
@@ -5378,6 +5426,10 @@ msgstr "版本标题需为空或不超过 200 字符的单行文字"
 #: plugin/i18n.js
 msgid "Versions must be a JSON array of objects"
 msgstr "版本必须为 JSON 对象数组"
+
+#: plugin/i18n.js
+msgid "View differences"
+msgstr "查看差异"
 
 #: plugin/i18n.js
 msgid "View differences and preview"

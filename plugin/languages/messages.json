@@ -1369,5 +1369,18 @@
   "Image emoji packs": "图片表情包",
   "MarkBridge settings sections": "MarkBridge 设置分类",
   "<p>Unicode is used by default; external resources are not automatically downloaded. No download source is bundled. Import only image packs with known provenance and licensing. Importing does not grant a license to use the resources.</p>": "<p>默认使用 Unicode，不自动下载外部资源。当前没有预置下载源；可导入具有明确来源与许可的图片数据包。导入不授予资源使用许可。</p>",
-  "</select> <button class=\"button\" name=\"operation\" value=\"select\">Enable selected pack</button> <button class=\"button\" name=\"operation\" value=\"delete\">Delete inactive pack</button></p></form>": "</select> <button class=\"button\" name=\"operation\" value=\"select\">启用所选</button> <button class=\"button\" name=\"operation\" value=\"delete\">删除未启用包</button></p></form>"
+  "</select> <button class=\"button\" name=\"operation\" value=\"select\">Enable selected pack</button> <button class=\"button\" name=\"operation\" value=\"delete\">Delete inactive pack</button></p></form>": "</select> <button class=\"button\" name=\"operation\" value=\"select\">启用所选</button> <button class=\"button\" name=\"operation\" value=\"delete\">删除未启用包</button></p></form>",
+  "More": "更多",
+  "Content preview": "正文预览",
+  "Source and differences": "源稿与差异",
+  "View differences": "查看差异",
+  "Preview, then confirm the source write": "先预览，再确认写回",
+  "Save directly; both formats stay in sync": "可直接保存，双格式同步",
+  "Save after checking the preview": "检查预览后保存",
+  "Scroll horizontally to read long lines. Focus the code and use the arrow keys.": "长行可横向滚动；聚焦代码后可使用方向键。",
+  "Synchronize horizontal scrolling": "联动横向滚动",
+  "Compatibility and advanced runtime settings": "兼容与高级运行环境设置",
+  "<p>Current backend: ": "<p>当前后端：",
+  "Verify and save Node directory": "验证并保存 Node 目录",
+  "Execution completed. The recorded trace is ready for playback.": "执行已结束，可回放已记录的轨迹。"
 }

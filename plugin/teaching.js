@@ -293,7 +293,8 @@
         const index = values.findIndex((t) => t.id === item.current);
         if (index >= 0 && typeof item.full === 'boolean') {
           current = index;
-          full = item.full;
+          // Older history entries may have expanded every language through Full text.
+          full = false;
           update();
         }
       },
@@ -438,6 +439,14 @@
         '− left-side deletions or changes; + right-side additions or changes. Outlines mark author highlights.',
       );
     node.append(legend);
+    const sync = document.createElement('label');
+    const syncInput = document.createElement('input');
+    syncInput.type = 'checkbox';
+    syncInput.addEventListener('change', () => {
+      node.dataset.mbbSyncScroll = String(syncInput.checked);
+    });
+    sync.append(syncInput, document.createTextNode(T('Synchronize horizontal scrolling')));
+    legend.append(sync);
     return true;
   }
   function highlightCompare(code) {
@@ -535,8 +544,6 @@
                 ?.querySelector('button')
                 ?.setAttribute('aria-expanded', 'true');
             }
-            for (const group of article.querySelectorAll('[data-mbb-teaching=code-tabs]'))
-              codeGroups.get(group)?.all();
             change();
             record();
           });
@@ -594,7 +601,10 @@
         navigation.className = 'mbb-stage-navigation';
         if (options.previous) navigation.append(prev);
         if (options.next) navigation.append(next);
-        controls.append(modes, status, progress, navigation);
+        const progressGroup = document.createElement('div');
+        progressGroup.className = 'mbb-stage-progress';
+        progressGroup.append(status, progress);
+        controls.append(modes, progressGroup, navigation);
         const chooser = document.createElement('select');
         chooser.setAttribute('aria-label', T('Choose a stage'));
         steps.forEach((step, index) => {

@@ -561,3 +561,56 @@
     padding-top: 3.8rem;
   }
 }
+
+.mbb-stage-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+.mbb-compare-legend label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+@media (max-width: 700px) {
+  .mbb-stage-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.6rem;
+  }
+  .mbb-stage-progress {
+    justify-self: end;
+  }
+  .mbb-stage-controls progress {
+    width: 3rem;
+  }
+  .mbb-stage-navigation {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    width: 100%;
+  }
+  .mbb-stage-navigation select {
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
+  }
+  .mbb-stage-navigation button:last-child {
+    grid-column: 3;
+    grid-row: 1;
+  }
+}
+
+.mbb-component-controls > button[hidden] {
+  display: none;
+}
+@media (max-width: 700px) {
+  .mbb-stage-controls {
+    font-size: 14px;
+  }
+  .mbb-stage-controls .mbb-stage-modes button {
+    white-space: nowrap;
+    padding-inline: 0.5rem;
+  }
+}

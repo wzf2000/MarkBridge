@@ -191,6 +191,7 @@ async function open(page) {
 }
 async function conflict(page, state, mine, latest, metadata = {}) {
   await open(page);
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-source').fill(mine);
   state.change(latest, metadata);
   await page.getByRole('button', { name: '查看差异与预览', exact: true }).last().click();
@@ -230,6 +231,7 @@ test('independent body changes preserve C metadata and require normal preview be
 test('overlapping body and all metadata fields require explicit choices', async ({ page }) => {
   const state = await fixture(page);
   await open(page);
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-source').fill('Mine.\n');
   await page.locator('#mbb-title').fill('Mine title');
   await page.locator('#mbb-publication').selectOption('private');
@@ -282,6 +284,7 @@ test('late opening response cannot overwrite a reopened target or entered B', as
   state.openingDelay = null;
   await page.locator('#mbb-new').click();
   await expect(page.locator('#mbb-source')).toBeEnabled();
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-source').fill('New target B raw\n');
   release();
   await expect(page.locator('#mbb-source')).toHaveValue('New target B raw\n');
@@ -337,6 +340,7 @@ test('adoption waiting for a fresh opening cannot overwrite a new target B', asy
   state.openingDelay = null;
   await page.locator('#mbb-new').click();
   await expect(page.locator('#mbb-source')).toBeEnabled();
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-source').fill('New different target B\n');
   release();
   await expect(page.locator('#mbb-source')).toHaveValue('New different target B\n');
@@ -350,7 +354,9 @@ test('unchanged FrontMatter selection survives adoption but receives a new previ
   const raw = '---\nmarkbridge: 1\ntitle: "Header proposal"\n---\n\nFirst.\n\nSecond.\n';
   const state = await fixture(page, { source: raw });
   await open(page);
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-frontmatter-title').check();
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-source').fill(raw.replace('First', 'Mine'));
   state.change(raw.replace('Second', 'Server'));
   await page.getByRole('button', { name: '查看差异与预览', exact: true }).last().click();
@@ -372,7 +378,9 @@ test('changed FrontMatter header resets prior selections explicitly and still re
   const raw = '---\nmarkbridge: 1\ntitle: "Header proposal"\n---\n\nFirst.\n\nSecond.\n';
   const state = await fixture(page, { source: raw });
   await open(page);
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-frontmatter-title').check();
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-source').fill(raw.replace('First', 'Mine'));
   state.change(raw.replace('Header proposal', 'Server proposal').replace('Second', 'Server'));
   await page.locator('#mbb-review').click();
@@ -381,7 +389,9 @@ test('changed FrontMatter header resets prior selections explicitly and still re
   await expect(page.locator('#mbb-merge-adopt')).toBeEnabled();
   await page.locator('#mbb-merge-adopt').click();
   await expect(page.locator('#mbb-frontmatter-title')).not.toBeChecked();
-  await expect(page.locator('#mbb-dialog > p[role=status]')).toContainText('原元数据选择已重置');
+  await expect(page.locator('#mbb-dialog .mbb-dialog-footer > p[role=status]')).toContainText(
+    '原元数据选择已重置',
+  );
   await expect(page.locator('#mbb-save')).toBeDisabled();
   await page.locator('#mbb-review').click();
   expect(state.calls.filter((r) => r.name === 'preview').at(-1).data.frontmatter_selected).toEqual(
@@ -401,6 +411,7 @@ for (const [phase, status, code] of [
   }) => {
     const state = await fixture(page, { source: 'First.\n\nSecond.\n' });
     await open(page);
+    await page.locator('#mbb-edit-toggle').click();
     await page.locator('#mbb-source').fill('Candidate B1.\n');
     await page.locator('#mbb-title').fill('Title B1');
     if (phase === 'save') {
@@ -415,6 +426,7 @@ for (const [phase, status, code] of [
     const prior = state.calls.filter((r) => r.name === phase).length;
     await page.locator(phase === 'save' ? '#mbb-save' : '#mbb-review').click();
     await expect.poll(() => state.calls.filter((r) => r.name === phase).length).toBe(prior + 1);
+    await page.locator('#mbb-edit-toggle').click();
     await page.locator('#mbb-source').fill('Candidate B2 with later input.\n');
     await page.locator('#mbb-title').fill('Title B2');
     await page.locator('#mbb-publication').selectOption('pending');
@@ -422,7 +434,9 @@ for (const [phase, status, code] of [
       recoveryFields.featured_media = 3;
     });
     release();
-    await expect(page.locator('#mbb-dialog > p[role=status]')).toContainText('新输入已保留');
+    await expect(page.locator('#mbb-dialog .mbb-dialog-footer > p[role=status]')).toContainText(
+      '新输入已保留',
+    );
     await expect(page.locator('#mbb-conflict')).toBeHidden();
     await expect(page.locator('#mbb-source')).toBeEditable();
     await expect(page.locator('#mbb-source')).toHaveValue('Candidate B2 with later input.\n');
@@ -468,6 +482,7 @@ for (const rejected of [false, true]) {
       state.current.expected,
     ]);
     const mine = raw.replace('First', 'Mine').replace('Second', 'C second');
+    await page.locator('#mbb-edit-toggle').click();
     await page.locator('#mbb-source').fill(mine);
     state.change(raw.replace('Second', 'D second'), {
       title: 'D title',

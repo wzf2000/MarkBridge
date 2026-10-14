@@ -658,8 +658,8 @@ function mbb_runtime_settings_page()
     $legacy_candidate = get_transient('mbb_runtime_diagnostics_' . get_current_user_id());
     delete_transient('mbb_runtime_diagnostics_' . get_current_user_id());
     mbb_admin_settings_overview($backend, $diagnostics);
-    mbb_converter_settings_form();
     mbb_admin_settings_preferences();
+    mbb_converter_settings_form();
     if (($_GET['mbb-runtime'] ?? '') === 'updated') {
         echo mbb_t(
             '<div class="notice notice-success"><p>The runtime was verified and enabled.</p></div>',
@@ -677,9 +677,17 @@ function mbb_runtime_settings_page()
             '<div class="notice notice-info"><p>This runtime directory endpoint cannot currently change configuration. Refresh the page and use the conversion backend settings. Server-managed directories cannot be overridden.</p></div>',
         );
     }
-    echo mbb_t(
-        '<details><summary>Compatibility and advanced runtime settings</summary><p>Current backend: ',
-    ) .
+    $needs_attention =
+        !$diagnostics['ok'] ||
+        is_array($candidate) ||
+        is_array($legacy_candidate) ||
+        in_array($_GET['mbb-runtime'] ?? '', ['rejected', 'save-failed'], true) ||
+        in_array($_GET['mbb-converter'] ?? '', ['rejected', 'save-failed'], true);
+    echo '<details class="mbb-settings-advanced"' . ($needs_attention ? ' open' : '') . '>';
+    echo '<summary>' .
+        esc_html(mbb_t('Compatibility and advanced runtime settings')) .
+        '</summary>';
+    echo mbb_t('<p>Current backend: ') .
         esc_html(is_string($backend) ? $backend : 'invalid') .
         '</p>';
     if ($backend === 'node') {
@@ -701,7 +709,7 @@ function mbb_runtime_settings_page()
             );
         }
         submit_button(
-            mbb_t('Verify and save'),
+            mbb_t('Verify and save Node directory'),
             'primary',
             'submit',
             true,
@@ -713,7 +721,6 @@ function mbb_runtime_settings_page()
             '<p>Select the engine in the conversion backend settings above. PHP requires no private Node directory, and failures do not fall back to another backend.</p>',
         );
     }
-    echo '</details>';
     echo mbb_t('<h2>Diagnostics</h2><table class="widefat striped"><tbody>');
     foreach ($diagnostics['checks'] as $check) {
         echo '<tr><th>' . esc_html($check['label']) . '</th><td>';
@@ -727,6 +734,7 @@ function mbb_runtime_settings_page()
     if (is_array($legacy_candidate)) {
         mbb_converter_candidate_diagnostics('node', $legacy_candidate);
     }
+    echo '</details>';
     do_action('mbb_settings_page', $configuration, $diagnostics);
     echo '</div>';
 }

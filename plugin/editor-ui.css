@@ -27,10 +27,10 @@
   margin-left: 8px;
   min-height: 36px;
   white-space: nowrap;
-  border-color: #3858e9;
+  border-color: var(--wp-admin-theme-color, #2271b1);
   color: #1e1e1e;
   background: #fff;
-  box-shadow: inset 0 0 0 1px #3858e9;
+  box-shadow: inset 0 0 0 1px var(--wp-admin-theme-color, #2271b1);
   transition:
     background-color 80ms ease,
     box-shadow 80ms ease;
@@ -50,11 +50,11 @@
     margin: 0;
     box-shadow:
       0 2px 10px #0002,
-      inset 0 0 0 1px #3858e9;
+      inset 0 0 0 1px var(--wp-admin-theme-color, #2271b1);
   }
 }
 #mbb-new-post:focus-visible {
-  outline: 2px solid #3858e9;
+  outline: 2px solid var(--wp-admin-theme-color, #2271b1);
   outline-offset: 1px;
 }
 #mbb-dialog {
@@ -431,5 +431,202 @@
 @media (max-width: 600px) {
   .mbb-merge-versions {
     grid-template-columns: 1fr;
+  }
+}
+
+/* The author keeps editing; secondary tools only occupy space when requested. */
+#mbb-toolbar {
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px) + var(--mbb-keyboard-inset, 0px));
+  gap: 6px;
+  padding: 6px;
+}
+#mbb-toolbar #mbb-markdown {
+  color: #fff;
+  background: var(--wp-admin-theme-color, #2271b1);
+  border: 1px solid var(--wp-admin-theme-color, #2271b1);
+  border-radius: 3px;
+}
+.mbb-mobile-save-guidance,
+.mbb-more-save-guidance {
+  display: none;
+}
+#mbb-more {
+  position: relative;
+}
+#mbb-more > summary {
+  cursor: pointer;
+  padding: 8px;
+  min-height: 20px;
+  white-space: nowrap;
+}
+#mbb-more-actions {
+  position: fixed;
+  bottom: calc(100% + 12px);
+  right: 0;
+  width: min(360px, calc(100vw - 40px));
+  max-height: min(60dvh, 520px);
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid #c3c4c7;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 2px 12px #0002;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+#mbb-more-actions .mbb-capabilities-help {
+  position: static;
+  width: auto;
+  max-height: none;
+  box-shadow: none;
+}
+body:has(#mbb-recovery-open) #mbb-local-recovery:not([open]):not(.mbb-recovery-attention) {
+  display: none;
+}
+#mbb-local-recovery summary {
+  min-height: 24px;
+}
+#mbb-dialog[open] {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 86dvh;
+  max-height: calc(100dvh - 24px);
+  padding: 0;
+}
+.mbb-dialog-header,
+.mbb-dialog-views,
+.mbb-dialog-footer {
+  flex: none;
+  padding: 10px 18px;
+  background: #fff;
+}
+.mbb-dialog-header h2 {
+  margin: 0;
+}
+.mbb-dialog-header {
+  gap: 12px;
+  border-bottom: 1px solid #dcdcde;
+}
+.mbb-dialog-views {
+  display: flex;
+  gap: 8px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+.mbb-dialog-views button[aria-pressed='true'] {
+  background: #eaf0ff;
+  border-color: var(--wp-admin-theme-color, #2271b1);
+}
+.mbb-dialog-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 18px 16px;
+  overscroll-behavior: contain;
+}
+.mbb-preview-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  padding: 0 18px 12px;
+}
+#mbb-dialog .mbb-preview-body iframe {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  box-sizing: border-box;
+}
+.mbb-dialog-body[hidden],
+.mbb-preview-body[hidden] {
+  display: none;
+}
+.mbb-dialog-footer {
+  border-top: 1px solid #dcdcde;
+}
+.mbb-dialog-footer > p {
+  margin: 0 0 8px;
+  max-height: 14dvh;
+  overflow: auto;
+}
+.mbb-dialog-footer .mbb-actions {
+  margin: 0;
+  gap: 8px;
+}
+#mbb-save:not(:disabled) {
+  color: #fff;
+  background: var(--wp-admin-theme-color, #2271b1);
+  border: 1px solid var(--wp-admin-theme-color, #2271b1);
+  border-radius: 3px;
+}
+#mbb-frontmatter > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+#mbb-dialog .mbb-diff-lines {
+  max-height: none;
+  overflow: visible;
+}
+@media (max-width: 600px) {
+  #mbb-toolbar {
+    flex-wrap: wrap;
+    font-size: 12px;
+    gap: 4px;
+  }
+  #mbb-toolbar > .mbb-mobile-save-guidance {
+    display: block;
+    flex-basis: 100%;
+    font-size: 11px;
+    line-height: 16px;
+    color: #50575e;
+  }
+  #mbb-toolbar > button {
+    min-height: 42px;
+    padding: 6px 8px;
+  }
+  #mbb-toolbar.mbb-keyboard-open {
+    display: none;
+  }
+  #mbb-more-actions .mbb-more-save-guidance {
+    display: block;
+    margin: 0;
+  }
+  #mbb-toolbar > .mbb-save-guidance {
+    display: none;
+  }
+  #mbb-more-actions {
+    right: -2px;
+  }
+  #mbb-dialog[open] {
+    width: calc(100vw - 16px);
+    height: calc(100dvh - 16px);
+    max-height: calc(100dvh - 16px);
+  }
+  .mbb-dialog-header,
+  .mbb-dialog-views,
+  .mbb-dialog-footer {
+    padding: 8px 12px;
+  }
+  .mbb-dialog-body,
+  .mbb-preview-body {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .mbb-dialog-footer {
+    padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+  }
+  #mbb-dialog button {
+    min-height: 42px;
+    padding: 8px 10px;
+  }
+  #mbb-dialog #mbb-source {
+    height: 30dvh;
+    min-height: 150px;
+  }
+  .mbb-dialog-footer .mbb-actions > button:not([hidden]) {
+    flex: 1 1 140px;
   }
 }

@@ -546,6 +546,7 @@
       download.disabled = true;
       window.MarkBridgeEditorRecovery?.cancel();
     }
+    panel.classList.add('mbb-recovery-attention');
     retry.hidden = !!(error.permissionLost || error.authExpired);
     message(
       E(error) + (lastCapture ? T('Retry verification or download the current candidate.') : ''),
@@ -554,6 +555,7 @@
   function renderRows(value) {
     entries.replaceChildren();
     const records = rowsFor(value);
+    panel.classList.toggle('mbb-recovery-attention', records.length > 0);
     for (const entry of records) {
       const row = node('div');
       row.className = 'mbb-recovery-row';
@@ -706,6 +708,7 @@
         return !rowsFor(fresh).length;
       }, serial);
       if (!enabled) {
+        panel.classList.remove('mbb-recovery-attention');
         message(T('Local recovery is not enabled.'));
         return;
       }
@@ -760,6 +763,7 @@
             fresh.expected !== snapshot.expected ||
             fresh.sourceDigest !== snapshot.sourceDigest
           ) {
+            panel.classList.add('mbb-recovery-attention');
             message(
               T(
                 'The server version or source file changed. Current edits did not overwrite the local candidate. Resolve the version conflict first; the current candidate can be downloaded.',
@@ -1018,6 +1022,7 @@
       try {
         await purge();
         entries.replaceChildren();
+        panel.classList.remove('mbb-recovery-attention');
         message(T("This account's local candidates were cleared and recovery was disabled."));
       } catch {
         message(
@@ -1060,6 +1065,7 @@
       if (!event.persisted) return;
       observer.observe(document.body, { childList: true, subtree: true });
       installWatchers();
+      panel.classList.add('mbb-recovery-attention');
       retry.hidden = false;
       message(
         T(

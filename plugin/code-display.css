@@ -1,0 +1,40 @@
+/* Scoped to code displayed by MarkBridge, including delayed Prism output. */
+pre.mbb-code-display {
+  --mbb-code-muted: #526577;
+  --mbb-code-surface: #fdf6e3;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+pre.mbb-code-display:focus-visible {
+  outline: 3px solid #2271b1;
+  outline-offset: -3px;
+}
+pre.mbb-code-display .token.comment,
+pre.mbb-code-display .token.prolog,
+pre.mbb-code-display .token.doctype,
+pre.mbb-code-display .token.cdata,
+pre.mbb-code-display .line-numbers-rows > span::before,
+pre.mbb-code-display .mbb-compare-line-number {
+  color: var(--mbb-code-muted);
+  opacity: 1;
+}
+.mbb-code-scroll-hint {
+  margin: 0;
+  padding: 4px 12px;
+  font: 12px/1.5 system-ui;
+  background: #f5f6f8;
+  color: #526577;
+}
+.mbb-code-scroll-hint[hidden] {
+  display: none;
+}
+@media print {
+  .mbb-code-scroll-hint {
+    display: none !important;
+  }
+  pre.mbb-code-display {
+    overflow: visible;
+    white-space: pre-wrap;
+  }
+}

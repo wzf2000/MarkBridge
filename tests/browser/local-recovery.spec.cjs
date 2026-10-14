@@ -157,9 +157,17 @@ async function fixture(page, options = {}) {
   for (const key of ['source', 'new', 'sidebar']) if (options[key]) query.set(key, '1');
   await page.goto('/recovery-editor?' + query);
   await expect(page.locator('#task-editor .block-editor-rich-text__editable')).toHaveCount(2);
-  await page.locator('#mbb-local-recovery summary').click();
+  await openRecovery(page);
   await expect(page.locator('#mbb-recovery-opt-in')).toBeEnabled();
   return state;
+}
+async function openRecovery(page) {
+  const summary = page.locator('#mbb-local-recovery summary');
+  if (await summary.isVisible()) await summary.click();
+  else {
+    await page.locator('#mbb-more > summary').click();
+    await page.locator('#mbb-recovery-open').click();
+  }
 }
 async function enable(page) {
   await page.locator('#mbb-recovery-opt-in').check();
@@ -201,7 +209,7 @@ test('recovery controls stay clickable above an open editor sidebar and toolbar 
   await expect(page.locator('#mbb-recovery-apply')).toBeEnabled();
   await page.locator('#mbb-dialog button[aria-label="关闭编辑桥"]').click();
   await expect(page.locator('.editor-sidebar')).toBeVisible();
-  await page.locator('#mbb-local-recovery summary').click();
+  await openRecovery(page);
   await expect(page.locator('#mbb-local-recovery')).not.toHaveAttribute('open', '');
 });
 
@@ -228,7 +236,7 @@ test('opt-in native editing survives reload, previews before applying, and succe
   expect(stored).not.toContain('nonce');
   expect(stored).not.toContain('source_path');
   await page.reload();
-  await page.locator('#mbb-local-recovery summary').click();
+  await openRecovery(page);
   await expect(page.getByRole('button', { name: '恢复候选并查看差异', exact: true })).toHaveCount(
     1,
   );
@@ -260,6 +268,7 @@ test('Markdown new-draft identity survives reload and server-baseline changes re
   await page.locator('#mbb-new').click();
   await page.locator('#mbb-title').fill('Local new article');
   await page.locator('#mbb-document-id').fill('NEWRECOVERY');
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-source').fill('New private Markdown\n');
   await expect.poll(() => recordCount(page)).toBe(1);
   await page.locator('#mbb-dialog button[aria-label="关闭编辑桥"]').click();
@@ -267,7 +276,7 @@ test('Markdown new-draft identity survives reload and server-baseline changes re
     Object.keys(sessionStorage).map((k) => sessionStorage.getItem(k)),
   );
   await page.reload();
-  await page.locator('#mbb-local-recovery summary').click();
+  await openRecovery(page);
   expect(
     await page.evaluate(() => Object.keys(sessionStorage).map((k) => sessionStorage.getItem(k))),
   ).toEqual(keys);
@@ -287,7 +296,7 @@ test('old baseline keeps its draft and requires explicit conflict adoption follo
   await writeNative(page, 'Old baseline local edits');
   state.expected = 'baseline-new';
   await page.reload();
-  await page.locator('#mbb-local-recovery summary').click();
+  await openRecovery(page);
   await expect(page.locator('#mbb-recovery-entries')).toContainText('旧版本基线');
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: '下载本地候选', exact: true }).click();
@@ -376,6 +385,7 @@ test('storage quota, UTF-8/JSON overflow and corruption retain editing and offer
   await page.getByRole('button', { name: '重试本地恢复校验', exact: true }).click();
   await expect.poll(() => recordCount(page)).toBe(1);
   await page.locator('#mbb-markdown').click();
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-source').fill('界'.repeat(90000));
   await expect(page.locator('#mbb-local-recovery [role=status]')).toContainText('256 KiB');
   await expect(page.locator('#mbb-source')).toHaveValue('界'.repeat(90000));
@@ -402,7 +412,9 @@ test('source files stay preview-only and inactive/deleted articles never apply o
   await page.getByRole('button', { name: '恢复候选并查看差异', exact: true }).click();
   await expect(page.locator('#mbb-recovery-apply')).toBeDisabled();
   await expect(page.locator('#mbb-save')).toBeDisabled();
-  await expect(page.locator('#mbb-dialog > p[role=status]')).toContainText('仅供预览');
+  await expect(page.locator('#mbb-dialog .mbb-dialog-footer > p[role=status]')).toContainText(
+    '仅供预览',
+  );
   expect(await page.evaluate(() => recoveryLocks)).toContain('mbb-paired-save');
   await page.locator('#mbb-dialog button[aria-label="关闭编辑桥"]').click();
   state.active = 'inactive';
@@ -424,7 +436,7 @@ test('new native auto-draft recovery explicitly creates a managed pair instead o
   await enable(page);
   await writeNative(page, 'New core unsaved draft');
   await page.reload();
-  await page.locator('#mbb-local-recovery summary').click();
+  await openRecovery(page);
   await page.getByRole('button', { name: '恢复候选并查看差异', exact: true }).click();
   await expect(page.locator('#mbb-save')).toBeEnabled();
   await expect(page.locator('#mbb-recovery-apply')).toBeHidden();
@@ -466,7 +478,7 @@ test('two editor tabs retain independent drafts, restore their own after reload,
   await other.reload();
   for (const p of [page, other]) {
     await p.bringToFront();
-    await p.locator('#mbb-local-recovery summary').click();
+    await openRecovery(p);
     await expect(p.locator('#mbb-recovery-entries .mbb-recovery-row')).toHaveCount(2);
     const own = p.locator('.mbb-recovery-row').filter({ hasText: '本标签页' });
     await own.getByRole('button', { name: '恢复候选并查看差异', exact: true }).click();
@@ -523,7 +535,7 @@ test('two new-document tabs use separate stable identities and list retained new
   }
   expect(await recordCount(page)).toBe(2);
   await page.reload();
-  await page.locator('#mbb-local-recovery summary').click();
+  await openRecovery(page);
   await expect(page.locator('.mbb-recovery-row')).toHaveCount(2);
   await page
     .locator('.mbb-recovery-row')
@@ -550,7 +562,7 @@ test('nonce expiry preserves candidates, renewed authorization restores them, an
   ).toBeDisabled();
   state.active = 'ok';
   await page.reload();
-  await page.locator('#mbb-local-recovery summary').click();
+  await openRecovery(page);
   await expect(page.getByRole('button', { name: '恢复候选并查看差异', exact: true })).toBeEnabled();
   state.permission = '7'.repeat(64);
   await page.getByRole('button', { name: '恢复候选并查看差异', exact: true }).click();
@@ -649,6 +661,7 @@ test('quick Markdown close retains its snapshot and BFCache resume explicitly re
   await page.locator('#mbb-new').click();
   await page.locator('#mbb-title').fill('Quick close');
   await page.locator('#mbb-document-id').fill('QUICK');
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-source').fill('Fast close local draft\n');
   await page.locator('#mbb-dialog button[aria-label="关闭编辑桥"]').click();
   await expect.poll(() => recordCount(page)).toBe(1);
@@ -662,6 +675,7 @@ test('quick Markdown close retains its snapshot and BFCache resume explicitly re
   await page.getByRole('button', { name: '重试本地恢复校验', exact: true }).click();
   await expect(page.locator('#mbb-recovery-opt-in')).toBeChecked();
   await page.locator('#mbb-new').click();
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-source').fill('After lifecycle draft\n');
   await expect(page.locator('#mbb-local-recovery [role=status]')).toContainText('候选已更新');
 });
@@ -695,7 +709,7 @@ test('a late validation of older input cannot overwrite the latest draft, and un
     Object.defineProperty(navigator, 'locks', { value: undefined, configurable: true }),
   );
   await page.reload();
-  await page.locator('#mbb-local-recovery summary').click();
+  await openRecovery(page);
   await expect(page.locator('#mbb-local-recovery [role=status]')).toContainText('存储锁');
   await page
     .locator('#task-editor .block-editor-rich-text__editable')
@@ -871,12 +885,14 @@ test('a late forbidden preview from the old article cannot purge or stop the new
   await page.keyboard.press('Escape');
   await expect(page.locator('#mbb-dialog')).not.toBeVisible();
   await page.locator('#mbb-new').click();
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-source').fill('New target B private draft\n');
   await expect.poll(() => recordCount(page)).toBe(2);
   release();
   await page.waitForTimeout(300);
   await expect(page.locator('#mbb-recovery-opt-in')).toBeChecked();
   expect(await recordCount(page)).toBe(2);
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-source').fill('New target B continued\n');
   await expect(page.locator('#mbb-local-recovery [role=status]')).toContainText('候选已更新');
 });
@@ -894,6 +910,7 @@ test('an old native-save response cannot cancel the pending Markdown candidate i
   });
   await page.locator('#fixture-native-save').click();
   await page.locator('#mbb-new').click();
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-source').fill('Pending new B\n');
   release();
   await expect.poll(() => state.saves.length).toBe(1);

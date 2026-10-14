@@ -166,7 +166,15 @@ function mbb_admin_settings_overview($backend, $diagnostics)
     $GLOBALS['rendered_overview'] = [$backend, $diagnostics['ok']];
     echo '<p>Effective ' . esc_html($backend) . '</p>';
 }
-function mbb_admin_settings_preferences() {}
+function mbb_admin_settings_tabs()
+{
+    return ['general' => ['render' => null]];
+}
+function mbb_admin_settings_navigation($active) {}
+function mbb_admin_settings_preferences()
+{
+    echo '<section id="display-preferences">Display</section>';
+}
 function converter_assert($condition, $message)
 {
     if (!$condition) {
@@ -434,3 +442,21 @@ converter_assert(
     'Rejected candidate was not shown separately',
 );
 echo "Converter selection capability, nonce, strict input, readiness, atomic persistence, failure preservation, constants and repeat selection passed.\n";
+
+converter_assert(
+    strpos($page, 'data-mbb-node-fields') !== false &&
+        !preg_match('/id="mbb-converter-path"[^>]*disabled/', $page),
+    'Node directory must remain submitted when its presentation group is hidden',
+);
+converter_assert(
+    str_contains($page, '<details class="mbb-settings-advanced" open>'),
+    'Failed candidate diagnostics were collapsed',
+);
+
+converter_assert(
+    strpos($page, 'id="display-preferences"') < strpos($page, 'data-mbb-node-fields'),
+    'Display preferences should precede conversion configuration',
+);
+if ($mode === '--render') {
+    echo 'SETTINGS_HTML=' . json_encode($page) . "\n";
+}

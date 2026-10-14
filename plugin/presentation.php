@@ -185,6 +185,7 @@ add_action(
         $styles = [
             $base . 'prism/themes/prism-solarizedlight.css',
             $base . 'prism/plugins/toolbar/prism-toolbar.css',
+            plugins_url(mbb_asset('code-display.css'), __FILE__),
         ];
         if ($preferences['code_line_numbers']) {
             $scripts[] = $base . 'prism/plugins/line-numbers/prism-line-numbers.min.js';

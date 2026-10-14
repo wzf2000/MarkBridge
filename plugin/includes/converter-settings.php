@@ -141,6 +141,7 @@ function mbb_converter_settings_form()
             esc_html($label) .
             '</label></p>';
     }
+    echo '<div data-mbb-node-fields>';
     echo mbb_t('<p><label for="mbb-converter-path">Private Node directory</label> ');
     echo '<input id="mbb-converter-path" class="regular-text code" name="converter[runtime_path]" value="' .
         esc_attr($configuration['path']) .
@@ -155,6 +156,7 @@ function mbb_converter_settings_form()
     echo mbb_t(
         '<p class="description">Selecting PHP preserves the existing valid Node directory for later switching and does not use the directory entered here.</p>',
     );
+    echo '</div>';
     submit_button(mbb_t('Verify and apply conversion backend'));
     echo '</fieldset></form>';
     if ($managed) {

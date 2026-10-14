@@ -231,9 +231,11 @@ test('modeled REST: converter-only new screen selects seven proposals explicitly
     featured_media: 0,
   };
   const source = head(proposal, 'Body $x$ and note[^n].\n\n- [ ] Task\n\n[^n]: Note\n');
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-source').fill(source);
   await expect(page.locator('#mbb-title')).toHaveValue('');
   await expect(page.locator('#mbb-frontmatter input:checked')).toHaveCount(0);
+  await page.locator('#mbb-edit-toggle').click();
   for (const key of Object.keys(proposal)) await page.locator('#mbb-frontmatter-' + key).check();
   await page.locator('#mbb-review').click();
   await expect(page.locator('#mbb-save')).toBeEnabled();
@@ -254,13 +256,16 @@ test('modeled REST: changing or cancelling selections requires another preview w
   const state = await fixture(page);
   const source = head({ title: 'Proposal', status: 'publish', featured_media: 123 });
   await page.locator('#mbb-title').fill('Form title');
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-source').fill(source);
   await page.locator('#mbb-review').click();
   await expect(page.locator('#mbb-save')).toHaveText('确认保存草稿');
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-frontmatter-status').check();
   await expect(page.locator('#mbb-save')).toBeDisabled();
   await page.locator('#mbb-review').click();
   await expect(page.locator('#mbb-save')).toHaveText('确认公开发布');
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-frontmatter-status').uncheck();
   await expect(page.locator('#mbb-save')).toBeDisabled();
   await expect(page.locator('#mbb-publication')).toHaveValue('draft');
@@ -273,6 +278,7 @@ test('modeled REST: changing or cancelling selections requires another preview w
     'Synthetic permission denial',
   );
   expect(state.saves).toHaveLength(0);
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-source').fill(head({ title: 'Changed proposal' }));
   await expect(page.locator('#mbb-save')).toBeDisabled();
   await expect(page.locator('#mbb-frontmatter-status')).toHaveCount(0);
@@ -284,6 +290,9 @@ test('modeled REST: current metadata only prepares a header; old literal and rea
   const source = '---\ntitle: Old YAML\n---\n\nLiteral author body.\n';
   const state = await fixture(page, { isNew: false, source });
   await expect(page.locator('#mbb-frontmatter input')).toHaveCount(0);
+  if ((await page.locator('#mbb-frontmatter').getAttribute('open')) === null)
+    await page.locator('#mbb-frontmatter > summary').click();
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-frontmatter-from-current').click();
   await expect(page.locator('#mbb-source')).toHaveValue(head(state.current, source));
   await expect(page.locator('#mbb-frontmatter input:checked')).toHaveCount(0);
@@ -407,6 +416,9 @@ test('modeled REST: from-current refreshes displayed term slugs at the same base
   const state = await fixture(page, { isNew: false, source: head({ categories: ['existing'] }) });
   // A term slug can change while this post retains the same assigned IDs/fingerprint.
   state.current.categories = ['renamed-existing'];
+  if ((await page.locator('#mbb-frontmatter').getAttribute('open')) === null)
+    await page.locator('#mbb-frontmatter > summary').click();
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-frontmatter-from-current').click();
   await expect
     .poll(() => page.locator('#mbb-source').inputValue())
@@ -431,7 +443,7 @@ test('modeled REST: reopening never adopts a different fingerprint from a metada
     documentId: state.document.documentId,
   });
   await page.locator('#mbb-markdown').click();
-  await expect(page.locator('#mbb-dialog > p[role=status]')).toContainText(
+  await expect(page.locator('#mbb-dialog .mbb-dialog-footer > p[role=status]')).toContainText(
     'Synthetic baseline changed',
   );
   expect(await page.evaluate(() => MBB_EDITOR.state.expected)).toBe('baseline-1');

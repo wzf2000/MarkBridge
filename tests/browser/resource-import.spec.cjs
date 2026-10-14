@@ -274,6 +274,7 @@ async function prepared(page) {
   await expect(page.locator('#mbb-resource-public-ack')).toBeEnabled();
 }
 async function review(page) {
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-resource-public-ack').check();
   await page.locator('#mbb-review').click();
 }
@@ -307,7 +308,9 @@ test('cancelled resources persist only a reupload hint, never credentials or byt
   await prepared(page);
   await page.locator('#mbb-resource-cancel').click();
   await page.locator('#mbb-review').click();
-  await expect(page.locator('#mbb-dialog > p[role="status"]')).toContainText('Needs ZIP reupload');
+  await expect(page.locator('#mbb-dialog .mbb-dialog-footer > p[role="status"]')).toContainText(
+    'Needs ZIP reupload',
+  );
   await expect(page.locator('#mbb-save')).toBeDisabled();
   await expect
     .poll(() =>
@@ -332,6 +335,7 @@ test('late ZIP preparation preserves text entered while reading', async ({ page 
   state.holdPrepare = new Promise((resolve) => (release = resolve));
   await upload(page);
   await expect.poll(() => state.prepares).toBe(1);
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-source').fill('Later author input B.\n');
   release();
   await expect(page.locator('#mbb-resource-public-ack')).toBeEnabled();
@@ -345,6 +349,7 @@ test('closing and reopening cannot revive a late prepared batch', async ({ page 
   await expect.poll(() => state.prepares).toBe(1);
   await page.locator('#mbb-dialog [aria-label="关闭编辑桥"]').click();
   await page.locator('#mbb-new').click();
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-source').fill('New target B.\n');
   release();
   await expect.poll(() => state.cancelled.length).toBe(1);
@@ -358,9 +363,12 @@ test('late preview cannot confirm a later candidate', async ({ page }) => {
   state.holdPreview = new Promise((resolve) => (release = resolve));
   await review(page);
   await expect.poll(() => state.previews.length).toBe(1);
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-source').fill('Preview B preserved.\n');
   release();
-  await expect(page.locator('#mbb-dialog > p[role="status"]')).toContainText('内容已变化');
+  await expect(page.locator('#mbb-dialog .mbb-dialog-footer > p[role="status"]')).toContainText(
+    '内容已变化',
+  );
   await expect(page.locator('#mbb-save')).toBeDisabled();
   await expect(page.locator('#mbb-source')).toHaveValue('Preview B preserved.\n');
 });
@@ -373,7 +381,7 @@ for (const failure of ['sha', 'type', 'forbidden'])
       state.imageError = failure;
       await review(page);
       await expect(page.locator('#mbb-save')).toBeDisabled();
-      await expect(page.locator('#mbb-dialog > p[role="status"]')).toContainText(
+      await expect(page.locator('#mbb-dialog .mbb-dialog-footer > p[role="status"]')).toContainText(
         failure === 'sha'
           ? '校验失败'
           : failure === 'type'
@@ -423,7 +431,9 @@ test('missing Web Crypto stops ZIP before any private staging, ordinary Markdown
     Object.defineProperty(crypto, 'subtle', { value: undefined, configurable: true }),
   );
   await upload(page);
-  await expect(page.locator('#mbb-dialog > p[role="status"]')).toContainText('HTTPS');
+  await expect(page.locator('#mbb-dialog .mbb-dialog-footer > p[role="status"]')).toContainText(
+    'HTTPS',
+  );
   expect(state.prepares).toBe(0);
   await page.locator('#mbb-upload').setInputFiles({
     name: 'ordinary.md',
@@ -479,9 +489,12 @@ test('saving A retains later B and avoids redirect or credential persistence', a
   state.holdSave = new Promise((resolve) => (release = resolve));
   await page.locator('#mbb-save').click();
   await expect.poll(() => state.saves.length).toBe(1);
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-source').fill('Unsaved B after confirmed A.\n');
   release();
-  await expect(page.locator('#mbb-dialog > p[role="status"]')).toContainText('新输入仍保留');
+  await expect(page.locator('#mbb-dialog .mbb-dialog-footer > p[role="status"]')).toContainText(
+    '新输入仍保留',
+  );
   await expect(page.locator('#mbb-source')).toHaveValue('Unsaved B after confirmed A.\n');
   await expect(page.locator('#mbb-dialog')).toBeVisible();
   expect(state.saves[0].source).toBe(zipSource);

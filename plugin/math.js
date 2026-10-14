@@ -395,6 +395,11 @@
     const doc = document.implementation.createHTMLDocument('');
     doc.body.innerHTML = html;
     await typeset(doc.body);
+    for (const code of doc.querySelectorAll('pre code')) {
+      if (code.closest('.wp-block-mbb-math')) continue;
+      code.parentElement.classList.add('mbb-code-display');
+      code.parentElement.tabIndex = 0;
+    }
     // An opaque, scriptless srcdoc cannot fetch same-site fonts without CORS.
     // Embed only our trusted font assets instead of relaxing the iframe sandbox.
     return (await previewStyle()) + doc.body.innerHTML;

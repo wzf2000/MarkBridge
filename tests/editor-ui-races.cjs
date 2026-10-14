@@ -126,7 +126,7 @@ const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
       assert.equal(el('#mbb-conflict').hidden, true);
       assert.equal(el('#mbb-save').disabled, true);
       assert.equal(
-        el('#mbb-dialog > p[role=status]').textContent,
+        el('#mbb-dialog .mbb-dialog-footer > p[role=status]').textContent,
         phase === 'cleanup'
           ? 'The confirmed candidate was saved, but subsequent local recovery cleanup did not complete. Current input is preserved. Preview again or download it.'
           : phase === 'preview'

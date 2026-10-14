@@ -24,6 +24,14 @@
     busy = false,
     saving = false;
   let dialog, source, title, docId, publication, status, diff, preview, save, reviewButton;
+  let editorBody, previewBody, previewToggle, editToggle;
+  function showPreview(visible) {
+    editorBody.hidden = visible;
+    previewBody.hidden = !visible;
+    previewToggle.setAttribute('aria-pressed', String(visible));
+    editToggle?.setAttribute('aria-pressed', String(!visible));
+    if (visible && editorBody.contains(document.activeElement)) previewToggle.focus();
+  }
   let opening = null,
     openingReason = '',
     featuredOverride = null;
@@ -174,6 +182,8 @@
   function controls() {
     sourceEOLNotice();
     dialog.querySelectorAll('button,input,textarea,select').forEach((b) => (b.disabled = busy));
+    previewToggle.disabled = busy || !candidate;
+    editToggle.disabled = false;
     save.disabled =
       busy ||
       !!conflict ||
@@ -189,6 +199,7 @@
     reviewButton.disabled =
       busy || !loaded || resources?.pending() || (!!conflict && !conflict.adopted);
     if (conflict) {
+      showPreview(false);
       conflictAdopt.disabled = busy || !conflict.latest || !!conflict.merge;
       conflictDownload.disabled = busy || typeof conflict.markdown !== 'string';
       if (conflict.manualMetadata)
@@ -302,6 +313,7 @@
         throw Error(message);
       });
     } catch (error) {
+      frontmatterPanel.open = true;
       frontmatterRows.replaceChildren(el('p', { role: 'alert' }, E(error)));
       frontmatterSelected.clear();
       frontmatterAuthority = null;
@@ -312,6 +324,7 @@
       frontmatterAuthority = null;
     }
     if (authority) frontmatterAuthority = authority;
+    if (parsed?.raw) frontmatterPanel.open = true;
     const proposal = parsed?.proposal || {};
     for (const key of frontmatterSelected) if (!(key in proposal)) frontmatterSelected.delete(key);
     const current = frontmatterAuthority?.current || currentMetadata();
@@ -1156,11 +1169,13 @@
         MBB_MATH.style +
         (MBB_EDITOR.footnoteStyle || '') +
         (MBB_EDITOR.teachingStyle || '') +
+        (MBB_EDITOR.codeDisplayStyle || '') +
         'body{font:16px/1.7 system-ui;padding:16px;overflow-wrap:anywhere}pre{overflow:auto}table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:4px}img{max-width:100%}</style></head><body>' +
         previewContent.innerHTML +
         '</body></html>';
       candidate = payload;
       candidateSource = result.document.source;
+      showPreview(true);
       conflict = null;
       conflictPanel.hidden = true;
       message(
@@ -1508,12 +1523,12 @@
     sourceNotice = el('p', { id: 'mbb-source-eol', role: 'note', class: 'mbb-source-eol' });
     sourceNotice.hidden = true;
     dialog.append(source, sourceNotice);
-    frontmatterPanel = el('section', {
+    frontmatterPanel = el('details', {
       id: 'mbb-frontmatter',
       'aria-label': T('FrontMatter metadata proposal'),
     });
     frontmatterPanel.append(
-      el('h3', {}, T('FrontMatter metadata proposal')),
+      el('summary', {}, T('FrontMatter metadata proposal')),
       el(
         'p',
         {},
@@ -1686,13 +1701,49 @@
     mergeAdopt.onclick = adoptMerge;
     mergePanel.append(versions, mergeStatus, mergeRows, mergeAdopt);
     conflictPanel.append(conflictSummary, conflictActions, conflictDiff, mergePanel);
-    dialog.append(status, conflictPanel, diff, preview);
+    editorBody = el('div', { id: 'mbb-editor-body', class: 'mbb-dialog-body' });
+    // Keep existing IDs and handlers while giving the dialog a single scrolling content region.
+    while (header.nextSibling) editorBody.append(header.nextSibling);
+    actions.remove();
+    editorBody.append(conflictPanel, diff);
+    previewBody = el('div', { id: 'mbb-preview-body', class: 'mbb-preview-body' });
+    previewBody.hidden = true;
+    previewBody.append(preview);
+    previewToggle = el(
+      'button',
+      {
+        type: 'button',
+        id: 'mbb-preview-toggle',
+        'aria-pressed': 'false',
+        'aria-controls': 'mbb-preview-body',
+      },
+      T('Content preview'),
+    );
+    previewToggle.onclick = () => showPreview(previewBody.hidden);
+    editToggle = el(
+      'button',
+      {
+        type: 'button',
+        id: 'mbb-edit-toggle',
+        'aria-controls': 'mbb-editor-body',
+        'aria-pressed': 'true',
+      },
+      T('Source and differences'),
+    );
+    editToggle.onclick = () => showPreview(false);
+    const views = el('div', { class: 'mbb-dialog-views' });
+    views.append(editToggle, previewToggle);
+    const footer = el('div', { class: 'mbb-dialog-footer' });
+    footer.append(status, actions);
+    dialog.append(views, editorBody, previewBody, footer);
     document.body.append(dialog);
   }
   async function open(id, selectedMode = 'markdown') {
     if (!dialog) build();
     if (dialog.open) return;
     const serial = ++epoch;
+    showPreview(false);
+    frontmatterPanel.open = false;
     dialog.showModal();
     busy = true;
     loaded = false;
@@ -2065,23 +2116,58 @@
       const b = el(
         'button',
         { type: 'button', id: 'mbb-block-review' },
-        cfg.state?.source_managed ? T('Block preview') : T('View differences and preview'),
+        cfg.state?.source_managed ? T('Block preview') : T('View differences'),
       );
       b.onclick = () => open(cfg.postId, 'blocks');
       const h = el('button', { type: 'button', id: 'mbb-history' }, T('Revisions / restore'));
       h.onclick = () => window.MBB_REVISIONS.open(cfg.postId);
+      const more = el('details', { id: 'mbb-more' });
+      const moreSummary = el('summary', {}, T('More'));
+      const moreBody = el('div', { id: 'mbb-more-actions' });
+      more.append(moreSummary, moreBody);
+      const recovery = el(
+        'button',
+        { type: 'button', id: 'mbb-recovery-open' },
+        T('Browser draft recovery'),
+      );
+      recovery.onclick = () => {
+        const panel = document.getElementById('mbb-local-recovery');
+        if (!panel) return;
+        more.open = false;
+        panel.open = true;
+        panel.querySelector('summary')?.focus();
+      };
+      moreBody.append(h, recovery);
       bar.append(
         a,
         b,
-        h,
+        more,
         el(
           'span',
-          {},
+          { class: 'mbb-save-guidance' },
           cfg.state?.source_managed
             ? T('The body is synchronized from a source file; preview and confirm the source write')
             : nativeSave
               ? T("Use the editor's Save / Update action to save both representations together")
               : T('Use the save button in the preview'),
+        ),
+      );
+      moreBody.append(
+        el(
+          'p',
+          { class: 'mbb-more-save-guidance' },
+          bar.querySelector('.mbb-save-guidance').textContent,
+        ),
+      );
+      bar.append(
+        el(
+          'span',
+          { class: 'mbb-mobile-save-guidance' },
+          cfg.state?.source_managed
+            ? T('Preview, then confirm the source write')
+            : nativeSave
+              ? T('Save directly; both formats stay in sync')
+              : T('Save after checking the preview'),
         ),
       );
       const getCurrentBlocks = () => wp.data.select('core/block-editor')?.getBlocks?.() || [];
@@ -2122,8 +2208,48 @@
       };
       help.append(check);
       capabilities.append(help);
-      bar.append(capabilities);
+      moreBody.append(capabilities);
+      // The export module installs asynchronously; retain its handler when grouping it here.
+      const groupSecondaryActions = () => {
+        const exportButton = document.getElementById('mbb-export-open');
+        if (exportButton && exportButton.parentElement !== moreBody) moreBody.prepend(exportButton);
+        recovery.hidden = !document.getElementById('mbb-local-recovery');
+      };
+      new MutationObserver(groupSecondaryActions).observe(document.body, {
+        childList: true,
+        subtree: true,
+      });
+      const placeMore = () => {
+        if (!more.open) return;
+        const width = Math.min(360, innerWidth - 40);
+        const bounds = more.getBoundingClientRect();
+        moreBody.style.left =
+          Math.max(12, Math.min(bounds.right - width, innerWidth - width - 12)) + 'px';
+        moreBody.style.bottom = innerHeight - bar.getBoundingClientRect().top + 8 + 'px';
+      };
+      more.addEventListener('toggle', placeMore);
+      more.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          more.open = false;
+          moreSummary.focus();
+          event.stopPropagation();
+        }
+      });
+      moreBody.addEventListener(
+        'click',
+        (event) => {
+          if (!event.target.closest('#mbb-history, #mbb-export-open')) return;
+          // Dialogs must restore focus to a visible control after the menu closes.
+          more.open = false;
+          moreSummary.focus();
+        },
+        true,
+      );
+      document.addEventListener('pointerdown', (event) => {
+        if (more.open && !more.contains(event.target)) more.open = false;
+      });
       document.body.append(bar);
+      groupSecondaryActions();
       const inspectCapabilities = () => {
         const unsupported = [];
         const supported = new Set(cfg.supportedBlocks || window.MBB?.supportedBlocks || []);
@@ -2164,6 +2290,13 @@
       });
       // Keep the toolbar inside the visible editor canvas, never over its settings sidebar.
       const placeBar = () => {
+        const viewport = window.visualViewport;
+        const keyboardInset = viewport
+          ? Math.max(0, innerHeight - viewport.height - viewport.offsetTop)
+          : 0;
+        bar.classList.toggle('mbb-keyboard-open', keyboardInset > 140);
+        bar.style.setProperty('--mbb-keyboard-inset', keyboardInset + 'px');
+        placeMore();
         const canvas = document.querySelector('.interface-interface-skeleton__content');
         if (!canvas) return;
         const bounds = canvas.getBoundingClientRect();
@@ -2199,6 +2332,8 @@
           attributeFilter: ['class', 'style', 'hidden'],
         });
       window.addEventListener('resize', scheduleBar);
+      window.visualViewport?.addEventListener('resize', scheduleBar);
+      window.visualViewport?.addEventListener('scroll', scheduleBar);
       placeBar();
       const editingFingerprint = () => {
         const e = wp.data.select('core/editor');

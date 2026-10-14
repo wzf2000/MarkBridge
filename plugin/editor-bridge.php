@@ -1363,6 +1363,7 @@ function mbb_enqueue_ui()
         'state' => $tool || $new_post ? null : mbb_state($id),
         'footnoteStyle' => file_get_contents(__DIR__ . '/footnotes.css'),
         'teachingStyle' => file_get_contents(__DIR__ . '/teaching.css'),
+        'codeDisplayStyle' => file_get_contents(__DIR__ . '/code-display.css'),
         'supportedBlocks' => array_merge(
             array_keys(
                 json_decode(

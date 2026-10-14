@@ -19,6 +19,13 @@ add_action('admin_enqueue_scripts', static function ($hook) {
             true,
         )
     ) {
+        wp_enqueue_script(
+            'mbb-settings',
+            plugins_url(mbb_asset('settings.js'), dirname(__DIR__) . '/markdown-block-bridge.php'),
+            [],
+            null,
+            true,
+        );
         wp_enqueue_style(
             'mbb-settings',
             plugins_url(mbb_asset('settings.css'), dirname(__DIR__) . '/markdown-block-bridge.php'),

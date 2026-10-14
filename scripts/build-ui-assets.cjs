@@ -39,4 +39,6 @@ asset('teaching.js');
 asset('components.js');
 asset('teaching.css');
 asset('settings.css');
+asset('settings.js');
+asset('code-display.css');
 fs.writeFileSync(path.join(root, 'assets.json'), JSON.stringify(map, null, 2) + '\n');

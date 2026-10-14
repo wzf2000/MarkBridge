@@ -135,6 +135,7 @@
       loading = false;
       ready = false;
       launch.disabled = false;
+      launch.hidden = false;
       close.hidden = true;
       if (reason) status.textContent = reason;
       if (changedLayout) changed();
@@ -171,6 +172,8 @@
       slots.add(node);
       loading = true;
       launch.disabled = true;
+      launch.hidden = true;
+      close.hidden = false;
       status.textContent = T('Verifying component resources…');
       abort = new AbortController();
       startup = setTimeout(() => {
@@ -344,7 +347,7 @@
         runId = null;
         status.textContent =
           data.type === 'complete'
-            ? T('Component execution completed.')
+            ? T('Execution completed. The recorded trace is ready for playback.')
             : data.type === 'stopped'
               ? T('Execution stopped.')
               : T('Execution failed. Static fallback content remains readable.');

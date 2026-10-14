@@ -44,6 +44,7 @@ test('mock REST: a 20k-line review exposes dispersed hunks and bounded expansion
     input.dispatchEvent(new Event('input', { bubbles: true }));
   }, after);
   await page.locator('#mbb-review').click();
+  await page.locator('#mbb-edit-toggle').click();
   const diff = page.getByRole('region', { name: '修改差异' });
   await expect(diff.locator('.mbb-diff-hunk')).toHaveCount(20);
   expect(await diff.locator('.mbb-diff-row').count()).toBeLessThan(4_000);
@@ -110,6 +111,7 @@ test('mock REST: save conflict retains and downloads candidate, then requires ne
   });
   await page.goto('/editor');
   await page.getByRole('button', { name: '编辑现有文档' }).click();
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-source').fill('my candidate');
   await page.locator('#mbb-review').click();
   await expect(page.locator('#mbb-save')).toBeEnabled();
@@ -187,6 +189,7 @@ test('mock REST: file conflict cannot adopt until both document and source refre
   await page.goto('/editor');
   await page.getByRole('button', { name: '编辑现有文档' }).click();
   await expect(page.locator('#mbb-source')).toHaveValue('old source');
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-source').fill('local source');
   await page.locator('#mbb-review').click();
   await page.locator('#mbb-save').click();
@@ -243,6 +246,7 @@ test('mock REST: inconsistent source/document versions block adoption', async ({
   });
   await page.goto('/editor');
   await page.getByRole('button', { name: '编辑现有文档' }).click();
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-source').fill('local edit');
   await page.locator('#mbb-review').click();
   await page.locator('#mbb-save').click();
@@ -275,13 +279,17 @@ test('mock REST: rejected preview cannot save, and diff markup stays inert with 
   });
   await page.goto('/editor');
   await page.getByRole('button', { name: '编辑现有文档' }).click();
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-source').fill(`first\n${payload}\nlast`);
   await page.locator('#mbb-review').click();
-  await expect(page.locator('#mbb-dialog > p[role="status"]')).toContainText('Preview rejected');
+  await expect(page.locator('#mbb-dialog .mbb-dialog-footer > p[role="status"]')).toContainText(
+    'Preview rejected',
+  );
   await expect(page.locator('#mbb-save')).toBeDisabled();
   expect(saves).toBe(0);
   rejectPreview = false;
   await page.locator('#mbb-review').click();
+  await page.locator('#mbb-edit-toggle').click();
   const removed = page.locator('[aria-label="修改差异"] .mbb-removed');
   const added = page.locator('[aria-label="修改差异"] .mbb-added');
   await expect(removed).toHaveCount(1);
@@ -324,6 +332,7 @@ test('mock REST: a late preview cannot change a reopened editor session', async 
   });
   await page.goto('/editor');
   await page.getByRole('button', { name: '编辑现有文档' }).click();
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-source').fill('stale candidate');
   await page.locator('#mbb-review').click();
   await previewStarted;
@@ -342,4 +351,106 @@ test('mock REST: a late preview cannot change a reopened editor session', async 
   await expect(page.locator('#mbb-save')).toBeDisabled();
   await expect(page.locator('[aria-label="修改差异"] .mbb-diff-hunk')).toHaveCount(0);
   await expect(page.locator('#mbb-dialog [role="status"]').first()).not.toContainText('校验通过');
+});
+
+test('dialog keeps actions visible and separates scrolling source from the sandboxed preview', async ({
+  page,
+}, testInfo) => {
+  await page.route('**/wp-json/mbb/v1/**', (route) => {
+    if (new URL(route.request().url()).pathname.endsWith('/preview'))
+      return json(route, {
+        before: 'original',
+        document: { source: 'changed' },
+        html: '<p>Full preview</p>'.repeat(150),
+      });
+    return json(route, state('original'));
+  });
+  await page.goto('/editor');
+  const opener = page.getByRole('button', { name: '编辑现有文档' });
+  await opener.click();
+  await expect(page.locator('#mbb-frontmatter')).not.toHaveAttribute('open', '');
+  await expect(page.locator('#mbb-save')).toBeDisabled();
+  const inViewport = (locator) =>
+    locator.evaluate((node) => {
+      const r = node.getBoundingClientRect();
+      return r.top >= 0 && r.bottom <= innerHeight && r.left >= 0 && r.right <= innerWidth;
+    });
+  expect(await inViewport(page.locator('#mbb-review'))).toBe(true);
+  await page.locator('#mbb-edit-toggle').click();
+  await page.locator('#mbb-source').fill('changed');
+  await page.locator('#mbb-review').click();
+  await expect(page.locator('#mbb-save')).toBeEnabled();
+  await expect(page.locator('#mbb-preview-body')).toBeVisible();
+  await page.locator('#mbb-edit-toggle').click();
+  await page.locator('#mbb-editor-body').evaluate((node) => {
+    node.scrollTop = node.scrollHeight;
+  });
+  expect(await inViewport(page.locator('#mbb-review'))).toBe(true);
+  expect(await inViewport(page.locator('[data-mbb-close]'))).toBe(true);
+  await page.screenshot({ path: `test-results/dialog-review-${testInfo.project.name}.png` });
+  await page.locator('#mbb-preview-toggle').click();
+  await expect(page.locator('#mbb-editor-body')).toBeHidden();
+  const frame = page.locator('iframe[title="内置内容预览"]');
+  await expect(frame).toBeVisible();
+  await expect(frame).toHaveAttribute('sandbox', '');
+  const geometry = await frame.evaluate((node) => ({
+    frame: node.clientHeight,
+    region: node.parentElement.clientHeight,
+  }));
+  expect(geometry.frame).toBeGreaterThan(geometry.region - 30);
+  expect(await inViewport(page.locator('#mbb-save'))).toBe(true);
+  await page.locator('#mbb-edit-toggle').click();
+  await expect(page.locator('#mbb-source')).toBeVisible();
+  await page.locator('#mbb-edit-toggle').click();
+  await page.locator('#mbb-source').fill('changed again');
+  await expect(page.locator('#mbb-save')).toBeDisabled();
+  await page.keyboard.press('Escape');
+  await expect(opener).toBeFocused();
+});
+
+test('existing article toolbar has compact primary actions and an accessible secondary menu', async ({
+  page,
+}, testInfo) => {
+  await page.goto('/native-editor');
+  await page.locator('#mbb-toolbar').waitFor();
+  await page.addScriptTag({ url: '/plugin/export-ui.js' });
+  const menu = page.locator('#mbb-more');
+  await expect(menu).not.toHaveAttribute('open', '');
+  await expect(page.locator('#mbb-history')).toBeHidden();
+  await expect(page.locator('#mbb-export-open')).toBeHidden();
+  expect(
+    await page.locator('#mbb-toolbar').evaluate((node) => node.getBoundingClientRect().height),
+  ).toBeLessThan(85);
+  if (testInfo.project.name.startsWith('mobile')) {
+    await expect(page.locator('.mbb-save-guidance')).toBeHidden();
+    expect(
+      await page.locator('#mbb-toolbar').evaluate((node) => node.getBoundingClientRect().height),
+    ).toBeLessThan(80);
+  }
+  await menu.locator('summary').first().click();
+  await expect(page.locator('#mbb-history')).toBeVisible();
+  await expect(page.locator('#mbb-export-open')).toBeVisible();
+  expect(
+    await page.locator('#mbb-more-actions').evaluate((node) => {
+      const r = node.getBoundingClientRect();
+      return r.left >= 0 && r.right <= innerWidth && r.top >= 0;
+    }),
+  ).toBe(true);
+  await page.keyboard.press('Escape');
+  await expect(menu).not.toHaveAttribute('open', '');
+  await expect(menu.locator('summary').first()).toBeFocused();
+  await page.screenshot({ path: `test-results/toolbar-${testInfo.project.name}.png` });
+  await page.evaluate(() => {
+    window.MBB_REVISIONS.open = () => {
+      const modal = document.createElement('dialog');
+      modal.innerHTML = '<button>Close history</button>';
+      document.body.append(modal);
+      modal.showModal();
+    };
+  });
+  await menu.locator('summary').first().click();
+  await page.locator('#mbb-history').click();
+  await expect(menu).not.toHaveAttribute('open', '');
+  await page.keyboard.press('Escape');
+  await expect(menu.locator('summary').first()).toBeFocused();
 });

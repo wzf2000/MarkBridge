@@ -250,3 +250,28 @@ test('long titles and language labels fit the viewport without secure-context UU
     true,
   );
 });
+
+test('full article view and old history entries preserve the selected language', async ({
+  page,
+}) => {
+  await load(
+    page,
+    true,
+    `<div id="course" data-mbb-teaching="steps" data-mbb-teaching-config='{"mode":"staged","previous":true,"next":true}'><div class="mbb-teaching-body"><div id="stage-one" data-mbb-teaching="step"><p class="mbb-teaching-title">First</p>${markup()}</div><div id="stage-two" data-mbb-teaching="step">Second</div></div></div>`,
+  );
+  await page.getByRole('tab', { name: 'Python', exact: true }).click();
+  await page.getByRole('button', { name: '全文', exact: true }).click();
+  await expect(page.locator('#stage-two')).toBeVisible();
+  await expect(page.locator('#python')).toBeVisible();
+  await expect(page.locator('#javascript')).toBeHidden();
+  await page.evaluate(() => {
+    const state = structuredClone(history.state);
+    state.mbbTeaching.tabs[0].full = true;
+    dispatchEvent(new PopStateEvent('popstate', { state }));
+  });
+  await expect(page.locator('#python')).toBeVisible();
+  await expect(page.locator('#javascript')).toBeHidden();
+  await page.emulateMedia({ media: 'print' });
+  await expect(page.locator('#javascript')).toBeVisible();
+  await expect(page.locator('#python')).toBeVisible();
+});

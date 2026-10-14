@@ -80,7 +80,9 @@ async function upload(page) {
   await page
     .locator('#mbb-upload')
     .setInputFiles({ name: 'raw.md', mimeType: 'text/markdown', buffer: Buffer.from(raw, 'utf8') });
-  await expect(page.locator('#mbb-dialog > p[role=status]')).toContainText('文件已读取');
+  await expect(page.locator('#mbb-dialog .mbb-dialog-footer > p[role=status]')).toContainText(
+    '文件已读取',
+  );
 }
 test('unedited MD upload previews and saves exact raw source while textarea displays normalized lines', async ({
   page,
@@ -123,10 +125,15 @@ test('server source loading, explicit recovery and FrontMatter preparation retai
     raw,
   );
   expect(await page.evaluate(() => MarkBridgeEditorRecovery.snapshot().payload.content)).toBe(raw);
+  await page.locator('#mbb-edit-toggle').click();
+  if ((await page.locator('#mbb-frontmatter').getAttribute('open')) === null) {
+    await page.locator('#mbb-frontmatter > summary').click();
+  }
   await page.locator('#mbb-frontmatter-from-current').click();
   await expect
     .poll(() => page.evaluate(() => MarkBridgeEditorRecovery.snapshot().payload.content))
     .toContain(raw);
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-source').fill('Actual input\n');
   await expect(page.locator('#mbb-source-eol')).toContainText('已实际编辑');
   expect(await page.evaluate(() => MarkBridgeEditorRecovery.snapshot().payload.content)).toBe(
@@ -144,9 +151,12 @@ test('saved A response leaves later edited B source and recovery snapshot intact
   state.holdSave = new Promise((resolve) => (release = resolve));
   await page.locator('#mbb-save').click();
   await expect.poll(() => state.saves.length).toBe(1);
+  await page.locator('#mbb-edit-toggle').click();
   await page.locator('#mbb-source').fill('Later B\n');
   release();
-  await expect(page.locator('#mbb-dialog > p[role=status]')).toContainText('新输入仍保留');
+  await expect(page.locator('#mbb-dialog .mbb-dialog-footer > p[role=status]')).toContainText(
+    '新输入仍保留',
+  );
   expect(state.saves[0].source).toBe(raw);
   expect(await page.evaluate(() => MarkBridgeEditorRecovery.snapshot().payload.content)).toBe(
     'Later B\n',
@@ -201,6 +211,7 @@ test('recovery verification cannot replace later input or a reopened session on 
       await expect(page.locator('#mbb-dialog')).not.toBeVisible();
       await page.locator('#mbb-new').click();
     }
+    await page.locator('#mbb-edit-toggle').click();
     await page.locator('#mbb-source').fill('Later B ' + hold + ' ' + reopen + '\n');
     const kept = await page.locator('#mbb-source').inputValue();
     const before = state.previews.length;

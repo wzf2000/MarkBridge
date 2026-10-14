@@ -260,3 +260,25 @@ test('comparison syntax keeps multiline tokens and original text across annotate
   await page.evaluate(() => document.dispatchEvent(new CustomEvent('mbb:syntax-ready')));
   expect(await left.textContent()).toBe(source);
 });
+
+test('stage controls keep the count and progress together without vertical button text', async ({
+  page,
+}, testInfo) => {
+  await load(page);
+  const modes = page.locator('.mbb-stage-modes');
+  expect(
+    await modes
+      .locator('button')
+      .first()
+      .evaluate((node) => node.getBoundingClientRect().height),
+  ).toBeLessThan(45);
+  const progress = page.locator('.mbb-stage-progress');
+  await expect(progress.locator('.mbb-stage-status')).toContainText('1 / 2');
+  await expect(progress.locator('progress')).toHaveAttribute('value', '1');
+  expect(
+    await page
+      .locator('.mbb-stage-controls')
+      .evaluate((node) => node.scrollWidth <= node.clientWidth + 1),
+  ).toBe(true);
+  await page.screenshot({ path: `test-results/stage-controls-${testInfo.project.name}.png` });
+});
