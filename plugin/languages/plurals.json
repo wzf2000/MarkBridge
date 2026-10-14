@@ -1,0 +1,7 @@
+[
+  {
+    "single": "%1$s difference: green additions, red deletions, and gray unchanged context.",
+    "plural": "%1$s differences: green additions, red deletions, and gray unchanged context.",
+    "zh": "共 %1$s 处差异；绿色为新增，红色为删除，灰色为未变上下文。"
+  }
+]

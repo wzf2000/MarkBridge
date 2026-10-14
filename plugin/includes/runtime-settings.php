@@ -1,4 +1,13 @@
 <?php
+
+// Standalone CLI conversion and model tests remain supported; direct web access requires WordPress.
+if (!defined('ABSPATH')) {
+    if (PHP_SAPI !== 'cli') {
+        exit();
+    }
+}
+
+require_once __DIR__ . '/i18n.php';
 // Runtime configuration, compatibility checks and administrator-only diagnostics.
 require_once __DIR__ . '/conversion-backends.php';
 
@@ -151,9 +160,11 @@ function mbb_runtime_diagnostics($candidate = null, $smoke = false)
             'checks' => [
                 mbb_runtime_check(
                     'backend',
-                    '转换后端',
+                    mbb_t('Conversion backend'),
                     false,
-                    '转换后端设置无效，不会回退其他后端。',
+                    mbb_t(
+                        'The conversion backend configuration is invalid. No other backend will be used as a fallback.',
+                    ),
                 ),
             ],
         ];
@@ -164,11 +175,21 @@ function mbb_runtime_diagnostics($candidate = null, $smoke = false)
         $checks[] = mbb_runtime_check($code, $label, (bool) $ok, $message);
     };
     if ($runtime === '') {
-        $add('path', '运行目录', false, '尚未配置运行目录。');
+        $add(
+            'path',
+            mbb_t('Runtime directory'),
+            false,
+            mbb_t('No runtime directory is configured.'),
+        );
         return ['ok' => false, 'path' => '', 'checks' => $checks];
     }
     $exists = is_dir($runtime);
-    $add('path', '运行目录', $exists, $exists ? '目录存在。' : '目录不存在。');
+    $add(
+        'path',
+        mbb_t('Runtime directory'),
+        $exists,
+        $exists ? mbb_t('The directory exists.') : mbb_t('The directory does not exist.'),
+    );
     if (!$exists) {
         return ['ok' => false, 'path' => $runtime, 'checks' => $checks];
     }
@@ -181,9 +202,13 @@ function mbb_runtime_diagnostics($candidate = null, $smoke = false)
     }
     $add(
         'private_path',
-        '目录隔离',
+        mbb_t('Directory isolation'),
         !$public,
-        $public ? '运行目录不能位于 WordPress 或上传公共目录内。' : '运行目录位于公共目录之外。',
+        $public
+            ? mbb_t(
+                'The runtime directory must not be inside WordPress or a public uploads directory.',
+            )
+            : mbb_t('The runtime directory is outside public directories.'),
     );
     if ($public) {
         return ['ok' => false, 'path' => $runtime, 'checks' => $checks];
@@ -191,9 +216,11 @@ function mbb_runtime_diagnostics($candidate = null, $smoke = false)
     $readable = is_readable($runtime) && is_readable($runtime . '/worker.cjs');
     $add(
         'permissions',
-        '读取权限',
+        mbb_t('Read permissions'),
         $readable,
-        $readable ? 'PHP 进程可读取运行文件。' : 'PHP 进程无法读取运行目录或 worker.cjs。',
+        $readable
+            ? mbb_t('The PHP process can read runtime files.')
+            : mbb_t('The PHP process cannot read the runtime directory or worker.cjs.'),
     );
     $manifest = mbb_runtime_manifest($runtime);
     $manifest_ok =
@@ -204,12 +231,19 @@ function mbb_runtime_diagnostics($candidate = null, $smoke = false)
         is_array($manifest['core_sha256']);
     $add(
         'manifest',
-        '运行清单',
+        mbb_t('Runtime manifest'),
         $manifest_ok,
-        $manifest_ok ? '清单格式有效。' : 'manifest.json 缺失、损坏或版本不受支持。',
+        $manifest_ok
+            ? mbb_t('The manifest format is valid.')
+            : mbb_t('manifest.json is missing, damaged, or has an unsupported version.'),
     );
     if (!is_callable('proc_open')) {
-        $add('process', '进程执行', false, 'PHP proc_open 不可用，无法执行隔离转换。');
+        $add(
+            'process',
+            mbb_t('Process execution'),
+            false,
+            mbb_t('PHP proc_open is unavailable; isolated conversion cannot run.'),
+        );
         return ['ok' => false, 'path' => $runtime, 'checks' => $checks];
     }
     $node = $runtime . '/node/bin/node';
@@ -224,8 +258,8 @@ function mbb_runtime_diagnostics($candidate = null, $smoke = false)
         'Node.js',
         $node_ok,
         $node_ok
-            ? '私有 Node.js 版本匹配且可执行。'
-            : '私有 Node.js 缺失、版本过低或与清单不匹配。',
+            ? mbb_t('The private Node.js version matches and is executable.')
+            : mbb_t('Private Node.js is missing, outdated, or does not match the manifest.'),
     );
     foreach (
         ['/usr/bin/timeout' => 'timeout', '/usr/bin/bwrap' => 'bubblewrap']
@@ -235,7 +269,9 @@ function mbb_runtime_diagnostics($candidate = null, $smoke = false)
             $name,
             $name,
             is_executable($path),
-            is_executable($path) ? $name . ' 可执行。' : $name . ' 缺失或不可执行。',
+            is_executable($path)
+                ? $name . mbb_t(' is executable.')
+                : $name . mbb_t(' is missing or not executable.'),
         );
     }
     if ($manifest_ok) {
@@ -244,9 +280,11 @@ function mbb_runtime_diagnostics($candidate = null, $smoke = false)
             hash_equals((string) $manifest['wordpress'], (string) get_bloginfo('version'));
         $add(
             'wordpress',
-            'WordPress 版本',
+            mbb_t('WordPress version'),
             $same_wordpress,
-            $same_wordpress ? '版本匹配。' : '运行环境与当前 WordPress 版本不匹配。',
+            $same_wordpress
+                ? mbb_t('The version matches.')
+                : mbb_t('The runtime does not match the current WordPress version.'),
         );
         $core_ok = true;
         foreach ($manifest['core_sha256'] as $name => $expected) {
@@ -272,9 +310,11 @@ function mbb_runtime_diagnostics($candidate = null, $smoke = false)
         }
         $add(
             'wordpress_core',
-            'WordPress 核心脚本',
+            mbb_t('WordPress core scripts'),
             $core_ok,
-            $core_ok ? '核心脚本快照匹配。' : '核心脚本快照不匹配，请重建运行环境。',
+            $core_ok
+                ? mbb_t('The core script snapshot matches.')
+                : mbb_t('The core script snapshot differs. Rebuild the runtime.'),
         );
         $kernel_snapshot = $runtime . '/site/wp-content/plugins/markdown-block-bridge/kernel.js';
         $kernel_ok =
@@ -293,9 +333,11 @@ function mbb_runtime_diagnostics($candidate = null, $smoke = false)
             );
         $add(
             'kernel',
-            '转换内核',
+            mbb_t('Conversion kernel'),
             $kernel_ok,
-            $kernel_ok ? '转换内核匹配。' : '转换内核与插件不匹配，请重建运行环境。',
+            $kernel_ok
+                ? mbb_t('The conversion kernel matches.')
+                : mbb_t('The conversion kernel differs from the plugin. Rebuild the runtime.'),
         );
         $worker_ok =
             isset($manifest['worker_sha256']) &&
@@ -313,9 +355,11 @@ function mbb_runtime_diagnostics($candidate = null, $smoke = false)
             );
         $add(
             'worker',
-            '转换进程',
+            mbb_t('Conversion worker'),
             $worker_ok,
-            $worker_ok ? '转换进程匹配。' : 'worker.cjs 与插件或清单不匹配。',
+            $worker_ok
+                ? mbb_t('The conversion worker matches.')
+                : mbb_t('worker.cjs differs from the plugin or manifest.'),
         );
         $contract = json_decode(@file_get_contents(__DIR__ . '/../runtime-contract.json'), true);
         $bootstrap = $runtime . '/run/worker-bootstrap.html';
@@ -325,9 +369,11 @@ function mbb_runtime_diagnostics($candidate = null, $smoke = false)
             hash_equals($manifest['bootstrap_sha256'], mbb_runtime_hash('sha256', $bootstrap));
         $add(
             'bootstrap',
-            '转换启动快照',
+            mbb_t('Conversion startup snapshot'),
             $bootstrap_ok,
-            $bootstrap_ok ? '启动快照匹配。' : '启动快照已变化，请重建运行环境。',
+            $bootstrap_ok
+                ? mbb_t('The startup snapshot matches.')
+                : mbb_t('The startup snapshot changed. Rebuild the runtime.'),
         );
         $files_ok =
             is_array($manifest['runtime_sha256'] ?? null) &&
@@ -357,9 +403,11 @@ function mbb_runtime_diagnostics($candidate = null, $smoke = false)
         }
         $add(
             'dependencies',
-            '运行依赖',
+            mbb_t('Runtime dependencies'),
             $files_ok,
-            $files_ok ? '依赖锁定文件匹配。' : '运行依赖锁定文件不匹配。',
+            $files_ok
+                ? mbb_t('The dependency lockfile matches.')
+                : mbb_t('The dependency lockfile differs.'),
         );
     }
     $ok = !in_array(false, array_column($checks, 'ok'), true);
@@ -375,9 +423,11 @@ function mbb_runtime_diagnostics($candidate = null, $smoke = false)
         $smoke_ok = !is_wp_error($result) && !empty($result['ok']);
         $add(
             'conversion',
-            '隔离转换',
+            mbb_t('Isolated conversion'),
             $smoke_ok,
-            $smoke_ok ? '隔离转换通过。' : '隔离转换失败，配置未切换。',
+            $smoke_ok
+                ? mbb_t('Isolated conversion passed.')
+                : mbb_t('Isolated conversion failed. The configuration was not switched.'),
         );
         $ok = $smoke_ok;
     }
@@ -456,14 +506,22 @@ function mbb_runtime_lock()
 function mbb_run_worker($input, $runtime = null)
 {
     if (!is_callable('proc_open')) {
-        return mbb_error('worker', 'PHP 进程执行不可用，Node 转换未执行，原内容未写入。', 503);
+        return mbb_error(
+            'worker',
+            mbb_t(
+                'PHP process execution is unavailable. Node conversion did not run; original content was not written.',
+            ),
+            503,
+        );
     }
     $runtime = $runtime ?? mbb_runtime();
     $lock = mbb_runtime_lock();
     if (!$lock) {
         return mbb_error(
             'busy',
-            '转换服务正在处理另一请求，或共享锁不可读，请稍后重试并检查权限。',
+            mbb_t(
+                'The converter is processing another request or the shared lock is unreadable. Try later and check permissions.',
+            ),
             409,
         );
     }
@@ -475,7 +533,7 @@ function mbb_run_worker($input, $runtime = null)
             $pipes,
         );
         if (!is_resource($process)) {
-            return mbb_error('worker', '转换服务不可用。', 503);
+            return mbb_error('worker', mbb_t('The conversion service is unavailable.'), 503);
         }
         fwrite($pipes[0], wp_json_encode($input));
         fclose($pipes[0]);
@@ -486,7 +544,11 @@ function mbb_run_worker($input, $runtime = null)
         $exit = proc_close($process);
         $result = json_decode($output, true);
         if ($exit !== 0 || !is_array($result)) {
-            return mbb_error('worker', '转换服务未完成，原内容未写入。', 503);
+            return mbb_error(
+                'worker',
+                mbb_t('The conversion service did not complete. Original content was not written.'),
+                503,
+            );
         }
         return $result;
     } finally {
@@ -504,7 +566,9 @@ function mbb_runtime_admin_notice()
         $url = admin_url('options-general.php?page=markbridge');
         echo '<div class="notice notice-warning"><p>';
         echo wp_kses_post(
-            'MarkBridge：转换运行环境不可用。<a href="' . esc_url($url) . '">查看设置与诊断</a>。',
+            mbb_t('MarkBridge: the conversion runtime is unavailable. <a href="') .
+                esc_url($url) .
+                mbb_t('">View settings and diagnostics</a>.'),
         );
         echo '</p></div>';
     }
@@ -526,7 +590,7 @@ add_action('admin_menu', 'mbb_runtime_settings_menu');
 function mbb_runtime_settings_save()
 {
     if (!current_user_can('manage_options')) {
-        wp_die('无权修改 MarkBridge 设置。', '', ['response' => 403]);
+        wp_die(mbb_t('You cannot change MarkBridge settings.'), '', ['response' => 403]);
     }
     check_admin_referer('mbb_runtime_save');
     if (
@@ -571,7 +635,19 @@ add_action('admin_post_mbb_runtime_save', 'mbb_runtime_settings_save');
 function mbb_runtime_settings_page()
 {
     if (!current_user_can('manage_options')) {
-        wp_die('无权查看 MarkBridge 设置。', '', ['response' => 403]);
+        wp_die(mbb_t('You cannot view MarkBridge settings.'), '', ['response' => 403]);
+    }
+    $tabs = mbb_admin_settings_tabs();
+    $tab = is_string($_GET['tab'] ?? null) ? $_GET['tab'] : 'general';
+    if (!isset($tabs[$tab])) {
+        $tab = 'general';
+    }
+    echo '<div class="wrap mbb-settings"><h1>MarkBridge</h1>';
+    mbb_admin_settings_navigation($tab);
+    if ($tab !== 'general') {
+        call_user_func($tabs[$tab]['render'], true);
+        echo '</div>';
+        return;
     }
     $configuration = mbb_runtime_configuration();
     $backend = mbb_converter_backend();
@@ -581,38 +657,59 @@ function mbb_runtime_settings_page()
     delete_transient('mbb_converter_diagnostics_' . get_current_user_id());
     $legacy_candidate = get_transient('mbb_runtime_diagnostics_' . get_current_user_id());
     delete_transient('mbb_runtime_diagnostics_' . get_current_user_id());
-    echo '<div class="wrap"><h1>MarkBridge</h1>';
     mbb_admin_settings_overview($backend, $diagnostics);
-    mbb_converter_settings_form();
     mbb_admin_settings_preferences();
+    mbb_converter_settings_form();
     if (($_GET['mbb-runtime'] ?? '') === 'updated') {
-        echo '<div class="notice notice-success"><p>运行环境已经验证并启用。</p></div>';
+        echo mbb_t(
+            '<div class="notice notice-success"><p>The runtime was verified and enabled.</p></div>',
+        );
     } elseif (($_GET['mbb-runtime'] ?? '') === 'save-failed') {
-        echo '<div class="notice notice-error"><p>无法保存数据库配置，请检查数据库状态；未报告切换成功。</p></div>';
+        echo mbb_t(
+            '<div class="notice notice-error"><p>The database configuration could not be saved. Check the database state. No successful switch was reported.</p></div>',
+        );
     } elseif (($_GET['mbb-runtime'] ?? '') === 'rejected') {
-        echo '<div class="notice notice-error"><p>候选运行环境未通过验证，原设置保持不变。</p></div>';
+        echo mbb_t(
+            '<div class="notice notice-error"><p>The proposed runtime failed verification. Original settings are unchanged.</p></div>',
+        );
     } elseif (($_GET['mbb-runtime'] ?? '') === 'managed') {
-        echo '<div class="notice notice-info"><p>此运行目录接口当前不可修改配置，请刷新页面并使用转换方案；服务器常量管理的目录不能覆盖。</p></div>';
+        echo mbb_t(
+            '<div class="notice notice-info"><p>This runtime directory endpoint cannot currently change configuration. Refresh the page and use the conversion backend settings. Server-managed directories cannot be overridden.</p></div>',
+        );
     }
-    echo '<details><summary>兼容与高级：转换运行环境</summary><p>当前后端：' .
+    $needs_attention =
+        !$diagnostics['ok'] ||
+        is_array($candidate) ||
+        is_array($legacy_candidate) ||
+        in_array($_GET['mbb-runtime'] ?? '', ['rejected', 'save-failed'], true) ||
+        in_array($_GET['mbb-converter'] ?? '', ['rejected', 'save-failed'], true);
+    echo '<details class="mbb-settings-advanced"' . ($needs_attention ? ' open' : '') . '>';
+    echo '<summary>' .
+        esc_html(mbb_t('Compatibility and advanced runtime settings')) .
+        '</summary>';
+    echo mbb_t('<p>Current backend: ') .
         esc_html(is_string($backend) ? $backend : 'invalid') .
         '</p>';
     if ($backend === 'node') {
-        echo '<p>有效配置来源：' . esc_html($configuration['source']) . '</p>';
+        echo mbb_t('<p>Active configuration source: ') .
+            esc_html($configuration['source']) .
+            '</p>';
         echo '<form action="' . esc_url(admin_url('admin-post.php')) . '" method="post">';
         echo '<input type="hidden" name="action" value="mbb_runtime_save">';
         wp_nonce_field('mbb_runtime_save');
-        echo '<label for="mbb-runtime-path">服务器私有目录</label> ';
+        echo mbb_t('<label for="mbb-runtime-path">Private server directory</label> ');
         echo '<input id="mbb-runtime-path" class="regular-text code" name="runtime_path" value="' .
             esc_attr($configuration['path']) .
             '"' .
             ($configuration['managed'] ? ' disabled' : '') .
             '>';
         if ($configuration['managed']) {
-            echo '<p class="description">MARKBRIDGE_RUNTIME 已定义；常量无效时不会回退数据库设置。</p>';
+            echo mbb_t(
+                '<p class="description">MARKBRIDGE_RUNTIME is defined. An invalid constant does not fall back to database settings.</p>',
+            );
         }
         submit_button(
-            '验证并保存',
+            mbb_t('Verify and save Node directory'),
             'primary',
             'submit',
             true,
@@ -620,13 +717,14 @@ function mbb_runtime_settings_page()
         );
         echo '</form>';
     } else {
-        echo '<p>请在上方转换方案选择引擎。PHP 不需要 Node 私有目录，失败不会回退其他后端。</p>';
+        echo mbb_t(
+            '<p>Select the engine in the conversion backend settings above. PHP requires no private Node directory, and failures do not fall back to another backend.</p>',
+        );
     }
-    echo '</details>';
-    echo '<h2>诊断</h2><table class="widefat striped"><tbody>';
+    echo mbb_t('<h2>Diagnostics</h2><table class="widefat striped"><tbody>');
     foreach ($diagnostics['checks'] as $check) {
         echo '<tr><th>' . esc_html($check['label']) . '</th><td>';
-        echo $check['ok'] ? '通过' : '失败';
+        echo esc_html($check['ok'] ? mbb_t('Passed') : mbb_t('Failed'));
         echo '</td><td>' . esc_html($check['message']) . '</td></tr>';
     }
     echo '</tbody></table>';
@@ -636,6 +734,7 @@ function mbb_runtime_settings_page()
     if (is_array($legacy_candidate)) {
         mbb_converter_candidate_diagnostics('node', $legacy_candidate);
     }
+    echo '</details>';
     do_action('mbb_settings_page', $configuration, $diagnostics);
     echo '</div>';
 }

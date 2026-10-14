@@ -6,7 +6,7 @@ $options = [
     'markbridge_emoji_active' => 'synthetic-pack',
     'markbridge_emoji_packs' => ['synthetic-pack' => ['name' => 'Synthetic']],
 ];
-$actions = $filters = $scripts = $styles = $inline = [];
+$actions = $filters = $scripts = $styles = $inline = $script_inline = [];
 $can_manage = true;
 $nonce_ok = true;
 $database_ok = true;
@@ -19,6 +19,14 @@ function add_filter($name, $callback, $priority = 10)
 {
     $GLOBALS['filters'][$name][] = $callback;
 }
+function apply_filters($name, $value)
+{
+    foreach ($GLOBALS['filters'][$name] ?? [] as $callback) {
+        $value = $callback($value);
+    }
+    return $value;
+}
+function mbb_emoji_page($embedded = false) {}
 function remove_filter($name, $callback, $priority = 10) {}
 function plugin_basename($file)
 {
@@ -106,7 +114,10 @@ function wp_enqueue_style($handle, $url, $deps = [], $version = null)
 {
     $GLOBALS['styles'][] = $handle;
 }
-function wp_add_inline_script($handle, $script, $position = 'after') {}
+function wp_add_inline_script($handle, $script, $position = 'after')
+{
+    $GLOBALS['script_inline'][$handle][$position][] = $script;
+}
 function wp_add_inline_style($handle, $css)
 {
     $GLOBALS['inline'][] = $handle;
@@ -130,7 +141,9 @@ function mbb_emoji_config()
 }
 
 require __DIR__ . '/../plugin/includes/admin-settings.php';
+require __DIR__ . '/../plugin/components.php';
 require __DIR__ . '/../plugin/presentation.php';
+require __DIR__ . '/../plugin/teaching.php';
 function mbb_settings_assert($condition, $message)
 {
     if (!$condition) {
@@ -148,6 +161,48 @@ function mbb_settings_submit($values)
     throw new RuntimeException('Settings handler did not terminate');
 }
 $baseline = $options;
+$styles = [];
+foreach ($actions['admin_enqueue_scripts'] ?? [] as $callback) {
+    $callback('dashboard');
+}
+mbb_settings_assert(!in_array('mbb-settings', $styles, true), 'Settings CSS leaked to dashboard');
+foreach ($actions['admin_enqueue_scripts'] ?? [] as $callback) {
+    $callback('settings_page_markbridge');
+}
+mbb_settings_assert(in_array('mbb-settings', $styles, true), 'Grouped settings CSS missing');
+mbb_settings_assert(
+    array_keys(mbb_admin_settings_tabs()) === ['general', 'emoji'],
+    'Core settings were not grouped',
+);
+add_filter('mbb_admin_settings_tabs', static function ($tabs) {
+    $tabs['updates'] = ['label' => '<Updates>', 'render' => 'mbb_emoji_page'];
+    $tabs['bad'] = ['label' => 'Bad', 'render' => 'not_a_renderer'];
+    $tabs['../escape'] = ['label' => 'Bad key', 'render' => 'mbb_emoji_page'];
+    $tabs['private'] = [
+        'label' => 'Private',
+        'render' => 'mbb_emoji_page',
+        'capability' => 'manage_network_options',
+    ];
+    return $tabs;
+});
+mbb_settings_assert(
+    array_keys(mbb_admin_settings_tabs()) === ['general', 'emoji', 'updates'],
+    'Invalid or unauthorized settings tab was exposed',
+);
+ob_start();
+mbb_admin_settings_navigation('updates');
+$navigation = ob_get_clean();
+mbb_settings_assert(
+    str_contains($navigation, 'tab=updates') &&
+        str_contains($navigation, 'aria-current="page"') &&
+        str_contains($navigation, '&lt;Updates&gt;') &&
+        !str_contains($navigation, '../escape'),
+    'Grouped settings navigation or escaping failed',
+);
+$can_manage = false;
+mbb_settings_assert(mbb_admin_settings_tabs() === [], 'Author could access settings tabs');
+$can_manage = true;
+mbb_settings_assert($options === $baseline, 'Navigation wrote settings');
 mbb_settings_assert(mbb_display_preferences() === mbb_display_defaults(), 'Fresh defaults changed');
 $valid = [
     'source_font_size' => '18',
@@ -362,4 +417,62 @@ mbb_settings_assert(
     array_diff_key($options, [MBB_DISPLAY_OPTION => true]) === $baseline,
     'Rendering wrote legacy options',
 );
+$special = "<!--<script></script>&'\"";
+$GLOBALS['mbb_components'] = [
+    'html-fixture' => [
+        'id' => 'html-fixture',
+        'title' => $special,
+        'version' => '0.1.0',
+        'status' => 'available',
+        'protocolVersion' => 1,
+        'minMarkBridge' => '1.9.0-dev.1',
+        'budgets' => mbb_component_budget_limits(),
+        'schema' => [
+            'type' => 'object',
+            'additionalProperties' => false,
+            'properties' => ['text' => ['type' => 'string', 'enum' => [$special]]],
+        ],
+        'defaults' => (object) ['text' => $special],
+        'resource' => ['url' => '/fixed-fixture.html', 'sha256' => str_repeat('a', 64)],
+    ],
+];
+foreach (
+    [
+        [$actions['enqueue_block_editor_assets'], ['mbb-components']],
+        [
+            array_merge($actions['wp_enqueue_scripts'], [
+                'mbb_enqueue_teaching_assets',
+                'mbb_enqueue_teaching_assets',
+            ]),
+            ['mbb-presentation-loader', 'mbb-components'],
+        ],
+    ]
+    as [$callbacks, $handles]
+) {
+    $scripts = $script_inline = [];
+    foreach ($callbacks as $callback) {
+        $callback();
+    }
+    foreach ($handles as $handle) {
+        $prefix = 'window.MBBComponents=';
+        $registries = array_values(
+            array_filter(
+                $script_inline[$handle]['before'] ?? [],
+                static fn($script) => str_starts_with($script, 'window.MBBComponents='),
+            ),
+        );
+        mbb_settings_assert(
+            count($registries) === 1,
+            'Actual enqueue omitted or duplicated its registry inline for ' . $handle,
+        );
+        $encoded = substr($registries[0], strlen($prefix), -1);
+        mbb_settings_assert(
+            !preg_match('/[<>&\']/', $encoded) &&
+                str_contains($encoded, '\\u0022') &&
+                json_decode($encoded, true, 16, JSON_THROW_ON_ERROR) ===
+                    json_decode(mbb_component_json(mbb_component_available()), true),
+            'Registry inline exposed HTML script syntax or changed its decoded provider data',
+        );
+    }
+}
 echo "Settings defaults, capability, nonce, strict input, persistence, failure, legacy options, links and real presentation effects passed.\n";

@@ -1,0 +1,379 @@
+<?php
+// Pure registry contracts use only a newly created synthetic directory.
+$directory = sys_get_temp_dir() . '/mbb-registry-' . bin2hex(random_bytes(8));
+mkdir($directory);
+mkdir($directory . '/fixture');
+define('WP_PLUGIN_DIR', $directory);
+function add_action(...$args) {}
+function wp_normalize_path($path)
+{
+    return str_replace('\\', '/', $path);
+}
+function plugins_url($name, $file)
+{
+    return 'http://markbridge.invalid/plugins/' . basename(dirname($file)) . '/' . $name;
+}
+class WP_Error
+{
+    public function __construct(public string $code) {}
+}
+function mbb_error($code, ...$args)
+{
+    return new WP_Error($code);
+}
+function site_url()
+{
+    return 'http://markbridge.invalid';
+}
+function wp_json_encode($value, $flags = 0)
+{
+    return json_encode($value, $flags);
+}
+function current_user_can($capability)
+{
+    return $GLOBALS['diagnostic_admin'] ?? false;
+}
+function esc_html($text)
+{
+    return htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+}
+require dirname(__DIR__) . '/plugin/components.php';
+function registry_assert($ok, $message)
+{
+    if (!$ok) {
+        throw new RuntimeException($message);
+    }
+}
+$file = $directory . '/fixture/frame.html';
+file_put_contents($file, '<!doctype html><p>Fixed fixture</p>');
+$provider = [
+    'version' => '0.1.0',
+    'protocolVersion' => 1,
+    'minMarkBridge' => '1.6.0',
+    'budgets' => [
+        'resourceBytes' => 524288,
+        'startupMs' => 5000,
+        'wallMs' => 2000,
+        'traceFrames' => 8192,
+        'traceBytes' => 524288,
+    ],
+    'title' => 'Fixture',
+    'schema' => [
+        'type' => 'object',
+        'additionalProperties' => false,
+        'required' => ['n'],
+        'properties' => ['n' => ['type' => 'number', 'minimum' => 0, 'maximum' => 64]],
+    ],
+    'defaults' => ['n' => 3],
+    'resource' => [
+        'file' => $file,
+        'url' => plugins_url('frame.html', $file),
+        'sha256' => hash_file('sha256', $file),
+    ],
+];
+try {
+    registry_assert(
+        markbridge_register_teaching_component('fixture', $provider),
+        'Valid provider rejected',
+    );
+    registry_assert(
+        !markbridge_register_teaching_component('fixture', $provider),
+        'Duplicate provider replaced existing resource',
+    );
+    registry_assert(
+        mbb_component_registry()['fixture']['defaults']->n === 3,
+        'Duplicate changed defaults',
+    );
+    registry_assert(markbridge_teaching_supports_ui_locale(), 'Locale capability probe missing');
+    registry_assert(
+        !array_key_exists(
+            'supportsUiLocale',
+            mbb_component_public(mbb_component_registry()['fixture']),
+        ),
+        'Legacy DTO gained an optional field',
+    );
+    foreach ([true, false] as $flag) {
+        $localeProvider = $provider;
+        $localeProvider['supportsUiLocale'] = $flag;
+        $localeId = $flag ? 'locale-enabled' : 'locale-disabled';
+        registry_assert(
+            markbridge_register_teaching_component($localeId, $localeProvider) &&
+                mbb_component_public(mbb_component_registry()[$localeId])['supportsUiLocale'] ===
+                    $flag,
+            'Trusted locale capability was not preserved',
+        );
+    }
+    foreach ([null, 1, 'true', []] as $flag) {
+        $localeProvider = $provider;
+        $localeProvider['supportsUiLocale'] = $flag;
+        registry_assert(
+            !markbridge_register_teaching_component('bad-locale', $localeProvider),
+            'Nonboolean locale capability accepted',
+        );
+    }
+    $numeric = $provider;
+    $numeric['schema'] = [
+        'type' => 'object',
+        'additionalProperties' => false,
+        'required' => ['1', '01'],
+        'properties' => ['1' => ['type' => 'string'], '01' => ['type' => 'string']],
+    ];
+    $numeric['defaults'] = json_decode('{"1":"numeric","01":"leading"}');
+    registry_assert(
+        markbridge_register_teaching_component('numeric-keys', $numeric) &&
+            mbb_component_registry()['numeric-keys']['defaults']->{'1'} === 'numeric' &&
+            mbb_component_registry()['numeric-keys']['defaults']->{'01'} === 'leading',
+        'Distinct JSON numeric property names collapsed during registration',
+    );
+    $numeric['schema']['required'] = ['1', '1'];
+    registry_assert(
+        !markbridge_register_teaching_component('duplicate-required', $numeric),
+        'Repeated required property accepted',
+    );
+    foreach (
+        [
+            ['type' => 'string', 'pattern' => '^safe$'],
+            ['type' => 'object', 'properties' => [], 'additionalProperties' => true],
+            ['type' => 'array', 'minItems' => 5, 'maxItems' => 1, 'items' => ['type' => 'number']],
+            [
+                'type' => 'object',
+                'properties' => [],
+                'required' => ['missing'],
+                'additionalProperties' => false,
+            ],
+            ['type' => 'number', 'minimum' => null],
+        ]
+        as $schema
+    ) {
+        registry_assert(
+            !mbb_component_schema_definition($schema),
+            'Unsupported schema silently ignored',
+        );
+    }
+    foreach (
+        [NAN, INF, (object) ['n' => NAN], (object) ['n' => 65], (object) ['n' => '3']]
+        as $defaults
+    ) {
+        $bad = $provider;
+        $bad['defaults'] = $defaults;
+        registry_assert(
+            !markbridge_register_teaching_component('bad-default', $bad),
+            'Bad defaults accepted or interrupted the page',
+        );
+    }
+    $bad = $provider;
+    $bad['resource']['url'] = 'https://invalid.example/frame.html';
+    registry_assert(
+        !markbridge_register_teaching_component('bad-url', $bad),
+        'Remote resource accepted',
+    );
+    $bad = $provider;
+    $bad['resource']['sha256'] = '0';
+    registry_assert(
+        !markbridge_register_teaching_component('bad-hash', $bad),
+        'Malformed digest accepted',
+    );
+    $bad = $provider;
+    $bad['resource']['sha256'] = str_repeat('0', 64);
+    registry_assert(
+        markbridge_register_teaching_component('bad-integrity', $bad),
+        'Known bad integrity should remain diagnostic',
+    );
+    registry_assert(
+        mbb_component_registry()['bad-integrity']['status'] === 'resource-integrity',
+        'Digest failure enabled provider',
+    );
+    ini_set('serialize_precision', '14');
+    registry_assert(
+        mbb_component_json(1.000000000000001) !== mbb_component_json(1.000000000000002),
+        'Distinct floats collapsed in public data',
+    );
+    registry_assert(ini_get('serialize_precision') === '14', 'Precision setting was not restored');
+    registry_assert(
+        mbb_component_schema(1.0, ['type' => 'number', 'enum' => [1]]),
+        'JSON numeric enum rejected same numeric value',
+    );
+    registry_assert(
+        mbb_component_schema((object) ['n' => 1], [
+            'type' => 'object',
+            'additionalProperties' => false,
+            'properties' => ['n' => ['type' => 'number']],
+            'enum' => [(object) ['n' => 1.0]],
+        ]),
+        'JSON object enum used object identity',
+    );
+    $original = $GLOBALS['mbb_components'];
+    $GLOBALS['mbb_components'] = [];
+    $base =
+        '<!-- wp:mbb/component {"id":"near","component":"fixture","componentVersion":"0.1.0","version":1,"params":{"n":1.000000000000001}} -->';
+    $candidate = str_replace('1.000000000000001', '1.000000000000002', $base);
+    registry_assert(
+        mbb_component_admit($candidate, $base) instanceof WP_Error,
+        'Missing provider accepted distinct near floats',
+    );
+    $GLOBALS['mbb_components'] = $original;
+    registry_assert(
+        !mbb_component_schema((object) ['n' => '3'], $provider['schema']),
+        'Numeric string was coerced',
+    );
+    foreach (["\u{2028}", "\u{2029}"] as $separator) {
+        registry_assert(
+            mbb_component_pure_params((object) ['text' => str_repeat($separator, 3000)]),
+            'Line separators were counted as escaped source bytes',
+        );
+        registry_assert(
+            !mbb_component_pure_params((object) ['text' => str_repeat($separator, 6000)]),
+            'Line separator byte limit was ignored',
+        );
+    }
+    foreach (
+        [
+            ['type' => 'string', 'enum' => ['valid', "\xFF"]],
+            [
+                'type' => 'object',
+                'properties' => ["\xFF" => ['type' => 'string']],
+                'additionalProperties' => false,
+            ],
+        ]
+        as $badSchema
+    ) {
+        $bad = $provider;
+        $bad['schema'] = [
+            'type' => 'object',
+            'properties' => ['optional' => $badSchema],
+            'additionalProperties' => false,
+        ];
+        $bad['defaults'] = (object) [];
+        registry_assert(
+            !markbridge_register_teaching_component('bad-utf8', $bad),
+            'Invalid schema UTF8 poisoned public registry',
+        );
+    }
+    registry_assert(
+        is_string(mbb_component_json(mbb_component_available())),
+        'Rejected provider poisoned public JSON',
+    );
+    $unsupported = $provider;
+    $unsupported['protocolVersion'] = 2;
+    registry_assert(
+        markbridge_register_teaching_component('future-protocol', $unsupported),
+        'Incompatible provider could not retain diagnostics',
+    );
+    registry_assert(
+        mbb_component_registry()['future-protocol']['status'] === 'protocol-incompatible',
+        'Protocol mismatch was usable',
+    );
+    $future = $provider;
+    $future['minMarkBridge'] = '999.0.0';
+    registry_assert(
+        markbridge_register_teaching_component('future-core', $future) &&
+            mbb_component_registry()['future-core']['status'] === 'version-incompatible',
+        'Future minimum version was usable',
+    );
+    $candidate = $provider;
+    preg_match(
+        '/^ \* Version: ([^ \r\n]+)/m',
+        file_get_contents(dirname(__DIR__) . '/plugin/markdown-block-bridge.php'),
+        $headerVersion,
+    );
+    $currentVersion = $headerVersion[1];
+    $baseVersion = explode('-', $currentVersion, 2)[0];
+    $candidate['minMarkBridge'] = str_contains($currentVersion, '-')
+        ? $baseVersion . '-dev.1'
+        : $currentVersion;
+    registry_assert(
+        markbridge_register_teaching_component('candidate', $candidate) &&
+            mbb_component_registry()['candidate']['status'] === 'available',
+        'Current core rejected its same-base candidate floor',
+    );
+    $stable = $provider;
+    $stable['minMarkBridge'] = $baseVersion;
+    registry_assert(
+        markbridge_register_teaching_component('stable-only', $stable) &&
+            mbb_component_registry()['stable-only']['status'] ===
+                (str_contains($currentVersion, '-') ? 'version-incompatible' : 'available'),
+        'Candidate claimed stable compatibility',
+    );
+    $lowerStable = $provider;
+    $lowerStable['minMarkBridge'] = '1.9.0';
+    registry_assert(
+        markbridge_register_teaching_component('lower-stable', $lowerStable) &&
+            mbb_component_registry()['lower-stable']['status'] === 'available',
+        'Current core rejected the supported lower stable version',
+    );
+    foreach (mbb_component_budget_limits() as $key => $max) {
+        foreach ([0, -1, $max + 1, '1', 1.0] as $badValue) {
+            $bad = $provider;
+            $bad['budgets'][$key] = $badValue;
+            registry_assert(
+                !markbridge_register_teaching_component('bad-budget', $bad),
+                'Budget type or hard limit ignored: ' . $key,
+            );
+        }
+    }
+    $bad = $provider;
+    $bad['unexpected'] = true;
+    registry_assert(
+        !markbridge_register_teaching_component('bad-field', $bad),
+        'Unknown SDK field ignored',
+    );
+    $bad = $provider;
+    unset($bad['budgets']['wallMs']);
+    registry_assert(
+        !markbridge_register_teaching_component('missing-budget', $bad),
+        'Missing runtime budget accepted',
+    );
+    $limited = $provider;
+    $limited['budgets']['resourceBytes'] = 1;
+    registry_assert(
+        markbridge_register_teaching_component('limited', $limited) &&
+            mbb_component_registry()['limited']['status'] === 'resource-limit',
+        'Resource exceeded declared budget',
+    );
+    $missing = $provider;
+    $missing['resource']['file'] = dirname($file) . '/missing.html';
+    $missing['resource']['url'] = plugins_url('missing.html', $missing['resource']['file']);
+    registry_assert(
+        markbridge_register_teaching_component('missing-file', $missing) &&
+            mbb_component_registry()['missing-file']['status'] === 'resource-unavailable',
+        'Missing local resource lost its diagnostic',
+    );
+    $GLOBALS['diagnostic_admin'] = false;
+    ob_start();
+    mbb_component_diagnostics_page();
+    $html = ob_get_clean();
+    registry_assert($html === '', 'Unauthenticated diagnostics exposed provider data');
+    $GLOBALS['diagnostic_admin'] = true;
+    ob_start();
+    mbb_component_diagnostics_page();
+    $html = ob_get_clean();
+    registry_assert(
+        str_contains($html, 'future-protocol') &&
+            str_contains($html, 'protocol-incompatible') &&
+            !str_contains($html, $directory) &&
+            !str_contains($html, 'http://'),
+        'Diagnostics leaked paths or omitted status',
+    );
+    registry_assert(
+        count(mbb_component_available()) < count(mbb_component_registry()),
+        'Unavailable providers entered author menu',
+    );
+    while (count(mbb_component_registry()) < 32) {
+        registry_assert(
+            markbridge_register_teaching_component(
+                'capacity-' . count(mbb_component_registry()),
+                $provider,
+            ),
+            'Provider capacity setup failed',
+        );
+    }
+    registry_assert(
+        !markbridge_register_teaching_component('capacity-overflow', $provider),
+        'Provider registry was unbounded',
+    );
+    echo "Registry closed schemas, strong types, bounded local resources, conflicts and registration failure recovery passed.\n";
+} finally {
+    unlink($file);
+    rmdir($directory . '/fixture');
+    rmdir($directory);
+}

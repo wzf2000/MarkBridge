@@ -22,7 +22,7 @@ try {
       (error) => {
         assert.equal(error.location, 'line:3');
         assert(!error.message.includes('PRIVATE_BODY') && !error.message.includes('PRIVATE_LABEL'));
-        assert.equal(w.MBB.formatLocation(error.location), 'Markdown 第 3 行所在区块');
+        assert.equal(w.MBB.formatLocation(error.location), 'Block at Markdown line 3');
         return true;
       },
     );
@@ -75,7 +75,7 @@ try {
   );
   assert.equal(
     w.MBB.formatLocation('blocks[1][2].attributes.align'),
-    '第 2 → 3 个区块，属性 align',
+    'Block 2 → 3, attribute align',
   );
   assert.equal(w.MBB.formatLocation('/srv/private/source.md'), '');
   console.log(

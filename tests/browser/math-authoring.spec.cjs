@@ -307,10 +307,12 @@ test('native math inspection accepts recoverable TeX and rejects lost attributes
     };
   });
   expect(result.example).toBeNull();
-  expect(result.mismatched).toMatch(/不一致/);
-  expect(result.missingAnnotation).toMatch(/语义结构|源码注释/);
-  expect(result.styled).toMatch(/额外样式/);
-  expect(result.html).toMatch(/不支持|语义结构/);
+  expect(result.mismatched).toBe('TeX inside native MathML differs from the formula source.');
+  expect(result.missingAnnotation).toBe('The native MathML lacks verifiable semantic structure.');
+  expect(result.styled).toBe(
+    'The native formula has extra styles or attributes and cannot be converted without loss.',
+  );
+  expect(result.html).toBe('The native MathML lacks verifiable semantic structure.');
 });
 
 test('native math conversion rejects a display tree that disagrees with its TeX annotation', async ({
@@ -333,7 +335,9 @@ test('native math conversion rejects a display tree that disagrees with its TeX 
   });
   expect(result.structural).toBeNull();
   expect(result.matching).toBeNull();
-  expect(result.misleading).toMatch(/不一致/);
+  expect(result.misleading).toBe(
+    "The native formula's display structure differs from its TeX and cannot be converted without loss.",
+  );
 });
 
 test('selected native inline math converts explicitly to a paired MathJax span', async ({

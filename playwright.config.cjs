@@ -2,6 +2,10 @@
 for (const key of ['NO_PROXY', 'no_proxy'])
   process.env[key] = [process.env[key], '127.0.0.1', 'localhost'].filter(Boolean).join(',');
 const { defineConfig, devices } = require('@playwright/test');
+const fixturePort = Number(process.env.MARKBRIDGE_TEST_BROWSER_PORT || 8765);
+if (!Number.isInteger(fixturePort) || fixturePort < 1024 || fixturePort > 65535)
+  throw Error('MARKBRIDGE_TEST_BROWSER_PORT must be a local unprivileged port.');
+const fixtureOrigin = 'http://127.0.0.1:' + fixturePort;
 
 module.exports = defineConfig({
   testDir: './tests/browser',
@@ -12,7 +16,7 @@ module.exports = defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['line'], ['html', { open: 'never' }]] : 'list',
   use: {
-    baseURL: 'http://127.0.0.1:8765',
+    baseURL: fixtureOrigin,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     ...(process.env.MARKBRIDGE_CHROMIUM_PATH
@@ -25,8 +29,8 @@ module.exports = defineConfig({
   ],
   webServer: {
     command: 'node tests/browser/server.cjs',
-    url: 'http://127.0.0.1:8765/health',
-    reuseExistingServer: !process.env.CI,
+    url: fixtureOrigin + '/health',
+    reuseExistingServer: !process.env.CI && process.env.MARKBRIDGE_REUSE_BROWSER_FIXTURE === '1',
     timeout: 15_000,
   },
 });

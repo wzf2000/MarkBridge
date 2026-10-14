@@ -38,7 +38,14 @@ function mbb_save($request)
 {
     return null;
 }
+function clean_post_cache($id) {}
+function wp_cache_delete($id, $group) {}
+function is_wp_error($value)
+{
+    return $value instanceof WP_Error;
+}
 require __DIR__ . '/../plugin/source-sync.php';
+require __DIR__ . '/../plugin/save-commit.php';
 
 $dir = sys_get_temp_dir() . '/mbb-source-writeback-' . bin2hex(random_bytes(4));
 mkdir($dir, 0700);
@@ -57,6 +64,11 @@ assert(mbb_source_target(7) === $real);
 assert(mbb_source_fingerprint($real)['contents'] === "before\n");
 assert(mbb_source_atomic_write($real, "after\n") === true);
 assert(file_get_contents($real) === "after\n");
+assert(mbb_save_restore_source(get_post(7), $real, "after\n", "before\n"));
+assert(file_get_contents($real) === "before\n");
+file_put_contents($real, "third-party\n");
+assert(!mbb_save_restore_source(get_post(7), $real, "after\n", "before\n"));
+assert(file_get_contents($real) === "third-party\n");
 
 $mbb_test_meta[7]['_mbb_source_path_hash'] = hash('sha256', $real . 'changed');
 $error = mbb_source_target(7);

@@ -30,7 +30,9 @@ The copied legacy Prism/clipboard assets keep their original bytes and notices; 
 
 Emoji image packs are **not distributed**. Builds use Unicode characters rendered by the reader's fonts.
 
-PHP dependency versions and source references are pinned in `plugin/includes/php-converter/composer.lock`. The build includes their source and license files; users do not run Composer on the WordPress server. Selecting the PHP candidate is explicit, and does not replace the default Node backend.
+PHP dependency versions and source references are pinned in `plugin/includes/php-converter/composer.lock`. The build includes their source and license files; users do not run Composer on the WordPress server. New installations default to PHP. Existing Node configurations are retained until an administrator explicitly selects and verifies another backend; there is no automatic fallback.
+
+Readable MarkBridge source and build instructions are maintained in the repository's `src/`, `plugin/`, `scripts/`, and `CONTRIBUTING.md`. Dependency source revisions and package integrity values are recorded in the JavaScript and PHP lockfiles. The upstream MathJax renderer source is maintained at [MathJax-src](https://github.com/mathjax/MathJax-src). The locked [New Computer Modern package](https://registry.npmjs.org/@mathjax/mathjax-newcm-font/4.1.3) provides readable module files and font data; its declared GitHub font repository was unavailable when checked and must not be presented as a verified source link. License texts are retained in `plugin/licenses`.
 
 ## Development tools
 

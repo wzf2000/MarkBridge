@@ -1,0 +1,220 @@
+[
+  {
+    "source": ":::mbb:v1 code-tabs {\"id\":\"examples\",\"defaultTab\":\"variant4\",\"tabs\":[{\"id\":\"variant0\",\"title\":\"\",\"terminalNewline\":false},{\"id\":\"variant1\",\"title\":\"版本 1\",\"terminalNewline\":false},{\"id\":\"variant2\",\"title\":\"\",\"terminalNewline\":true},{\"id\":\"variant3\",\"title\":\"版本 3\",\"terminalNewline\":true},{\"id\":\"variant4\",\"title\":\"\",\"terminalNewline\":false}]}\n\n```javascript\n\n```\n\n```python\nx\n```\n\n```javascript\na\n```\n\n```python\n\talpha  \r\n\tbeta\n\r\n```\n\n```javascript\na\rb\r\n```\n\n:::mbb:end\n",
+    "tabs": [
+      {
+        "id": "variant0",
+        "title": "",
+        "language": "javascript",
+        "code": ""
+      },
+      {
+        "id": "variant1",
+        "title": "版本 1",
+        "language": "python",
+        "code": "x"
+      },
+      {
+        "id": "variant2",
+        "title": "",
+        "language": "javascript",
+        "code": "a\n"
+      },
+      {
+        "id": "variant3",
+        "title": "版本 3",
+        "language": "python",
+        "code": "\talpha  \r\n\tbeta\n\r\n"
+      },
+      {
+        "id": "variant4",
+        "title": "",
+        "language": "javascript",
+        "code": "a\rb\r"
+      }
+    ]
+  },
+  {
+    "source": ":::mbb:v1 code-tabs {\"id\":\"examples\",\"defaultTab\":\"variant2\",\"tabs\":[{\"id\":\"variant0\",\"title\":\"\",\"terminalNewline\":true},{\"id\":\"variant1\",\"title\":\"版本 1\",\"terminalNewline\":true},{\"id\":\"variant2\",\"title\":\"\",\"terminalNewline\":true}]}\n\n````javascript\n```\n:::mbb:end\n~~~\n````\n\n```python\n<script> & </code>\n```\n\n```javascript\n😀  \t\n\n```\n\n:::mbb:end\n",
+    "tabs": [
+      {
+        "id": "variant0",
+        "title": "",
+        "language": "javascript",
+        "code": "```\n:::mbb:end\n~~~\n"
+      },
+      {
+        "id": "variant1",
+        "title": "版本 1",
+        "language": "python",
+        "code": "<script> & </code>\n"
+      },
+      {
+        "id": "variant2",
+        "title": "",
+        "language": "javascript",
+        "code": "😀  \t\n\n"
+      }
+    ]
+  },
+  {
+    "source": ":::mbb:v1 steps {\"id\":\"course\",\"title\":\"课程\",\"mode\":\"staged\",\"previous\":true,\"next\":true,\"full\":true}\n\n:::mbb:v1 step {\"id\":\"lesson\",\"title\":\"第一阶段\"}\n\n:::mbb:v1 collapse {\"id\":\"fold\",\"title\":\"展开代码\",\"open\":false}\n\n:::mbb:v1 code-tabs {\"id\":\"examples\",\"defaultTab\":\"variant4\",\"tabs\":[{\"id\":\"variant0\",\"title\":\"\",\"terminalNewline\":false},{\"id\":\"variant1\",\"title\":\"版本 1\",\"terminalNewline\":false},{\"id\":\"variant2\",\"title\":\"\",\"terminalNewline\":true},{\"id\":\"variant3\",\"title\":\"版本 3\",\"terminalNewline\":true},{\"id\":\"variant4\",\"title\":\"\",\"terminalNewline\":false}]}\n\n```javascript\n\n```\n\n```python\nx\n```\n\n```javascript\na\n```\n\n```python\n\talpha  \r\n\tbeta\n\r\n```\n\n```javascript\na\rb\r\n```\n\n:::mbb:end\n\n:::mbb:end\n\n:::mbb:end\n\n:::mbb:end\n",
+    "tabs": [
+      {
+        "id": "variant0",
+        "title": "",
+        "language": "javascript",
+        "code": ""
+      },
+      {
+        "id": "variant1",
+        "title": "版本 1",
+        "language": "python",
+        "code": "x"
+      },
+      {
+        "id": "variant2",
+        "title": "",
+        "language": "javascript",
+        "code": "a\n"
+      },
+      {
+        "id": "variant3",
+        "title": "版本 3",
+        "language": "python",
+        "code": "\talpha  \r\n\tbeta\n\r\n"
+      },
+      {
+        "id": "variant4",
+        "title": "",
+        "language": "javascript",
+        "code": "a\rb\r"
+      }
+    ]
+  },
+  {
+    "source": "```html\n<pre>\n```\n\n:::mbb:v1 code-tabs {\"id\":\"examples\",\"defaultTab\":\"variant4\",\"tabs\":[{\"id\":\"variant0\",\"title\":\"\",\"terminalNewline\":false},{\"id\":\"variant1\",\"title\":\"版本 1\",\"terminalNewline\":false},{\"id\":\"variant2\",\"title\":\"\",\"terminalNewline\":true},{\"id\":\"variant3\",\"title\":\"版本 3\",\"terminalNewline\":true},{\"id\":\"variant4\",\"title\":\"\",\"terminalNewline\":false}]}\n\n```javascript\n\n```\n\n```python\nx\n```\n\n```javascript\na\n```\n\n```python\n\talpha  \r\n\tbeta\n\r\n```\n\n```javascript\na\rb\r\n```\n\n:::mbb:end\n\n```html\n</pre>\n```\n",
+    "tabs": [
+      {
+        "id": "variant0",
+        "title": "",
+        "language": "javascript",
+        "code": ""
+      },
+      {
+        "id": "variant1",
+        "title": "版本 1",
+        "language": "python",
+        "code": "x"
+      },
+      {
+        "id": "variant2",
+        "title": "",
+        "language": "javascript",
+        "code": "a\n"
+      },
+      {
+        "id": "variant3",
+        "title": "版本 3",
+        "language": "python",
+        "code": "\talpha  \r\n\tbeta\n\r\n"
+      },
+      {
+        "id": "variant4",
+        "title": "",
+        "language": "javascript",
+        "code": "a\rb\r"
+      }
+    ]
+  },
+  {
+    "source": ":::mbb:v1 code-tabs {\"id\":\"combined\",\"defaultTab\":\"combined-code\",\"tabs\":[{\"id\":\"combined-code\",\"title\":\"\",\"terminalNewline\":false}]}\n\n```javascript\nconst html=\"<pre>\";\n\t// exact  \n```\n\n:::mbb:end\n\n<pre>\n:::mbb:v1 code-tabs {}\n:::mbb:end\n</pre>\n",
+    "tabs": [
+      {
+        "id": "combined-code",
+        "title": "",
+        "language": "javascript",
+        "code": "const html=\"<pre>\";\n\t// exact  "
+      }
+    ]
+  },
+  {
+    "source": ":::mbb:v1 code-tabs {\"id\":\"combined\",\"defaultTab\":\"combined-code\",\"tabs\":[{\"id\":\"combined-code\",\"title\":\"\",\"terminalNewline\":false}]}\r\n\r\n```javascript\r\nconst html=\"<pre>\";\r\n\t// exact  \n```\r\n\r\n:::mbb:end\r\n\r\n<pre>\r\n:::mbb:v1 code-tabs {}\r\n:::mbb:end\r\n</pre>\r\n",
+    "tabs": [
+      {
+        "id": "combined-code",
+        "title": "",
+        "language": "javascript",
+        "code": "const html=\"<pre>\";\r\n\t// exact  "
+      }
+    ]
+  },
+  {
+    "source": "```js\nconst html=\"<pre>\";\n```\n\n:::mbb:v1 code-tabs {\"id\":\"combined\",\"defaultTab\":\"combined-code\",\"tabs\":[{\"id\":\"combined-code\",\"title\":\"\",\"terminalNewline\":true}]}\n\n```javascript\nconst x = 1;\n```\n\n:::mbb:end\n\n<pre>\n:::mbb:v1 code-tabs {}\n:::mbb:end\n</pre>\n",
+    "tabs": [
+      {
+        "id": "combined-code",
+        "title": "",
+        "language": "javascript",
+        "code": "const x = 1;\n"
+      }
+    ]
+  },
+  {
+    "source": "```js\r\nconst html=\"<pre>\";\r\n```\r\n\r\n:::mbb:v1 code-tabs {\"id\":\"combined\",\"defaultTab\":\"combined-code\",\"tabs\":[{\"id\":\"combined-code\",\"title\":\"\",\"terminalNewline\":true}]}\r\n\r\n```javascript\r\nconst x = 1;\r\n```\r\n\r\n:::mbb:end\r\n\r\n<pre>\r\n:::mbb:v1 code-tabs {}\r\n:::mbb:end\r\n</pre>\r\n",
+    "tabs": [
+      {
+        "id": "combined-code",
+        "title": "",
+        "language": "javascript",
+        "code": "const x = 1;\r\n"
+      }
+    ]
+  },
+  {
+    "source": ":::mbb:v1 code-tabs {\"id\":\"combined\",\"defaultTab\":\"combined-code\",\"tabs\":[{\"id\":\"combined-code\",\"title\":\"<pre>\",\"terminalNewline\":true}]}\n\n```javascript\nconst x = 1;\n```\n\n:::mbb:end\n\n<pre>\n:::mbb:v1 code-tabs {}\n:::mbb:end\n</pre>\n",
+    "tabs": [
+      {
+        "id": "combined-code",
+        "title": "<pre>",
+        "language": "javascript",
+        "code": "const x = 1;\n"
+      }
+    ]
+  },
+  {
+    "source": ":::mbb:v1 code-tabs {\"id\":\"combined\",\"defaultTab\":\"combined-code\",\"tabs\":[{\"id\":\"combined-code\",\"title\":\"<pre>\",\"terminalNewline\":true}]}\r\n\r\n```javascript\r\nconst x = 1;\r\n```\r\n\r\n:::mbb:end\r\n\r\n<pre>\r\n:::mbb:v1 code-tabs {}\r\n:::mbb:end\r\n</pre>\r\n",
+    "tabs": [
+      {
+        "id": "combined-code",
+        "title": "<pre>",
+        "language": "javascript",
+        "code": "const x = 1;\r\n"
+      }
+    ]
+  },
+  {
+    "source": "`const html=\"<pre>\";`\n\n:::mbb:v1 code-tabs {\"id\":\"combined\",\"defaultTab\":\"combined-code\",\"tabs\":[{\"id\":\"combined-code\",\"title\":\"\",\"terminalNewline\":true}]}\n\n```javascript\nconst x = 1;\n```\n\n:::mbb:end\n\n<pre>\n:::mbb:v1 code-tabs {}\n:::mbb:end\n</pre>\n",
+    "tabs": [
+      {
+        "id": "combined-code",
+        "title": "",
+        "language": "javascript",
+        "code": "const x = 1;\n"
+      }
+    ],
+    "normalizesInlineGT": true
+  },
+  {
+    "source": "`const html=\"<pre>\";`\r\n\r\n:::mbb:v1 code-tabs {\"id\":\"combined\",\"defaultTab\":\"combined-code\",\"tabs\":[{\"id\":\"combined-code\",\"title\":\"\",\"terminalNewline\":true}]}\r\n\r\n```javascript\r\nconst x = 1;\r\n```\r\n\r\n:::mbb:end\r\n\r\n<pre>\r\n:::mbb:v1 code-tabs {}\r\n:::mbb:end\r\n</pre>\r\n",
+    "tabs": [
+      {
+        "id": "combined-code",
+        "title": "",
+        "language": "javascript",
+        "code": "const x = 1;\r\n"
+      }
+    ],
+    "normalizesInlineGT": true
+  }
+]

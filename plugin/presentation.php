@@ -117,6 +117,30 @@ function mbb_enqueue_footnote_assets()
     );
 }
 
+function mbb_code_languages()
+{
+    static $languages = null;
+    if ($languages !== null) {
+        return $languages;
+    }
+    $languages = ['text', 'plain', 'plaintext', 'none'];
+    $components = json_decode(file_get_contents(__DIR__ . '/vendor/prism/components.json'), true);
+    foreach ($components['languages'] ?? [] as $id => $entry) {
+        if (
+            !preg_match('/^[a-z0-9_-]{1,64}$/D', $id) ||
+            !is_file(__DIR__ . '/vendor/prism/components/prism-' . $id . '.min.js')
+        ) {
+            continue;
+        }
+        $languages[] = $id;
+        foreach ((array) ($entry['alias'] ?? []) as $alias) {
+            if (is_string($alias) && preg_match('/^[a-z0-9_+-]{1,64}$/D', $alias)) {
+                $languages[] = $alias;
+            }
+        }
+    }
+    return array_values(array_unique($languages));
+}
 function mbb_detect_presentation($html)
 {
     if (is_admin() || !is_string($html)) {
@@ -161,6 +185,7 @@ add_action(
         $styles = [
             $base . 'prism/themes/prism-solarizedlight.css',
             $base . 'prism/plugins/toolbar/prism-toolbar.css',
+            plugins_url(mbb_asset('code-display.css'), __FILE__),
         ];
         if ($preferences['code_line_numbers']) {
             $scripts[] = $base . 'prism/plugins/line-numbers/prism-line-numbers.min.js';
@@ -181,11 +206,22 @@ add_action(
         );
         wp_add_inline_script(
             'mbb-presentation-loader',
+            'window.MBBComponents=' .
+                mbb_component_json(
+                    mbb_component_available(),
+                    JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT,
+                ) .
+                ';',
+            'before',
+        );
+        wp_add_inline_script(
+            'mbb-presentation-loader',
             'window.MBB_PRESENTATION=' .
                 wp_json_encode([
                     'codeScripts' => $scripts,
                     'codeStyles' => $styles,
                     'languages' => $base . 'prism/components/',
+                    'codeLanguages' => mbb_code_languages(),
                     'lineNumbers' => $preferences['code_line_numbers'],
                     'lineNumberStyle' => $preferences['code_line_numbers']
                         ? mbb_code_line_number_css()
@@ -193,6 +229,9 @@ add_action(
                     'emoji' => plugins_url(mbb_asset('emoji.js'), __FILE__),
                     'images' => mbb_emoji_config(),
                     'footnotes' => plugins_url(mbb_asset('footnotes.css'), __FILE__),
+                    'componentScript' => plugins_url(mbb_asset('components.js'), __FILE__),
+                    'teachingScript' => plugins_url(mbb_asset('teaching.js'), __FILE__),
+                    'teachingStyle' => plugins_url(mbb_asset('teaching.css'), __FILE__),
                 ]) .
                 ';',
             'before',
@@ -217,6 +256,7 @@ add_action(
             'prism-plugin-toolbar',
             'prism-plugin-line-numbers',
             'mbb-footnotes',
+            'mbb-teaching',
         ]);
     },
     5,

@@ -1,4 +1,5 @@
 (() => {
+  const T = (message) => globalThis.MBBI18n?.t(message) ?? message;
   const config = window.MBB_PRESENTATION;
   if (!config) return;
   window.MBB_EMOJI_MANUAL = true;
@@ -23,7 +24,7 @@
       node.onerror = () => {
         pending.delete(url);
         node.remove();
-        reject(Error('展示资源暂时无法加载'));
+        reject(Error('Presentation resources could not be loaded'));
       };
       document.head.append(node);
     });
@@ -37,9 +38,104 @@
     root.nodeType === Node.ELEMENT_NODE
       ? [...(root.matches(selector) ? [root] : []), ...root.querySelectorAll(selector)]
       : [];
+  const codeDisplays = new Map();
+  const expectedScroll = new WeakMap();
+  let queuedCodeLayout = false;
+  const updateCodeLayout = () => {
+    if (queuedCodeLayout) return;
+    queuedCodeLayout = true;
+    requestAnimationFrame(() => {
+      queuedCodeLayout = false;
+      for (const [pre, hint] of codeDisplays) {
+        if (!pre.isConnected) {
+          codeSizes?.unobserve(pre);
+          const code = pre.querySelector('code');
+          if (code) codeSizes?.unobserve(code);
+          hint.remove();
+          codeDisplays.delete(pre);
+          continue;
+        }
+        const overflowing = pre.clientWidth > 0 && pre.scrollWidth > pre.clientWidth + 1;
+        hint.hidden = !overflowing;
+        if (overflowing) pre.setAttribute('tabindex', '0');
+        else pre.removeAttribute('tabindex');
+      }
+    });
+  };
+  const codeSizes =
+    typeof ResizeObserver === 'function' ? new ResizeObserver(updateCodeLayout) : null;
+  const enhanceCode = (code) => {
+    const pre = code.closest('pre');
+    if (
+      !pre ||
+      !pre.isConnected ||
+      (!pre.matches('pre.wp-block-mbb-code') &&
+        !pre.closest('.wp-block-mbb-code-tabs,.wp-block-mbb-code-compare'))
+    )
+      return;
+    pre.classList.add('mbb-code-display');
+    if (!codeDisplays.has(pre)) {
+      const hint = document.createElement('p');
+      hint.className = 'mbb-code-scroll-hint';
+      hint.dataset.mbbGenerated = '';
+      hint.textContent = T(
+        'Scroll horizontally to read long lines. Focus the code and use the arrow keys.',
+      );
+      hint.hidden = true;
+      const wrapper = pre.parentElement?.classList.contains('code-toolbar')
+        ? pre.parentElement
+        : pre;
+      wrapper.before(hint);
+      codeDisplays.set(pre, hint);
+      codeSizes?.observe(pre);
+      codeSizes?.observe(code);
+      pre.addEventListener(
+        'scroll',
+        () => {
+          const expected = expectedScroll.get(pre);
+          if (expected !== undefined && Math.abs(pre.scrollLeft - expected) < 1) {
+            expectedScroll.delete(pre);
+            return;
+          }
+          const group = pre.closest('[data-mbb-sync-scroll="true"]');
+          if (!group) return;
+          for (const other of group.querySelectorAll('pre')) {
+            if (other === pre) continue;
+            const offset = Math.min(
+              pre.scrollLeft,
+              Math.max(0, other.scrollWidth - other.clientWidth),
+            );
+            if (Math.abs(other.scrollLeft - offset) < 1) continue;
+            expectedScroll.set(other, offset);
+            other.scrollLeft = offset;
+          }
+        },
+        { passive: true },
+      );
+    }
+    updateCodeLayout();
+  };
+  window.addEventListener('resize', updateCodeLayout);
+  document.addEventListener('mbb:teaching-change', updateCodeLayout);
   const highlighted = new WeakMap();
   const codeSignature = (node) => node.textContent + '\0' + window.Prism?.util?.getLanguage(node);
   let codeAssets;
+  const compareLanguages = new Map();
+  const prepareComparison = (block) => {
+    const language = Prism.util.getLanguage(block);
+    if (!compareLanguages.has(language)) {
+      const grammar = Prism.languages[language];
+      const prepared = grammar
+        ? Promise.resolve()
+        : new Promise((resolve, reject) => {
+            Prism.plugins.autoloader.loadLanguages(language, resolve, reject);
+          });
+      compareLanguages.set(language, prepared);
+      prepared
+        .then(() => document.dispatchEvent(new CustomEvent('mbb:syntax-ready')))
+        .catch(() => {});
+    }
+  };
   const highlight = async (root) => {
     const blocks = within(root, 'pre code').filter(
       (node) =>
@@ -67,6 +163,17 @@
         Prism.languages.text = Prism.languages.plaintext = Prism.languages.plain = {};
         Prism.languages.sh = Prism.languages.shell = {};
         Prism.plugins.autoloader.languages_path = config.languages;
+        if (!Prism.mbbCodeTabsHook) {
+          Prism.mbbCodeTabsHook = true;
+          Prism.hooks.add('complete', ({ element }) => {
+            if (!element.closest('.wp-block-mbb-code-tabs,.wp-block-mbb-code-compare')) return;
+            const wrapper = element.closest('.code-toolbar');
+            for (const toolbar of wrapper?.querySelectorAll(':scope > .toolbar') || [])
+              toolbar.remove();
+            for (const rows of element.querySelectorAll('.line-numbers-rows'))
+              rows.dataset.mbbGenerated = '';
+          });
+        }
       })().catch((error) => {
         codeAssets = null;
         throw error;
@@ -75,18 +182,54 @@
     for (const block of blocks) {
       if (!block.isConnected || highlighted.get(block) === codeSignature(block)) continue;
       if (
+        block.closest('.wp-block-mbb-code-tabs,.wp-block-mbb-code-compare') &&
+        !(config.codeLanguages || ['text', 'plain', 'plaintext', 'none']).includes(
+          Prism.util.getLanguage(block),
+        )
+      )
+        block.className = block.className
+          .split(/\s+/)
+          .filter((name) => !/^lang(?:uage)?-/i.test(name))
+          .concat('language-text')
+          .join(' ');
+      if (
         !/(?:^|\s)lang(?:uage)?-\S+/.test(block.className) &&
         !/(?:^|\s)lang(?:uage)?-\S+/.test(block.parentElement.className)
       )
         block.classList.add('language-text');
+      if (block.closest('.wp-block-mbb-code-compare')) {
+        // Its renderer preserves diff rows while distributing whole-source Prism tokens.
+        highlighted.set(block, codeSignature(block));
+        prepareComparison(block);
+        enhanceCode(block);
+        continue;
+      }
       if (config.lineNumbers) block.parentElement.classList.add('line-numbers');
+      block.parentElement.setAttribute('data-prismjs-copy', T('Copy'));
+      block.parentElement.setAttribute('data-prismjs-copy-success', T('Copied'));
+      block.parentElement.setAttribute(
+        'data-prismjs-copy-error',
+        T('Copy the original code manually'),
+      );
+
       Prism.highlightElement(block);
+      for (const numbers of block.querySelectorAll('.line-numbers-rows'))
+        numbers.dataset.mbbGenerated = '';
       highlighted.set(block, codeSignature(block));
+      enhanceCode(block);
     }
   };
   const scan = (root) => {
     if (!root.isConnected) return;
     highlight(root).catch(() => {});
+    if (
+      config.teachingScript &&
+      within(root, '[data-mbb-teaching],details.wp-block-details').length
+    ) {
+      load(config.teachingStyle, true).catch(() => {});
+      load(config.teachingScript).catch(() => {});
+      if (config.componentScript) load(config.componentScript).catch(() => {});
+    }
     if (within(root, '.mbb-footnote-ref,.mbb-footnotes').length)
       load(config.footnotes, true).catch(() => {});
     const nodes = root.nodeType === Node.TEXT_NODE ? [root] : [];
@@ -127,6 +270,7 @@
     };
     new MutationObserver((records) => {
       for (const record of records) {
+        if (record.removedNodes.length) updateCodeLayout();
         const target =
           record.target.nodeType === Node.ELEMENT_NODE
             ? record.target

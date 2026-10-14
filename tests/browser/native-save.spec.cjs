@@ -5,7 +5,7 @@ test('native save is enabled and only successful saves advance the paired baseli
   await page.goto('/native-editor');
   await page.locator('#mbb-toolbar').waitFor();
   expect(await page.evaluate(() => nativeLocks)).toEqual(['autosave:mbb-paired-save']);
-  await expect(page.locator('#mbb-block-review')).toHaveText('查看差异与预览');
+  await expect(page.locator('#mbb-block-review')).toHaveText('查看差异');
   await page.evaluate(() => {
     window.nativeResult = () =>
       Promise.resolve({

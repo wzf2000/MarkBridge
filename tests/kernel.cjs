@@ -121,17 +121,20 @@ assert.equal(
 const nativeMath = (tex, mathML, attributes = { latex: tex, mathML }) =>
   inspectNativeMath({ tex, mathML, attributes }, parser.window.document);
 assert.equal(nativeMath('x^2', ''), null);
-assert.match(nativeMath('x^2', '<semantics><mi>x</mi></semantics>'), /语义结构|源码注释/);
-assert.match(
+assert.equal(
+  nativeMath('x^2', '<semantics><mi>x</mi></semantics>'),
+  'The native MathML lacks verifiable semantic structure.',
+);
+assert.equal(
   nativeMath(
     'x^2',
     '<semantics><mi>x</mi><annotation encoding="application/x-tex">y</annotation></semantics>',
   ),
-  /不一致/,
+  'TeX inside native MathML differs from the formula source.',
 );
-assert.match(
+assert.equal(
   nativeMath('x^2', '', { latex: 'x^2', style: { color: { text: '#f00' } } }),
-  /额外样式/,
+  'The native formula has extra styles or attributes and cannot be converted without loss.',
 );
 function flatten(blocks, parents = []) {
   return blocks.flatMap((block) => [

@@ -9,7 +9,7 @@ const input = path.join(root, '.php-build/input');
 const output = path.join(library, 'scoped');
 fs.rmSync(input, { recursive: true, force: true });
 fs.mkdirSync(input, { recursive: true });
-for (const name of ['src', 'vendor', 'composer.json', 'composer.lock'])
+for (const name of ['src', 'vendor', 'composer.json', 'composer.lock', 'diagnostics.json'])
   fs.cpSync(path.join(library, name), path.join(input, name), { recursive: true });
 fs.rmSync(output, { recursive: true, force: true });
 cp.execFileSync(
@@ -47,11 +47,12 @@ cp.execFileSync('php', [path.join(root, 'scripts/build-scoped-autoload.php')], {
 const inputs = [
   ...fs
     .readdirSync(path.join(library, 'src'))
-    .filter((name) => name.endsWith('.php'))
+    .filter((name) => /\.(php|json)$/.test(name))
     .map((name) => 'plugin/includes/php-converter/src/' + name),
   'plugin/includes/php-converter/composer.json',
   'plugin/includes/php-converter/composer.lock',
   'plugin/includes/php-converter/block-capabilities.json',
+  'plugin/includes/php-converter/diagnostics.json',
   'tools/php-scoper/composer.json',
   'tools/php-scoper/composer.lock',
   'tools/php-scoper/scoper.inc.php',

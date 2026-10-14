@@ -1,4 +1,5 @@
 <?php
+require __DIR__ . '/helpers/localization.php';
 define('ABSPATH', __DIR__);
 class WP_Error
 {

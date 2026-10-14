@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 namespace MarkBridge\Probe;
 
+// Standalone CLI conversion and model tests remain supported; direct web access requires WordPress.
+if (!defined('ABSPATH')) {
+    if (PHP_SAPI !== 'cli') {
+        exit();
+    }
+}
+
 use League\CommonMark\Node\Block\AbstractBlock;
 use League\CommonMark\Node\Inline\AbstractStringContainer;
 use League\CommonMark\Extension\CommonMark\Node\Block\ListItem;

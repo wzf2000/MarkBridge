@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 namespace MarkBridge\Probe;
 
+// Standalone CLI conversion and model tests remain supported; direct web access requires WordPress.
+if (!defined('ABSPATH')) {
+    if (PHP_SAPI !== 'cli') {
+        exit();
+    }
+}
+
 use DOMDocument;
 use DOMElement;
 use DOMNode;
@@ -39,19 +46,27 @@ use League\CommonMark\Node\Node;
 use League\CommonMark\Parser\MarkdownParser;
 
 require_once __DIR__ . '/../autoload.php';
+require_once __DIR__ . '/Diagnostics.php';
 require_once __DIR__ . '/MathExtension.php';
 require_once __DIR__ . '/Footnotes.php';
 require_once __DIR__ . '/DisplayBoundaries.php';
 require_once __DIR__ . '/CodeWhitespace.php';
+require_once __DIR__ . '/Teaching.php';
+require_once __DIR__ . '/BlockAdapters.php';
+require_once __DIR__ . '/FrontMatter.php';
+require_once __DIR__ . '/ResourceImages.php';
+require_once __DIR__ . '/PortableImages.php';
 
 final class ConversionError extends \RuntimeException
 {
+    public readonly array $translation;
     public function __construct(
         public readonly string $errorCode,
         string $message,
         public string $location = '',
     ) {
         parent::__construct($message);
+        $this->translation = Diagnostics::describe($message);
     }
 }
 
@@ -61,11 +76,39 @@ final class Converter
     public const MAX_BYTES = 262144;
     public const MAX_NODES = 10000;
     public const MAX_DEPTH = 32;
+    private string $teachingNonce = '';
     private int $nodes = 0;
     private bool $legacyTasks = false;
     private bool $legacyFootnotes = false;
+    private bool $legacyFrontMatter = false;
     private bool $markdownInline = false;
     private bool $sourceLocations = true;
+
+    public function rewriteImages(array $base, array $mappings): array
+    {
+        $verified = $this->restorePair($base['source'], $base['serialized'], $base['documentId']);
+        $serialized = ResourceImages::rewrite($verified['serialized'], $mappings);
+        return $serialized === $verified['serialized']
+            ? $verified
+            : $this->fromMarkdown($this->fromBlocks($serialized)['source']);
+    }
+    public function portableImages(array $base, array $mappings): array
+    {
+        $verified = $this->restorePair($base['source'], $base['serialized'], $base['documentId']);
+        $expected = ResourceImages::rewrite($verified['serialized'], $mappings, true);
+        if (!$mappings) {
+            return $verified;
+        }
+        $result = $this->fromMarkdown(PortableImages::source($verified['source'], $mappings));
+        if ($result['serialized'] !== $expected) {
+            throw new ConversionError(
+                'EXPORT_PROJECTION',
+                'Image projection cannot preserve the complete document',
+            );
+        }
+        $result['documentId'] = $base['documentId'];
+        return $result;
+    }
 
     public function fromMarkdown(string $source): array
     {
@@ -127,41 +170,46 @@ final class Converter
             throw new ConversionError('DOCUMENT_ID', 'A nonempty documentId is required');
         }
         try {
-            foreach (
-                [[false, false], [true, true], [false, true]]
-                as [$legacyTasks, $legacyFootnotes]
-            ) {
-                $this->legacyTasks = $legacyTasks;
-                $this->legacyFootnotes = $legacyFootnotes;
-                try {
-                    // Snapshot admission intentionally does not call the editing
-                    // reverse path: historical pairs may be non-editable today.
-                    $candidate = $this->serializeAll($this->markdownBlocks($source));
-                    $this->input($candidate);
-                    $snapshotKind = $legacyFootnotes ? 'legacy' : 'current';
-                    $matches = $candidate === $serialized;
-                    if (!$matches) {
-                        // A fixed historical renderer operates only on our
-                        // complete authorized output, never on client bytes.
-                        $historical = self::htmlTextGtV1($candidate);
-                        $this->input($historical);
-                        $matches = $historical === $serialized;
-                        $snapshotKind .= ':html-text-gt-v1';
+            foreach ([false, true] as $legacyFrontMatter) {
+                $this->legacyFrontMatter = $legacyFrontMatter;
+                foreach (
+                    [[false, false], [true, true], [false, true]]
+                    as [$legacyTasks, $legacyFootnotes]
+                ) {
+                    $this->legacyTasks = $legacyTasks;
+                    $this->legacyFootnotes = $legacyFootnotes;
+                    try {
+                        // Snapshot admission intentionally does not call the editing
+                        // reverse path: historical pairs may be non-editable today.
+                        $candidate = $this->serializeAll($this->markdownBlocks($source));
+                        $this->input($candidate);
+                        $snapshotKind =
+                            $legacyFootnotes || $legacyFrontMatter ? 'legacy' : 'current';
+                        $matches = $candidate === $serialized;
+                        if (!$matches) {
+                            // A fixed historical renderer operates only on our
+                            // complete authorized output, never on client bytes.
+                            $historical = self::htmlTextGtV1($candidate);
+                            $this->input($historical);
+                            $matches = $historical === $serialized;
+                            $snapshotKind .= ':html-text-gt-v1';
+                        }
+                        if ($matches) {
+                            return [
+                                'ok' => true,
+                                'source' => $source,
+                                'serialized' => $serialized,
+                                'documentId' => $documentId,
+                                'snapshot_kind' => $snapshotKind,
+                            ];
+                        }
+                    } catch (ConversionError $error) {
+                        // Only an exact complete snapshot can use a historical variant.
                     }
-                    if ($matches) {
-                        return [
-                            'ok' => true,
-                            'source' => $source,
-                            'serialized' => $serialized,
-                            'documentId' => $documentId,
-                            'snapshot_kind' => $snapshotKind,
-                        ];
-                    }
-                } catch (ConversionError $error) {
-                    // Only an exact complete snapshot can use a historical variant.
                 }
             }
         } finally {
+            $this->legacyFrontMatter = false;
             $this->legacyTasks = false;
             $this->legacyFootnotes = false;
             $this->markdownInline = false;
@@ -209,10 +257,14 @@ final class Converter
     {
         $this->markdownInline = false;
         $original = $source;
+        $front = $this->legacyFrontMatter ? null : FrontMatter::parse($source);
+        if ($front) {
+            $source = $front['body'];
+        }
         try {
             $source = DisplayBoundaries::normalize($source);
         } catch (ConversionError $error) {
-            if (!$reportSource) {
+            if (!$reportSource || $front) {
                 $error->location = '';
             }
             throw $error;
@@ -221,6 +273,9 @@ final class Converter
         // generated line numbers as positions in the author's source.
         $this->sourceLocations = $reportSource && $source === $original;
         $this->input($source);
+        $teachingNonce = '';
+        $source = Teaching::source($source, $teachingNonce);
+        $this->teachingNonce = $teachingNonce;
         $environment = new Environment(['max_nesting_level' => self::MAX_DEPTH + 1]);
         $environment->addExtension(new CommonMarkCoreExtension());
         $environment->addBlockStartParser(
@@ -332,7 +387,13 @@ final class Converter
             }
             $blocks[] = $this->block('mbb/footnotes', [], $notes);
         }
-        return $blocks;
+        $blocks = Teaching::assemble($blocks);
+        return $front
+            ? array_merge(
+                [$this->block('mbb/frontmatter', ['version' => 1, 'raw' => $front['raw']])],
+                $blocks,
+            )
+            : $blocks;
     }
 
     private function block(
@@ -419,6 +480,9 @@ final class Converter
         }
         if ($node instanceof HtmlBlock) {
             $raw = trim($node->getLiteral());
+            if (($marker = Teaching::marker($raw, $this->teachingNonce)) !== null) {
+                return ['marker' => $marker];
+            }
             if (preg_match('/^<!--\s*more\s*-->$/D', $raw)) {
                 return $this->block('core/more');
             }
@@ -852,6 +916,128 @@ final class Converter
         $attrs = $block['attrs'];
         $children = $this->serializeAll($block['children']);
         $content = $block['content'];
+        if ($name === 'mbb/frontmatter') {
+            return '<!-- wp:mbb/frontmatter ' .
+                self::commentJson($attrs) .
+                " -->\n" .
+                FrontMatter::HTML .
+                "\n<!-- /wp:mbb/frontmatter -->";
+        }
+        if (($native = BlockAdapters::kind($name)) !== null) {
+            $a = BlockAdapters::nativeAttrs($native, $attrs);
+            $comment = [];
+            if ($native === 'details' && $a['showContent']) {
+                $comment['showContent'] = true;
+            }
+            if (isset($a['anchor'])) {
+                $comment['anchor'] = $a['anchor'];
+            }
+            if ($native === 'buttons' && isset($a['layout'])) {
+                $comment['layout'] = $a['layout'];
+            }
+            $html = BlockAdapters::nativeHtml($native, $attrs, $children);
+            $short = substr($name, 5);
+            return '<!-- wp:' .
+                $short .
+                ($comment ? ' ' . self::commentJson($comment) : '') .
+                " -->\n" .
+                $html .
+                "\n<!-- /wp:" .
+                $short .
+                ' -->';
+        }
+        if (($descriptor = BlockAdapters::descriptor($name, true)) !== null) {
+            if ($children) {
+                throw new ConversionError(
+                    'ADAPTER_STRUCTURE',
+                    'Static adapters must not contain child blocks',
+                );
+            }
+            $a = BlockAdapters::leafAttrs($descriptor, $attrs);
+            return '<!-- wp:' .
+                $name .
+                ' ' .
+                self::commentJson($a) .
+                " -->\n" .
+                BlockAdapters::html($descriptor, $a) .
+                "\n<!-- /wp:" .
+                $name .
+                ' -->';
+        }
+        if (($kind = Teaching::kind($name)) !== null) {
+            $html =
+                '<div id="' .
+                self::attribute($attrs['id']) .
+                '" class="wp-block-mbb-' .
+                $kind .
+                '">';
+            if ($kind === 'code-tabs') {
+                foreach ($attrs['tabs'] as $tab) {
+                    $html .=
+                        '<div id="' .
+                        self::attribute($tab['id']) .
+                        '" class="mbb-code-tab"><p data-mbb-generated="" class="mbb-code-tab-title">' .
+                        self::elementText(
+                            $tab['title'] !== ''
+                                ? $tab['title']
+                                : ($tab['language'] !== ''
+                                    ? $tab['language']
+                                    : '代码'),
+                        ) .
+                        '</p><pre><code' .
+                        ($tab['language'] === ''
+                            ? ''
+                            : ' class="language-' . self::attribute($tab['language']) . '"') .
+                        '>' .
+                        self::elementText($tab['code']) .
+                        '</code></pre></div>';
+                }
+                $html .= '</div>';
+                return '<!-- wp:' .
+                    $name .
+                    ' ' .
+                    self::commentJson($attrs) .
+                    " -->\n" .
+                    $html .
+                    "\n<!-- /wp:" .
+                    $name .
+                    ' -->';
+            } elseif ($kind === 'code-compare') {
+                foreach (['Left', 'Right'] as $side) {
+                    $lang = $attrs['language' . $side];
+                    $html .=
+                        '<div class="mbb-compare-' .
+                        strtolower($side) .
+                        '"><p data-mbb-generated="">' .
+                        self::elementText($attrs[strtolower($side) . 'Title']) .
+                        '</p><pre><code' .
+                        ($lang === '' ? '' : ' class="language-' . self::attribute($lang) . '"') .
+                        '>' .
+                        self::elementText($attrs['code' . $side]) .
+                        '</code></pre></div>';
+                }
+            } elseif ($kind === 'component') {
+                $html .=
+                    '<p data-mbb-generated="" class="mbb-component-params">' .
+                    base64_encode(Teaching::encode($attrs['params'])) .
+                    '</p>';
+            } else {
+                $html .=
+                    '<p class="mbb-teaching-title" data-mbb-generated="">' .
+                    self::elementText($attrs['title']) .
+                    '</p>';
+            }
+            $html .= '<div class="mbb-teaching-body">' . $children . '</div></div>';
+            return '<!-- wp:' .
+                $name .
+                ' ' .
+                self::commentJson($attrs) .
+                " -->\n" .
+                $html .
+                "\n<!-- /wp:" .
+                $name .
+                ' -->';
+        }
         switch ($name) {
             case 'core/paragraph':
                 $html = '<p>' . $content . '</p>';
@@ -955,13 +1141,7 @@ final class Converter
 
     private static function commentJson(array $attrs): string
     {
-        $json = json_encode(
-            $attrs,
-            JSON_UNESCAPED_UNICODE |
-                JSON_UNESCAPED_SLASHES |
-                JSON_UNESCAPED_LINE_TERMINATORS |
-                JSON_THROW_ON_ERROR,
-        );
+        $json = Teaching::encode($attrs);
         // Match WordPress serializeAttributes: first protect literal backslashes.
         // Otherwise the final slash of an escaped backslash consumes the JSON
         // string's closing quote when the escaped-quote replacement runs first.
@@ -1063,6 +1243,12 @@ final class Converter
         if (!is_array($attrs) || (array_is_list($attrs) && $attrs !== [])) {
             throw new ConversionError('BLOCK_ATTRIBUTES', 'Block attributes must be an object');
         }
+        if ((Teaching::kind($name) !== null || $name === 'mbb/frontmatter') && isset($match[2])) {
+            $attrs = Teaching::json($match[2]);
+        }
+        if ($name === 'mbb/frontmatter' && ($attrs['version'] ?? null) === 1.0) {
+            $attrs['version'] = 1;
+        }
         $this->validateAttrs($name, $attrs);
         $position += strlen($match[0]);
         $raw = '';
@@ -1096,13 +1282,16 @@ final class Converter
                     throw new ConversionError('BLOCK_SYNTAX', 'Mismatched block closing comment');
                 }
                 $position += strlen($close[0]);
-                return [
+                $block = [
                     'name' => $name,
                     'attrs' => $attrs,
                     'children' => $children,
                     'raw' => trim($raw),
                     'path' => $path,
                 ];
+                return BlockAdapters::kind($name) !== null
+                    ? BlockAdapters::decodeNative($block)
+                    : $block;
             }
             $index = count($children);
             $children[] = $this->parseOne(
@@ -1127,6 +1316,10 @@ final class Converter
             32,
             JSON_THROW_ON_ERROR,
         );
+        if (($descriptor = BlockAdapters::descriptor($name, true)) !== null) {
+            BlockAdapters::leafAttrs($descriptor, $attrs);
+            return;
+        }
         if (!array_key_exists($name, $schemas)) {
             throw new ConversionError('UNSUPPORTED_BLOCK', 'Unsupported block: ' . $name);
         }
@@ -1521,6 +1714,18 @@ final class Converter
     private function decodeAll(array $blocks, int $depth = 0): string
     {
         if ($depth === 0) {
+            Teaching::validate($blocks);
+            FrontMatter::validate($blocks);
+            if (($blocks[0]['name'] ?? '') === 'mbb/frontmatter') {
+                $raw = $blocks[0]['attrs']['raw'];
+                return $raw .
+                    (count($blocks) > 1
+                        ? (str_ends_with($raw, "\n") ? "\n" : "\n\n") .
+                            $this->decodeAll(array_slice($blocks, 1), 0)
+                        : '');
+            }
+        }
+        if ($depth === 0) {
             $notes = array_keys(
                 array_filter($blocks, fn(array $block): bool => $block['name'] === 'mbb/footnotes'),
             );
@@ -1585,6 +1790,41 @@ final class Converter
         $attrs = $block['attrs'];
         $children = $block['children'];
         $raw = $block['raw'];
+        if ($name === 'mbb/frontmatter') {
+            if ($children !== [] || $raw !== FrontMatter::HTML) {
+                throw new ConversionError(
+                    'FRONTMATTER_STRUCTURE',
+                    'Invalid FrontMatter carrier HTML',
+                );
+            }
+            return $attrs['raw'];
+        }
+        if (($descriptor = BlockAdapters::descriptor($name, true)) !== null) {
+            if (
+                $children ||
+                $this->canonical($raw) !==
+                    $this->canonical(
+                        BlockAdapters::html(
+                            $descriptor,
+                            BlockAdapters::leafAttrs($descriptor, $attrs),
+                        ),
+                    )
+            ) {
+                throw new ConversionError(
+                    'ADAPTER_STRUCTURE',
+                    'Static adapter HTML does not match the registered template',
+                );
+            }
+            return Teaching::markdown($block, '');
+        }
+        if (Teaching::kind($name) !== null) {
+            return Teaching::markdown(
+                $block,
+                $name === 'core/button'
+                    ? '<p>' . BlockAdapters::buttonText($attrs['text']) . '</p>'
+                    : $this->decodeAll($children, $depth + 1),
+            );
+        }
         switch ($name) {
             case 'core/html':
                 if ($children !== []) {
@@ -2086,7 +2326,12 @@ final class Converter
                 $text = substr($text, 1);
             }
             $text = str_replace(['&', '<'], ['&amp;', '&lt;'], $text);
-            return preg_replace('/([\\\\`*{}_\[\]()#+.!>~|$-])/', '\\\\$1', $text);
+            $text = preg_replace('/([\\\\`*{}_\[\]()#+.!>~|$-])/', '\\\\$1', $text);
+            return preg_replace_callback(
+                '/(^|\n)(:::mbb:)/',
+                fn(array $match): string => $match[1] . chr(92) . $match[2],
+                $text,
+            );
         }
         if (!($node instanceof DOMElement)) {
             throw new ConversionError(
@@ -2298,7 +2543,12 @@ final class Converter
                     $error->code !== 801 ||
                     !in_array(
                         trim($error->message),
-                        ['Tag figure invalid', 'Tag section invalid'],
+                        [
+                            'Tag figure invalid',
+                            'Tag section invalid',
+                            'Tag details invalid',
+                            'Tag summary invalid',
+                        ],
                         true,
                     )
                 ) {

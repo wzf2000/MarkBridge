@@ -33,5 +33,74 @@
   },
   "mbb/math": {
     "tex": "string"
+  },
+  "mbb/collapse": {
+    "id": "string",
+    "title": "string",
+    "open": "boolean",
+    "version": "integer"
+  },
+  "mbb/steps": {
+    "id": "string",
+    "title": "string",
+    "mode": "string",
+    "previous": "boolean",
+    "next": "boolean",
+    "full": "boolean",
+    "version": "integer"
+  },
+  "mbb/step": {
+    "id": "string",
+    "title": "string",
+    "version": "integer"
+  },
+  "mbb/code-compare": {
+    "id": "string",
+    "leftTitle": "string",
+    "rightTitle": "string",
+    "leftHighlights": "string",
+    "rightHighlights": "string",
+    "version": "integer",
+    "codeLeft": "string",
+    "languageLeft": "string",
+    "codeRight": "string",
+    "languageRight": "string"
+  },
+  "mbb/component": {
+    "id": "string",
+    "component": "string",
+    "componentVersion": "string",
+    "params": "object",
+    "version": "integer"
+  },
+  "mbb/frontmatter": {
+    "version": "integer",
+    "raw": "string"
+  },
+  "mbb/code-tabs": {
+    "id": "string",
+    "defaultTab": "string",
+    "tabs": "array",
+    "version": "integer"
+  },
+  "core/details": {
+    "summary": "string",
+    "showContent": "boolean",
+    "anchor": "string",
+    "name": "string"
+  },
+  "core/buttons": {
+    "anchor": "string",
+    "layout": "array"
+  },
+  "core/button": {
+    "anchor": "string",
+    "url": "string",
+    "title": "string",
+    "text": "string",
+    "linkTarget": "string",
+    "rel": "string",
+    "tagName": "string",
+    "type": "string"
   }
 }

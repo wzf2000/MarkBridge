@@ -110,11 +110,11 @@ async function loadEditor(content = '', title = '', options = {}) {
       ok: true,
       async json() {
         if (/document\?post_id=42$/.test(url)) {
-          return { ...managedState, expected: 'fresh-token' };
+          return { ...managedState, expected: 'stored-token' };
         }
         assert.match(url, /source\?post_id=42$/);
         return {
-          expected: 'fresh-token',
+          expected: 'stored-token',
           source_sha256: 'fresh-source-hash',
           source: '# Fresh Markdown',
         };

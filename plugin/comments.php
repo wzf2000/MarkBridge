@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/includes/i18n.php';
 if (!defined('ABSPATH')) {
     exit();
 }
@@ -41,7 +42,7 @@ add_filter(
         if (is_wp_error($doc)) {
             $GLOBALS['mbb_comment_error'] = new WP_Error(
                 'comment_markdown',
-                '评论未保存：' . $doc->get_error_message(),
+                mbb_t('Comment was not saved: ') . $doc->get_error_message(),
                 ['status' => 400],
             );
             return $data;

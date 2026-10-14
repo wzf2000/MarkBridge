@@ -4,6 +4,13 @@ declare(strict_types=1);
 
 namespace MarkBridge\Probe;
 
+// Standalone CLI conversion and model tests remain supported; direct web access requires WordPress.
+if (!defined('ABSPATH')) {
+    if (PHP_SAPI !== 'cli') {
+        exit();
+    }
+}
+
 require_once __DIR__ . '/Converter.php';
 
 /** WordPress-independent adapter for the existing server worker document contract. */
@@ -12,6 +19,7 @@ final class Worker
     public static function convert(array $request): array
     {
         try {
+            BlockAdapters::configure($request['blockAdapters'] ?? '[]');
             if (($request['mode'] ?? null) === 'batch') {
                 $items = $request['items'] ?? null;
                 if (!is_array($items) || !array_is_list($items) || count($items) > 5) {
@@ -20,8 +28,12 @@ final class Worker
                 $results = [];
                 foreach ($items as $item) {
                     $result =
-                        is_array($item) && ($item['mode'] ?? null) !== 'batch'
-                            ? self::convert($item)
+                        is_array($item) &&
+                        ($item['mode'] ?? null) !== 'batch' &&
+                        !array_key_exists('blockAdapters', $item)
+                            ? self::convert(
+                                $item + ['blockAdapters' => $request['blockAdapters'] ?? '[]'],
+                            )
                             : [
                                 'ok' => false,
                                 'code' => 'REQUEST',
@@ -37,6 +49,8 @@ final class Worker
                 'ok' => false,
                 'code' => $error->errorCode,
                 'message' => $error->getMessage(),
+                'message_id' => $error->translation['id'],
+                'message_args' => $error->translation['args'],
                 'location' => $error->location,
             ];
         } catch (\JsonException $error) {
@@ -51,7 +65,8 @@ final class Worker
             return [
                 'ok' => false,
                 'code' => 'CONVERSION',
-                'message' => 'PHP 转换服务未完成，原内容未写入。',
+                'message' =>
+                    'The PHP conversion service did not complete. Original content was not written.',
                 'location' => '',
             ];
         }
@@ -84,6 +99,8 @@ final class Worker
                 );
                 break;
             case 'blocks':
+            case 'resource_images':
+            case 'portable_images':
                 $base = $request['base'] ?? null;
                 if (
                     !is_array($base) ||
@@ -107,6 +124,16 @@ final class Worker
                     self::string($base, 'serialized'),
                     $documentId,
                 );
+                if (in_array($request['mode'], ['resource_images', 'portable_images'], true)) {
+                    if (!is_array($request['mappings'] ?? null)) {
+                        throw new ConversionError('RESOURCE_MAP', 'Image mapping must be a list');
+                    }
+                    $result =
+                        $request['mode'] === 'portable_images'
+                            ? $converter->portableImages($base, $request['mappings'])
+                            : $converter->rewriteImages($base, $request['mappings']);
+                    break;
+                }
                 $serialized = self::string($request, 'serialized');
                 if ($converter->equivalentSerialized($serialized, $verified['serialized'])) {
                     $result = $verified;

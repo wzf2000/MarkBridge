@@ -81,6 +81,22 @@ function mbb_emoji_config()
 }
 $plugin = getenv('MARKBRIDGE_TEST_PLUGIN_ROOT') ?: __DIR__ . '/../../plugin';
 require $plugin . '/includes/admin-settings.php';
+require $plugin . '/components.php';
+if (($GLOBALS['argv'][1] ?? '') === 'empty-component') {
+    $raw = file_get_contents(__DIR__ . '/fixtures/component.html');
+    $GLOBALS['mbb_components']['fixture'] = [
+        'id' => 'fixture',
+        'version' => '0.1.0',
+        'title' => 'Fixed fixture',
+        'status' => 'available',
+        'protocolVersion' => 1,
+        'minMarkBridge' => '1.9.0-dev.1',
+        'schema' => ['type' => 'object', 'properties' => [], 'additionalProperties' => false],
+        'defaults' => (object) [],
+        'budgets' => mbb_component_budget_limits(),
+        'resource' => ['url' => '/component-fixture.html', 'sha256' => hash('sha256', $raw)],
+    ];
+}
 require $plugin . '/presentation.php';
 foreach ($actions['wp_enqueue_scripts'] as $callback) {
     $callback();

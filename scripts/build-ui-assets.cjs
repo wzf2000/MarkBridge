@@ -24,11 +24,21 @@ asset(
     'root + ' + JSON.stringify(engine),
   ),
 );
+asset('i18n.js');
 asset('kernel.js');
 asset('emoji.js');
 asset('presentation-loader.js');
 asset('editor-ui.js');
+asset('resource-ui.js');
+asset('export-ui.js');
+asset('local-recovery.js');
 asset('editor-ui.css');
 asset('math.css');
 asset('footnotes.css');
+asset('teaching.js');
+asset('components.js');
+asset('teaching.css');
+asset('settings.css');
+asset('settings.js');
+asset('code-display.css');
 fs.writeFileSync(path.join(root, 'assets.json'), JSON.stringify(map, null, 2) + '\n');

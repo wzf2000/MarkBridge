@@ -12,6 +12,7 @@ PAGES = {
     "docs/GETTING-STARTED.md": ("Getting-Started", "快速开始"),
     "docs/INSTALL.md": ("Installation", "安装与升级"),
     "docs/USAGE.md": ("Usage", "编辑与发布"),
+    "docs/TEACHING.md": ("Teaching", "教学内容"),
     "docs/TROUBLESHOOTING.md": ("Troubleshooting", "常见问题"),
     "docs/EMOJI-PACKS.md": ("Emoji-Packs", "图片表情"),
     "docs/RUNTIME.md": ("Runtime", "服务器配置"),
@@ -123,7 +124,7 @@ def generate(root, output, repository, sha):
         pages[f"{page}.md"] = rewrite_markdown(text, source, repository, sha) + footer
     wiki = f"https://github.com/{repository}/wiki"
     groups = (
-        ("开始使用", ("Getting-Started", "Usage")),
+        ("开始使用", ("Getting-Started", "Usage", "Teaching")),
         ("遇到问题", ("Troubleshooting",)),
         ("管理站点", ("Installation", "Runtime", "Emoji-Packs")),
         ("版本信息", ("Changelog",)),

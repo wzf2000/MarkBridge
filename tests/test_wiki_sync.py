@@ -111,6 +111,7 @@ class WikiSyncTests(unittest.TestCase):
                     "Troubleshooting.md",
                     "Installation.md",
                     "Usage.md",
+                    "Teaching.md",
                     "Emoji-Packs.md",
                     "Runtime.md",
                     "Changelog.md",

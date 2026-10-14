@@ -55,6 +55,7 @@ test('managed conversion hints show unsupported blocks without changing them', a
   });
   await expect(page.locator('.mbb-capabilities summary')).toContainText('1 个区块暂不支持');
   await expect(page.locator('.mbb-capabilities')).not.toHaveAttribute('open', '');
+  await page.locator('#mbb-more > summary').click();
   await page.locator('.mbb-capabilities summary').click();
   await expect(page.locator('.mbb-capabilities [role="status"]')).toContainText(
     '尚不支持转换的区块',

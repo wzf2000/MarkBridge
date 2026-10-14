@@ -27,6 +27,11 @@ $files = array_map(
 $loader = <<<'PHP'
 <?php
 // Generated from PHP-Scoper output and Composer's authoritative classmap.
+if (!defined('ABSPATH')) {
+    if (PHP_SAPI !== 'cli') {
+        exit();
+    }
+}
 (static function (): void {
     $map = __MAP__;
     spl_autoload_register(static function (string $class) use ($map): void {

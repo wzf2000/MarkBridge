@@ -3,7 +3,7 @@ Tags: markdown, blocks, editor, mathjax, revisions
 Requires at least: 7.1
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 1.4.0
+Stable tag: 2.0.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -12,7 +12,11 @@ Markdown and WordPress blocks, saved and restored together.
 == Description ==
 MarkBridge provides paired Markdown/block editing, previews, revisions, local MathJax rendering and Markdown comments.
 
-New installations use the bundled PHP converter with PHP 8.2+, DOM and mbstring on WordPress 7.1.x. No Node.js runtime or subprocess is required for supported content. Existing non-empty runtime settings retain Node until an administrator explicitly switches; unsupported environments or content are rejected without fallback. This readme applies to version 1.4.0. For installation packages, see GitHub Releases.
+New installations use the bundled PHP converter with PHP 8.2+, DOM and mbstring on WordPress 7.1.x. No Node.js runtime or subprocess is required for supported content. Existing non-empty runtime settings retain Node until an administrator explicitly switches; unsupported environments or content are rejected without fallback.
+
+This readme applies to MarkBridge 2.0.0. WordPress.org submission and approval are separate from a GitHub release. Download reviewed installation packages from GitHub Releases; source archives are not installation packages. Chinese and English interface text follows the WordPress user language in the editor and the site language for readers.
+
+Core Markdown editing does not call an external service. Local recovery is off until an author explicitly enables browser storage; it is not encrypted or a server backup. Optional ZIP images use normal WordPress media storage: a draft or private article does not make the media URL private. Bound-file writeback requires separate trusted server configuration. A GitHub updater, if chosen, is a separate plugin requiring explicit consent; it is not included in this package.
 
 == Installation ==
 1. Confirm WordPress 7.1.x, PHP 8.2+, DOM and mbstring.
@@ -20,6 +24,32 @@ New installations use the bundled PHP converter with PHP 8.2+, DOM and mbstring 
 3. Import a test Markdown draft, preview, save and reopen. Existing Node installations should review the upgrade guide before changing their backend.
 
 == Changelog ==
+
+= 2.0.0 =
+* Adds structured teaching content: folds, staged reading, code comparison and multilingual code tabs, with complete static and print content.
+* Provides trusted teaching component and static block adapter interfaces; independent extensions supply algorithms and resources.
+* Adds opt-in browser recovery, explicitly selected Front Matter metadata, safe image ZIP import, saved Markdown/ZIP export and reviewed three-way merge.
+* Supports native details and link buttons, English/Chinese interfaces, clearer author tools and responsive reading controls.
+* Maintains paired saves, revisions, permissions, source writeback and explicit PHP/Node selection. Optional image workflows and independent extensions need their own configuration.
+
+= 2.0.0-rc.8 =
+* Recovers a stalled initial component resource request once within the unchanged startup deadline.
+* Preserves cancellation, resource verification, isolated execution and static fallback.
+
+= 2.0.0-rc.7 =
+* Refines native select arrows, author dialog controls, compact revision previews and touch-friendly reading navigation.
+* Keeps revision confirmation disabled if the content preview fails.
+
+= 2.0.0-rc.6 =
+* Unpublished review candidate: compact author tools, dedicated preview layout, readable code scrolling, and clearer teaching and settings controls.
+* Full reading retains the selected code language; printing still includes every version.
+* Fixes new-document previews on the Tools screen and excess mobile code-scroll hint spacing.
+
+= 2.0.0-rc.4 =
+Local recovery, bounded Front Matter proposals, safe image ZIP import, multilingual code tabs, saved Markdown/ZIP export, signed-baseline three-way merge, native details/link buttons, trusted static block adapters and English/Chinese interfaces. Includes the earlier fold/stage/code comparison and trusted teaching component candidates. Unpublished candidate; review the validation guide before considering an upgrade.
+
+= 1.9.0-rc.1 =
+Local teaching candidate: structured reading, code comparison, trusted component interfaces and lifecycle/budget protection. Not a published release.
 
 = 1.4.0 =
 Actionable conversion locations, managed-editor compatibility hints, content-scoped presentation assets and real WordPress CI for both converters.

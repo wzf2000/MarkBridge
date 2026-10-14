@@ -1,3 +1,4 @@
+import { translate as T, format as F, translateError as E } from './i18n.js';
 import {
   inspectNativeMath,
   verifyNativeMathML,
@@ -150,7 +151,7 @@ function decorate(owner) {
     if (wrapper?.getAttribute('contenteditable') === 'false') {
       wrapper.tabIndex = 0;
       wrapper.setAttribute('role', 'button');
-      wrapper.setAttribute('aria-label', `编辑行内公式：${tex}`);
+      wrapper.setAttribute('aria-label', F(T('Edit inline formula: %1$s'), tex));
     }
     if (records.get(host)?.tex === tex) {
       paint(host);
@@ -273,7 +274,7 @@ function SmallPreview({ tex }) {
           if (active) setHTML(result);
         },
         (reason) => {
-          if (active) setError(reason.message);
+          if (active) setError(E(reason));
         },
       );
     }, 250);
@@ -295,7 +296,7 @@ function SmallPreview({ tex }) {
         overflowX: 'auto',
       },
     },
-    el('small', {}, '公式预览（不写入正文）'),
+    el('small', {}, T('Formula preview (not written to the body)')),
     error
       ? el('code', { role: 'status' }, error)
       : html
@@ -556,13 +557,12 @@ export function InlineMathEdit({ contentRef, value, onChange, onFocus, isVisible
           template.innerHTML = html;
           setCreationValidation(
             template.content.querySelector('mjx-merror,[data-mbb-math-error]')
-              ? { tex: draft, status: 'invalid', message: '公式无法排版。' }
+              ? { tex: draft, status: 'invalid', message: T('The formula cannot be typeset.') }
               : { tex: draft, status: 'valid' },
           );
         },
         (reason) => {
-          if (active)
-            setCreationValidation({ tex: draft, status: 'invalid', message: reason.message });
+          if (active) setCreationValidation({ tex: draft, status: 'invalid', message: E(reason) });
         },
       );
     }, 250);
@@ -587,7 +587,11 @@ export function InlineMathEdit({ contentRef, value, onChange, onFocus, isVisible
         selection.formats.some((formats) => formats?.length),
     };
     setDraft(text);
-    setError(creationRef.current.invalid ? '选区含其他格式或对象，请先选择纯文本。' : '');
+    setError(
+      creationRef.current.invalid
+        ? T('The selection contains other formatting or objects. Select plain text first.')
+        : '',
+    );
     setCreating(true);
   };
   const coreObject = wp.richText.getActiveObject(value);
@@ -618,13 +622,17 @@ export function InlineMathEdit({ contentRef, value, onChange, onFocus, isVisible
       host.getAttribute('data-latex') !== object.attributes?.['data-latex'] ||
       current.formats[current.start]?.length
     )
-      return setNativeError('原生公式带有额外格式或属性，无法无损转换。');
+      return setNativeError(
+        T(
+          'The native formula has extra formatting or attributes and cannot be converted without loss.',
+        ),
+      );
     const tex = object.attributes['data-latex'];
     const problem = inspectNativeMath(
       { tex, mathML: object.innerHTML || '', attributes: object.attributes, inline: true },
       root.ownerDocument,
     );
-    if (problem) return setNativeError(problem);
+    if (problem) return setNativeError(T(problem));
     const signature = valueSignature(current);
     const start = current.start;
     const end = current.end;
@@ -640,12 +648,12 @@ export function InlineMathEdit({ contentRef, value, onChange, onFocus, isVisible
     if (epoch !== nativeEpoch.current) return;
     if (structureProblem) {
       setNativeBusy(false);
-      return setNativeError(structureProblem);
+      return setNativeError(T(structureProblem));
     }
     const renderingProblem = await verifyRenderedMath(tex, false, root.ownerDocument);
     if (epoch !== nativeEpoch.current) return;
     setNativeBusy(false);
-    if (renderingProblem) return setNativeError(renderingProblem);
+    if (renderingProblem) return setNativeError(T(renderingProblem));
     const latest = valueRef.current;
     if (
       !root.isConnected ||
@@ -655,7 +663,9 @@ export function InlineMathEdit({ contentRef, value, onChange, onFocus, isVisible
       valueSignature(latest) !== signature ||
       host.getAttribute('data-latex') !== tex
     )
-      return setNativeError('原生公式在验证期间已变化，请重新选择后转换。');
+      return setNativeError(
+        T('The native formula changed during verification. Select it again before converting.'),
+      );
     const next = wp.richText.insertObject(
       latest,
       { type: FORMAT, attributes: { tex }, innerHTML: escapeHTML('$' + tex + '$') },
@@ -679,13 +689,17 @@ export function InlineMathEdit({ contentRef, value, onChange, onFocus, isVisible
       const current = valueRef.current;
       const selection = creationRef.current;
       if (!current || !selection || valueSignature(current) !== selection.signature)
-        return setError('正文已变化，请重新选择后创建公式。');
-      if (selection.invalid) return setError('选区含其他格式或对象，请先选择纯文本。');
-      if (!validTex(draft)) return setError('请输入不含未转义美元符的单行 TeX 源码。');
+        return setError(T('The body changed. Select it again before creating a formula.'));
+      if (selection.invalid)
+        return setError(
+          T('The selection contains other formatting or objects. Select plain text first.'),
+        );
+      if (!validTex(draft))
+        return setError(T('Enter single-line TeX without unescaped dollar signs.'));
       if (creationValidation.tex !== draft || creationValidation.status !== 'valid')
-        return setError('请等待公式排版成功后再应用。');
+        return setError(T('Wait for successful typesetting before applying the formula.'));
       const root = contentRef.current;
-      if (!root) return setError('正文已变化，请重新选择后创建公式。');
+      if (!root) return setError(T('The body changed. Select it again before creating a formula.'));
       const next = wp.richText.insertObject(
         current,
         { type: FORMAT, attributes: { tex: draft }, innerHTML: escapeHTML('$' + draft + '$') },
@@ -700,7 +714,8 @@ export function InlineMathEdit({ contentRef, value, onChange, onFocus, isVisible
     }
     const root = contentRef.current,
       host = selectedRef.current;
-    if (!root || !host || !root.contains(host)) return setError('公式已变化，请重新选择。');
+    if (!root || !host || !root.contains(host))
+      return setError(T('The formula changed. Select it again.'));
     const spans = [...root.querySelectorAll('span.mbb-math[data-mbb-tex]')];
     const ordinal = spans.indexOf(host);
     const positions = [];
@@ -713,8 +728,8 @@ export function InlineMathEdit({ contentRef, value, onChange, onFocus, isVisible
       host.dataset.mbbTex !== openedTexRef.current ||
       valueRef.current.replacements[position]?.attributes?.tex !== openedTexRef.current
     )
-      return setError('无法定位当前公式，请重新选择。');
-    if (!draft.trim() || /[\r\n]/.test(draft)) return setError('请输入单行 TeX 源码。');
+      return setError(T('The current formula could not be located. Select it again.'));
+    if (!draft.trim() || /[\r\n]/.test(draft)) return setError(T('Enter single-line TeX.'));
     const next = wp.richText.insertObject(
       valueRef.current,
       {
@@ -734,14 +749,14 @@ export function InlineMathEdit({ contentRef, value, onChange, onFocus, isVisible
     {},
     el(wp.blockEditor.RichTextToolbarButton, {
       icon: 'editor-customchar',
-      title: '数学（MathJax）',
+      title: T('Math (MathJax)'),
       onClick: startCreating,
       isActive: creating || !!selected,
     }),
     canConvertCore
       ? el(wp.blockEditor.RichTextToolbarButton, {
           icon: 'update',
-          title: '转换原生数学为行内公式（MathJax）',
+          title: T('Convert native math to inline formula (MathJax)'),
           onClick: convertCore,
           disabled: nativeBusy,
         })
@@ -764,7 +779,7 @@ export function InlineMathEdit({ contentRef, value, onChange, onFocus, isVisible
               'aria-busy': nativeBusy,
               className: 'mbb-native-math-convert',
             },
-            nativeBusy ? '正在核对公式…' : '转换为行内公式（MathJax）',
+            nativeBusy ? T('Verifying the formula…') : T('Convert to inline formula (MathJax)'),
           ),
         )
       : null,
@@ -795,7 +810,7 @@ export function InlineMathEdit({ contentRef, value, onChange, onFocus, isVisible
             el(
               'label',
               {},
-              'TeX 源码',
+              T('TeX source'),
               el('textarea', {
                 className: 'mbb-inline-math-source',
                 value: draft,
@@ -822,12 +837,16 @@ export function InlineMathEdit({ contentRef, value, onChange, onFocus, isVisible
                   creating &&
                   (creationValidation.tex !== draft || creationValidation.status !== 'valid'),
               },
-              '应用公式',
+              T('Apply formula'),
             ),
-            el(wp.components.Button, { variant: 'tertiary', onClick: () => close(true) }, '取消'),
+            el(
+              wp.components.Button,
+              { variant: 'tertiary', onClick: () => close(true) },
+              T('Cancel'),
+            ),
             error ? el('p', { role: 'alert' }, error) : null,
             creating && creationValidation.status === 'pending'
-              ? el('p', { role: 'status' }, '正在验证公式…')
+              ? el('p', { role: 'status' }, T('Validating the formula…'))
               : null,
             creating && creationValidation.message
               ? el('p', { role: 'alert' }, creationValidation.message)

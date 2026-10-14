@@ -1,9 +1,23 @@
 <?php
+require __DIR__ . '/helpers/localization.php';
 // Isolated regression for the existing file-bound CLI save path.
 define('WP_CLI', true);
 // This fixture supplies a Node worker stub, not a PHP dependency installation.
 define('MARKBRIDGE_CONVERTER_BACKEND', 'node');
 define('ABSPATH', '/isolated-markbridge-test/');
+define('ARRAY_A', 'ARRAY_A');
+function home_url($path = '')
+{
+    return 'http://cli-model.invalid' . $path;
+}
+function get_current_blog_id()
+{
+    return 1;
+}
+function wp_salt($scheme)
+{
+    return 'synthetic-cli-binding-salt';
+}
 
 class WP_Error
 {
@@ -31,6 +45,10 @@ class WP_REST_Request implements ArrayAccess
     {
         return $this->body;
     }
+    public function has_param($key)
+    {
+        return array_key_exists($key, $this->data);
+    }
     public function set_header($name, $value) {}
     public function offsetExists($offset): bool
     {
@@ -51,12 +69,39 @@ class WP_REST_Request implements ArrayAccess
 }
 class TestDB
 {
+    public $posts = 'posts';
+    public $postmeta = 'postmeta';
+    public $term_relationships = 'term_relationships';
     public $last_error = '';
     public $queries = [];
     public function query($sql)
     {
         $this->queries[] = $sql;
         return 1;
+    }
+    public function prepare($sql, ...$args)
+    {
+        return vsprintf($sql, $args);
+    }
+    public function get_row($sql, $format)
+    {
+        return (array) $GLOBALS['post'];
+    }
+    public function get_results($sql, $format)
+    {
+        if (str_contains($sql, 'term_relationships')) {
+            return [];
+        }
+        $rows = [];
+        $meta = $GLOBALS['meta'][7];
+        ksort($meta);
+        foreach ($meta as $key => $value) {
+            $rows[] = [
+                'meta_key' => $key,
+                'meta_value' => is_string($value) ? $value : serialize($value),
+            ];
+        }
+        return $rows;
     }
 }
 $wpdb = new TestDB();
@@ -126,6 +171,10 @@ function update_post_meta($id, $key, $value)
     global $meta;
     $meta[$id][$key] = $value;
     return true;
+}
+function wp_get_object_terms(...$args)
+{
+    return [];
 }
 function get_post_thumbnail_id($id)
 {
@@ -244,6 +293,7 @@ function get_preview_post_link($id)
 }
 
 require __DIR__ . '/../plugin/source-sync.php';
+require __DIR__ . '/../plugin/components.php';
 require __DIR__ . '/../plugin/editor-bridge.php';
 
 function check($condition, $message)

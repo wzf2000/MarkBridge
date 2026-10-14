@@ -1,0 +1,38 @@
+{
+  "descriptors": [
+    {
+      "schema": 1,
+      "name": "plain-card",
+      "version": "1.0.0",
+      "blockName": "markbridge-example/plain-card",
+      "attributes": {
+        "text": { "type": "plainText", "maxLength": 4096 },
+        "count": { "type": "integer", "minimum": -5, "maximum": 20 },
+        "enabled": { "type": "boolean" },
+        "tone": { "type": "enum", "values": ["plain", "note"] }
+      },
+      "template": {
+        "tag": "div",
+        "class": "mbb-example-card",
+        "children": [
+          { "tag": "p", "children": [{ "field": "text" }] },
+          {
+            "tag": "span",
+            "children": [
+              { "field": "count" },
+              { "text": " / " },
+              { "field": "enabled" },
+              { "text": " / " },
+              { "field": "tone" }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "native": [
+    ":::mbb:v1 details {\"summary\":\"Plain & <literal> summary\",\"showContent\":false,\"anchor\":\"fold\"}\n\nText **strong**.\n\n:::mbb:end\n",
+    ":::mbb:v1 buttons {\"anchor\":\"links\",\"layout\":{\"type\":\"flex\"}}\n\n:::mbb:v1 button {\"url\":\"https://example.invalid/?a=1&b=2\",\"title\":\"A & B\",\"linkTarget\":\"_blank\",\"rel\":\"noopener noreferrer\",\"anchor\":\"link\"}\n\n<p>Read <strong>now</strong> <code>![literal](image.png)</code> $x$</p>\n\n:::mbb:end\n\n:::mbb:end\n",
+    ":::mbb:v1 details {\"summary\":\"0\",\"showContent\":true}\n\n:::mbb:v1 details {\"summary\":\"Nested\",\"showContent\":false}\n\n- [x] task\n\nMath $x$ and note[^a].\n\n```js\nconst x = 1;\n```\n\n:::mbb:end\n\n:::mbb:end\n\n[^a]: note\n"
+  ]
+}

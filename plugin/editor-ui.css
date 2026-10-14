@@ -4,6 +4,7 @@
   left: 12px;
   right: auto;
   width: max-content;
+  max-width: calc(100vw - 24px);
   box-sizing: border-box;
   flex-wrap: wrap;
   z-index: 30;
@@ -26,10 +27,10 @@
   margin-left: 8px;
   min-height: 36px;
   white-space: nowrap;
-  border-color: #3858e9;
+  border-color: var(--wp-admin-theme-color, #2271b1);
   color: #1e1e1e;
   background: #fff;
-  box-shadow: inset 0 0 0 1px #3858e9;
+  box-shadow: inset 0 0 0 1px var(--wp-admin-theme-color, #2271b1);
   transition:
     background-color 80ms ease,
     box-shadow 80ms ease;
@@ -39,8 +40,21 @@
   background: #f0f6fc;
   box-shadow: inset 0 0 0 1px #1e3fbf;
 }
+@media (max-width: 782px) {
+  #mbb-new-post {
+    position: fixed;
+    left: 12px;
+    bottom: 22px;
+    z-index: 1000;
+    max-width: calc(100vw - 24px);
+    margin: 0;
+    box-shadow:
+      0 2px 10px #0002,
+      inset 0 0 0 1px var(--wp-admin-theme-color, #2271b1);
+  }
+}
 #mbb-new-post:focus-visible {
-  outline: 2px solid #3858e9;
+  outline: 2px solid var(--wp-admin-theme-color, #2271b1);
   outline-offset: 1px;
 }
 #mbb-dialog {
@@ -187,7 +201,6 @@
     font-size: 18px;
   }
   #mbb-new-post {
-    margin-left: 4px;
     padding-left: 8px;
     padding-right: 8px;
   }
@@ -195,9 +208,11 @@
 
 #mbb-revisions-dialog {
   width: min(1060px, 92vw);
-  height: 86vh;
-  max-height: 90vh;
-  border: 1px solid #bbb;
+  height: fit-content;
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid #c3c4c7;
   border-radius: 10px;
   padding: 18px;
   box-sizing: border-box;
@@ -241,6 +256,11 @@
   max-width: 100%;
   white-space: normal;
 }
+#mbb-toolbar > span,
+#mbb-toolbar > details {
+  min-width: 0;
+  max-width: 100%;
+}
 
 .mbb-capabilities {
   position: relative;
@@ -268,4 +288,484 @@
 .mbb-capability-warning {
   color: #b32d2e;
   font-weight: 600;
+}
+
+#mbb-local-recovery {
+  position: fixed;
+  right: 12px;
+  bottom: var(--mbb-author-controls-clearance, 88px);
+  z-index: 1000;
+  width: min(420px, calc(100vw - 24px));
+  max-height: max(
+    48px,
+    min(65dvh, 600px, calc(100dvh - var(--mbb-author-controls-clearance, 88px) - 58px))
+  );
+  overflow: auto;
+  padding: 8px 12px;
+  background: #fff;
+  border: 1px solid #c3c4c7;
+  border-radius: 4px;
+  max-width: 100%;
+  box-sizing: border-box;
+  font: 14px/1.5 system-ui;
+  box-shadow: 0 2px 10px #0002;
+}
+#mbb-local-recovery summary {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 600;
+}
+#mbb-local-recovery p {
+  max-width: 75ch;
+}
+#mbb-local-recovery button {
+  margin: 4px;
+}
+.mbb-recovery-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+.mbb-recovery-row span {
+  flex: 1 1 200px;
+}
+
+#mbb-frontmatter {
+  border: 1px solid #c3c4c7;
+  border-radius: 6px;
+  padding: 12px;
+  margin: 12px 0;
+}
+.mbb-frontmatter-row {
+  border-top: 1px solid #ddd;
+  padding: 10px 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.mbb-frontmatter-row label {
+  font-weight: 600;
+}
+.mbb-frontmatter-reason {
+  color: #654f19;
+}
+#mbb-resources {
+  padding: 12px;
+  border: 1px solid #b6c9dc;
+  border-radius: 6px;
+  background: #f4f8fc;
+}
+#mbb-resources label {
+  display: block;
+  margin: 8px 0;
+}
+#mbb-resource-projected {
+  display: block;
+  width: 100%;
+  min-height: 120px;
+  font: 13px/1.6 monospace;
+}
+#mbb-resource-list {
+  padding-left: 20px;
+  overflow-wrap: anywhere;
+}
+
+#mbb-export-dialog {
+  box-sizing: border-box;
+  width: min(900px, calc(100vw - 24px));
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  border: 1px solid #c3c4c7;
+  border-radius: 12px;
+  padding: 20px;
+}
+#mbb-export-dialog::backdrop {
+  background: rgb(0 0 0 / 45%);
+}
+#mbb-export-dialog button,
+#mbb-export-dialog select {
+  margin: 4px;
+  max-width: 100%;
+  white-space: normal;
+}
+#mbb-export-dialog ul {
+  overflow-wrap: anywhere;
+}
+#mbb-export-projected-source {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 240px;
+  font-family: monospace;
+}
+
+.mbb-merge-versions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.mbb-merge-versions label {
+  min-width: 0;
+}
+.mbb-merge-versions textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 180px;
+  font-family: monospace;
+}
+.mbb-merge-hunk {
+  border: 1px solid #c3c4c7;
+  padding: 12px;
+  margin: 12px 0;
+}
+.mbb-merge-hunk pre {
+  max-height: 220px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.mbb-merge-choices select,
+.mbb-conflict-metadata select {
+  max-width: 100%;
+}
+@media (max-width: 600px) {
+  .mbb-merge-versions {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* The author keeps editing; secondary tools only occupy space when requested. */
+#mbb-toolbar {
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px) + var(--mbb-keyboard-inset, 0px));
+  gap: 6px;
+  padding: 6px;
+}
+#mbb-toolbar #mbb-markdown {
+  color: #fff;
+  background: var(--wp-admin-theme-color, #2271b1);
+  border: 1px solid var(--wp-admin-theme-color, #2271b1);
+  border-radius: 3px;
+}
+.mbb-mobile-save-guidance,
+.mbb-more-save-guidance {
+  display: none;
+}
+#mbb-more {
+  position: relative;
+}
+#mbb-more > summary {
+  box-sizing: border-box;
+  cursor: pointer;
+  padding: 8px;
+  min-height: 20px;
+  white-space: nowrap;
+}
+#mbb-more-actions {
+  position: fixed;
+  bottom: calc(64px + env(safe-area-inset-bottom, 0px) + var(--mbb-keyboard-inset, 0px));
+  left: 12px;
+  right: auto;
+  width: min(360px, calc(100vw - 40px));
+  max-height: min(60dvh, 520px);
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid #c3c4c7;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 2px 12px #0002;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+#mbb-more-actions .mbb-capabilities-help {
+  position: static;
+  width: auto;
+  max-height: none;
+  box-shadow: none;
+}
+body:has(#mbb-toolbar:not([hidden]):not(.mbb-keyboard-open) #mbb-recovery-open:not([hidden]))
+  #mbb-local-recovery:not([open]):not(.mbb-recovery-attention) {
+  display: none;
+}
+#mbb-local-recovery summary {
+  min-height: 24px;
+}
+#mbb-dialog[open] {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  height: 86dvh;
+  max-height: calc(100dvh - 24px);
+  padding: 0;
+}
+.mbb-dialog-header,
+.mbb-dialog-views,
+.mbb-dialog-footer {
+  flex: none;
+  padding: 10px 18px;
+  background: #fff;
+}
+.mbb-dialog-header h2 {
+  margin: 0;
+}
+.mbb-dialog-header {
+  gap: 12px;
+  border-bottom: 1px solid #dcdcde;
+}
+.mbb-dialog-views {
+  display: flex;
+  gap: 8px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+.mbb-dialog-views button[aria-pressed='true'] {
+  background: #f0f0f1;
+  border-color: #8c8f94;
+  color: #1d2327;
+  font-weight: 600;
+}
+.mbb-dialog-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 18px 16px;
+  overscroll-behavior: contain;
+}
+.mbb-preview-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  padding: 0 18px 12px;
+}
+#mbb-dialog .mbb-preview-body iframe {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  box-sizing: border-box;
+}
+.mbb-dialog-body[hidden],
+.mbb-preview-body[hidden] {
+  display: none;
+}
+.mbb-dialog-footer {
+  border-top: 1px solid #dcdcde;
+}
+.mbb-dialog-footer > p {
+  margin: 0 0 8px;
+  max-height: 14dvh;
+  overflow: auto;
+}
+.mbb-dialog-footer .mbb-actions {
+  margin: 0;
+  gap: 8px;
+}
+#mbb-save:not(:disabled) {
+  color: #fff;
+  background: var(--wp-admin-theme-color, #2271b1);
+  border: 1px solid var(--wp-admin-theme-color, #2271b1);
+  border-radius: 3px;
+}
+#mbb-frontmatter > summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+#mbb-dialog .mbb-diff-lines {
+  max-height: none;
+  overflow: visible;
+}
+@media (max-width: 600px) {
+  #mbb-toolbar {
+    flex-wrap: wrap;
+    font-size: 12px;
+    gap: 4px;
+  }
+  #mbb-toolbar > .mbb-mobile-save-guidance {
+    display: block;
+    flex-basis: 100%;
+    font-size: 11px;
+    line-height: 16px;
+    color: #50575e;
+  }
+  #mbb-toolbar > button {
+    min-height: 42px;
+    padding: 6px 8px;
+  }
+  #mbb-toolbar.mbb-keyboard-open {
+    display: none;
+  }
+  #mbb-more-actions .mbb-more-save-guidance {
+    display: block;
+    margin: 0;
+  }
+  #mbb-toolbar > .mbb-save-guidance {
+    display: none;
+  }
+  #mbb-more-actions {
+    right: -2px;
+  }
+  #mbb-dialog[open] {
+    width: calc(100vw - 16px);
+    height: calc(100dvh - 16px);
+    max-height: calc(100dvh - 16px);
+  }
+  .mbb-dialog-header,
+  .mbb-dialog-views,
+  .mbb-dialog-footer {
+    padding: 8px 12px;
+  }
+  .mbb-dialog-body,
+  .mbb-preview-body {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .mbb-dialog-footer {
+    padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+  }
+  #mbb-dialog button {
+    min-height: 42px;
+    padding: 8px 10px;
+  }
+  #mbb-dialog #mbb-source {
+    height: 30dvh;
+    min-height: 150px;
+  }
+  .mbb-dialog-footer .mbb-actions > button:not([hidden]) {
+    flex: 1 1 140px;
+  }
+}
+
+/* Author controls share WordPress's primary color and a quiet secondary treatment. */
+:is(#mbb-toolbar, #mbb-dialog, #mbb-revisions-dialog, #mbb-export-dialog, #mbb-local-recovery)
+  button {
+  box-sizing: border-box;
+  min-height: 36px;
+  padding: 7px 12px;
+  border: 1px solid #c3c4c7;
+  border-radius: 5px;
+  background: #fff;
+  color: #2c3338;
+  font: inherit;
+  line-height: 1.4;
+  cursor: pointer;
+}
+:is(#mbb-toolbar, #mbb-dialog, #mbb-revisions-dialog, #mbb-export-dialog, #mbb-local-recovery)
+  button:hover:not(:disabled) {
+  background: #f6f7f7;
+  border-color: #8c8f94;
+}
+:is(#mbb-toolbar, #mbb-dialog, #mbb-revisions-dialog, #mbb-export-dialog, #mbb-local-recovery)
+  :is(button, summary, input, select):focus-visible {
+  outline: 2px solid var(--wp-admin-theme-color, #2271b1);
+  outline-offset: 2px;
+}
+:is(#mbb-toolbar, #mbb-dialog, #mbb-revisions-dialog, #mbb-export-dialog, #mbb-local-recovery)
+  button:disabled {
+  color: #787c82;
+  background: #f0f0f1;
+  border-color: #dcdcde;
+  cursor: default;
+}
+#mbb-dialog #mbb-save:not(:disabled),
+#mbb-revisions-dialog #mbb-revision-confirm:not(:disabled) {
+  background: var(--wp-admin-theme-color, #2271b1);
+  border-color: var(--wp-admin-theme-color, #2271b1);
+  color: #fff;
+}
+#mbb-dialog #mbb-save:hover:not(:disabled),
+#mbb-toolbar #mbb-markdown:hover:not(:disabled),
+#mbb-revisions-dialog #mbb-revision-confirm:hover:not(:disabled) {
+  filter: brightness(0.9);
+}
+:is(#mbb-dialog, #mbb-revisions-dialog) :is(.mbb-status, .mbb-error, [role='status']) {
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+#mbb-dialog input[type='file'] {
+  max-width: 100%;
+  font: 13px/1.5 system-ui;
+}
+#mbb-dialog input[type='file']::file-selector-button {
+  margin-inline-end: 8px;
+  padding: 6px 10px;
+  border: 1px solid #c3c4c7;
+  border-radius: 4px;
+  background: #f6f7f7;
+  color: #2c3338;
+  font: inherit;
+  cursor: pointer;
+}
+#mbb-revisions-dialog iframe {
+  display: block;
+  box-sizing: border-box;
+  margin-top: 12px;
+}
+#mbb-revisions-dialog iframe[hidden] {
+  display: none;
+}
+#mbb-revisions-dialog .mbb-diff-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+#mbb-revisions-dialog .mbb-diff-grid pre {
+  min-width: 0;
+  max-height: 28dvh;
+  overflow: auto;
+  padding: 10px;
+  background: #f6f7f7;
+  border: 1px solid #dcdcde;
+  font: 13px/1.5 monospace;
+}
+@media (max-width: 600px) {
+  #mbb-revisions-dialog .mbb-dialog-header {
+    padding-inline: 0;
+    align-items: flex-start;
+  }
+  #mbb-revisions-dialog .mbb-diff-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (pointer: coarse) {
+  :is(#mbb-toolbar, #mbb-dialog, #mbb-revisions-dialog, #mbb-export-dialog, #mbb-local-recovery)
+    button,
+  #mbb-more > summary {
+    min-height: 44px;
+  }
+}
+
+#mbb-dialog .mbb-dialog-views button[aria-pressed='true'] {
+  background: #f0f0f1;
+  border-color: #8c8f94;
+  font-weight: 600;
+}
+
+:is(#mbb-dialog, #mbb-revisions-dialog, #mbb-export-dialog) select {
+  appearance: none;
+  padding-inline: 10px 32px;
+  min-height: 36px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    right 17px center,
+    right 12px center;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+}
+:is(#mbb-dialog, #mbb-revisions-dialog, #mbb-export-dialog) select:dir(rtl) {
+  background-position:
+    left 12px center,
+    left 17px center;
+}
+
+@media (forced-colors: active) {
+  :is(#mbb-dialog, #mbb-revisions-dialog, #mbb-export-dialog) select {
+    appearance: auto;
+    background-image: none;
+  }
 }

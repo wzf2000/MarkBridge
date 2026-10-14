@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/includes/i18n.php';
 /** Optional, data-only emoji packs. Never extract an untrusted archive. */
 if (!defined('ABSPATH')) {
     exit();
@@ -258,22 +259,28 @@ function mbb_emoji_config()
     }
     return $images;
 }
-add_action('admin_menu', function () {
-    add_options_page(
-        'MarkBridge 图片表情',
-        'MarkBridge 图片表情',
-        'manage_options',
-        'markbridge-emoji',
-        'mbb_emoji_page',
-    );
-});
-function mbb_emoji_page()
+add_action(
+    'admin_menu',
+    function () {
+        add_options_page(
+            mbb_t('MarkBridge image emoji'),
+            mbb_t('MarkBridge image emoji'),
+            'manage_options',
+            'markbridge-emoji',
+            'mbb_emoji_page',
+        );
+        // Retain the old registered URL, but present one MarkBridge settings entry.
+        remove_submenu_page('options-general.php', 'markbridge-emoji');
+    },
+    30,
+);
+function mbb_emoji_page($embedded = false)
 {
     if (!current_user_can('manage_options')) {
         wp_die('Forbidden', '', ['response' => 403]);
     }
     $message = '';
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         check_admin_referer('markbridge-emoji');
         try {
             $operation = sanitize_key($_POST['operation'] ?? '');
@@ -281,7 +288,9 @@ function mbb_emoji_page()
             if ($operation === 'import') {
                 $upload = $_FILES['pack_zip'] ?? [];
                 if (
+                    !is_array($upload) ||
                     ($upload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK ||
+                    !is_string($upload['tmp_name'] ?? null) ||
                     !is_uploaded_file($upload['tmp_name'])
                 ) {
                     throw new RuntimeException('Please upload a ZIP data pack.');
@@ -294,15 +303,24 @@ function mbb_emoji_page()
             } else {
                 throw new RuntimeException('Unknown operation.');
             }
-            $message = '操作完成。';
+            $message = mbb_t('Operation completed.');
         } catch (Throwable $error) {
             $message = $error->getMessage();
         }
     }
-    echo '<div class="wrap"><h1>MarkBridge 图片表情</h1><p>默认使用 Unicode，不自动下载外部资源。当前没有预置下载源；可导入具有明确来源与许可的图片数据包。导入不授予资源使用许可。</p>';
+    if (!$embedded) {
+        echo '<div class="wrap mbb-settings"><h1>MarkBridge</h1>';
+        mbb_admin_settings_navigation('emoji');
+    }
+    echo '<h2>' . esc_html(mbb_t('MarkBridge image emoji')) . '</h2>';
+    echo mbb_t(
+        '<p>Unicode is used by default; external resources are not automatically downloaded. No download source is bundled. Import only image packs with known provenance and licensing. Importing does not grant a license to use the resources.</p>',
+    );
     echo '<p>' . esc_html($message) . '</p><form method="post" enctype="multipart/form-data">';
     wp_nonce_field('markbridge-emoji');
-    echo '<input type="hidden" name="operation" value="import"><input type="file" name="pack_zip" accept=".zip" required><button class="button">导入数据包</button></form><form method="post">';
+    echo mbb_t(
+        '<input type="hidden" name="operation" value="import"><input type="file" name="pack_zip" accept=".zip" required><button class="button">Import pack</button></form><form method="post">',
+    );
     wp_nonce_field('markbridge-emoji');
     echo '<p><select name="pack"><option value="">Unicode</option>';
     foreach (get_option('markbridge_emoji_packs', []) as $key => $pack) {
@@ -314,5 +332,10 @@ function mbb_emoji_page()
             esc_html($pack['name'] . ' ' . $pack['version'] . ' — ' . $pack['license']) .
             '</option>';
     }
-    echo '</select> <button class="button" name="operation" value="select">启用所选</button> <button class="button" name="operation" value="delete">删除未启用包</button></p></form></div>';
+    echo mbb_t(
+        '</select> <button class="button" name="operation" value="select">Enable selected pack</button> <button class="button" name="operation" value="delete">Delete inactive pack</button></p></form>',
+    );
+    if (!$embedded) {
+        echo '</div>';
+    }
 }

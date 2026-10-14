@@ -2,6 +2,9 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
+const fixturePort = Number(process.env.MARKBRIDGE_TEST_BROWSER_PORT || 8765);
+if (!Number.isInteger(fixturePort) || fixturePort < 1024 || fixturePort > 65535)
+  throw Error('MARKBRIDGE_TEST_BROWSER_PORT must be a local unprivileged port.');
 
 const plugin = process.env.MARKBRIDGE_TEST_PLUGIN_ROOT
   ? fs.realpathSync(process.env.MARKBRIDGE_TEST_PLUGIN_ROOT)
@@ -17,6 +20,11 @@ const disabledPresentation = JSON.parse(
 );
 const readerDisabledPresentation = JSON.parse(
   execFileSync('php', [path.join(__dirname, 'presentation-assets.php'), 'reader-disabled'], {
+    encoding: 'utf8',
+  }),
+);
+const componentPresentation = JSON.parse(
+  execFileSync('php', [path.join(__dirname, 'presentation-assets.php'), 'empty-component'], {
     encoding: 'utf8',
   }),
 );
@@ -59,18 +67,25 @@ const editor = `<!doctype html><html><head><meta charset="utf-8"><meta name="vie
 <script>window.MBB_MATH_CONFIG={front:false};window.MBB_EDITOR={root:location.origin+'/wp-json/mbb/v1/',nonce:'fixture',postId:0,canPublish:true,sourceFontSize:'14',state:null,footnoteStyle:${JSON.stringify(fs.readFileSync(path.join(plugin, 'footnotes.css'), 'utf8'))}};
 window.wp={blocks:{serialize:()=>''},data:{select:()=>({getEditedPostAttribute:()=>0,getEditedPostContent:()=>'',getBlocks:()=>[]})}};
 window.MBB_REVISIONS={open(){}};</script>
-<script defer src="${mapped('math.js')}"></script><script defer src="${mapped('editor-ui.js')}"></script>
+<script defer src="${mapped('math.js')}"></script><script defer src="${mapped('resource-ui.js')}"></script><script defer src="${mapped('editor-ui.js')}"></script>
 </head><body><button id="mbb-new" type="button">上传新文档</button><button class="mbb-open" data-post="12" type="button">编辑现有文档</button></body></html>`;
 
 // Optional real WordPress block editor fixture, using only a sanitized core-script runtime.
 const wpRuntime = process.env.MARKBRIDGE_TEST_RUNTIME;
-const taskEditor = (source = '- [ ] Browser task\n- ordinary\n') => {
+const taskEditor = (source = '- [ ] Browser task\n- ordinary\n', options = {}) => {
   if (!wpRuntime) return null;
   let html = fs.readFileSync(path.join(wpRuntime, 'run/worker-bootstrap.html'), 'utf8');
   html = html.replaceAll('http://markbridge.invalid', '');
+  if (options.converterOnly)
+    html = html.replace(
+      '<script src="/wp-content/plugins/markdown-block-bridge/kernel.js">',
+      '<script>window.MBB_CONVERTER_ONLY=true;</script><script src="/wp-content/plugins/markdown-block-bridge/kernel.js">',
+    );
   html = html.replace(
     '</head>',
-    '<meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/wp-includes/css/dashicons.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/components/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-editor/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-library/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-library/editor.min.css"><style>#task-editor{padding:90px 24px 24px;max-width:850px;margin:auto}</style></head>',
+    '<link rel="stylesheet" href="' +
+      mapped('teaching.css') +
+      '"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/wp-includes/css/dashicons.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/components/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-editor/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-library/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-library/editor.min.css"><style>#task-editor{padding:90px 24px 24px;max-width:850px;margin:auto}#task-export{white-space:pre-wrap;overflow-wrap:anywhere;max-width:100%}</style></head>',
   );
   return html.replace(
     '</body>',
@@ -79,13 +94,13 @@ const taskEditor = (source = '- [ ] Browser task\n- ordinary\n') => {
 const e = wp.element.createElement;
 function EditorBody() {
   window.taskRegistry = wp.data.useRegistry();
-  return e(wp.blockEditor.BlockTools, {}, e(wp.blockEditor.BlockList), e(wp.blockEditor.ButtonBlockAppender));
+  return e(wp.blockEditor.BlockTools, {}, ${options.iframe ? `e(wp.blockEditor.__unstableIframe,{name:'editor-canvas',title:'Editor canvas',style:{width:'100%',height:'500px'}},e(wp.blockEditor.BlockList)),e(wp.components.Panel,{},e(wp.blockEditor.InspectorControls.Slot))` : 'e(wp.blockEditor.BlockList), e(wp.blockEditor.ButtonBlockAppender)'});
 }
 function TaskEditorApp() {
   const [blocks,setBlocks] = wp.element.useState(() => MBB.toBlocks(${JSON.stringify(source)}));
   window.taskBlocks = blocks;
   return e(wp.components.SlotFillProvider, {}, e(wp.blockEditor.BlockEditorProvider, {
-    value:blocks,onInput:setBlocks,onChange:setBlocks,settings:{allowedBlockTypes:true},
+    value:blocks,onInput:setBlocks,onChange:setBlocks,settings:{allowedBlockTypes:true,__unstableResolvedAssets:{styles:'<link rel="stylesheet" href="/wp-includes/css/dist/block-editor/style.min.css">',scripts:''}},
   }, e(EditorBody)));
 }
 wp.element.createRoot(document.getElementById('task-editor')).render(e(TaskEditorApp));
@@ -107,6 +122,32 @@ const mime = {
 http
   .createServer((request, response) => {
     const pathname = new URL(request.url, 'http://localhost').pathname;
+    const locale =
+      new URL(request.url, 'http://localhost').searchParams.get('locale') === 'en_US'
+        ? 'en_US'
+        : 'zh_CN';
+    const originalEnd = response.end.bind(response);
+    response.end = (body, ...rest) => {
+      if (typeof body === 'string' && /<!doctype html>|<html\b/i.test(body)) {
+        // Explicit synthetic catalogs; this does not model WordPress's real user/site locale selection.
+        body = body.replace(
+          /(<script\b[^>]*src=["'][^"']*(?:\/plugin\/|markdown-block-bridge\/kernel)[^"']*["'][^>]*>)/g,
+          '<script src="/fixture-localization.js?locale=' + locale + '"></script>$1',
+        );
+      }
+      return originalEnd(body, ...rest);
+    };
+    if (pathname === '/fixture-localization.js') {
+      const jed = JSON.parse(
+        fs.readFileSync(path.join(plugin, 'languages/markbridge-zh_CN-mbb-i18n.json'), 'utf8'),
+      ).locale_data.messages;
+      const data = locale === 'zh_CN' ? jed : {};
+      const boot = `(() => { const data=${JSON.stringify(data)};window.MBB_UI_LOCALE=${JSON.stringify(locale)};window.wp=window.wp||{};if(window.wp.i18n?.setLocaleData)window.wp.i18n.setLocaleData(data,'markbridge');else window.wp.i18n={__(text,domain){return domain==='markbridge'?(data[text]?.[0]??text):text;},_n(single,plural,count,domain){return domain==='markbridge'?(data[single]?.[0]??(count===1?single:plural)):(count===1?single:plural);}};})();`;
+      return response
+        .writeHead(200, { 'Content-Type': 'application/javascript; charset=utf-8' })
+        .end(boot + '\n' + fs.readFileSync(path.join(plugin, 'i18n.js'), 'utf8'));
+    }
+
     if (pathname === '/health') return response.writeHead(200).end('ok');
     if (pathname === '/wp/v2/types')
       return response.writeHead(200, { 'Content-Type': 'application/json' }).end('{}');
@@ -140,6 +181,57 @@ http
         .writeHead(200, { 'Content-Type': 'text/html' })
         .end(editor.replace('</head>', setup + '</head>'));
     }
+    if (pathname === '/recovery-editor' || pathname === '/wp-admin/post-new.php') {
+      const query = new URL(request.url, 'http://localhost').searchParams;
+      const isNew = query.has('new'),
+        sourceManaged = query.has('source');
+      let html = taskEditor('# Original\n\nOriginal body.\n', { converterOnly: isNew });
+      if (!html) return response.writeHead(404).end();
+      if (query.has('header'))
+        html = html.replace(
+          '</body>',
+          `<style>
+.fixture-editor-header{position:fixed;top:46px;left:0;right:0;height:64px;background:white;border-bottom:1px solid #888;z-index:90;display:flex;align-items:center}
+.fixture-editor-header .edit-post-header-toolbar{display:flex;align-items:center;gap:8px}
+.fixture-editor-header .editor-header__settings{margin-left:auto;display:flex;align-items:center;gap:12px;background:white;height:100%}
+@media(max-width:782px){.fixture-editor-header .edit-post-header-toolbar{width:100px;flex-shrink:0;overflow:hidden}.fixture-editor-header .editor-header__settings{position:absolute;left:100px;right:0;top:0}}
+</style><header class="editor-header fixture-editor-header"><div class="edit-post-header-toolbar"><button>Add</button><button>List</button></div><div class="editor-header__settings"><button class="editor-header__post-preview-button">Preview</button><button>Publish</button></div></header></body>`,
+        );
+      if (query.has('sidebar'))
+        html = html.replace(
+          '</body>',
+          '<aside class="interface-complementary-area editor-sidebar" style="position:fixed;right:0;top:64px;bottom:0;width:min(320px,90vw);z-index:90;background:#fff;border-left:1px solid #888">Synthetic open editor sidebar</aside></body>',
+        );
+      html = html.replace(
+        'const e = wp.element.createElement;',
+        `
+window.MBB_EDITOR={root:location.origin+'/wp-json/mbb/v1/',nonce:'synthetic-nonce-not-for-storage',postId:${isNew ? 0 : 12},newPost:${isNew},canPublish:true,
+recovery:{schema:1,siteKey:'a'.repeat(64),userKey:'b'.repeat(64)},
+state:${isNew ? 'null' : `{post_id:12,expected:'baseline-1',title:'Original',post_status:'draft',featured_media:0,source_managed:${sourceManaged},source_write_available:false,source_sha256:${sourceManaged ? "'f'.repeat(64)" : 'null'},document:{documentId:'RECOVERY',source:'# Original\\n\\nOriginal body.\\n',serialized:wp.blocks.serialize(MBB.toBlocks('# Original\\n\\nOriginal body.\\n'))}}`}};
+window.MBB_REVISIONS={open(){}};window.MBB_MATH_CONFIG={front:false};
+window.recoveryFields={title:'Original',status:${isNew ? "'auto-draft'" : "'draft'"},featured_media:0};window.recoveryOriginalSerialized=wp.blocks.serialize(MBB.toBlocks('# Original\\n\\nOriginal body.\\n'));window.nativeDirty=false;window.recoveryLocks=[];
+const subscribers=new Set();window.recoveryNotify=()=>subscribers.forEach(fn=>fn());
+const select=wp.data.select.bind(wp.data),dispatch=wp.data.dispatch.bind(wp.data),subscribe=wp.data.subscribe.bind(wp.data);wp.data={...wp.data};
+wp.data.select=name=>name==='core/editor'?{getCurrentPostId:()=>12,getEditedPostAttribute:key=>recoveryFields[key],getEditedPostContent:()=>wp.blocks.serialize(window.taskBlocks||[]),isEditedPostDirty:()=>nativeDirty}:name==='core/block-editor'?{getBlocks:()=>window.taskBlocks||[]}:select(name);
+wp.data.dispatch=name=>name==='core/editor'?{editPost:attrs=>{Object.assign(recoveryFields,attrs);window.nativeDirty=true;recoveryNotify();},lockPostSaving:key=>recoveryLocks.push(key),lockPostAutosaving:key=>recoveryLocks.push(key)}:name==='core/block-editor'?{resetBlocks:blocks=>taskRegistry.dispatch('core/block-editor').resetBlocks(blocks)}:dispatch(name);
+wp.data.subscribe=fn=>{subscribers.add(fn);const original=subscribe(fn);return()=>{subscribers.delete(fn);original();};};
+const middlewares=[];window.nativePosts=[];
+wp.apiFetch=options=>middlewares.reduceRight((next,fn)=>opts=>fn(opts,next),async opts=>{nativePosts.push(opts);const result=await fetch('/wp-json/mbb/v1/mock-native-save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(opts.data)});if(!result.ok)throw await result.json();return result.json();})(options);
+wp.apiFetch.use=fn=>middlewares.push(fn);
+const e = wp.element.createElement;`,
+      );
+      html = html.replace(
+        'window.taskBlocks = blocks;',
+        'window.taskBlocks = blocks;wp.element.useEffect(()=>{window.nativeDirty=wp.blocks.serialize(blocks)!==(MBB_EDITOR.state?.document.serialized||window.recoveryOriginalSerialized);window.recoveryNotify();},[blocks]);',
+      );
+      html = html.replace(
+        '</body>',
+        `<style>#mbb-new,#fixture-native-save{position:fixed;top:12px;z-index:60;padding:8px}#mbb-new{left:12px}#fixture-native-save{right:12px}</style><div style="position:relative;z-index:30"><button id="mbb-new">新 Markdown 草稿</button><button id="fixture-native-save">Fixture native save</button></div>
+<link rel="stylesheet" href="${mapped('editor-ui.css')}"><script src="${mapped('math.js')}"></script><script src="${mapped('resource-ui.js')}"></script><script src="${mapped('editor-ui.js')}"></script><script src="${mapped('local-recovery.js')}"></script><script src="${mapped('export-ui.js')}"></script>
+<script>document.getElementById('fixture-native-save').onclick=async()=>{await wp.apiFetch({path:'/wp/v2/posts/12',method:'POST',data:{content:wp.blocks.serialize(taskBlocks),title:recoveryFields.title,status:recoveryFields.status==='auto-draft'?'draft':recoveryFields.status}});window.nativeDirty=false;recoveryNotify();};</script></body>`,
+      );
+      return response.writeHead(200, { 'Content-Type': 'text/html' }).end(html);
+    }
     if (pathname === '/editor') {
       const size = Number(
         new URL(request.url, 'http://localhost').searchParams.get('sourceFontSize'),
@@ -164,6 +256,88 @@ http
         .end(
           `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="${mapped('footnotes.css')}"><style>body{font:18px/1.7 sans-serif;margin:20px}article{max-width:800px;margin:auto}</style></head><body>${body}</body></html>`,
         );
+    }
+    if (pathname === '/component-dynamic')
+      return response
+        .writeHead(200, { 'Content-Type': 'text/html' })
+        .end(
+          '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><article id="dynamic"></article>' +
+            frontScripts(componentPresentation),
+        );
+    if (pathname === '/component-fixture.html')
+      return response
+        .writeHead(200, { 'Content-Type': 'text/html' })
+        .end(fs.readFileSync(path.join(__dirname, 'fixtures/component.html'), 'utf8'));
+    if (pathname === '/component-editor') {
+      const raw = fs.readFileSync(path.join(__dirname, 'fixtures/component.html'), 'utf8');
+      const provider = {
+        id: 'fixture',
+        version: '0.1.0',
+        protocolVersion: 1,
+        minMarkBridge: '1.9.0-dev.1',
+        budgets: {
+          resourceBytes: 524288,
+          startupMs: 5000,
+          wallMs: 2000,
+          traceFrames: 8192,
+          traceBytes: 524288,
+        },
+        title: 'Fixed fixture',
+        defaults: { value: 42, behavior: 'complete' },
+        resource: {
+          url: '/component-fixture.html',
+          sha256: require('node:crypto').createHash('sha256').update(raw).digest('hex'),
+        },
+      };
+      const source =
+        ':::mbb:v1 component {"id":"editor-component","component":"fixture","componentVersion":"0.1.0","params":{"value":42,"behavior":"complete"}}\n\nEditable static fallback.\n\n:::mbb:end\n';
+      let html = taskEditor(source, { iframe: true });
+      if (html)
+        html = html
+          .replace(
+            'const e = wp.element.createElement;',
+            'window.MBBComponents=' +
+              JSON.stringify([
+                provider,
+                {
+                  ...provider,
+                  id: 'fixture-second',
+                  defaults: { value: 99, behavior: 'complete' },
+                },
+              ]) +
+              ';const e = wp.element.createElement;',
+          )
+          .replace(
+            '<div id="task-editor">',
+            '<script src="' + mapped('components.js') + '"></script><div id="task-editor">',
+          );
+      return response
+        .writeHead(html ? 200 : 404, { 'Content-Type': 'text/html' })
+        .end(html || 'Core runtime required');
+    }
+    if (pathname === '/adapters-editor') {
+      const adapters = JSON.parse(
+        fs.readFileSync(path.join(__dirname, '../fixtures/block-adapters.json'), 'utf8'),
+      );
+      let html = taskEditor(adapters.native[0] + '\n' + adapters.native[1], { iframe: true });
+      if (html)
+        html = html.replace(
+          '<script src="/wp-content/plugins/markdown-block-bridge/kernel.js">',
+          '<script>window.MBB_ADAPTERS=' +
+            JSON.stringify(adapters.descriptors).replaceAll('<', '\\u003c') +
+            ';</script><script src="/wp-content/plugins/markdown-block-bridge/kernel.js">',
+        );
+      return response
+        .writeHead(html ? 200 : 404, { 'Content-Type': 'text/html' })
+        .end(html || 'Core runtime required');
+    }
+    if (pathname === '/teaching-editor') {
+      const source =
+        ':::mbb:v1 collapse {"id":"edit-fold","title":"可编辑折叠","open":false}\n\nExisting teaching body.\n\n:::mbb:end\n\n:::mbb:v1 code-compare {"id":"edit-compare","leftTitle":"左代码","rightTitle":"右代码","leftHighlights":"","rightHighlights":""}\n\n```js\nleft();\n```\n\n```python\nright()\n```\n\nExplanation.\n\n:::mbb:end\n';
+      const html = taskEditor(source);
+      return response
+        .writeHead(html ? 200 : 404, { 'Content-Type': 'text/html' })
+        .end(html || 'Core runtime required');
     }
     if (pathname === '/footnotes-editor' || pathname === '/footnotes-adjacent-editor') {
       const html = taskEditor(
@@ -242,4 +416,4 @@ http
     });
     fs.createReadStream(file).pipe(response);
   })
-  .listen(8765, '127.0.0.1');
+  .listen(fixturePort, '127.0.0.1');

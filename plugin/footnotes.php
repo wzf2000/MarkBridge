@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/includes/i18n.php';
 if (!defined('ABSPATH')) {
     exit();
 }
@@ -104,7 +105,7 @@ function mbb_render_footnotes($html)
             $anchor = $document->createElement('a', (string) $number);
             $anchor->setAttribute('href', '#' . $target);
             $anchor->setAttribute('id', $refId);
-            $anchor->setAttribute('aria-label', '脚注 ' . $number);
+            $anchor->setAttribute('aria-label', mbb_t('Footnote ') . $number);
             $marker->removeAttribute('data-mbb-footnote');
             while ($marker->firstChild) {
                 $marker->removeChild($marker->firstChild);
@@ -114,7 +115,7 @@ function mbb_render_footnotes($html)
             $back->setAttribute('href', '#' . $refId);
             $back->setAttribute(
                 'aria-label',
-                '返回脚注 ' . $number . ' 的第 ' . ($index + 1) . ' 处引用',
+                sprintf(mbb_t('Return to footnote %1$s, reference %2$s'), $number, $index + 1),
             );
             $backlinks->appendChild($back);
         }

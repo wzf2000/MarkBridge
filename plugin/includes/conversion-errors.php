@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/i18n.php';
 if (!defined('ABSPATH')) {
     exit();
 }
@@ -41,48 +42,55 @@ function mbb_conversion_position($location)
 function mbb_conversion_location_label($position)
 {
     if (($position['kind'] ?? '') === 'source') {
-        return 'Markdown 第 ' .
-            $position['line'] .
-            ' 行' .
-            (isset($position['column']) ? '，第 ' . $position['column'] . ' 列' : '所在区块');
+        return isset($position['column'])
+            ? sprintf(
+                mbb_t('Markdown line %1$s, column %2$s'),
+                $position['line'],
+                $position['column'],
+            )
+            : sprintf(mbb_t('Block at Markdown line %1$s'), $position['line']);
     }
     if (($position['kind'] ?? '') === 'block') {
-        $label =
-            '第 ' .
-            implode(' → ', array_map(static fn($index) => $index + 1, $position['path'])) .
-            ' 个区块';
-        if ($position['attribute'] !== null) {
-            $label .=
-                '，属性' . ($position['attribute'] === '' ? '' : ' ' . $position['attribute']);
-        }
-        return $label;
+        $path = implode(' → ', array_map(static fn($index) => $index + 1, $position['path']));
+        return $position['attribute'] !== null
+            ? sprintf(mbb_t('Block %1$s, attribute %2$s'), $path, $position['attribute'])
+            : sprintf(mbb_t('Block %1$s'), $path);
     }
-    if (($position['kind'] ?? '') === 'serialized') {
-        return '区块序列化内容第 ' . ($position['offset'] + 1) . ' 个字符附近';
-    }
-    return '';
+    return ($position['kind'] ?? '') === 'serialized'
+        ? sprintf(mbb_t('Near serialized block character %1$s'), $position['offset'] + 1)
+        : '';
 }
 
 function mbb_conversion_hint($code)
 {
     if (str_starts_with($code, 'FOOTNOTE')) {
-        return '请核对命名脚注的引用和定义；定义需唯一、被引用，并放在文末。';
+        return mbb_t(
+            'Check named footnote references and definitions. Each definition must be unique, referenced, and placed at the end of the document.',
+        );
     }
     if (in_array($code, ['UNCLOSED_MATH', 'MATH_DELIMITER', 'MATH_MISMATCH'], true)) {
-        return '请核对公式分隔符和 TeX 源码；块公式的 $$ 应分别独占一行。';
+        return mbb_t(
+            'Check formula delimiters and TeX source. Each block formula delimiter $$ must occupy its own line.',
+        );
     }
     if (
         in_array($code, ['INPUT_LIMIT', 'STRUCTURE_LIMIT', 'INPUT_ENCODING', 'INVALID_INPUT'], true)
     ) {
-        return '请减少文档大小或嵌套层数，并使用不含 NUL 的 UTF-8 文本。';
+        return mbb_t('Reduce document size or nesting and use UTF-8 text without NUL.');
     }
     if (in_array($code, ['ROUNDTRIP', 'LOSSY_ROUNDTRIP', 'BLOCK_ATTRIBUTES'], true)) {
-        return '请检查此区块的样式、属性和嵌套；支持区块类型并不表示支持全部格式。可先下载 Markdown 保留候选。';
+        return mbb_t(
+            'Check this block\'s styles, attributes, and nesting. A supported block type does not imply support for all formatting. Download Markdown to preserve the candidate if needed.',
+        );
     }
     if (str_contains($code, 'HTML') || str_contains($code, 'STYLE') || str_contains($code, 'URL')) {
-        return '请使用受支持的文本格式和安全链接；不要包含脚本、事件属性或不支持的 HTML。';
+        return mbb_t(
+            'Use supported text formatting and safe links. Do not include scripts, event attributes, or unsupported HTML.',
+        );
     }
-    return '请检查标示位置，使用受支持的区块和格式；当前候选保留，请修正后重新预览。';
+    return mbb_t(
+        'Check the indicated position and use supported blocks and formatting. The candidate is preserved; correct it and preview again.',
+    );
 }
 
 function mbb_conversion_failure($result)
@@ -95,7 +103,7 @@ function mbb_conversion_failure($result)
     $hint = mbb_conversion_hint($code);
     return new WP_Error(
         $valid_code ? $worker_code : 'conversion',
-        ($result['message'] ?? '转换失败') . ($label ? '（' . $label . '）' : '') . '。' . $hint,
+        mbb_conversion_message($result) . ($label ? ' (' . $label . ')' : '') . '. ' . $hint,
         [
             'status' => 422,
             'conversion_code' => $code,
@@ -104,4 +112,61 @@ function mbb_conversion_failure($result)
             'hint' => $hint,
         ],
     );
+}
+
+function mbb_conversion_message(array $result): string
+{
+    $message = $result['message'] ?? 'Conversion failed';
+    if (
+        !is_string($message) ||
+        strlen($message) > 8192 ||
+        !mb_check_encoding($message, 'UTF-8') ||
+        str_contains($message, "\0")
+    ) {
+        return mbb_t('Conversion failed');
+    }
+    // Derive the descriptor from trusted, bounded English text. Never trust an arbitrary REST msgid.
+    static $messages;
+    $messages ??= json_decode(
+        file_get_contents(__DIR__ . '/php-converter/diagnostics.json'),
+        true,
+        32,
+        JSON_THROW_ON_ERROR,
+    );
+    $id = $result['message_id'] ?? null;
+    if ($id === null && in_array($message, $messages, true)) {
+        return mbb_t($message);
+    }
+    $args = $result['message_args'] ?? [];
+    if (
+        is_string($id) &&
+        in_array($id, $messages, true) &&
+        is_array($args) &&
+        array_is_list($args) &&
+        count($args) <= 8
+    ) {
+        foreach ($args as $arg) {
+            if (
+                !is_string($arg) ||
+                strlen($arg) > 128 ||
+                !preg_match(
+                    '/^[a-zA-Z][a-zA-Z0-9_-]{0,63}(?:\/[a-zA-Z][a-zA-Z0-9_-]{0,63})?$/D',
+                    $arg,
+                )
+            ) {
+                return mbb_t('Conversion failed');
+            }
+        }
+        try {
+            if (
+                (!$args || preg_match('/^(?:Unsupported |Expected |Block )/', $id)) &&
+                sprintf($id, ...$args) === $message
+            ) {
+                return sprintf(mbb_t($id), ...$args);
+            }
+        } catch (Throwable $error) {
+            // Invalid descriptors retain the precise bounded English detail.
+        }
+    }
+    return mbb_t('Conversion failed');
 }

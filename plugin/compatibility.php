@@ -1,4 +1,12 @@
 <?php
+
+// Standalone CLI conversion and model tests remain supported; direct web access requires WordPress.
+if (!defined('ABSPATH')) {
+    if (PHP_SAPI !== 'cli') {
+        exit();
+    }
+}
+
 // Keep legacy callbacks in their original position; bypass only our paired write scope.
 add_action('wp_loaded', function () {
     global $wp_filter;

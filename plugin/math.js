@@ -1,4 +1,14 @@
 (() => {
+  const T = (message) => globalThis.MBBI18n?.t(message) ?? message;
+  const F = (message, ...values) => {
+    let next = 0;
+    return String(message).replace(/%%|%(?:(\d+)\$)?([sd])/g, (token, index, kind) => {
+      if (token === '%%') return '%';
+      const value = values[index ? Number(index) - 1 : next++];
+      return kind === 'd' ? String(Number(value)) : String(value ?? '');
+    });
+  };
+
   if (window.MBB_MATH) return;
   const root = new URL('.', document.currentScript.src).href;
   let engine, ready, outputStyle;
@@ -56,22 +66,22 @@
     reader.setAttribute('aria-labelledby', 'mbb-math-reader-title');
     const heading = document.createElement('h2');
     heading.id = 'mbb-math-reader-title';
-    heading.textContent = '公式阅读';
+    heading.textContent = T('Formula reader');
     const toolbar = document.createElement('div');
     toolbar.className = 'mbb-math-reader-toolbar';
     toolbar.append(
-      readerButton('decrease', '缩小'),
-      readerButton('reset', '重置大小'),
-      readerButton('increase', '放大'),
+      readerButton('decrease', T('Zoom out')),
+      readerButton('reset', T('Reset size')),
+      readerButton('increase', T('Zoom in')),
     );
     readerScale = document.createElement('output');
     readerScale.className = 'mbb-math-reader-scale';
-    readerScale.setAttribute('aria-label', '当前公式大小');
+    readerScale.setAttribute('aria-label', T('Current formula size'));
     toolbar.append(readerScale);
     readerRender = document.createElement('div');
     readerRender.className = 'mbb-math-reader-render';
     const sourceLabel = document.createElement('label');
-    sourceLabel.textContent = 'TeX 源码';
+    sourceLabel.textContent = T('TeX source');
     readerSource = document.createElement('textarea');
     readerSource.className = 'mbb-math-reader-source';
     readerSource.readOnly = true;
@@ -79,7 +89,7 @@
     sourceLabel.append(readerSource);
     const footer = document.createElement('div');
     footer.className = 'mbb-math-reader-footer';
-    footer.append(readerButton('copy', '复制 TeX'), readerButton('close', '关闭'));
+    footer.append(readerButton('copy', T('Copy TeX')), readerButton('close', T('Close')));
     readerStatus = document.createElement('p');
     readerStatus.className = 'mbb-math-reader-status';
     readerStatus.setAttribute('role', 'status');
@@ -100,12 +110,14 @@
         try {
           await navigator.clipboard.writeText(readerSource.value);
           if (!reader.open || session !== readerSession) return;
-          readerStatus.textContent = 'TeX 已复制';
+          readerStatus.textContent = T('TeX copied');
         } catch {
           if (!reader.open || session !== readerSession) return;
           readerSource.focus();
           readerSource.select();
-          readerStatus.textContent = '无法自动复制，已选中源码，请手动复制';
+          readerStatus.textContent = T(
+            'Automatic copy failed. The source is selected for manual copying',
+          );
         }
       }
     });
@@ -130,8 +142,8 @@
       readerRender.textContent = tex;
       readerStatus.textContent =
         node.dataset.mbbMathError === 'true'
-          ? '公式排版失败，显示 TeX 源码'
-          : '公式正在排版，暂时显示 TeX 源码';
+          ? T('Formula typesetting failed; showing TeX source')
+          : T('The formula is being typeset; showing TeX source temporarily');
     }
     readerPercent = readerDefaultPercent;
     updateReaderScale();
@@ -150,14 +162,14 @@
       )
     )
       return;
-    node.setAttribute('aria-label', '查看公式：' + node.getAttribute('data-mbb-tex'));
+    node.setAttribute('aria-label', T('View formula: ') + node.getAttribute('data-mbb-tex'));
     if (node.dataset.mbbReaderReady) return;
     node.dataset.mbbReaderReady = 'true';
     node.classList.add('mbb-math-readable');
     node.tabIndex = 0;
     node.setAttribute('role', 'button');
     node.setAttribute('aria-haspopup', 'dialog');
-    node.title = '点击或按 Enter 查看公式与 TeX';
+    node.title = T('Click or press Enter to view the formula and TeX');
     node.addEventListener('click', () => {
       if (!node.parentElement?.closest('a,button,input,select,textarea,summary,[contenteditable]'))
         openReader(node);
@@ -175,7 +187,7 @@
     const frame = document.createElement('iframe');
     engine = frame;
     frame.hidden = true;
-    frame.title = '公式排版引擎';
+    frame.title = T('Formula typesetting engine');
     frame.setAttribute('aria-hidden', 'true');
     const origin = new URL(root).origin,
       channel = crypto.randomUUID(),
@@ -193,7 +205,7 @@
         window.removeEventListener('message', receive);
         frame.remove();
         ready = undefined;
-        const error = Error(message + '。已保留源码，可重试。');
+        const error = Error(T(message) + T('. The source is preserved. You can retry.'));
         for (const p of pending.values()) {
           clearTimeout(p.timer);
           p.reject(error);
@@ -213,7 +225,7 @@
           m.channel !== channel
         )
           return;
-        if (m.action === 'load-error') return fail('公式引擎加载失败：' + m.error);
+        if (m.action === 'load-error') return fail('Formula engine failed to load: ' + m.error);
         if (m.action === 'ready' && !done) {
           done = true;
           clearTimeout(timer);
@@ -224,7 +236,9 @@
                 const id = ++sequence;
                 const timer = setTimeout(() => {
                   pending.delete(id);
-                  reject(Error('公式排版超时，已保留源码，可重试。'));
+                  reject(
+                    Error('Formula typesetting timed out. The source is preserved. You can retry.'),
+                  );
                 }, 120000);
                 pending.set(id, { resolve, reject, timer });
                 send({ action: 'render', id, tex, display });
@@ -254,11 +268,15 @@
         }
       };
       window.addEventListener('message', receive);
-      timer = setTimeout(() => fail('公式引擎加载超时'), 45000);
+      timer = setTimeout(() => fail('Formula engine load timed out'), 45000);
       poll = setInterval(() => send({ action: 'hello' }), 200);
       frame.onload = () => send({ action: 'hello' });
-      frame.onerror = () => fail('公式引擎文档未能下载');
-      frame.src = root + 'math-engine.html';
+      frame.onerror = () => fail('The formula engine document could not be loaded');
+      frame.src =
+        root +
+        'math-engine.html' +
+        '?uiLocale=' +
+        (window.MBB_UI_LOCALE === 'zh_CN' ? 'zh_CN' : 'en_US');
       document.body.append(frame);
     });
     return ready;
@@ -303,12 +321,17 @@
           n.dataset.mbbRendered = tex;
           if (n.dataset.mbbMathError) {
             delete n.dataset.mbbMathError;
-            if (n.dataset.mbbReaderReady) n.title = '点击或按 Enter 查看公式与 TeX';
+            if (n.dataset.mbbReaderReady)
+              n.title = T('Click or press Enter to view the formula and TeX');
             else n.removeAttribute('title');
           }
         } catch (e) {
           n.dataset.mbbMathError = 'true';
-          n.title = e.message + (n.dataset.mbbReaderReady ? '；点击或按 Enter 查看公式与 TeX' : '');
+          n.title =
+            e.message +
+            (n.dataset.mbbReaderReady
+              ? T('; click or press Enter to view the formula and TeX')
+              : '');
         }
       }),
     );
@@ -328,7 +351,7 @@
           target.search ||
           target.hash
         )
-          throw Error('预览字体来源无效，未生成预览。');
+          throw Error(T('The preview font origin is invalid. No preview was generated.'));
         if (!previewFonts.has(target.href)) {
           const pending = (async () => {
             const controller = new AbortController();
@@ -339,11 +362,12 @@
                 redirect: 'error',
                 signal: controller.signal,
               });
-              if (!response.ok) throw Error('预览数学字体加载失败，请重试。');
+              if (!response.ok) throw Error(T('Preview math fonts failed to load. Try again.'));
               const bytes = new Uint8Array(await response.arrayBuffer());
-              if (bytes.length > 1000000) throw Error('预览数学字体超出大小限制。');
+              if (bytes.length > 1000000)
+                throw Error(T('Preview math fonts exceed their size budget.'));
               if (bytes.length < 48 || String.fromCharCode(...bytes.subarray(0, 4)) !== 'wOF2')
-                throw Error('预览数学字体文件无效，请重试。');
+                throw Error(T('Preview math font files are invalid. Try again.'));
               let binary = '';
               for (let i = 0; i < bytes.length; i += 4096)
                 binary += String.fromCharCode(...bytes.subarray(i, i + 4096));
@@ -371,6 +395,11 @@
     const doc = document.implementation.createHTMLDocument('');
     doc.body.innerHTML = html;
     await typeset(doc.body);
+    for (const code of doc.querySelectorAll('pre code')) {
+      if (code.closest('.wp-block-mbb-math')) continue;
+      code.parentElement.classList.add('mbb-code-display');
+      code.parentElement.tabIndex = 0;
+    }
     // An opaque, scriptless srcdoc cannot fetch same-site fonts without CORS.
     // Embed only our trusted font assets instead of relaxing the iframe sandbox.
     return (await previewStyle()) + doc.body.innerHTML;

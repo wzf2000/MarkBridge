@@ -1,4 +1,13 @@
 <?php
+
+// Standalone CLI conversion and model tests remain supported; direct web access requires WordPress.
+if (!defined('ABSPATH')) {
+    if (PHP_SAPI !== 'cli') {
+        exit();
+    }
+}
+
+require_once __DIR__ . '/includes/i18n.php';
 // Keep a managed document paired while the normal WordPress REST controller saves all fields.
 function mbb_native_pre_insert($prepared, $request)
 {
@@ -12,7 +21,10 @@ function mbb_native_pre_insert($prepared, $request)
     clean_post_cache($scope['id']);
     $current = get_post($scope['id']);
     if (!$current || !hash_equals($scope['expected'], mbb_token($current))) {
-        return mbb_error('conflict', '文章已有新修改，请重新载入后合并。');
+        return mbb_error(
+            'conflict',
+            mbb_t('The article has newer changes. Reload and merge them.'),
+        );
     }
     $review = new WP_REST_Request('POST', '/mbb/v1/preview');
     $review->set_body((string) $request->get_body());
@@ -44,6 +56,14 @@ function mbb_native_pre_insert($prepared, $request)
     }
     $prepared->post_content = $candidate['document']['serialized'];
     $prepared->post_content_filtered = $candidate['document']['source'];
+    if (!hash_equals($candidate['_adapter_registry_digest'], mbb_block_adapter_digest())) {
+        return mbb_error(
+            'adapter_conflict',
+            mbb_t(
+                'Static registrations changed while preparing the native candidate. Verify it again.',
+            ),
+        );
+    }
     $GLOBALS['mbb_native_pair']['candidate'] = $candidate;
     return $prepared;
 }
@@ -154,37 +174,76 @@ function mbb_native_rest_update($result, $server, $request)
         return $result;
     }
     if (!current_user_can('edit_post', $id)) {
-        return mbb_error('forbidden', '无权编辑这篇文章。', 403);
+        return mbb_error(
+            'forbidden',
+            mbb_t('You do not have permission to edit this article.'),
+            403,
+        );
     }
     if ($matches[2] !== '' && $matches[2] !== '/') {
-        return mbb_error('paired_save_required', '此文档的自动保存与修订不能单独写入。', 403);
+        return mbb_error(
+            'paired_save_required',
+            mbb_t('Autosaves and revisions for this document cannot be written separately.'),
+            403,
+        );
     }
     if (get_post_meta($id, '_mbb_source_managed', true) === 'file') {
-        return mbb_error('source_managed', '文件来源文章请先预览并明确确认写回。', 403);
+        return mbb_error(
+            'source_managed',
+            mbb_t('Preview and explicitly confirm the write for a source-managed article.'),
+            403,
+        );
     }
     if (!in_array($request->get_method(), ['POST', 'PUT', 'PATCH'], true)) {
-        return mbb_error('paired_save_required', '此文档只能通过原生文章更新保存。', 403);
+        return mbb_error(
+            'paired_save_required',
+            mbb_t('This document must be saved through the native article update route.'),
+            403,
+        );
+    }
+    if (
+        $request->has_param('resource_import') ||
+        $request->has_param('resource_receipt') ||
+        $request->has_param('requires_resources') ||
+        ($request['frontmatter_selected'] ?? []) !== [] ||
+        $request->has_param('frontmatter_receipt') ||
+        $request->has_param('frontmatter_applied')
+    ) {
+        return mbb_error(
+            'frontmatter_native',
+            mbb_t(
+                'Native saving only preserves header proposals. Apply metadata by selecting fields, previewing, and confirming in the editing bridge.',
+            ),
+            422,
+        );
     }
     $expected = $request->get_param('mbb_expected');
     if (!is_string($expected) || !preg_match('/^[a-f0-9]{64}$/', $expected)) {
-        return mbb_error('expected_required', '缺少当前文档版本，请重新载入后保存。', 409);
+        return mbb_error(
+            'expected_required',
+            mbb_t('The current document version is missing. Reload before saving.'),
+            409,
+        );
     }
     $doc_id = mbb_id($id);
     if (!is_string($doc_id) || !preg_match('/^[A-Za-z][A-Za-z0-9_-]{2,63}$/', $doc_id)) {
-        return mbb_error('identity', '文档 ID 无效。', 422);
+        return mbb_error('identity', mbb_t('The document ID is invalid.'), 422);
     }
     $dir = sys_get_temp_dir() . '/mbb-locks-' . hash('sha256', ABSPATH);
     if (!is_dir($dir) && !mkdir($dir, 0700, true) && !is_dir($dir)) {
-        return mbb_error('lock', '无法创建文档锁。', 500);
+        return mbb_error('lock', mbb_t('The document lock could not be created.'), 500);
     }
     $lock = fopen($dir . '/' . hash('sha256', $doc_id) . '.lock', 'c');
     if (!$lock || !flock($lock, LOCK_EX | LOCK_NB)) {
         if ($lock) {
             fclose($lock);
         }
-        return mbb_error('busy', '另一个保存正在进行，请稍后重试。');
+        return mbb_error('busy', mbb_t('Another save is in progress. Try again later.'));
     }
     $started = false;
+    $attempted = false;
+    $commit_attempted = false;
+    $database_baseline = null;
     $response = null;
     $revisions = [];
     $term_ids = [];
@@ -197,20 +256,30 @@ function mbb_native_rest_update($result, $server, $request)
         }
     };
     try {
+        $database_baseline = mbb_save_database_snapshot($id);
+        $attempted = true;
         if ($wpdb->query('START TRANSACTION') === false) {
-            return mbb_error('transaction', '无法开启保存事务。', 500);
+            $response = mbb_error(
+                'transaction',
+                mbb_t('The save transaction could not be started.'),
+                500,
+            );
+            throw new RuntimeException('Transaction start rejected');
         }
         $started = true;
         $row = $wpdb->get_var(
             $wpdb->prepare("SELECT ID FROM {$wpdb->posts} WHERE ID = %d FOR UPDATE", $id),
         );
         if ((int) $row !== $id || $wpdb->last_error) {
-            throw new RuntimeException('无法锁定文章记录');
+            throw new RuntimeException(mbb_t('The article record could not be locked'));
         }
         clean_post_cache($id);
         $post = get_post($id);
         if (!$post || !hash_equals($expected, mbb_token($post))) {
-            $response = mbb_error('conflict', '文章已有新修改，请重新载入后合并。');
+            $response = mbb_error(
+                'conflict',
+                mbb_t('The article has newer changes. Reload and merge them.'),
+            );
             throw new RuntimeException('stale expected version');
         }
         foreach (get_object_taxonomies($post->post_type, 'objects') as $taxonomy) {
@@ -219,7 +288,7 @@ function mbb_native_rest_update($result, $server, $request)
             }
             $old = wp_get_object_terms($id, $taxonomy->name, ['fields' => 'ids']);
             if (is_wp_error($old)) {
-                throw new RuntimeException('无法读取当前分类或标签');
+                throw new RuntimeException(mbb_t('Current categories or tags could not be read'));
             }
             $field = $taxonomy->rest_base ?: $taxonomy->name;
             $term_ids[$taxonomy->name] = array_merge(
@@ -244,7 +313,9 @@ function mbb_native_rest_update($result, $server, $request)
             throw new RuntimeException('WordPress REST update rejected');
         }
         if (!mbb_native_verify($id, $request)) {
-            throw new RuntimeException('配对正文或附属字段核验失败');
+            throw new RuntimeException(
+                mbb_t('Paired body or accompanying field verification failed'),
+            );
         }
         if (
             !mbb_native_update_history(
@@ -253,11 +324,17 @@ function mbb_native_rest_update($result, $server, $request)
                 $GLOBALS['mbb_native_pair']['candidate']['document']['source'],
             )
         ) {
-            throw new RuntimeException('源版本历史保存失败');
+            throw new RuntimeException(mbb_t('Source version history could not be saved'));
         }
         $saved_revision = mbb_pair_snapshot($id, $revision_floor);
+        $adapter_digest =
+            $GLOBALS['mbb_native_pair']['candidate']['_adapter_registry_digest'] ?? null;
+        if ($adapter_digest !== null && !hash_equals($adapter_digest, mbb_block_adapter_digest())) {
+            throw new RuntimeException(mbb_t('Static block registrations changed during saving'));
+        }
+        $commit_attempted = true;
         if ($wpdb->query('COMMIT') === false) {
-            throw new RuntimeException('事务提交失败');
+            throw new RuntimeException(mbb_t('Transaction commit failed'));
         }
         $started = false;
         $data = $response->get_data();
@@ -270,13 +347,39 @@ function mbb_native_rest_update($result, $server, $request)
         }
         return $response;
     } catch (Throwable $error) {
-        if ($started && $wpdb->query('ROLLBACK') === false) {
-            return mbb_error('rollback_failed', '保存失败且无法回滚，请联系管理员。', 500);
+        try {
+            $rollback_ok = !$attempted || $wpdb->query('ROLLBACK') !== false;
+        } catch (Throwable $rollback_error) {
+            $rollback_ok = false;
+        }
+        if (
+            $commit_attempted &&
+            (!$rollback_ok || !mbb_save_rollback_confirmed($id, $database_baseline))
+        ) {
+            mbb_native_clear_rollback_cache($id, $revisions, $term_ids);
+            return mbb_error(
+                'commit_uncertain',
+                mbb_t(
+                    'The commit result could not be reliably confirmed. Verify the article before saving again.',
+                ),
+                500,
+            );
+        }
+        if (!$rollback_ok) {
+            return mbb_error(
+                'rollback_failed',
+                mbb_t('Saving failed and rollback was unavailable. Contact an administrator.'),
+                500,
+            );
         }
         mbb_native_clear_rollback_cache($id, $revisions, $term_ids);
         return $response && (is_wp_error($response) || $response->get_status() >= 400)
             ? $response
-            : mbb_error('native_save_failed', '原生保存未完成，已回滚。', 500);
+            : mbb_error(
+                'native_save_failed',
+                mbb_t('Native saving did not complete and was rolled back.'),
+                500,
+            );
     } finally {
         remove_action('_wp_put_post_revision', $revision_callback, 1);
         remove_filter('safe_style_css', 'mbb_safe_css');

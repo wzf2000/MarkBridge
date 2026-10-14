@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8" />
+<style>
+  body {
+    font: 16px system-ui;
+    margin: 12px;
+  }
+
+  button {
+    font: inherit;
+    padding: 8px;
+  }
+
+  pre {
+    white-space: pre-wrap;
+  }
+
+</style>
+
+<body>
+  <p id="status" role="status">Waiting</p>
+  <pre id="params"></pre>
+  <pre id="init" hidden></pre>
+  <button id="run">Run fixed fixture</button><button id="stop">Stop fixture</button>
+  <script>
+    (() => {
+      'use strict';
+      const protocol = 'mbb-component/v1';
+      let session = null,
+        runId = null,
+        params = null,
+        worker = null;
+      const status = document.getElementById('status');
+      const send = (type, extra = {}) =>
+        parent.postMessage({
+            protocol,
+            session,
+            type,
+            ...extra,
+          },
+          '*',
+        );
+      const stop = () => {
+        worker?.terminate();
+        worker = null;
+        if (runId)
+          send('stopped', {
+            runId,
+          });
+        runId = null;
+        status.textContent = 'Stopped';
+      };
+      window.addEventListener('message', (event) => {
+        const d = event.data;
+        if (
+          event.source !== parent ||
+          d?.protocol !== protocol ||
+          !/^[a-f0-9]{32}$/.test(d.session || '')
+        )
+          return;
+        if (d.type === 'init' && session === null) {
+          document.getElementById('init').textContent = JSON.stringify(d);
+          session = d.session;
+          params = d.params;
+          document.getElementById('params').textContent = JSON.stringify(params);
+          status.textContent = 'Ready';
+          send('ready');
+          send('resize', {
+            height: 320,
+          });
+        } else if (d.session === session && d.type === 'grant' && d.runId === runId) {
+          status.textContent = 'Running';
+          const source =
+            params?.behavior === 'hang' ?
+            'while(true){}' :
+            params?.behavior === 'error' ?
+            'throw Error("fixture")' :
+            'self.postMessage("done")';
+          const blob = URL.createObjectURL(
+            new Blob([source], {
+              type: 'text/javascript',
+            }),
+          );
+          worker = new Worker(blob);
+          URL.revokeObjectURL(blob);
+          worker.onmessage = () => {
+            send('complete', {
+              runId,
+              frameCount: 1,
+              outputBytes: 4,
+            });
+            worker.terminate();
+            worker = null;
+            runId = null;
+            status.textContent = 'Complete';
+          };
+          worker.onerror = () => {
+            send('error', {
+              runId,
+              code: 'RUNTIME',
+            });
+            worker.terminate();
+            worker = null;
+            runId = null;
+            status.textContent = 'Failed';
+          };
+        } else if (d.session === session && d.type === 'cancel') {
+          stop();
+        } else if (d.session === session && d.type === 'denied' && d.runId === runId) {
+          runId = null;
+          status.textContent = 'Busy';
+        }
+      });
+      document.getElementById('run').onclick = () => {
+        if (!session || runId) return;
+        runId = Array.from(crypto.getRandomValues(new Uint8Array(16)), (v) =>
+          v.toString(16).padStart(2, '0'),
+        ).join('');
+        send('run-request', {
+          runId,
+        });
+      };
+      document.getElementById('stop').onclick = stop;
+      window.addEventListener('pagehide', () => worker?.terminate());
+    })();
+
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,664 @@
+.wp-block-mbb-collapse,
+.wp-block-mbb-steps,
+.wp-block-mbb-step,
+.wp-block-mbb-code-compare {
+  margin-block: 1.25rem;
+  scroll-margin-top: 5rem;
+}
+.wp-block-mbb-code-tabs {
+  margin-block: 1.25rem;
+  padding: 0;
+  border: 1px solid #8884;
+  border-radius: 8px;
+  min-width: 0;
+}
+.mbb-code-tab {
+  min-width: 0;
+  scroll-margin-top: 5rem;
+}
+.mbb-code-tab-title {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.wp-block-mbb-code-tabs .mbb-teaching-controls,
+.mbb-code-tabs-list {
+  min-width: 0;
+  max-inline-size: 100%;
+}
+.wp-block-mbb-code-tabs button,
+.mbb-code-tabs-editor [role='tab'] {
+  min-width: 0;
+  max-inline-size: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.mbb-code-tab pre {
+  max-width: 100%;
+  overflow: auto;
+  tab-size: 4;
+}
+.mbb-code-tabs-list,
+.mbb-code-tabs-editor [role='tablist'] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+}
+.mbb-code-tabs-list [aria-selected='true'],
+.mbb-code-tabs-editor [aria-selected='true'] {
+  background: #2271b120;
+  border-bottom: 3px solid #2271b1;
+}
+.mbb-code-tabs-editor button {
+  font: inherit;
+  padding: 0.4rem 0.6rem;
+  margin: 0.25rem;
+}
+@media print {
+  .mbb-code-tab[hidden] {
+    display: block !important;
+  }
+  .mbb-code-tab pre {
+    white-space: pre-wrap;
+    overflow: visible;
+  }
+  .mbb-code-tab pre code {
+    white-space: pre-wrap;
+  }
+}
+.mbb-teaching-title {
+  font-weight: 700;
+}
+.mbb-teaching-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-block: 0.5rem;
+}
+.mbb-teaching-controls button,
+.mbb-teaching-controls select {
+  font: inherit;
+  padding: 0.4rem 0.7rem;
+  cursor: pointer;
+}
+.mbb-teaching-controls button:focus-visible,
+.mbb-teaching-controls select:focus-visible {
+  outline: 3px solid currentColor;
+  outline-offset: 3px;
+}
+.wp-block-mbb-collapse {
+  border: 1px solid #8886;
+  padding: 0.75rem;
+}
+.wp-block-mbb-code-compare {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1rem;
+}
+.wp-block-mbb-code-compare > .mbb-teaching-body,
+.wp-block-mbb-code-compare > .mbb-teaching-controls {
+  grid-column: 1/-1;
+}
+.mbb-compare-left,
+.mbb-compare-right {
+  min-width: 0;
+}
+.wp-block-mbb-code-compare pre {
+  overflow: auto;
+  tab-size: 4;
+  padding: 0.5rem;
+}
+.mbb-compare-line {
+  display: block;
+  white-space: pre;
+  min-height: 1em;
+}
+.mbb-compare-line-number {
+  display: inline-block;
+  width: 3em;
+  user-select: none;
+  opacity: 0.6;
+}
+.mbb-compare-line-number::before {
+  content: attr(data-symbol) ' ' attr(data-line);
+}
+.mbb-compare-line[data-mbb-diff='removed'] {
+  background: #d3363620;
+  border-left: 3px solid #b22;
+}
+.mbb-compare-line[data-mbb-diff='added'] {
+  background: #21873b20;
+  border-left: 3px solid #18732f;
+}
+.mbb-compare-line[data-mbb-highlight] {
+  outline: 1px solid currentColor;
+  outline-offset: -1px;
+}
+@media (max-width: 700px) {
+  .wp-block-mbb-code-compare {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media print {
+  [data-mbb-teaching] .mbb-teaching-body,
+  [data-mbb-teaching='step'] {
+    display: block !important;
+  }
+  [data-mbb-teaching] .mbb-teaching-title {
+    display: block !important;
+  }
+  .mbb-teaching-controls[data-mbb-generated],
+  .mbb-compare-line-number[data-mbb-generated] {
+    display: none !important;
+  }
+  .wp-block-mbb-code-compare {
+    display: block;
+  }
+  .wp-block-mbb-code-compare pre {
+    white-space: pre-wrap;
+    overflow: visible;
+  }
+  .mbb-compare-line {
+    white-space: pre-wrap;
+  }
+}
+
+.mbb-teaching-editor {
+  border: 1px solid #8c8f9460;
+  border-radius: 8px;
+  padding: 16px !important;
+  background: #f6f7f780;
+}
+.mbb-teaching-editor-label {
+  margin: 0 0 12px !important;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: #50575e;
+  font-weight: 700;
+}
+.mbb-teaching-editor-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+}
+.mbb-teaching-editor textarea {
+  font-family: ui-monospace, monospace;
+  tab-size: 4;
+  min-height: 150px;
+}
+.mbb-teaching-controls textarea {
+  flex-basis: 100%;
+  max-width: 100%;
+  min-height: 8rem;
+  font-family: ui-monospace, monospace;
+}
+.mbb-teaching-controls button {
+  border: 1px solid #8888;
+  border-radius: 5px;
+  background: transparent;
+  color: inherit;
+}
+.mbb-teaching-controls button[aria-pressed='true'] {
+  background: #2271b120;
+}
+.mbb-teaching-controls button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+@media (max-width: 700px) {
+  .mbb-teaching-editor-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+.mbb-component-controls {
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 12px;
+  margin-block: 16px;
+  color: #243447;
+}
+.mbb-component-controls > button {
+  font: inherit;
+  padding: 6px 12px;
+  margin-right: 8px;
+  background: white;
+  color: inherit;
+  border: 1px solid #9daec2;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.mbb-component-controls > button:focus-visible {
+  outline: 3px solid #1674c5;
+  outline-offset: 2px;
+}
+.mbb-component-frame {
+  display: block;
+  width: 100%;
+  border: 1px solid #d4dce8;
+  border-radius: 8px;
+  min-height: 280px;
+}
+.wp-block-mbb-component > .mbb-teaching-body {
+  padding: 12px;
+  border-left: 3px solid #93b8d4;
+}
+@media print {
+  .mbb-component-controls {
+    display: none !important;
+  }
+}
+
+.mbb-component-params {
+  display: none;
+}
+@media print {
+  details.wp-block-details::details-content {
+    content-visibility: visible !important;
+    display: block !important;
+  }
+  details.wp-block-details > :not(summary) {
+    display: block !important;
+  }
+}
+
+/* Reading controls inherit the article palette and form a compact, consistent toolbar. */
+.mbb-stage-controls {
+  padding: 0.65rem 0.8rem;
+  border: 1px solid #8883;
+  border-radius: 10px;
+  background: #88808;
+  gap: 0.65rem 1rem;
+}
+.mbb-stage-modes,
+.mbb-stage-navigation {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-width: 0;
+}
+.mbb-stage-modes {
+  padding: 3px;
+  border-radius: 8px;
+  background: #88812;
+}
+.mbb-stage-controls .mbb-stage-modes button {
+  border: 0;
+  border-radius: 6px;
+  padding: 0.3rem 0.7rem;
+}
+.mbb-stage-controls .mbb-stage-modes button[aria-pressed='true'] {
+  background: #88818;
+  color: inherit;
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+.mbb-stage-status {
+  font-size: 0.85em;
+  font-variant-numeric: tabular-nums;
+}
+.mbb-stage-controls progress {
+  width: 5rem;
+  height: 5px;
+  accent-color: currentColor;
+}
+.mbb-stage-navigation {
+  margin-inline-start: auto;
+}
+.mbb-stage-navigation select {
+  max-width: 16rem;
+  min-width: 0;
+  border: 1px solid #8884;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+}
+.mbb-stage-navigation button {
+  font-size: 0.85em;
+}
+.wp-block-mbb-collapse {
+  border-radius: 9px;
+  border-color: #8883;
+  padding: 0;
+  overflow: clip;
+}
+.mbb-collapse-controls {
+  margin: 0;
+}
+.mbb-teaching-controls .mbb-collapse-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  text-align: start;
+  border: 0;
+  border-radius: 0;
+  padding: 0.85rem 1rem;
+  font-weight: 600;
+}
+.mbb-collapse-toggle::before {
+  content: '';
+  flex: 0 0 0.45rem;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 150ms ease;
+}
+.mbb-collapse-toggle:dir(rtl)::before {
+  transform: rotate(135deg);
+}
+.mbb-collapse-toggle[aria-expanded='true']::before {
+  transform: rotate(45deg);
+}
+.mbb-collapse-toggle:hover {
+  background: #88808;
+}
+.mbb-collapse-toggle:focus-visible {
+  outline-offset: -3px;
+}
+.wp-block-mbb-collapse > .mbb-teaching-body {
+  padding: 0 1rem 0.7rem;
+}
+.wp-block-mbb-code-tabs > .mbb-teaching-controls {
+  margin: 0;
+  border-bottom: 1px solid #8883;
+  padding: 0 0.65rem;
+}
+.mbb-code-tabs-list {
+  gap: 0;
+}
+.mbb-code-tabs-list button {
+  border: 0;
+  border-radius: 0;
+  padding: 0.7rem 0.9rem;
+  border-bottom: 2px solid transparent;
+  font-size: 0.9em;
+  color: inherit;
+}
+.mbb-code-tabs-list [aria-selected='true'] {
+  background: transparent;
+  border-bottom: 2px solid #2271b1;
+  font-weight: 600;
+}
+.mbb-code-tab,
+.mbb-compare-left,
+.mbb-compare-right {
+  position: relative;
+}
+.mbb-code-tab-title,
+.mbb-compare-left > p:not(.mbb-code-scroll-hint),
+.mbb-compare-right > p:not(.mbb-code-scroll-hint) {
+  box-sizing: border-box;
+  margin: 0 !important;
+  padding: 0.75rem 6rem 0.6rem 1rem;
+  font-size: 0.95em;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.mbb-code-tab > pre,
+.mbb-code-tab > .code-toolbar > pre,
+.wp-block-mbb-code-compare pre {
+  margin: 0 !important;
+  border: 0;
+  border-radius: 0 0 8px 8px;
+  padding: 1rem;
+  font-size: 0.85em;
+  line-height: 1.7;
+  background: #f5f6f8;
+}
+.mbb-code-tab-title[hidden] + .mbb-code-panel-tools + pre,
+.mbb-code-tab-title[hidden] + .mbb-code-panel-tools + .code-toolbar > pre {
+  padding-top: 2.8rem;
+}
+.mbb-code-panel-tools {
+  position: absolute;
+  top: 0.5rem;
+  inset-inline-end: 0.65rem;
+  margin: 0;
+  gap: 0.55rem;
+  z-index: 1;
+  font-size: 0.8em;
+}
+.mbb-code-panel-tools > span:not(.mbb-code-status) {
+  opacity: 0.65;
+}
+.mbb-teaching-controls .mbb-code-copy {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+}
+.mbb-code-copy::before,
+.mbb-code-copy::after {
+  content: '';
+  position: absolute;
+  width: 9px;
+  height: 11px;
+  border: 1.5px solid currentColor;
+  border-radius: 2px;
+}
+.mbb-code-copy::before {
+  top: 7px;
+  left: 8px;
+  opacity: 0.5;
+}
+.mbb-code-copy::after {
+  top: 11px;
+  left: 12px;
+  background: Canvas;
+}
+.mbb-code-copy:hover {
+  background: #88815;
+}
+.mbb-code-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.mbb-code-panel-tools:has(textarea) {
+  position: static;
+  padding: 0.5rem 1rem;
+}
+.mbb-code-panel-tools textarea {
+  width: 100%;
+}
+.mbb-compare-left,
+.mbb-compare-right {
+  border: 1px solid #8883;
+  border-radius: 9px;
+  overflow: hidden;
+}
+.mbb-compare-line {
+  border-inline-start: 3px solid transparent;
+  margin-inline: -1rem;
+  padding-inline: 0.25rem 0.75rem;
+}
+.mbb-compare-line[data-mbb-diff='removed'] {
+  border-inline-start-color: #b22;
+}
+.mbb-compare-line[data-mbb-diff='added'] {
+  border-inline-start-color: #18732f;
+}
+.mbb-compare-legend {
+  font-size: 0.8em;
+  opacity: 0.7;
+  margin: 0;
+}
+@media (max-width: 700px) {
+  .mbb-stage-navigation {
+    flex-basis: 100%;
+    margin-inline-start: 0;
+  }
+  .mbb-stage-navigation select {
+    flex: 1;
+    max-width: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mbb-collapse-toggle::before {
+    transition: none;
+  }
+}
+@media print {
+  .mbb-code-tab-title[hidden] {
+    display: block !important;
+  }
+  .mbb-code-panel-tools,
+  .mbb-stage-controls,
+  .mbb-collapse-controls {
+    display: none !important;
+  }
+  .mbb-code-tab > pre,
+  .mbb-code-tab > .code-toolbar > pre,
+  .wp-block-mbb-code-compare pre {
+    padding: 0.5rem;
+  }
+  .mbb-compare-line {
+    margin-inline: 0;
+  }
+}
+
+.mbb-compare-annotation {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8em;
+  line-height: 1.5;
+}
+.mbb-compare-annotation > span {
+  opacity: 0.7;
+}
+
+.mbb-code-tabs-list [aria-selected='false'] {
+  opacity: 0.75;
+}
+.mbb-code-tabs-list button:hover,
+.mbb-code-tabs-list button:focus-visible {
+  background: #88812;
+  opacity: 1;
+}
+@media (pointer: coarse) {
+  .mbb-teaching-controls .mbb-code-copy {
+    width: 44px;
+    height: 44px;
+  }
+  .mbb-code-copy::before {
+    top: 14px;
+    left: 15px;
+  }
+  .mbb-code-copy::after {
+    top: 18px;
+    left: 19px;
+  }
+  .mbb-code-tab-title,
+  .mbb-compare-left > p:not(.mbb-code-scroll-hint),
+  .mbb-compare-right > p:not(.mbb-code-scroll-hint) {
+    min-height: 60px;
+  }
+  .mbb-code-tab-title[hidden] + .mbb-code-panel-tools + pre {
+    padding-top: 3.8rem;
+  }
+}
+
+.mbb-stage-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+.mbb-compare-legend label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+@media (max-width: 700px) {
+  .mbb-stage-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.6rem;
+  }
+  .mbb-stage-progress {
+    justify-self: end;
+  }
+  .mbb-stage-controls progress {
+    width: 3rem;
+  }
+  .mbb-stage-navigation {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    width: 100%;
+  }
+  .mbb-stage-navigation select {
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
+  }
+  .mbb-stage-navigation button:last-child {
+    grid-column: 3;
+    grid-row: 1;
+  }
+}
+
+.mbb-component-controls > button[hidden] {
+  display: none;
+}
+@media (max-width: 700px) {
+  .mbb-stage-controls {
+    font-size: 14px;
+  }
+  .mbb-stage-controls .mbb-stage-modes button {
+    white-space: nowrap;
+    padding-inline: 0.5rem;
+  }
+}
+
+.mbb-stage-controls :is(button, select) {
+  box-sizing: border-box;
+  min-height: 34px;
+  line-height: 1.4;
+}
+.mbb-teaching-controls button:hover:not(:disabled) {
+  background: #88815;
+}
+@media (pointer: coarse) {
+  .mbb-stage-controls :is(button, select),
+  .mbb-teaching-controls .mbb-collapse-toggle {
+    min-height: 44px;
+  }
+}
+
+.mbb-stage-navigation select {
+  appearance: none;
+  padding-inline: 10px 32px;
+  min-height: 36px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    right 17px center,
+    right 12px center;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+}
+.mbb-stage-navigation select:dir(rtl) {
+  background-position:
+    left 12px center,
+    left 17px center;
+}
+
+@media (forced-colors: active) {
+  .mbb-stage-navigation select {
+    appearance: auto;
+    background-image: none;
+  }
+}
+
+@media (pointer: coarse) {
+  .mbb-stage-navigation select {
+    min-height: 44px;
+  }
+}
