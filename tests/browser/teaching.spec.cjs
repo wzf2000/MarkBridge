@@ -272,6 +272,21 @@ test('stage controls keep the count and progress together without vertical butto
       .first()
       .evaluate((node) => node.getBoundingClientRect().height),
   ).toBeLessThan(45);
+  const coarse = await page.evaluate(() => matchMedia('(pointer: coarse)').matches);
+  if (coarse) {
+    for (const control of await page
+      .locator('.mbb-stage-controls button, .mbb-stage-controls select, .mbb-collapse-toggle')
+      .all()) {
+      if (await control.isVisible())
+        expect((await control.boundingBox()).height).toBeGreaterThanOrEqual(44);
+    }
+    const title = page.locator('#compare .mbb-compare-left > p').first();
+    const copy = page.locator('#compare .mbb-compare-left .mbb-code-copy');
+    const titleBox = await title.boundingBox();
+    const copyBox = await copy.boundingBox();
+    expect(titleBox.height).toBe(60);
+    expect(copyBox.y + copyBox.height).toBeLessThanOrEqual(titleBox.y + titleBox.height);
+  }
   const progress = page.locator('.mbb-stage-progress');
   await expect(progress.locator('.mbb-stage-status')).toContainText('1 / 2');
   await expect(progress.locator('progress')).toHaveAttribute('value', '1');

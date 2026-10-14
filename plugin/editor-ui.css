@@ -208,9 +208,11 @@
 
 #mbb-revisions-dialog {
   width: min(1060px, 92vw);
-  height: 86vh;
-  max-height: 90vh;
-  border: 1px solid #bbb;
+  height: fit-content;
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  overscroll-behavior: contain;
+  border: 1px solid #c3c4c7;
   border-radius: 10px;
   padding: 18px;
   box-sizing: border-box;
@@ -519,8 +521,10 @@ body:has(#mbb-toolbar:not([hidden]):not(.mbb-keyboard-open) #mbb-recovery-open:n
   padding-bottom: 8px;
 }
 .mbb-dialog-views button[aria-pressed='true'] {
-  background: #eaf0ff;
-  border-color: var(--wp-admin-theme-color, #2271b1);
+  background: #f0f0f1;
+  border-color: #8c8f94;
+  color: #1d2327;
+  font-weight: 600;
 }
 .mbb-dialog-body {
   flex: 1 1 auto;
@@ -629,5 +633,137 @@ body:has(#mbb-toolbar:not([hidden]):not(.mbb-keyboard-open) #mbb-recovery-open:n
   }
   .mbb-dialog-footer .mbb-actions > button:not([hidden]) {
     flex: 1 1 140px;
+  }
+}
+
+/* Author controls share WordPress's primary color and a quiet secondary treatment. */
+:is(#mbb-toolbar, #mbb-dialog, #mbb-revisions-dialog, #mbb-export-dialog, #mbb-local-recovery)
+  button {
+  box-sizing: border-box;
+  min-height: 36px;
+  padding: 7px 12px;
+  border: 1px solid #c3c4c7;
+  border-radius: 5px;
+  background: #fff;
+  color: #2c3338;
+  font: inherit;
+  line-height: 1.4;
+  cursor: pointer;
+}
+:is(#mbb-toolbar, #mbb-dialog, #mbb-revisions-dialog, #mbb-export-dialog, #mbb-local-recovery)
+  button:hover:not(:disabled) {
+  background: #f6f7f7;
+  border-color: #8c8f94;
+}
+:is(#mbb-toolbar, #mbb-dialog, #mbb-revisions-dialog, #mbb-export-dialog, #mbb-local-recovery)
+  :is(button, summary, input, select):focus-visible {
+  outline: 2px solid var(--wp-admin-theme-color, #2271b1);
+  outline-offset: 2px;
+}
+:is(#mbb-toolbar, #mbb-dialog, #mbb-revisions-dialog, #mbb-export-dialog, #mbb-local-recovery)
+  button:disabled {
+  color: #787c82;
+  background: #f0f0f1;
+  border-color: #dcdcde;
+  cursor: default;
+}
+#mbb-dialog #mbb-save:not(:disabled),
+#mbb-revisions-dialog #mbb-revision-confirm:not(:disabled) {
+  background: var(--wp-admin-theme-color, #2271b1);
+  border-color: var(--wp-admin-theme-color, #2271b1);
+  color: #fff;
+}
+#mbb-dialog #mbb-save:hover:not(:disabled),
+#mbb-toolbar #mbb-markdown:hover:not(:disabled),
+#mbb-revisions-dialog #mbb-revision-confirm:hover:not(:disabled) {
+  filter: brightness(0.9);
+}
+:is(#mbb-dialog, #mbb-revisions-dialog) :is(.mbb-status, .mbb-error, [role='status']) {
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+#mbb-dialog input[type='file'] {
+  max-width: 100%;
+  font: 13px/1.5 system-ui;
+}
+#mbb-dialog input[type='file']::file-selector-button {
+  margin-inline-end: 8px;
+  padding: 6px 10px;
+  border: 1px solid #c3c4c7;
+  border-radius: 4px;
+  background: #f6f7f7;
+  color: #2c3338;
+  font: inherit;
+  cursor: pointer;
+}
+#mbb-revisions-dialog iframe {
+  display: block;
+  box-sizing: border-box;
+  margin-top: 12px;
+}
+#mbb-revisions-dialog iframe[hidden] {
+  display: none;
+}
+#mbb-revisions-dialog .mbb-diff-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+#mbb-revisions-dialog .mbb-diff-grid pre {
+  min-width: 0;
+  max-height: 28dvh;
+  overflow: auto;
+  padding: 10px;
+  background: #f6f7f7;
+  border: 1px solid #dcdcde;
+  font: 13px/1.5 monospace;
+}
+@media (max-width: 600px) {
+  #mbb-revisions-dialog .mbb-dialog-header {
+    padding-inline: 0;
+    align-items: flex-start;
+  }
+  #mbb-revisions-dialog .mbb-diff-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (pointer: coarse) {
+  :is(#mbb-toolbar, #mbb-dialog, #mbb-revisions-dialog, #mbb-export-dialog, #mbb-local-recovery)
+    button,
+  #mbb-more > summary {
+    min-height: 44px;
+  }
+}
+
+#mbb-dialog .mbb-dialog-views button[aria-pressed='true'] {
+  background: #f0f0f1;
+  border-color: #8c8f94;
+  font-weight: 600;
+}
+
+:is(#mbb-dialog, #mbb-revisions-dialog, #mbb-export-dialog) select {
+  appearance: none;
+  padding-inline: 10px 32px;
+  min-height: 36px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    right 17px center,
+    right 12px center;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+}
+:is(#mbb-dialog, #mbb-revisions-dialog, #mbb-export-dialog) select:dir(rtl) {
+  background-position:
+    left 12px center,
+    left 17px center;
+}
+
+@media (forced-colors: active) {
+  :is(#mbb-dialog, #mbb-revisions-dialog, #mbb-export-dialog) select {
+    appearance: auto;
+    background-image: none;
   }
 }

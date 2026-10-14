@@ -49,6 +49,7 @@
   }
   function invalidate() {
     candidate = null;
+    preview.hidden = true;
     preview.srcdoc = '';
     diff.replaceChildren();
     controls();
@@ -104,7 +105,7 @@
     dialog.append(actions);
     status = el('p', { role: 'status' });
     diff = el('section', { 'aria-label': T('Restoration differences') });
-    preview = el('iframe', { title: T('Revision content preview'), sandbox: '' });
+    preview = el('iframe', { title: T('Revision content preview'), sandbox: '', hidden: '' });
     dialog.append(status, diff, preview);
     document.body.append(dialog);
   }
@@ -113,11 +114,8 @@
     if (dialog.open) return;
     dialog.showModal();
     list.replaceChildren();
-    candidate = null;
     busy = true;
-    controls();
-    diff.replaceChildren();
-    preview.srcdoc = '';
+    invalidate();
     message(T('Reading revisions…'));
     try {
       if (dirty())
@@ -151,9 +149,8 @@
   }
   async function compare() {
     if (busy || !list.value) return;
-    candidate = null;
     busy = true;
-    controls();
+    invalidate();
     message(T('Validating both representations of the revision…'));
     try {
       if (dirty()) throw Error(T('There are unsaved changes. Save before restoring.'));
@@ -167,7 +164,6 @@
       };
       const result = await api('preview', payload);
       payload.adapter_digest = result.adapter_digest;
-      candidate = payload;
       diff.replaceChildren();
       diff.append(el('p', {}, F(T('Title: %1$s → %2$s'), result.before_title, result.title)));
       const a = result.before.split('\n'),
@@ -207,6 +203,8 @@
         MBB_MATH.style +
         'body{font:16px/1.7 system-ui;padding:16px;overflow-wrap:anywhere}pre{overflow:auto}table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:4px}img{max-width:100%}</style>' +
         (await MBB_MATH.preview(result.html));
+      preview.hidden = false;
+      candidate = payload;
       message(T('Both representations match. Check the differences and confirm restoration.'));
     } catch (e) {
       message(E(e), true);
