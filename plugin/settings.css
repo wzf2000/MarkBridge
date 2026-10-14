@@ -14,6 +14,10 @@
 .mbb-settings .widefat {
   table-layout: fixed;
 }
+.mbb-settings fieldset {
+  min-width: 0;
+  max-width: 100%;
+}
 .mbb-settings .widefat th,
 .mbb-settings .widefat td,
 .mbb-settings p,
