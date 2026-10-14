@@ -456,6 +456,7 @@
   position: relative;
 }
 #mbb-more > summary {
+  box-sizing: border-box;
   cursor: pointer;
   padding: 8px;
   min-height: 20px;
@@ -463,8 +464,9 @@
 }
 #mbb-more-actions {
   position: fixed;
-  bottom: calc(100% + 12px);
-  right: 0;
+  bottom: calc(64px + env(safe-area-inset-bottom, 0px) + var(--mbb-keyboard-inset, 0px));
+  left: 12px;
+  right: auto;
   width: min(360px, calc(100vw - 40px));
   max-height: min(60dvh, 520px);
   overflow: auto;

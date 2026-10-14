@@ -104,6 +104,11 @@ test('server source loading, explicit recovery and FrontMatter preparation retai
 }) => {
   await fixture(page, { existing: true });
   await page.locator('#mbb-markdown').click();
+  // The saved WP copy is displayed before the bound source GET and opening validation finish.
+  // A recovery snapshot is available only after the source-loading workflow completes.
+  await expect(page.locator('#mbb-dialog .mbb-dialog-footer > p[role=status]')).toContainText(
+    '已读取绑定源文件',
+  );
   await expect(page.locator('#mbb-source')).toHaveValue(raw.replace(/\r\n?/g, '\n'));
   expect(await page.evaluate(() => MarkBridgeEditorRecovery.snapshot().payload.content)).toBe(raw);
   await page.evaluate(
