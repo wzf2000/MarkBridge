@@ -474,3 +474,181 @@ test('legacy init stays closed; trusted opt-in sends only the closed UI locale w
       expect(init.uiLocale).toBe(scenario.locale === 'zh_CN' ? 'zh_CN' : 'en_US');
   }
 });
+
+// Controlled transport keeps the AbortSignal observable during both header waits
+// and streaming reads. Other fixture and browser security tests use native fetch.
+async function transport(page, mode) {
+  await page.evaluate((mode) => {
+    const nativeFetch = window.fetch;
+    window.resourceRequests = [];
+    window.fetch = async (url, options) => {
+      if (!String(url).includes('/component/frame.html')) return nativeFetch(url, options);
+      if (!resourceRequests.length) window.resourceStarted = performance.now();
+      const record = { method: options.method || 'GET', aborted: false };
+      resourceRequests.push(record);
+      options.signal.addEventListener('abort', () => {
+        record.aborted = true;
+        window.lastResourceAbortMs = performance.now() - resourceStarted;
+      });
+      const index = resourceRequests.length;
+      if (mode === 'stall' || (mode === 'retry' && index === 1))
+        return new Promise((resolve, reject) =>
+          options.signal.addEventListener('abort', () =>
+            reject(new DOMException('Aborted', 'AbortError')),
+          ),
+        );
+      if (mode === 'body') {
+        return new Response(
+          new ReadableStream({
+            start(controller) {
+              options.signal.addEventListener('abort', () =>
+                controller.error(new DOMException('Aborted', 'AbortError')),
+              );
+            },
+          }),
+          { status: 200 },
+        );
+      }
+      return nativeFetch(url, options);
+    };
+  }, mode);
+}
+
+test('one pre-header retry keeps the shared startup deadline and creates only one iframe', async ({
+  page,
+}) => {
+  await load(page, { budgets: { startupMs: 900 } });
+  await transport(page, 'retry');
+  await page.getByRole('button', { name: '启动交互演示' }).click();
+  await expect(page.frameLocator('iframe').locator('#status')).toHaveText('Ready');
+  await expect(page.locator('iframe')).toHaveCount(1);
+  expect(await page.evaluate(() => resourceRequests)).toEqual([
+    { method: 'GET', aborted: true },
+    { method: 'GET', aborted: true },
+  ]);
+});
+
+test('fast resources and definite HTTP, redirect, digest and size failures never retry', async ({
+  page,
+}) => {
+  for (const outcome of ['ready', '404', 'redirect', 'digest', 'size']) {
+    await load(page, {
+      ...(outcome === 'digest' ? { digest: '0'.repeat(64) } : {}),
+      ...(outcome === 'size' ? { budgets: { resourceBytes: 100 } } : {}),
+    });
+    let calls = 0;
+    await page.route('**/component/frame.html', (route) => {
+      calls++;
+      return route.fulfill(
+        outcome === '404'
+          ? { status: 404, body: 'Missing' }
+          : outcome === 'redirect'
+            ? { status: 302, headers: { location: '/health' } }
+            : { contentType: 'text/html', body: html },
+      );
+    });
+    await page.getByRole('button', { name: '启动交互演示' }).click();
+    if (outcome === 'ready')
+      await expect(page.frameLocator('iframe').locator('#status')).toHaveText('Ready');
+    else {
+      await expect(page.getByRole('button', { name: '启动交互演示' })).toBeVisible();
+      await expect(page.locator('iframe')).toHaveCount(0);
+      await expect(page.locator('[role=status]')).toContainText('静态替代内容');
+    }
+    expect(calls, outcome).toBe(1);
+  }
+});
+
+test('close, suspension and config replacement cancel either pending header attempt without late frames', async ({
+  page,
+}) => {
+  for (const action of ['close', 'suspend', 'config']) {
+    for (const attempt of [1, 2]) {
+      await load(page, { budgets: { startupMs: 900 } });
+      await transport(page, 'stall');
+      await page.getByRole('button', { name: '启动交互演示' }).click();
+      await expect.poll(() => page.evaluate(() => resourceRequests.length)).toBe(attempt);
+      if (action === 'close') await page.getByRole('button', { name: '关闭交互预览' }).click();
+      else if (action === 'suspend')
+        await page.evaluate(() =>
+          dispatchEvent(new PageTransitionEvent('pagehide', { persisted: true })),
+        );
+      else
+        await page.locator('#demo-0').evaluate((node) => {
+          const config = JSON.parse(node.dataset.mbbTeachingConfig);
+          config.params.value++;
+          node.dataset.mbbTeachingConfig = JSON.stringify(config);
+        });
+      await expect(page.locator('iframe')).toHaveCount(0);
+      await expect
+        .poll(() => page.evaluate(() => resourceRequests.every((r) => r.aborted)))
+        .toBe(true);
+      await page.waitForTimeout(350);
+      expect(await page.evaluate(() => resourceRequests.length)).toBe(attempt);
+      expect(await page.evaluate(() => MarkBridgeComponents.frameCount())).toBe(0);
+      await expect(page.getByRole('button', { name: '启动交互演示' })).toBeEnabled();
+    }
+  }
+});
+
+test('headers clear the soft timer but body cancellation remains linked to close and deadline', async ({
+  page,
+}) => {
+  for (const action of ['close', 'deadline']) {
+    await load(page, { budgets: { startupMs: 900 } });
+    await transport(page, 'body');
+    await page.getByRole('button', { name: '启动交互演示' }).click();
+    await expect.poll(() => page.evaluate(() => resourceRequests.length)).toBe(1);
+    await page.waitForTimeout(400);
+    expect(await page.evaluate(() => resourceRequests[0].aborted)).toBe(false);
+    if (action === 'close') await page.getByRole('button', { name: '关闭交互预览' }).click();
+    else await expect(page.locator('[role=status]')).toContainText('初始化超时');
+    await expect.poll(() => page.evaluate(() => resourceRequests[0].aborted)).toBe(true);
+    expect(await page.evaluate(() => resourceRequests.length)).toBe(1);
+    expect(await page.evaluate(() => MarkBridgeComponents.frameCount())).toBe(0);
+  }
+});
+
+test('two stalled header requests terminate within the original shared budget', async ({
+  page,
+}) => {
+  await load(page, { budgets: { startupMs: 900 } });
+  await transport(page, 'stall');
+  await page.getByRole('button', { name: '启动交互演示' }).click();
+  await expect(page.locator('[role=status]')).toContainText('初始化超时');
+  const elapsed = await page.evaluate(() => lastResourceAbortMs);
+  expect(elapsed).toBeGreaterThanOrEqual(850);
+  expect(elapsed).toBeLessThanOrEqual(1050);
+  await expect(page.locator('.fallback')).toBeVisible();
+  expect(await page.evaluate(() => resourceRequests)).toEqual([
+    { method: 'GET', aborted: true },
+    { method: 'GET', aborted: true },
+  ]);
+  expect(await page.evaluate(() => MarkBridgeComponents.frameCount())).toBe(0);
+});
+
+test('late iframe load callbacks cannot initialize or kill a replacement preview', async ({
+  page,
+}) => {
+  await load(page);
+  await page.getByRole('button', { name: '启动交互演示' }).click();
+  await expect(page.frameLocator('iframe').locator('#status')).toHaveText('Ready');
+  await page.locator('iframe').evaluate((frame) => {
+    window.oldComponentLoad = frame.onload;
+  });
+  await page.getByRole('button', { name: '关闭交互预览' }).click();
+  await page.getByRole('button', { name: '启动交互演示' }).click();
+  await expect(page.frameLocator('iframe').locator('#status')).toHaveText('Ready');
+  const initial = await page.frameLocator('iframe').locator('#init').textContent();
+  await page.evaluate(() => {
+    oldComponentLoad();
+    oldComponentLoad();
+  });
+  await expect(page.locator('iframe')).toHaveCount(1);
+  await expect(page.frameLocator('iframe').locator('#init')).toHaveText(initial);
+  await expect(page.frameLocator('iframe').locator('#status')).toHaveText('Ready');
+  // A second load of the current frame still signals unauthorized navigation.
+  await page.locator('iframe').evaluate((frame) => frame.onload());
+  await expect(page.locator('iframe')).toHaveCount(0);
+  await expect(page.locator('[role=status]')).toContainText('未授权导航');
+});

@@ -143,6 +143,65 @@
     function failure(message) {
       stop(message + T(' Static fallback content remains readable. You can start again.'));
     }
+    async function readResource(url, signal) {
+      const headerGrace = Math.min(1500, Math.max(1, Math.floor(budgets.startupMs / 3)));
+      for (let attempt = 0; attempt < 2; attempt++) {
+        if (signal.aborted) throw Error(T('The component could not be loaded.'));
+        const request = new AbortController();
+        const cancel = () => request.abort();
+        signal.addEventListener('abort', cancel, { once: true });
+        let headerTimeout = false;
+        let headerTimer =
+          attempt === 0
+            ? setTimeout(() => {
+                headerTimeout = true;
+                request.abort();
+              }, headerGrace)
+            : null;
+        try {
+          const response = await fetch(url, {
+            credentials: 'omit',
+            redirect: 'error',
+            signal: request.signal,
+          });
+          clearTimeout(headerTimer);
+          headerTimer = null;
+          if (!response.ok) throw Error(T('The component resource is unavailable'));
+          if (Number(response.headers.get('content-length')) > budgets.resourceBytes)
+            throw Error(T('The component resource is too large'));
+          const reader = response.body?.getReader();
+          if (!reader) throw Error(T('This browser does not support bounded resource reads'));
+          const chunks = [];
+          let size = 0;
+          while (true) {
+            const part = await reader.read();
+            if (part.done) break;
+            size += part.value.byteLength;
+            if (size > budgets.resourceBytes) {
+              await reader.cancel();
+              throw Error(T('The component resource is too large'));
+            }
+            chunks.push(part.value);
+          }
+          const bytes = new Uint8Array(size);
+          let offset = 0;
+          for (const part of chunks) {
+            bytes.set(part, offset);
+            offset += part.byteLength;
+          }
+          return bytes;
+        } catch (error) {
+          // Only a first request still waiting for headers may retry. The outer
+          // startup watchdog and user cancellation still cover both requests.
+          if (attempt !== 0 || !headerTimeout || signal.aborted || error.name !== 'AbortError')
+            throw error;
+        } finally {
+          clearTimeout(headerTimer);
+          signal.removeEventListener('abort', cancel);
+          request.abort();
+        }
+      }
+    }
     async function launchComponent() {
       stop();
       const current = ++generation;
@@ -183,34 +242,7 @@
         const url = new URL(config.provider.resource.url, location.href);
         if (url.origin !== location.origin)
           throw Error(T('Only registered local resources are allowed'));
-        const response = await fetch(url, {
-          credentials: 'omit',
-          redirect: 'error',
-          signal: abort.signal,
-        });
-        if (!response.ok) throw Error(T('The component resource is unavailable'));
-        if (Number(response.headers.get('content-length')) > budgets.resourceBytes)
-          throw Error(T('The component resource is too large'));
-        const reader = response.body?.getReader();
-        if (!reader) throw Error(T('This browser does not support bounded resource reads'));
-        const chunks = [];
-        let size = 0;
-        while (true) {
-          const part = await reader.read();
-          if (part.done) break;
-          size += part.value.byteLength;
-          if (size > budgets.resourceBytes) {
-            await reader.cancel();
-            throw Error(T('The component resource is too large'));
-          }
-          chunks.push(part.value);
-        }
-        const bytes = new Uint8Array(size);
-        let offset = 0;
-        for (const part of chunks) {
-          bytes.set(part, offset);
-          offset += part.byteLength;
-        }
+        const bytes = await readResource(url, abort.signal);
         const digest = Array.from(
           new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)),
           (v) => v.toString(16).padStart(2, '0'),
@@ -224,8 +256,10 @@
         frame.setAttribute('sandbox', 'allow-scripts');
         frame.referrerPolicy = 'no-referrer';
         frame.className = 'mbb-component-frame';
+        const launchedFrame = frame;
         let initialized = false;
         frame.onload = () => {
+          if (current !== generation || frame !== launchedFrame || !node.isConnected) return;
           if (initialized) {
             failure(T('The isolated component attempted unauthorized navigation.'));
             return;
