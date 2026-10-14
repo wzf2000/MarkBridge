@@ -3,7 +3,7 @@ Tags: markdown, blocks, editor, mathjax, revisions
 Requires at least: 7.1
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 2.0.0-rc.5
+Stable tag: 2.0.0-rc.6
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -14,7 +14,7 @@ MarkBridge provides paired Markdown/block editing, previews, revisions, local Ma
 
 New installations use the bundled PHP converter with PHP 8.2+, DOM and mbstring on WordPress 7.1.x. No Node.js runtime or subprocess is required for supported content. Existing non-empty runtime settings retain Node until an administrator explicitly switches; unsupported environments or content are rejected without fallback.
 
-This readme applies to the unpublished 2.0.0-rc.5 review candidate. It is not a WordPress.org submission or a stable release. Download reviewed installation packages from GitHub Releases; source archives are not installation packages. Chinese and English interface text follows the WordPress user language in the editor and the site language for readers.
+This readme applies to the unpublished 2.0.0-rc.6 review candidate. It is not a WordPress.org submission or a stable release. Download reviewed installation packages from GitHub Releases; source archives are not installation packages. Chinese and English interface text follows the WordPress user language in the editor and the site language for readers.
 
 Core Markdown editing does not call an external service. Local recovery is off until an author explicitly enables browser storage; it is not encrypted or a server backup. Optional ZIP images use normal WordPress media storage: a draft or private article does not make the media URL private. Bound-file writeback requires separate trusted server configuration. A GitHub updater, if chosen, is a separate plugin requiring explicit consent; it is not included in this package.
 
@@ -25,9 +25,10 @@ Core Markdown editing does not call an external service. Local recovery is off u
 
 == Changelog ==
 
-= 2.0.0-rc.5 =
+= 2.0.0-rc.6 =
 * Unpublished review candidate: compact author tools, dedicated preview layout, readable code scrolling, and clearer teaching and settings controls.
 * Full reading retains the selected code language; printing still includes every version.
+* Fixes new-document previews on the Tools screen and excess mobile code-scroll hint spacing.
 
 = 2.0.0-rc.4 =
 Local recovery, bounded Front Matter proposals, safe image ZIP import, multilingual code tabs, saved Markdown/ZIP export, signed-baseline three-way merge, native details/link buttons, trusted static block adapters and English/Chinese interfaces. Includes the earlier fold/stage/code comparison and trusted teaching component candidates. Unpublished candidate; review the validation guide before considering an upgrade.

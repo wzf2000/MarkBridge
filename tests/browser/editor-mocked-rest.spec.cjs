@@ -454,3 +454,44 @@ test('existing article toolbar has compact primary actions and an accessible sec
   await page.keyboard.press('Escape');
   await expect(menu.locator('summary').first()).toBeFocused();
 });
+
+test('tool-screen new Markdown previews and saves without a core/editor store', async ({
+  page,
+}) => {
+  const requests = [];
+  await page.route('**/wp-json/mbb/v1/**', (route) => {
+    const endpoint = new URL(route.request().url()).pathname.split('/').at(-1);
+    const body = route.request().postDataJSON();
+    requests.push({ endpoint, body });
+    if (endpoint === 'preview')
+      return json(route, {
+        before: '',
+        post_status: 'draft',
+        html: '<p>Tool-screen draft.</p>',
+        document: { source: body.source },
+      });
+    if (endpoint === 'save') return json(route, { post_id: 23, editor_url: '/editor?saved=23' });
+    return json(route, { message: 'unexpected fixture route' }, 500);
+  });
+  await page.goto('/editor');
+  await page.evaluate(() => {
+    window.wp.data.select = () => undefined;
+  });
+  await page.locator('#mbb-new').click();
+  await expect(page.locator('#mbb-title')).toBeEnabled();
+  await page.locator('#mbb-title').fill('Tool-screen draft');
+  await page.locator('#mbb-document-id').fill('ToolScreenDraft');
+  await page.locator('#mbb-source').fill('Tool-screen draft.\n');
+  await page.locator('#mbb-review').click();
+  await expect(page.locator('#mbb-save')).toBeEnabled();
+  expect(requests).toHaveLength(1);
+  expect(requests[0].body).toMatchObject({ post_id: 0, featured_media: 0, post_status: 'draft' });
+  await page.locator('#mbb-save').click();
+  await expect(page).toHaveURL(/saved=23/);
+  expect(requests.map((r) => r.endpoint)).toEqual(['preview', 'save']);
+  expect(requests[1].body).toMatchObject({
+    post_id: 0,
+    featured_media: 0,
+    source: 'Tool-screen draft.\n',
+  });
+});

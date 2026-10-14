@@ -265,7 +265,9 @@
           : recoveryRecord
             ? recoveryRecord.payload.featuredMedia
             : Number(base?.post_id || 0) === Number(cfg.postId)
-              ? (wp.data.select('core/editor').getEditedPostAttribute('featured_media') ??
+              ? (window.wp?.data
+                  ?.select?.('core/editor')
+                  ?.getEditedPostAttribute?.('featured_media') ??
                 base?.featured_media ??
                 0)
               : (base?.featured_media ?? 0),
@@ -2298,11 +2300,12 @@
         bar.style.setProperty('--mbb-keyboard-inset', keyboardInset + 'px');
         placeMore();
         const canvas = document.querySelector('.interface-interface-skeleton__content');
-        if (!canvas) return;
-        const bounds = canvas.getBoundingClientRect();
+        const bounds = canvas?.getBoundingClientRect() || { left: 0, right: innerWidth };
         let left = Math.max(0, bounds.left),
           right = Math.min(innerWidth, bounds.right);
-        for (const sidebar of document.querySelectorAll('.interface-interface-skeleton__sidebar')) {
+        for (const sidebar of document.querySelectorAll(
+          '.interface-interface-skeleton__sidebar, .interface-complementary-area.editor-sidebar',
+        )) {
           const box = sidebar.getBoundingClientRect();
           if (box.width && box.height && box.right > left && box.left < right)
             right = Math.min(right, box.left);

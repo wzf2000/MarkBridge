@@ -163,10 +163,18 @@ async function fixture(page, options = {}) {
 }
 async function openRecovery(page) {
   const summary = page.locator('#mbb-local-recovery summary');
-  if (await summary.isVisible()) await summary.click();
-  else {
-    await page.locator('#mbb-more > summary').click();
+  await expect(summary).toBeAttached();
+  if (await page.evaluate(() => !MBB_EDITOR.newPost)) {
+    await expect(page.locator('#mbb-recovery-open')).toBeAttached();
+  }
+  const more = page.locator('#mbb-more > summary');
+  if ((await page.locator('#mbb-local-recovery').getAttribute('open')) !== null) {
+    await summary.click();
+  } else if (await more.isVisible()) {
+    if ((await page.locator('#mbb-more').getAttribute('open')) === null) await more.click();
     await page.locator('#mbb-recovery-open').click();
+  } else {
+    await summary.click();
   }
 }
 async function enable(page) {

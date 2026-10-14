@@ -25,6 +25,23 @@ async function fixture(
     const request = route.request(),
       url = new URL(request.url());
     const path = url.searchParams.get('rest_route') || url.pathname;
+    if (path.endsWith('/recovery-context'))
+      return route.fulfill({
+        json: {
+          schema: 1,
+          siteKey: 'a'.repeat(64),
+          userKey: 'b'.repeat(64),
+          postId: 12,
+          newKey: null,
+          identity: 'c'.repeat(64),
+          permission: 'e'.repeat(64),
+          baseline: 'f'.repeat(64),
+          expected: 'baseline-1',
+          sourceDigest: null,
+          sourceManaged: false,
+          sourceWriteAvailable: false,
+        },
+      });
     if (!path.startsWith('/mbb/v1/export') && !path.startsWith('/wp-json/mbb/v1/export'))
       return route.continue();
     requests.push({
@@ -100,6 +117,7 @@ async function fixture(
     { plain, unavailable },
   );
   await page.locator('#mbb-more > summary').click();
+  await expect(page.locator('#mbb-recovery-opt-in')).toBeEnabled();
   return { requests, cancelled, release: () => release?.() };
 }
 test('exact Markdown download and both REST URL forms leave unsaved native input untouched', async ({

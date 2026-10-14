@@ -62,6 +62,10 @@ test('comparison scroll synchronization is opt-in and stops at the shorter side'
     right = group.locator('.mbb-compare-right pre');
   await expect(left).toHaveClass(/mbb-code-display/);
   await expect(group.locator('input[type=checkbox]')).toBeVisible();
+  const hint = group.locator('.mbb-code-scroll-hint').first();
+  await expect(hint).toBeVisible();
+  expect(await hint.evaluate((node) => getComputedStyle(node).fontWeight)).toBe('400');
+  expect((await hint.boundingBox()).height).toBeLessThan(60);
   await left.evaluate((node) => {
     node.scrollLeft = 80;
   });

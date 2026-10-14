@@ -483,7 +483,8 @@
   max-height: none;
   box-shadow: none;
 }
-body:has(#mbb-recovery-open) #mbb-local-recovery:not([open]):not(.mbb-recovery-attention) {
+body:has(#mbb-toolbar:not([hidden]):not(.mbb-keyboard-open) #mbb-recovery-open:not([hidden]))
+  #mbb-local-recovery:not([open]):not(.mbb-recovery-attention) {
   display: none;
 }
 #mbb-local-recovery summary {
