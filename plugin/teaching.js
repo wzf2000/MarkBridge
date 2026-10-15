@@ -42,6 +42,44 @@
     language ||
     T('Code');
   const groups = new Map();
+  const stageBars = new Map();
+  let stickyFrame = 0;
+  // Themes opt their fixed/sticky headers into measurement without a theme-specific selector.
+  function measureStageBars() {
+    if (!stageBars.size) return;
+    let offset = 0;
+    const obstructions = [
+      ...document.querySelectorAll('#wpadminbar, [data-mbb-teaching-sticky-obstruction]'),
+    ]
+      .filter((node) => ['fixed', 'sticky'].includes(getComputedStyle(node).position))
+      .map((node) => node.getBoundingClientRect())
+      .sort((a, b) => a.top - b.top);
+    for (const rect of obstructions)
+      if (rect.height && rect.bottom > offset && rect.top <= offset + 1) offset = rect.bottom;
+    for (const [node, controls] of stageBars) {
+      if (!node.isConnected) {
+        stageBars.delete(node);
+        stageResize?.unobserve(controls);
+        continue;
+      }
+      for (const [name, value] of [
+        ['--mbb-teaching-measured-offset', offset + 'px'],
+        ['--mbb-teaching-controls-height', controls.getBoundingClientRect().height + 'px'],
+      ])
+        if (node.style.getPropertyValue(name) !== value) node.style.setProperty(name, value);
+    }
+  }
+  function scheduleStageMeasurement() {
+    if (stickyFrame) return;
+    stickyFrame = requestAnimationFrame(() => {
+      stickyFrame = 0;
+      measureStageBars();
+    });
+  }
+  const stageResize =
+    typeof ResizeObserver === 'function' ? new ResizeObserver(scheduleStageMeasurement) : null;
+  window.addEventListener('scroll', scheduleStageMeasurement, { passive: true });
+  window.addEventListener('resize', scheduleStageMeasurement);
   const codeGroups = new Map();
   const annotationBudgets = new WeakMap();
   const config = (node) => {
@@ -150,6 +188,7 @@
   }
   function navigate(node) {
     revealTarget(node);
+    measureStageBars();
     if (node.id) record(false, '#' + encodeURIComponent(node.id));
     node.scrollIntoView({ block: 'start' });
     node.setAttribute('tabindex', '-1');
@@ -164,7 +203,10 @@
     }
     if (id) {
       const node = document.getElementById(id);
-      if (node && revealTarget(node)) node.scrollIntoView({ block: 'start' });
+      if (node && revealTarget(node)) {
+        measureStageBars();
+        node.scrollIntoView({ block: 'start' });
+      }
     }
   }
   function codeTabs(node, options) {
@@ -620,6 +662,8 @@
         });
         navigation.insertBefore(chooser, next.parentNode ? next : null);
         node.insertBefore(controls, body);
+        stageBars.set(node, controls);
+        stageResize?.observe(controls);
         update();
       } else if (kind === 'code-compare') {
         if (!compare(node, options)) continue;
@@ -654,6 +698,7 @@
     printedDetails = null;
   });
   init();
+  measureStageBars();
   restore(history.state);
   hash();
   record(true);

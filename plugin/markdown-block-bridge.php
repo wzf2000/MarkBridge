@@ -4,7 +4,7 @@
  * Plugin URI: https://github.com/wzf2000/MarkBridge
  * Author: wzf2000
  * Author URI: https://github.com/wzf2000
- * Version: 2.0.0
+ * Version: 2.0.1
  * License: GPL-3.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  * Requires at least: 7.1

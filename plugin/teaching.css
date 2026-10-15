@@ -263,11 +263,26 @@
 }
 
 /* Reading controls inherit the article palette and form a compact, consistent toolbar. */
+[data-mbb-teaching='steps'][data-mbb-enhanced] {
+  --mbb-teaching-effective-offset: max(
+    var(--mbb-teaching-sticky-offset, 0px),
+    var(--mbb-teaching-measured-offset, 0px)
+  );
+  scroll-margin-top: calc(var(--mbb-teaching-effective-offset) + 0.75rem);
+}
+[data-mbb-teaching='steps'][data-mbb-enhanced] [id] {
+  scroll-margin-top: calc(
+    var(--mbb-teaching-effective-offset) + var(--mbb-teaching-controls-height, 0px) + 0.75rem
+  );
+}
 .mbb-stage-controls {
+  position: sticky;
+  top: var(--mbb-teaching-effective-offset, 0px);
+  z-index: 10;
   padding: 0.65rem 0.8rem;
   border: 1px solid #8883;
   border-radius: 10px;
-  background: #88808;
+  background: var(--mbb-teaching-sticky-background, Canvas);
   gap: 0.65rem 1rem;
 }
 .mbb-stage-modes,
@@ -609,6 +624,9 @@
 @media (max-width: 700px) {
   .mbb-stage-controls {
     font-size: 14px;
+  }
+  .mbb-stage-controls .mbb-stage-modes {
+    flex-wrap: wrap;
   }
   .mbb-stage-controls .mbb-stage-modes button {
     white-space: nowrap;

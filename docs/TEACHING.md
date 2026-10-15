@@ -1,6 +1,6 @@
 # 教学内容
 
-本文面向作者；扩展开发者另见[教学扩展接口](TEACHING-EXTENSIONS.md)。本文适用于 MarkBridge 2.0.0，其他版本的功能以对应 Release 文档为准。Markdown 与可视化编辑器仍维护同一份配对正文，阅读进度、播放状态和运行结果不写回文章。
+本文面向作者；扩展开发者另见[教学扩展接口](TEACHING-EXTENSIONS.md)。本文适用于 MarkBridge 2.0.1，其他版本的功能以对应 Release 文档为准。Markdown 与可视化编辑器仍维护同一份配对正文，阅读进度、播放状态和运行结果不写回文章。
 
 ## 先组织题意与解释
 
@@ -138,5 +138,9 @@ JSON 与围栏的顺序一一对应；不要在组内增加解释段落，解释
 编辑后仍按现有流程查看差异、预览并保存；直接可视化保存也经过服务器反转和配对校验。文章 ID、作者、状态权限、固定链接、评论、私人笔记、来源绑定和修订规则保持。文件来源文章仍同时检查 WordPress 与绑定真实文件的版本，不新增第二份可写正文。原文、规范原文、区块序列化各自最多 256 KiB，属性转义的增长也计算在内。
 
 主插件提供通用教学结构和基本展示，特定课程、算法及执行资源由独立扩展提供。主题可通过 `window.MarkBridgeTeaching.revealTarget(target)` 同步展开目标，监听 document 的 `mbb:teaching-change` 更新可见目录；history 自动定位可先检查 `hasCurrentHistoryView()`，避免覆盖用户保存的收起视图。只对展示控件使用 `data-mbb-generated`，不要给隐藏的作者正文加该标记；目录及段落身份应排除临时输出，继续索引隐藏正文。
+
+2.0.1 增加阶段导航吸附：到达视口顶部后固定，离开所属阶段组时随正文移出；手机上仍保留阶段选择与前后导航，英文模式按钮可自然换行，打印和无 JavaScript 时按完整静态正文阅读。折叠未指定展开状态时关闭，作者明确配置的 `open:true` 仍展开；全文模式、深链接和读者操作可以临时展开，不改写作者配置。
+
+主题可在固定或吸附顶栏上添加 `data-mbb-teaching-sticky-obstruction`，插件会与 WordPress 管理栏一起测量当前顶部遮挡。也可在文章容器设置 `--mbb-teaching-sticky-offset`（CSS 长度，表示顶部总留白）；实际偏移取此值与测量值的较大者。`--mbb-teaching-sticky-background` 控制导航栏的不透明背景。插件按导航栏实际高度为组内锚点留白；主题若覆盖 `scroll-margin-top`，应保留 `--mbb-teaching-effective-offset` 和 `--mbb-teaching-controls-height` 的空间。导航栏祖先应避免 `overflow:auto/hidden/scroll`，可用 `overflow:clip` 限制横向溢出而不创建新的滚动容器。
 
 > [编辑与发布](USAGE.md) · [工作原理](ARCHITECTURE.md) · [文档首页](index.md)
