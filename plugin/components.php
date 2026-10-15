@@ -392,7 +392,7 @@ function mbb_component_register_checked(string $id, array $provider): bool
     }
     if (
         !$inside ||
-        !preg_match('/\.html$/D', $file) ||
+        !preg_match('/\.html(?:\.txt)?$/D', $file) ||
         !is_string($provider['resource']['sha256'] ?? null) ||
         !preg_match('/^[a-f0-9]{64}$/D', $provider['resource']['sha256'])
     ) {

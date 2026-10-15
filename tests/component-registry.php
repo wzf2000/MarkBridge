@@ -161,6 +161,58 @@ try {
             'Bad defaults accepted or interrupted the page',
         );
     }
+    $textFile = $directory . '/fixture/frame-123456789abc.html.txt';
+    copy($file, $textFile);
+    $textProvider = $provider;
+    $textProvider['minMarkBridge'] = '2.0.3';
+    $textProvider['resource']['file'] = $textFile;
+    $textProvider['resource']['url'] = plugins_url(basename($textFile), $textFile);
+    registry_assert(
+        markbridge_register_teaching_component('text-payload', $textProvider) &&
+            mbb_component_registry()['text-payload']['status'] === 'available',
+        'Exact HTML text payload rejected',
+    );
+    $wrongText = $textProvider;
+    $wrongText['resource']['sha256'] = str_repeat('0', 64);
+    registry_assert(
+        markbridge_register_teaching_component('text-integrity', $wrongText) &&
+            mbb_component_registry()['text-integrity']['status'] === 'resource-integrity',
+        'Text payload digest mismatch became available',
+    );
+    $limitedText = $textProvider;
+    $limitedText['budgets']['resourceBytes'] = 1;
+    registry_assert(
+        markbridge_register_teaching_component('text-limit', $limitedText) &&
+            mbb_component_registry()['text-limit']['status'] === 'resource-limit',
+        'Text payload bypassed resource budget',
+    );
+    foreach (['frame.txt', 'frame.html.txt.js', 'frame.HTML.txt'] as $name) {
+        $invalidText = $textProvider;
+        $invalidText['resource']['file'] = $directory . '/fixture/' . $name;
+        $invalidText['resource']['url'] = plugins_url($name, $invalidText['resource']['file']);
+        registry_assert(
+            !markbridge_register_teaching_component('invalid-text', $invalidText),
+            'Arbitrary text suffix accepted',
+        );
+    }
+    $escapedText = $textProvider;
+    $escapedText['resource']['file'] = $directory . '/outside.html.txt';
+    copy($file, $escapedText['resource']['file']);
+    $escapedText['resource']['url'] = plugins_url(
+        'outside.html.txt',
+        $escapedText['resource']['file'],
+    );
+    registry_assert(
+        !markbridge_register_teaching_component('outside-text', $escapedText),
+        'Text payload escaped plugin directory',
+    );
+    unlink($escapedText['resource']['file']);
+    $remoteText = $textProvider;
+    $remoteText['resource']['url'] = 'https://invalid.example/frame.html.txt';
+    registry_assert(
+        !markbridge_register_teaching_component('remote-text', $remoteText),
+        'Text payload accepted a remote URL',
+    );
     $bad = $provider;
     $bad['resource']['url'] = 'https://invalid.example/frame.html';
     registry_assert(
@@ -373,6 +425,9 @@ try {
     );
     echo "Registry closed schemas, strong types, bounded local resources, conflicts and registration failure recovery passed.\n";
 } finally {
+    if (isset($textFile) && is_file($textFile)) {
+        unlink($textFile);
+    }
     unlink($file);
     rmdir($directory . '/fixture');
     rmdir($directory);

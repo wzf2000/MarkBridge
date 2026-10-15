@@ -18,8 +18,8 @@ async function load(
   } = {},
 ) {
   await page.goto('/health');
-  await page.route('**/component/frame.html', (route) =>
-    route.fulfill({ contentType: 'text/html', body: html }),
+  await page.route('**/component/frame-123456789abc.html.txt', (route) =>
+    route.fulfill({ contentType: 'text/plain', body: html }),
   );
   const config = {
     status,
@@ -41,7 +41,10 @@ async function load(
         ...budgets,
       },
       title: 'Fixed fixture',
-      resource: { url: new URL('/component/frame.html', page.url()).href, sha256: digest },
+      resource: {
+        url: new URL('/component/frame-123456789abc.html.txt', page.url()).href,
+        sha256: digest,
+      },
     },
   };
   await page.setContent(
@@ -108,12 +111,14 @@ test('missing provider, 404 and failed digest remain static and support explicit
   await expect(page.locator('[role=status]')).toContainText('组件缺失');
   await expect(page.locator('iframe')).toHaveCount(0);
   await load(page);
-  await page.route('**/component/frame.html', (r) => r.fulfill({ status: 404, body: 'Missing' }));
+  await page.route('**/component/frame-123456789abc.html.txt', (r) =>
+    r.fulfill({ status: 404, body: 'Missing' }),
+  );
   await page.getByRole('button', { name: '启动交互演示' }).click();
   await expect(page.locator('[role=status]')).toContainText('资源不可用');
-  await page.unroute('**/component/frame.html');
-  await page.route('**/component/frame.html', (r) =>
-    r.fulfill({ contentType: 'text/html', body: html }),
+  await page.unroute('**/component/frame-123456789abc.html.txt');
+  await page.route('**/component/frame-123456789abc.html.txt', (r) =>
+    r.fulfill({ contentType: 'text/plain', body: html }),
   );
   await page.getByRole('button', { name: '启动交互演示' }).click();
   await expect(page.frameLocator('iframe').locator('#status')).toHaveText('Ready');
@@ -269,7 +274,7 @@ test('bounded streaming and initialization timeout fail without losing static co
   page,
 }) => {
   await load(page);
-  await page.route('**/component/frame.html', (route) =>
+  await page.route('**/component/frame-123456789abc.html.txt', (route) =>
     route.fulfill({ contentType: 'text/html', body: 'x'.repeat(512 * 1024 + 1) }),
   );
   await page.getByRole('button', { name: '启动交互演示' }).click();
@@ -285,7 +290,7 @@ test('bounded streaming and initialization timeout fail without losing static co
     window.MBBComponents[0].resource.sha256 = digest;
     node.dataset.mbbTeachingConfig = JSON.stringify(cfg);
   }, digest);
-  await page.route('**/component/frame.html', (route) =>
+  await page.route('**/component/frame-123456789abc.html.txt', (route) =>
     route.fulfill({ contentType: 'text/html', body: broken }),
   );
   await page.getByRole('button', { name: '启动交互演示' }).click();
@@ -488,7 +493,8 @@ async function transport(page, mode) {
     const nativeFetch = window.fetch;
     window.resourceRequests = [];
     window.fetch = async (url, options) => {
-      if (!String(url).includes('/component/frame.html')) return nativeFetch(url, options);
+      if (!String(url).includes('/component/frame-123456789abc.html.txt'))
+        return nativeFetch(url, options);
       if (!resourceRequests.length) window.resourceStarted = performance.now();
       const record = { method: options.method || 'GET', aborted: false };
       resourceRequests.push(record);
@@ -543,14 +549,14 @@ test('fast resources and definite HTTP, redirect, digest and size failures never
       ...(outcome === 'size' ? { budgets: { resourceBytes: 100 } } : {}),
     });
     let calls = 0;
-    await page.route('**/component/frame.html', (route) => {
+    await page.route('**/component/frame-123456789abc.html.txt', (route) => {
       calls++;
       return route.fulfill(
         outcome === '404'
           ? { status: 404, body: 'Missing' }
           : outcome === 'redirect'
             ? { status: 302, headers: { location: '/health' } }
-            : { contentType: 'text/html', body: html },
+            : { contentType: 'text/plain', body: html },
       );
     });
     await page.getByRole('button', { name: '启动交互演示' }).click();
