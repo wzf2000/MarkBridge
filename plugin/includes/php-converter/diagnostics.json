@@ -1383,5 +1383,5 @@
   "raw must contain only the complete FrontMatter header",
   "right",
   "worker.cjs differs from the plugin or manifest.",
-  "− left-side deletions or changes; + right-side additions or changes. Outlines mark author highlights."
+  "− left-side deletions or changes; + right-side additions or changes. Leading marks indicate author highlights."
 ]

@@ -818,7 +818,7 @@
   "Initially annotates 400 lines; at most 2000 per side, 4000 initial lines per article, and 8000 manually requested lines. Remaining source stays unchanged and fully copyable.": "首次标注 400 行，每份最多 2000 行，每篇初次最多 4000 行、手动最多 8000 行；其余源码原样显示并完整复制。",
   "Line differences: ": "行级差异：",
   "Long code differences estimated by matching line positions: ": "长代码按相同行位置估计差异：",
-  "− left-side deletions or changes; + right-side additions or changes. Outlines mark author highlights.": "− 左侧删除或修改；+ 右侧新增或修改；框线标记作者重点。",
+  "− left-side deletions or changes; + right-side additions or changes. Leading marks indicate author highlights.": "− 左侧删除或修改；+ 右侧新增或修改；左侧标记表示作者重点。",
   "Read by stage": "分阶段阅读",
   "Show full text": "显示全文",
   "Stage %1$s / %2$s": "阶段 %1$s / %2$s",

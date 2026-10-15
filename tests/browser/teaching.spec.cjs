@@ -297,3 +297,53 @@ test('stage controls keep the count and progress together without vertical butto
   ).toBe(true);
   await page.screenshot({ path: `test-results/stage-controls-${testInfo.project.name}.png` });
 });
+
+test('comparison bands fill long source width and synchronize by default after theme Prism', async ({
+  page,
+}, info) => {
+  await load(page, false);
+  const source = `const start = 1;\n${'before_'.repeat(80)}\nbefore_short();\nconst end = 2;\n`;
+  await page.locator('#compare code').evaluateAll((codes, value) => {
+    codes[0].textContent = value;
+    codes[1].textContent = value.replaceAll('before', 'after');
+  }, source);
+  await page.addScriptTag({ content: script });
+  const front = await (await page.request.get('/front')).text();
+  const config = JSON.parse(/window\.MBB_PRESENTATION=(\{[^\n]+\});/.exec(front)[1]);
+  await page.evaluate((value) => (window.MBB_PRESENTATION = value), config);
+  await page.addScriptTag({ path: path.join(plugin, 'presentation-loader.js') });
+  const left = page.locator('#compare .mbb-compare-left pre');
+  await expect(left).toHaveClass(/mbb-code-display/);
+  await page.addStyleTag({
+    content: '.wp-block-mbb-code-compare pre:not(.wp-block-mbb-math){padding:20px!important}',
+  });
+  await expect(left).toHaveCSS('padding-left', '0px');
+  await expect(left).toHaveCSS('padding-right', '0px');
+  await page.evaluate(() => Prism.highlightAll());
+  await expect(left.locator('[data-mbb-diff="removed"]')).toHaveCount(2);
+  expect(await left.locator('code').textContent()).toBe(source);
+  await expect(page.locator('#compare input[type="checkbox"]')).toHaveCount(0);
+  const geometry = await left.evaluate((pre) => {
+    const rows = [...pre.querySelectorAll('[data-mbb-diff="removed"]')];
+    return rows.map((row) => ({
+      width: row.getBoundingClientRect().width,
+      codeWidth: pre.querySelector('code').getBoundingClientRect().width,
+      border: getComputedStyle(row).borderTopWidth,
+      bottom: row.getBoundingClientRect().bottom,
+      top: row.getBoundingClientRect().top,
+    }));
+  });
+  for (const row of geometry) {
+    expect(row.width).toBeCloseTo(row.codeWidth, 0);
+    expect(row.border).toBe('0px');
+  }
+  expect(geometry[0].bottom).toBeCloseTo(geometry[1].top, 0);
+  await left.evaluate((pre) => (pre.scrollLeft = 230));
+  await expect
+    .poll(() => page.locator('#compare .mbb-compare-right pre').evaluate((pre) => pre.scrollLeft))
+    .toBe(230);
+  await page.locator('#compare').scrollIntoViewIfNeeded();
+  await page.screenshot({ path: `test-results/code-diff-scroll-${info.project.name}.png` });
+  await page.emulateMedia({ media: 'print' });
+  expect(await left.evaluate((pre) => pre.scrollWidth <= pre.clientWidth + 1)).toBe(true);
+});

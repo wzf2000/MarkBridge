@@ -5590,5 +5590,5 @@ msgid "worker.cjs differs from the plugin or manifest."
 msgstr ""
 
 #: plugin/i18n.js
-msgid "− left-side deletions or changes; + right-side additions or changes. Outlines mark author highlights."
+msgid "− left-side deletions or changes; + right-side additions or changes. Leading marks indicate author highlights."
 msgstr ""

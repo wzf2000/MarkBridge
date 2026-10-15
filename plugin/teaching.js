@@ -478,17 +478,10 @@
         ? T('Line differences: ')
         : T('Long code differences estimated by matching line positions: ')) +
       T(
-        '− left-side deletions or changes; + right-side additions or changes. Outlines mark author highlights.',
+        '− left-side deletions or changes; + right-side additions or changes. Leading marks indicate author highlights.',
       );
     node.append(legend);
-    const sync = document.createElement('label');
-    const syncInput = document.createElement('input');
-    syncInput.type = 'checkbox';
-    syncInput.addEventListener('change', () => {
-      node.dataset.mbbSyncScroll = String(syncInput.checked);
-    });
-    sync.append(syncInput, document.createTextNode(T('Synchronize horizontal scrolling')));
-    legend.append(sync);
+    node.dataset.mbbSyncScroll = 'true';
     return true;
   }
   function highlightCompare(code) {

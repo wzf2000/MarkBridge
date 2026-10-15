@@ -5590,5 +5590,5 @@ msgid "worker.cjs differs from the plugin or manifest."
 msgstr "worker.cjs 与插件或清单不匹配。"
 
 #: plugin/i18n.js
-msgid "− left-side deletions or changes; + right-side additions or changes. Outlines mark author highlights."
-msgstr "− 左侧删除或修改；+ 右侧新增或修改；框线标记作者重点。"
+msgid "− left-side deletions or changes; + right-side additions or changes. Leading marks indicate author highlights."
+msgstr "− 左侧删除或修改；+ 右侧新增或修改；左侧标记表示作者重点。"

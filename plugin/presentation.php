@@ -5,7 +5,7 @@ if (!defined('ABSPATH')) {
 // Independent, pinned presentation assets. This module does not load the former editor.
 function mbb_code_line_number_css()
 {
-    return '.mbb-reading .mbb-document pre.wp-block-mbb-code.line-numbers{padding-left:5em!important}' .
+    return '.mbb-reading .mbb-document pre.wp-block-mbb-code.line-numbers{padding-left:var(--mbb-code-gutter,3.25em)!important}' .
         'pre.wp-block-mbb-code.line-numbers>code{display:block;font-size:inherit;line-height:inherit}';
 }
 function mbb_enqueue_code_assets()
@@ -79,7 +79,7 @@ function mbb_enqueue_code_assets()
             'copy-clipboard',
             $base . 'clipboard/clipboard.min.js',
             [],
-            '2.0.1',
+            '2.0.2',
             true,
         );
     }

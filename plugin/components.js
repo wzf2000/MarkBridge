@@ -88,6 +88,7 @@
     controls.dataset.mbbGenerated = '';
     controls.className = 'mbb-component-controls';
     const status = document.createElement('p');
+    status.className = 'mbb-component-status';
     status.setAttribute('role', 'status');
     status.setAttribute('aria-live', 'polite');
     let frame = null,
@@ -137,7 +138,10 @@
       launch.disabled = false;
       launch.hidden = false;
       close.hidden = true;
-      if (reason) status.textContent = reason;
+      launch.setAttribute('aria-expanded', 'false');
+      close.setAttribute('aria-expanded', 'false');
+      node.dataset.mbbComponentState = 'closed';
+      status.textContent = reason || '';
       if (changedLayout) changed();
     }
     function failure(message) {
@@ -230,6 +234,9 @@
       }
       slots.add(node);
       loading = true;
+      node.dataset.mbbComponentState = 'loading';
+      launch.setAttribute('aria-expanded', 'true');
+      close.setAttribute('aria-expanded', 'true');
       launch.disabled = true;
       launch.hidden = true;
       close.hidden = false;
@@ -256,6 +263,9 @@
         frame.setAttribute('sandbox', 'allow-scripts');
         frame.referrerPolicy = 'no-referrer';
         frame.className = 'mbb-component-frame';
+        frame.id = 'mbb-component-frame-' + session;
+        launch.setAttribute('aria-controls', frame.id);
+        close.setAttribute('aria-controls', frame.id);
         const launchedFrame = frame;
         let initialized = false;
         frame.onload = () => {
@@ -292,17 +302,19 @@
     }
     const launch = button(T('Start interactive demonstration'), launchComponent),
       close = button(T('Close interactive preview'), () => {
-        stop(T('The interactive preview is closed.'));
+        stop();
         launch.focus();
       });
+    launch.className = close.className = 'mbb-component-toggle';
+    launch.setAttribute('aria-expanded', 'false');
+    close.setAttribute('aria-expanded', 'false');
+    node.dataset.mbbComponentState = 'closed';
     close.hidden = true;
     controls.append(launch, close, status);
     node.insertBefore(controls, node.firstChild);
     status.textContent =
       config.status === 'available'
-        ? T(
-            'Static fallback content is always preserved. Start the interactive component explicitly.',
-          )
+        ? ''
         : T(
             'The component is missing or incompatible. Static fallback content and configuration are preserved.',
           );
@@ -346,7 +358,8 @@
         clearTimeout(startup);
         loading = false;
         ready = true;
-        status.textContent = T('The isolated component is ready.');
+        node.dataset.mbbComponentState = 'ready';
+        status.textContent = '';
       } else if (data.type === 'resize' && Number.isFinite(data.height))
         frame.style.height = Math.min(1200, Math.max(280, data.height)) + 'px';
       else if (data.type === 'run-request') {

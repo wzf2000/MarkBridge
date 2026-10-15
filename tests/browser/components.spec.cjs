@@ -94,6 +94,11 @@ test('generic fixed provider uses opaque iframe, enforced CSP and public data, r
   await expect(page.locator('iframe')).toHaveCount(0);
   await expect(page.getByRole('button', { name: '启动交互演示' })).toBeFocused();
   await expect(page.locator('.fallback')).toBeVisible();
+  await expect(page.locator('[role=status]')).toBeEmpty();
+  await expect(page.getByRole('button', { name: '启动交互演示' })).toHaveAttribute(
+    'aria-expanded',
+    'false',
+  );
 });
 test('missing provider, 404 and failed digest remain static and support explicit retry', async ({
   page,
@@ -349,7 +354,8 @@ test('over-budget summaries and messages terminate the session without removing 
         ),
       beforeRun,
     );
-  await expect(page.locator('[role=status]')).toContainText('已就绪');
+  await expect(page.locator('[data-mbb-component-state=ready]')).toHaveCount(1);
+  await expect(page.locator('[role=status]')).toBeEmpty();
   const frame = page.frameLocator('iframe');
   await frame.locator('#run').click();
   await expect(frame.locator('#status')).toHaveText('Running');

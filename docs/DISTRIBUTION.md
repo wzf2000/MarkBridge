@@ -1,6 +1,6 @@
 # 发行渠道与提交准备
 
-本页适用于 MarkBridge 2.0.1。主插件保持同一源码和安装 ZIP；WordPress.org 提交、GitHub Release 与生产部署是独立动作。
+本页适用于 MarkBridge 2.0.2。主插件保持同一源码和安装 ZIP；WordPress.org 提交、GitHub Release 与生产部署是独立动作。
 
 ## 通用主包
 

@@ -74,6 +74,10 @@
     )
       return;
     pre.classList.add('mbb-code-display');
+    const lineCount = (code.textContent.match(/\n(?!$)/g) || []).length + 1;
+    const start = Number.parseInt(pre.dataset.start || '1', 10) || 1;
+    const digits = String(Math.max(Math.abs(start), Math.abs(start + lineCount - 1))).length;
+    pre.style.setProperty('--mbb-code-gutter', Math.max(3.25, digits * 0.65 + 0.9) + 'em');
     if (!codeDisplays.has(pre)) {
       const hint = document.createElement('p');
       hint.className = 'mbb-code-scroll-hint';
@@ -165,6 +169,11 @@
         Prism.plugins.autoloader.languages_path = config.languages;
         if (!Prism.mbbCodeTabsHook) {
           Prism.mbbCodeTabsHook = true;
+          // A theme may run highlightAll again after our renderer. Comparison rows are
+          // already highlighted as a whole source and must retain their annotations.
+          Prism.hooks.add('before-sanity-check', (env) => {
+            if (env.element.closest('.wp-block-mbb-code-compare')) env.code = '';
+          });
           Prism.hooks.add('complete', ({ element }) => {
             if (!element.closest('.wp-block-mbb-code-tabs,.wp-block-mbb-code-compare')) return;
             const wrapper = element.closest('.code-toolbar');

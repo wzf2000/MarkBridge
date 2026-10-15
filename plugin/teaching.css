@@ -124,15 +124,12 @@
 }
 .mbb-compare-line[data-mbb-diff='removed'] {
   background: #d3363620;
-  border-left: 3px solid #b22;
 }
 .mbb-compare-line[data-mbb-diff='added'] {
   background: #21873b20;
-  border-left: 3px solid #18732f;
 }
 .mbb-compare-line[data-mbb-highlight] {
-  outline: 1px solid currentColor;
-  outline-offset: -1px;
+  box-shadow: inset 3px 0 currentColor;
 }
 @media (max-width: 700px) {
   .wp-block-mbb-code-compare {
@@ -211,32 +208,61 @@
   }
 }
 .mbb-component-controls {
-  border: 1px solid #cbd5e1;
-  background: #f8fafc;
+  border: 1px solid #8884;
   border-radius: 8px;
-  padding: 12px;
+  padding: 0;
   margin-block: 16px;
-  color: #243447;
-}
-.mbb-component-controls > button {
-  font: inherit;
-  padding: 6px 12px;
-  margin-right: 8px;
-  background: white;
+  overflow: hidden;
   color: inherit;
-  border: 1px solid #9daec2;
-  border-radius: 6px;
+}
+.mbb-component-controls > .mbb-component-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  font: inherit;
+  font-weight: 600;
+  text-align: start;
+  padding: 0.85rem 1rem;
+  margin: 0;
+  background: transparent;
+  color: inherit;
+  border: 0;
+  border-radius: 0;
   cursor: pointer;
+}
+.mbb-component-toggle::before {
+  content: '';
+  width: 0.45rem;
+  height: 0.45rem;
+  flex: 0 0 auto;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+}
+.mbb-component-toggle[aria-expanded='true']::before {
+  transform: rotate(45deg);
+}
+.mbb-component-toggle:disabled {
+  cursor: progress;
+  opacity: 0.7;
 }
 .mbb-component-controls > button:focus-visible {
   outline: 3px solid #1674c5;
-  outline-offset: 2px;
+  outline-offset: -3px;
+}
+.mbb-component-status:not(:empty) {
+  display: block;
+  padding: 0 1rem 0.85rem;
+}
+.mbb-component-status:empty {
+  display: none;
 }
 .mbb-component-frame {
   display: block;
   width: 100%;
-  border: 1px solid #d4dce8;
-  border-radius: 8px;
+  border: 0;
+  border-top: 1px solid #8884;
   min-height: 280px;
 }
 .wp-block-mbb-component > .mbb-teaching-body {
@@ -264,9 +290,10 @@
 
 /* Reading controls inherit the article palette and form a compact, consistent toolbar. */
 [data-mbb-teaching='steps'][data-mbb-enhanced] {
-  --mbb-teaching-effective-offset: max(
-    var(--mbb-teaching-sticky-offset, 0px),
-    var(--mbb-teaching-measured-offset, 0px)
+  --mbb-teaching-toolbar-gap: 12px;
+  --mbb-teaching-effective-offset: calc(
+    max(var(--mbb-teaching-sticky-offset, 0px), var(--mbb-teaching-measured-offset, 0px)) +
+      var(--mbb-teaching-toolbar-gap)
   );
   scroll-margin-top: calc(var(--mbb-teaching-effective-offset) + 0.75rem);
 }
@@ -283,6 +310,7 @@
   border: 1px solid #8883;
   border-radius: 10px;
   background: var(--mbb-teaching-sticky-background, Canvas);
+  box-shadow: 0 3px 12px #0000000d;
   gap: 0.65rem 1rem;
 }
 .mbb-stage-modes,
@@ -488,16 +516,23 @@
   border-radius: 9px;
   overflow: hidden;
 }
-.mbb-compare-line {
-  border-inline-start: 3px solid transparent;
-  margin-inline: -1rem;
+/* Every diff row stretches to the longest source line, including offscreen text. */
+.wp-block-mbb-code-compare pre > code {
+  display: grid;
+  inline-size: max-content;
+  min-inline-size: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  white-space: pre;
+}
+.wp-block-mbb-code-compare .mbb-compare-line {
+  box-sizing: border-box;
+  margin: 0;
   padding-inline: 0.25rem 0.75rem;
+  border: 0;
 }
-.mbb-compare-line[data-mbb-diff='removed'] {
-  border-inline-start-color: #b22;
-}
-.mbb-compare-line[data-mbb-diff='added'] {
-  border-inline-start-color: #18732f;
+.wp-block-mbb-code-compare :is(.mbb-compare-left, .mbb-compare-right) pre.mbb-code-display {
+  padding-inline: 0 !important;
 }
 .mbb-compare-legend {
   font-size: 0.8em;
@@ -520,6 +555,12 @@
   }
 }
 @media print {
+  .wp-block-mbb-code-compare pre > code {
+    display: block;
+    inline-size: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
   .mbb-code-tab-title[hidden] {
     display: block !important;
   }
