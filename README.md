@@ -4,7 +4,7 @@
   <a href="LICENSE"><img alt="License: GPL-3.0-or-later" src="https://img.shields.io/badge/license-GPL--3.0--or--later-818cf8"></a>
   <img alt="WordPress 7.1" src="https://img.shields.io/badge/WordPress-7.1-21759b">
   <img alt="PHP 8.2+" src="https://img.shields.io/badge/PHP-8.2%2B-777bb4">
-  <img alt="Version 2.0.0" src="https://img.shields.io/badge/version-2.0.0-818cf8">
+  <img alt="Version 2.0.1" src="https://img.shields.io/badge/version-2.0.1-818cf8">
 </p>
 
 <p align="center"><strong>用 Markdown 写作，用区块调整。保存时，让两种格式保持一致。</strong></p>
