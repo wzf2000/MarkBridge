@@ -237,7 +237,16 @@
     ) {
       load(config.teachingStyle, true).catch(() => {});
       load(config.teachingScript).catch(() => {});
-      if (config.componentScript) load(config.componentScript).catch(() => {});
+      if (config.componentScript) {
+        const diagnostics = config.diagnosticsScript
+          ? Promise.all([load(config.diagnosticsScript), load(config.diagnosticsStyle, true)])
+          : Promise.resolve();
+        window.MBB_DIAGNOSTICS_CONFIG = config.diagnosticsConfig || { canCopy: false };
+        diagnostics
+          .catch(() => {})
+          .then(() => load(config.componentScript))
+          .catch(() => {});
+      }
     }
     if (within(root, '.mbb-footnote-ref,.mbb-footnotes').length)
       load(config.footnotes, true).catch(() => {});

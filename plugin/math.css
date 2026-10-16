@@ -1,4 +1,25 @@
+/* Public presentation tokens. Themes override these on the article or preview root.
+ * Runtime measurements and code gutters are private implementation details. */
+:where(:root) {
+  --mbb-font-body: inherit;
+  --mbb-font-ui: system-ui, sans-serif;
+  --mbb-font-code: ui-monospace, SFMono-Regular, Consolas, monospace;
+  --mbb-code-size: 0.85em;
+  --mbb-code-line-height: 1.7;
+  --mbb-code-surface: #f5f6f8;
+  --mbb-code-text: #293630;
+  --mbb-code-muted: #526577;
+  --mbb-quote-surface: #f2f3ed;
+  --mbb-quote-text: inherit;
+  --mbb-quote-border: #93a58f;
+  --mbb-block-space: 1.25rem;
+  --mbb-panel-padding: 1rem;
+  --mbb-border-color: #8884;
+  --mbb-border-radius: 8px;
+  --mbb-focus-color: #2271b1;
+}
 .mbb-document {
+  font-family: var(--mbb-font-body);
   min-width: 0;
   max-width: 100%;
   overflow-wrap: anywhere;
@@ -26,7 +47,7 @@
   text-underline-offset: 0.18em;
 }
 .mbb-document .mbb-math-readable:focus-visible {
-  outline: 2px solid currentColor;
+  outline: 2px solid var(--mbb-focus-color, currentColor);
   outline-offset: 3px;
 }
 .mbb-math-reader {
@@ -46,7 +67,7 @@
 }
 .mbb-math-reader h2 {
   margin: 0 0 0.8rem;
-  font: 600 1.25rem/1.4 sans-serif;
+  font: 600 1.25rem/1.4 var(--mbb-font-ui, sans-serif);
 }
 .mbb-math-reader-toolbar,
 .mbb-math-reader-footer {
@@ -61,7 +82,7 @@
   border-radius: 0.3rem;
   color: inherit;
   background: #fff;
-  font: 0.9rem/1.4 sans-serif;
+  font: 0.9rem/1.4 var(--mbb-font-ui, sans-serif);
   cursor: pointer;
 }
 .mbb-math-reader button:disabled {
@@ -70,11 +91,11 @@
 }
 .mbb-math-reader button:focus-visible,
 .mbb-math-reader-source:focus-visible {
-  outline: 2px solid #165ea8;
+  outline: 2px solid var(--mbb-focus-color, #165ea8);
   outline-offset: 2px;
 }
 .mbb-math-reader-scale {
-  font: 0.9rem/1.4 sans-serif;
+  font: 0.9rem/1.4 var(--mbb-font-ui, sans-serif);
 }
 .mbb-math-reader-render {
   box-sizing: border-box;
@@ -96,7 +117,7 @@
 }
 .mbb-math-reader label {
   display: block;
-  font: 0.9rem/1.5 sans-serif;
+  font: 0.9rem/1.5 var(--mbb-font-ui, sans-serif);
 }
 .mbb-math-reader-source {
   box-sizing: border-box;
@@ -104,13 +125,13 @@
   width: 100%;
   margin: 0.25rem 0 1rem;
   padding: 0.5rem;
-  font: 0.9rem/1.5 monospace;
+  font: 0.9rem/1.5 var(--mbb-font-code, monospace);
   resize: vertical;
 }
 .mbb-math-reader-status {
   min-height: 1.4em;
   margin: 0.5rem 0 0;
-  font: 0.85rem/1.4 sans-serif;
+  font: 0.85rem/1.4 var(--mbb-font-ui, sans-serif);
 }
 .mbb-document pre.wp-block-mbb-math {
   white-space: normal;
@@ -162,4 +183,20 @@
   .mbb-reading .post-page .col-padding {
     padding: 16px !important;
   }
+}
+
+/* Keep generic Markdown readable with or without a theme adapter. */
+.mbb-document blockquote {
+  margin-block: var(--mbb-block-space);
+  margin-inline: 0;
+  padding: 0.55em var(--mbb-panel-padding);
+  border-inline-start: 3px solid var(--mbb-quote-border);
+  background: var(--mbb-quote-surface);
+  color: var(--mbb-quote-text);
+}
+.mbb-document blockquote > :first-child {
+  margin-block-start: 0;
+}
+.mbb-document blockquote > :last-child {
+  margin-block-end: 0;
 }

@@ -180,6 +180,17 @@ jobs:
           npx playwright test --retries=0 --reporter=line,json
           python3 scripts/check_browser_report.py "$RUNNER_TEMP/browser-results.json"
 
+      - name: Install pinned Firefox and WebKit for targeted compatibility
+        run: npx playwright install --with-deps firefox webkit
+
+      - name: Run targeted Firefox and WebKit regressions
+        env:
+          MARKBRIDGE_CROSS_BROWSER: '1'
+          PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ runner.temp }}/cross-browser-results.json
+        run: |
+          npx playwright test --project=desktop-firefox --project=mobile-firefox --project=desktop-webkit --project=mobile-webkit --retries=0 --reporter=line,json
+          python3 scripts/check_browser_report.py "$RUNNER_TEMP/cross-browser-results.json"
+
       - name: Upload browser failure screenshots and traces
         if: failure()
         uses: actions/upload-artifact@v4
@@ -189,6 +200,7 @@ jobs:
             test-results/
             playwright-report/
             ${{ runner.temp }}/browser-results.json
+            ${{ runner.temp }}/cross-browser-results.json
           if-no-files-found: ignore
 
       - name: Run source writeback safety tests
@@ -214,6 +226,9 @@ jobs:
 
       - name: Check release sources and PHP syntax
         run: python3 scripts/check_release.py
+
+      - name: Test anonymous component delivery probe
+        run: python3 -m unittest discover -s tests -p 'test_delivery_probe.py'
 
       - name: Test curated Wiki synchronization
         run: python3 -m unittest discover -s tests -p 'test_wiki_sync.py'

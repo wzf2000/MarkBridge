@@ -680,6 +680,10 @@ msgid "Authentication expired. Local candidates are preserved. Refresh or sign i
 msgstr "认证已过期；本地候选保留。请刷新页面或重新登录，再重新校验恢复权限。"
 
 #: plugin/i18n.js
+msgid "Automatic copy failed. Select the summary to copy it manually."
+msgstr "自动复制失败，请选择摘要后手动复制。"
+
+#: plugin/i18n.js
 msgid "Automatic copy failed. The source is selected for manual copying"
 msgstr "无法自动复制，已选中源码，请手动复制"
 
@@ -1264,6 +1268,10 @@ msgid "Copy TeX"
 msgstr "复制 TeX"
 
 #: plugin/i18n.js
+msgid "Copy diagnostic summary"
+msgstr "复制诊断摘要"
+
+#: plugin/i18n.js
 msgid "Copy the original code manually"
 msgstr "请手动复制原始代码"
 
@@ -1354,6 +1362,14 @@ msgstr "依赖加载"
 #: plugin/i18n.js
 msgid "Details must contain exactly one direct summary"
 msgstr "详情必须有唯一直接摘要"
+
+#: plugin/i18n.js
+msgid "Diagnostic summary"
+msgstr "诊断摘要"
+
+#: plugin/i18n.js
+msgid "Diagnostic summary copied."
+msgstr "诊断摘要已复制。"
 
 #, php-format
 #: plugin/i18n.js
@@ -3151,7 +3167,7 @@ msgstr "正在同时恢复两种格式……"
 
 #: plugin/i18n.js
 msgid "Retry formula typesetting"
-msgstr "重试公式排版"
+msgstr "重新排版公式"
 
 #: plugin/i18n.js
 msgid "Retry local recovery verification"
@@ -3622,6 +3638,10 @@ msgid "Teaching title must be nonempty single-line text"
 msgstr "教学标题必须为非空单行文字"
 
 #: plugin/i18n.js
+msgid "Technical details"
+msgstr "技术详情"
+
+#: plugin/i18n.js
 msgid "Template tag nesting would change the saved structure"
 msgstr "模板标签嵌套会改变保存结构"
 
@@ -4009,6 +4029,10 @@ msgstr "组件消息格式无效。"
 #: plugin/i18n.js
 msgid "The component resource digest does not match"
 msgstr "组件资源摘要不匹配"
+
+#: plugin/i18n.js
+msgid "The component resource has an unexpected content type."
+msgstr "组件资源的内容类型不正确。"
 
 #: plugin/i18n.js
 msgid "The component resource is too large"
@@ -5111,6 +5135,10 @@ msgstr "该修订不可用于此文章。"
 #: plugin/i18n.js
 msgid "This save request could not be verified. Reopen the editor and try again."
 msgstr "无法验证此保存请求，请重新打开编辑器后重试。"
+
+#: plugin/i18n.js
+msgid "This summary contains versions, error codes and timings only."
+msgstr "摘要仅包含版本、错误码与耗时。"
 
 #: plugin/i18n.js
 msgid "This tab's draft identity could not be isolated. Local recovery is disabled."

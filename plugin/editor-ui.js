@@ -176,6 +176,7 @@
     return E(error) + (label ? `（${label}）` : '');
   }
   function message(text, error = false) {
+    if (dialog) window.MBB_DIAGNOSTICS?.clear(dialog);
     status.textContent = text;
     status.className = error ? 'mbb-error' : 'mbb-status';
   }
@@ -1226,7 +1227,10 @@
           }
         }
         enterConflict(e, payload, markdown);
-      } else message(describeError(e), true);
+      } else {
+        message(describeError(e), true);
+        if (e.mbbDiagnostic) window.MBB_DIAGNOSTICS?.show(dialog, e.mbbDiagnostic);
+      }
     } finally {
       if (active(session)) {
         busy = false;

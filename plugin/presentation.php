@@ -229,6 +229,11 @@ add_action(
                     'emoji' => plugins_url(mbb_asset('emoji.js'), __FILE__),
                     'images' => mbb_emoji_config(),
                     'footnotes' => plugins_url(mbb_asset('footnotes.css'), __FILE__),
+                    'diagnosticsScript' => plugins_url(mbb_asset('diagnostics.js'), __FILE__),
+                    'diagnosticsStyle' => plugins_url(mbb_asset('diagnostics.css'), __FILE__),
+                    'diagnosticsConfig' => function_exists('mbb_diagnostics_configuration')
+                        ? mbb_diagnostics_configuration()
+                        : ['canCopy' => false],
                     'componentScript' => plugins_url(mbb_asset('components.js'), __FILE__),
                     'teachingScript' => plugins_url(mbb_asset('teaching.js'), __FILE__),
                     'teachingStyle' => plugins_url(mbb_asset('teaching.css'), __FILE__),
@@ -257,6 +262,7 @@ add_action(
             'prism-plugin-line-numbers',
             'mbb-footnotes',
             'mbb-teaching',
+            'mbb-diagnostics',
         ]);
     },
     5,

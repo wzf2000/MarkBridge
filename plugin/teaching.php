@@ -23,10 +23,13 @@ add_action('init', static function () {
 });
 function mbb_enqueue_teaching_assets()
 {
+    if (function_exists('mbb_enqueue_diagnostics')) {
+        mbb_enqueue_diagnostics();
+    }
     wp_enqueue_script(
         'mbb-components',
         plugins_url(mbb_asset('components.js'), __FILE__),
-        [],
+        function_exists('mbb_enqueue_diagnostics') ? ['mbb-diagnostics'] : [],
         substr(hash_file('sha256', __DIR__ . '/components.js'), 0, 12),
         true,
     );

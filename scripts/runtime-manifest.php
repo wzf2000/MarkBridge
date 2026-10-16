@@ -18,10 +18,23 @@ foreach ($scripts->to_do as $handle) {
     }
     $paths[$relative] = hash_file('sha256', ABSPATH . ltrim($relative, '/'));
 }
+// Native math authoring needs a core ES module and the format registration script.
+// Copy these browser-only assets without executing them in the conversion bootstrap.
+$browser_assets = [
+    '/wp-includes/js/dist/script-modules/latex-to-mathml/index.js',
+    '/wp-includes/js/dist/format-library.min.js',
+];
+foreach ($browser_assets as $module) {
+    if (!is_file(ABSPATH . ltrim($module, '/'))) {
+        throw new RuntimeException('Core native math module is missing.');
+    }
+    $paths[$module] = hash_file('sha256', ABSPATH . ltrim($module, '/'));
+}
 echo wp_json_encode([
     'format' => 1,
     'wordpress' => get_bloginfo('version'),
-    'scripts' => array_keys($paths),
+    'scripts' => array_values(array_diff(array_keys($paths), $browser_assets)),
+    'browser_assets' => $browser_assets,
     'core_sha256' => $paths,
     'public_roots' => array_values(
         array_filter([

@@ -45,6 +45,9 @@ const front = (
   settings = presentation,
 ) => `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="stylesheet" href="${mapped('math.css')}">
+<link rel="stylesheet" href="${mapped('diagnostics.css')}">
+<script>window.MBB_DIAGNOSTICS_CONFIG={version:"2.1.0-rc.1",canCopy:false};</script>
+<script defer src="${mapped('diagnostics.js')}"></script>
 ${settings.styles.map((url) => `<link rel="stylesheet" href="${url}">`).join('\n')}
 <style>
 body{margin:0;font:16px/1.7 Arial,sans-serif}.mbb-reading{padding:20px;max-width:800px;margin:auto}

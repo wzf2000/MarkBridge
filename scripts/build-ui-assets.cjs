@@ -25,6 +25,8 @@ asset(
   ),
 );
 asset('i18n.js');
+asset('diagnostics.js');
+asset('diagnostics.css');
 asset('kernel.js');
 asset('emoji.js');
 asset('presentation-loader.js');

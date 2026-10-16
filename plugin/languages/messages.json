@@ -344,7 +344,7 @@
   "The source and block snapshots do not match": "源快照与区块快照不匹配",
   "Unsupported origin or model version": "不支持的来源或模型版本",
   "Native adapter serialized attributes or HTML cannot round-trip exactly": "原生适配区块序列化属性或 HTML 不能精确往返",
-  "Retry formula typesetting": "重试公式排版",
+  "Retry formula typesetting": "重新排版公式",
   "Multi-paragraph list": "多段落列表",
   "Delete empty list": "删除空列表",
   "Convert to ordinary list": "转换为普通列表",
@@ -1382,5 +1382,12 @@
   "Compatibility and advanced runtime settings": "兼容与高级运行环境设置",
   "<p>Current backend: ": "<p>当前后端：",
   "Verify and save Node directory": "验证并保存 Node 目录",
-  "Execution completed. The recorded trace is ready for playback.": "执行已结束，可回放已记录的轨迹。"
+  "Execution completed. The recorded trace is ready for playback.": "执行已结束，可回放已记录的轨迹。",
+  "Technical details": "技术详情",
+  "This summary contains versions, error codes and timings only.": "摘要仅包含版本、错误码与耗时。",
+  "Diagnostic summary": "诊断摘要",
+  "Copy diagnostic summary": "复制诊断摘要",
+  "Diagnostic summary copied.": "诊断摘要已复制。",
+  "Automatic copy failed. Select the summary to copy it manually.": "自动复制失败，请选择摘要后手动复制。",
+  "The component resource has an unexpected content type.": "组件资源的内容类型不正确。"
 }

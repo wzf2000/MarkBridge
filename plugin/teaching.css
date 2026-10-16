@@ -2,14 +2,14 @@
 .wp-block-mbb-steps,
 .wp-block-mbb-step,
 .wp-block-mbb-code-compare {
-  margin-block: 1.25rem;
+  margin-block: var(--mbb-block-space, 1.25rem);
   scroll-margin-top: 5rem;
 }
 .wp-block-mbb-code-tabs {
-  margin-block: 1.25rem;
+  margin-block: var(--mbb-block-space, 1.25rem);
   padding: 0;
-  border: 1px solid #8884;
-  border-radius: 8px;
+  border: 1px solid var(--mbb-border-color, #8884);
+  border-radius: var(--mbb-border-radius, 8px);
   min-width: 0;
 }
 .mbb-code-tab {
@@ -83,7 +83,7 @@
 }
 .mbb-teaching-controls button:focus-visible,
 .mbb-teaching-controls select:focus-visible {
-  outline: 3px solid currentColor;
+  outline: 3px solid var(--mbb-focus-color, currentColor);
   outline-offset: 3px;
 }
 .wp-block-mbb-collapse {
@@ -162,7 +162,7 @@
 
 .mbb-teaching-editor {
   border: 1px solid #8c8f9460;
-  border-radius: 8px;
+  border-radius: var(--mbb-border-radius, 8px);
   padding: 16px !important;
   background: #f6f7f780;
 }
@@ -179,7 +179,7 @@
   gap: 16px;
 }
 .mbb-teaching-editor textarea {
-  font-family: ui-monospace, monospace;
+  font-family: var(--mbb-font-code, ui-monospace, monospace);
   tab-size: 4;
   min-height: 150px;
 }
@@ -187,7 +187,7 @@
   flex-basis: 100%;
   max-width: 100%;
   min-height: 8rem;
-  font-family: ui-monospace, monospace;
+  font-family: var(--mbb-font-code, ui-monospace, monospace);
 }
 .mbb-teaching-controls button {
   border: 1px solid #8888;
@@ -208,8 +208,8 @@
   }
 }
 .mbb-component-controls {
-  border: 1px solid #8884;
-  border-radius: 8px;
+  border: 1px solid var(--mbb-border-color, #8884);
+  border-radius: var(--mbb-border-radius, 8px);
   padding: 0;
   margin-block: 16px;
   overflow: hidden;
@@ -248,7 +248,7 @@
   opacity: 0.7;
 }
 .mbb-component-controls > button:focus-visible {
-  outline: 3px solid #1674c5;
+  outline: 3px solid var(--mbb-focus-color, #1674c5);
   outline-offset: -3px;
 }
 .mbb-component-status:not(:empty) {
@@ -262,7 +262,7 @@
   display: block;
   width: 100%;
   border: 0;
-  border-top: 1px solid #8884;
+  border-top: 1px solid var(--mbb-border-color, #8884);
   min-height: 280px;
 }
 .wp-block-mbb-component > .mbb-teaching-body {
@@ -307,7 +307,7 @@
   top: var(--mbb-teaching-effective-offset, 0px);
   z-index: 10;
   padding: 0.65rem 0.8rem;
-  border: 1px solid #8883;
+  border: 1px solid var(--mbb-border-color, #8883);
   border-radius: 10px;
   background: var(--mbb-teaching-sticky-background, Canvas);
   box-shadow: 0 3px 12px #0000000d;
@@ -322,7 +322,7 @@
 }
 .mbb-stage-modes {
   padding: 3px;
-  border-radius: 8px;
+  border-radius: var(--mbb-border-radius, 8px);
   background: #88812;
 }
 .mbb-stage-controls .mbb-stage-modes button {
@@ -350,7 +350,7 @@
 .mbb-stage-navigation select {
   max-width: 16rem;
   min-width: 0;
-  border: 1px solid #8884;
+  border: 1px solid var(--mbb-border-color, #8884);
   border-radius: 6px;
   background: transparent;
   color: inherit;
@@ -360,7 +360,7 @@
 }
 .wp-block-mbb-collapse {
   border-radius: 9px;
-  border-color: #8883;
+  border-color: var(--mbb-border-color, #8883);
   padding: 0;
   overflow: clip;
 }
@@ -405,7 +405,7 @@
 }
 .wp-block-mbb-code-tabs > .mbb-teaching-controls {
   margin: 0;
-  border-bottom: 1px solid #8883;
+  border-bottom: 1px solid var(--mbb-border-color, #8883);
   padding: 0 0.65rem;
 }
 .mbb-code-tabs-list {
@@ -421,7 +421,7 @@
 }
 .mbb-code-tabs-list [aria-selected='true'] {
   background: transparent;
-  border-bottom: 2px solid #2271b1;
+  border-bottom: 2px solid var(--mbb-focus-color, #2271b1);
   font-weight: 600;
 }
 .mbb-code-tab,
@@ -445,10 +445,10 @@
   margin: 0 !important;
   border: 0;
   border-radius: 0 0 8px 8px;
-  padding: 1rem;
-  font-size: 0.85em;
-  line-height: 1.7;
-  background: #f5f6f8;
+  padding: var(--mbb-panel-padding, 1rem);
+  font-size: var(--mbb-code-size, 0.85em);
+  line-height: var(--mbb-code-line-height, 1.7);
+  background: var(--mbb-code-surface, #f5f6f8);
 }
 .mbb-code-tab-title[hidden] + .mbb-code-panel-tools + pre,
 .mbb-code-tab-title[hidden] + .mbb-code-panel-tools + .code-toolbar > pre {
@@ -512,7 +512,7 @@
 }
 .mbb-compare-left,
 .mbb-compare-right {
-  border: 1px solid #8883;
+  border: 1px solid var(--mbb-border-color, #8883);
   border-radius: 9px;
   overflow: hidden;
 }

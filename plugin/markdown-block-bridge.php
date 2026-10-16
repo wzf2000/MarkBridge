@@ -4,7 +4,7 @@
  * Plugin URI: https://github.com/wzf2000/MarkBridge
  * Author: wzf2000
  * Author URI: https://github.com/wzf2000
- * Version: 2.0.3
+ * Version: 2.1.0-rc.1
  * License: GPL-3.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  * Requires at least: 7.1
@@ -23,6 +23,7 @@ require_once __DIR__ . '/includes/admin-settings.php';
 require_once __DIR__ . '/block-adapters.php';
 require_once __DIR__ . '/components.php';
 require_once __DIR__ . '/teaching.php';
+require_once __DIR__ . '/diagnostics.php';
 
 function mbb_is_lab()
 {
@@ -37,10 +38,11 @@ function mbb_asset($file)
     return $map[$file] ?? $file;
 }
 add_action('init', function () {
+    mbb_register_diagnostics();
     wp_register_script(
         'mbb-math',
         plugins_url(mbb_asset('math.js'), __FILE__),
-        [],
+        ['mbb-diagnostics'],
         substr(hash_file('sha256', __DIR__ . '/math.js'), 0, 12),
         true,
     );
@@ -55,11 +57,13 @@ add_action('wp_enqueue_scripts', function () {
         is_singular() &&
         get_post_meta(get_queried_object_id(), '_mbb_origin', true) === 'markdown_import'
     ) {
+        mbb_enqueue_diagnostics();
         wp_enqueue_script('mbb-math');
     }
 });
 function mbb_enqueue_kernel(bool $converterOnly = false): void
 {
+    mbb_enqueue_diagnostics();
     $file = __DIR__ . '/kernel.js';
     wp_enqueue_script(
         'mbb-kernel',

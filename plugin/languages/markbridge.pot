@@ -680,6 +680,10 @@ msgid "Authentication expired. Local candidates are preserved. Refresh or sign i
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Automatic copy failed. Select the summary to copy it manually."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Automatic copy failed. The source is selected for manual copying"
 msgstr ""
 
@@ -1264,6 +1268,10 @@ msgid "Copy TeX"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Copy diagnostic summary"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Copy the original code manually"
 msgstr ""
 
@@ -1353,6 +1361,14 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Details must contain exactly one direct summary"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Diagnostic summary"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Diagnostic summary copied."
 msgstr ""
 
 #, php-format
@@ -3622,6 +3638,10 @@ msgid "Teaching title must be nonempty single-line text"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Technical details"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Template tag nesting would change the saved structure"
 msgstr ""
 
@@ -4008,6 +4028,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "The component resource digest does not match"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The component resource has an unexpected content type."
 msgstr ""
 
 #: plugin/i18n.js
@@ -5110,6 +5134,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "This save request could not be verified. Reopen the editor and try again."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "This summary contains versions, error codes and timings only."
 msgstr ""
 
 #: plugin/i18n.js

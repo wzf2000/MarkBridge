@@ -22,6 +22,7 @@
     Array.from(crypto.getRandomValues(new Uint8Array(16)), (v) =>
       v.toString(16).padStart(2, '0'),
     ).join('');
+  const coded = (code, message) => Object.assign(Error(T(message)), { mbbCode: code });
   const changed = () => document.dispatchEvent(new CustomEvent('mbb:teaching-change'));
   const button = (text, action) => {
     const n = document.createElement('button');
@@ -99,7 +100,8 @@
       loading = false,
       ready = false,
       generation = 0,
-      abort = null;
+      abort = null,
+      diagnostic = null;
     const send = (type, extra = {}) => {
       if (!frame?.contentWindow) return false;
       const message = { protocol: PROTOCOL, session, type, ...extra };
@@ -109,13 +111,13 @@
           (type === 'init' ? 20480 : 8192)
         ) {
           if (type !== 'cancel')
-            failure(T('The component initialization envelope exceeds its budget.'));
+            failure(T('The component initialization envelope exceeds its budget.'), 'PROTOCOL');
           return false;
         }
         frame.contentWindow.postMessage(message, '*');
         return true;
       } catch {
-        if (type !== 'cancel') failure(T('The component message could not be sent.'));
+        if (type !== 'cancel') failure(T('The component message could not be sent.'), 'PROTOCOL');
         return false;
       }
     };
@@ -142,15 +144,25 @@
       close.setAttribute('aria-expanded', 'false');
       node.dataset.mbbComponentState = 'closed';
       status.textContent = reason || '';
+      window.MBB_DIAGNOSTICS?.clear(controls);
+      delete node.dataset.mbbFailureCode;
       if (changedLayout) changed();
     }
-    function failure(message) {
+    function report(code) {
+      node.dataset.mbbFailureCode = code;
+      const record = diagnostic?.failure(code);
+      if (record) window.MBB_DIAGNOSTICS?.show(controls, record);
+    }
+    function failure(message, code = 'UNAVAILABLE') {
+      const record = diagnostic?.failure(code);
       stop(message + T(' Static fallback content remains readable. You can start again.'));
+      node.dataset.mbbFailureCode = code;
+      if (record) window.MBB_DIAGNOSTICS?.show(controls, record);
     }
     async function readResource(url, signal) {
       const headerGrace = Math.min(1500, Math.max(1, Math.floor(budgets.startupMs / 3)));
       for (let attempt = 0; attempt < 2; attempt++) {
-        if (signal.aborted) throw Error(T('The component could not be loaded.'));
+        if (signal.aborted) throw coded('NETWORK', 'The component could not be loaded.');
         const request = new AbortController();
         const cancel = () => request.abort();
         signal.addEventListener('abort', cancel, { once: true });
@@ -170,11 +182,15 @@
           });
           clearTimeout(headerTimer);
           headerTimer = null;
-          if (!response.ok) throw Error(T('The component resource is unavailable'));
+          if (!response.ok) throw coded('HTTP', 'The component resource is unavailable');
+          const type = response.headers.get('content-type')?.split(';')[0].trim().toLowerCase();
+          if (type && !['text/plain', 'text/html'].includes(type))
+            throw coded('RESOURCE_TYPE', 'The component resource has an unexpected content type.');
           if (Number(response.headers.get('content-length')) > budgets.resourceBytes)
-            throw Error(T('The component resource is too large'));
+            throw coded('RESOURCE_SIZE', 'The component resource is too large');
           const reader = response.body?.getReader();
-          if (!reader) throw Error(T('This browser does not support bounded resource reads'));
+          if (!reader)
+            throw coded('UNSUPPORTED', 'This browser does not support bounded resource reads');
           const chunks = [];
           let size = 0;
           while (true) {
@@ -183,7 +199,7 @@
             size += part.value.byteLength;
             if (size > budgets.resourceBytes) {
               await reader.cancel();
-              throw Error(T('The component resource is too large'));
+              throw coded('RESOURCE_SIZE', 'The component resource is too large');
             }
             chunks.push(part.value);
           }
@@ -209,10 +225,12 @@
     async function launchComponent() {
       stop();
       const current = ++generation;
+      diagnostic = window.MBB_DIAGNOSTICS?.begin('component', config.provider);
       if (config.status !== 'available' || !config.provider?.resource) {
         status.textContent = T(
           'The component is missing, incompatible, or failed resource verification. Static fallback content and configuration are preserved.',
         );
+        report('UNAVAILABLE');
         return;
       }
       if (
@@ -224,12 +242,14 @@
         status.textContent = T(
           'This browser cannot safely verify the isolated component. Static fallback content is preserved.',
         );
+        report('UNSUPPORTED');
         return;
       }
       if (slots.size >= 4) {
         status.textContent = T(
           'Four interactive previews are already open. Close another preview first.',
         );
+        report('BUSY');
         return;
       }
       slots.add(node);
@@ -243,20 +263,23 @@
       status.textContent = T('Verifying component resources…');
       abort = new AbortController();
       startup = setTimeout(() => {
-        if (current === generation) failure(T('Component initialization timed out.'));
+        if (current === generation)
+          failure(T('Component initialization timed out.'), 'STARTUP_TIMEOUT');
       }, budgets.startupMs);
       try {
         const url = new URL(config.provider.resource.url, location.href);
         if (url.origin !== location.origin)
-          throw Error(T('Only registered local resources are allowed'));
+          throw coded('RESOURCE_ORIGIN', 'Only registered local resources are allowed');
         const bytes = await readResource(url, abort.signal);
+        diagnostic?.stage('integrity');
         const digest = Array.from(
           new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)),
           (v) => v.toString(16).padStart(2, '0'),
         ).join('');
         if (digest !== config.provider.resource.sha256)
-          throw Error(T('The component resource digest does not match'));
+          throw coded('DIGEST', 'The component resource digest does not match');
         if (current !== generation || !node.isConnected) return;
+        diagnostic?.stage('initialization');
         session = random();
         frame = document.createElement('iframe');
         frame.title = config.provider.title + T(' isolated interactive preview');
@@ -271,7 +294,7 @@
         frame.onload = () => {
           if (current !== generation || frame !== launchedFrame || !node.isConnected) return;
           if (initialized) {
-            failure(T('The isolated component attempted unauthorized navigation.'));
+            failure(T('The isolated component attempted unauthorized navigation.'), 'NAVIGATION');
             return;
           }
           initialized = true;
@@ -297,7 +320,10 @@
         changed();
       } catch (error) {
         if (current === generation)
-          failure(error.message || T('The component could not be loaded.'));
+          failure(
+            error.mbbCode ? error.message : T('The component could not be loaded.'),
+            error.mbbCode || 'NETWORK',
+          );
       }
     }
     const launch = button(T('Start interactive demonstration'), launchComponent),
@@ -329,11 +355,11 @@
         return;
       try {
         if (new TextEncoder().encode(JSON.stringify(data)).length > 8192) {
-          failure(T('The component message exceeds its budget.'));
+          failure(T('The component message exceeds its budget.'), 'PROTOCOL');
           return;
         }
       } catch {
-        failure(T('The component message format is invalid.'));
+        failure(T('The component message format is invalid.'), 'PROTOCOL');
         return;
       }
       if (
@@ -351,7 +377,10 @@
           ) ||
           (data.matches !== undefined && typeof data.matches !== 'boolean'))
       ) {
-        failure(T('The execution summary exceeds its budget or has an invalid format.'));
+        failure(
+          T('The execution summary exceeds its budget or has an invalid format.'),
+          'PROTOCOL',
+        );
         return;
       }
       if (data.type === 'ready' && !ready) {
@@ -374,16 +403,20 @@
           return;
         }
         clearTimeout(timer);
+        window.MBB_DIAGNOSTICS?.clear(controls);
+        delete node.dataset.mbbFailureCode;
+        diagnostic = window.MBB_DIAGNOSTICS?.begin('component', config.provider);
+        diagnostic?.stage('execution');
         active.add(node);
         runId = data.runId;
         const expectedRun = runId;
         timer = setTimeout(() => {
           if (runId === expectedRun)
-            failure(T('Execution exceeded its time budget and was terminated.'));
+            failure(T('Execution exceeded its time budget and was terminated.'), 'RUN_BUDGET');
         }, budgets.wallMs);
         send('grant', { runId });
       } else if (data.type === 'error' && !ready) {
-        failure(T('Component initialization failed.'));
+        failure(T('Component initialization failed.'), 'INITIALIZATION');
       } else if (
         ['complete', 'error', 'stopped'].includes(data.type) &&
         runId &&
@@ -398,6 +431,11 @@
             : data.type === 'stopped'
               ? T('Execution stopped.')
               : T('Execution failed. Static fallback content remains readable.');
+        if (data.type === 'error') {
+          node.dataset.mbbFailureCode = 'EXECUTION';
+          const record = diagnostic?.failure('EXECUTION');
+          if (record) window.MBB_DIAGNOSTICS?.show(controls, record);
+        }
       }
     };
     window.addEventListener('message', receive);
