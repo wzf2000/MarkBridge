@@ -1,3 +1,4 @@
+import { parseBibTeX, bibtexCandidate } from './bibtex.js';
 import {
   technicalSchemas,
   technicalDiagnostics,
@@ -359,6 +360,206 @@ function TechnicalTextDraft({ kind, a, setAttributes, clientId, drafts, syncDraf
     ),
   );
 }
+function BibTeXImport({ entries, change, registry, clientId, session }) {
+  const el = wp.element.createElement;
+  const state = (session.bibtex ??= { input: '', mode: 'merge', preview: null });
+  const [opened, setOpened] = wp.element.useState(false),
+    [error, setError] = wp.element.useState(''),
+    [, refresh] = wp.element.useState(0);
+  const lifetime = wp.element.useRef({ alive: true, sequence: 0 });
+  wp.element.useEffect(() => {
+    lifetime.current.alive = true;
+    return () => {
+      lifetime.current.alive = false;
+      lifetime.current.sequence++;
+      state.preview = null;
+    };
+  }, []);
+  const fail = (code, message) => {
+    throw Error(T(message));
+  };
+  const update = (patch) => {
+    Object.assign(state, patch, { preview: null });
+    setError('');
+    refresh((n) => n + 1);
+  };
+  const close = () => {
+    lifetime.current.sequence++;
+    state.preview = null;
+    setOpened(false);
+  };
+  const currentKeys = () => {
+    const blocks = registry.select('core/block-editor').getBlocks();
+    return [...new Set(entries.map((item) => item.key))].filter((key) =>
+      technicalReferenceCount(blocks, 'key', key),
+    );
+  };
+  return el(
+    wp.element.Fragment,
+    {},
+    el(
+      wp.components.Button,
+      { variant: 'secondary', onClick: () => setOpened(true) },
+      T('Import BibTeX'),
+    ),
+    opened
+      ? el(
+          wp.components.Modal,
+          { title: T('Import BibTeX bibliography'), onRequestClose: close },
+          el(
+            'p',
+            {},
+            T(
+              'Preview the mapping to the existing six bibliography fields. The entry type and original BibTeX are not stored separately. Nothing is applied until you apply bibliography edits.',
+            ),
+          ),
+          el(wp.components.TextareaControl, {
+            label: T('BibTeX source (up to 64 KiB)'),
+            value: state.input,
+            onChange: (value) => {
+              lifetime.current.sequence++;
+              if (new TextEncoder().encode(value).length > 65536) {
+                update({});
+                setError(T('BibTeX input must be UTF-8 text within 64 KiB'));
+                return;
+              }
+              update({ input: value });
+            },
+          }),
+          el(
+            'label',
+            {},
+            T('Upload a .bib file'),
+            el('input', {
+              type: 'file',
+              accept: '.bib',
+              onChange: async (event) => {
+                const file = event.target.files?.[0],
+                  sequence = ++lifetime.current.sequence;
+                update({});
+                if (!file) return;
+                try {
+                  if (!/\.bib$/i.test(file.name) || file.size > 65536)
+                    throw Error(T('Choose a .bib file within 64 KiB'));
+                  const bytes = await file.arrayBuffer();
+                  const value = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+                  if (!lifetime.current.alive || sequence !== lifetime.current.sequence) return;
+                  update({ input: value });
+                } catch (error) {
+                  if (lifetime.current.alive && sequence === lifetime.current.sequence)
+                    setError(T('The BibTeX file could not be read as bounded UTF-8 text'));
+                }
+              },
+            }),
+          ),
+          el(wp.components.SelectControl, {
+            label: T('Import operation'),
+            value: state.mode,
+            options: [
+              { value: 'merge', label: T('Merge without overwriting keys') },
+              { value: 'replace', label: T('Replace bibliography entries') },
+            ],
+            onChange: (mode) => {
+              lifetime.current.sequence++;
+              update({ mode });
+            },
+          }),
+          el(
+            wp.components.Button,
+            {
+              variant: 'secondary',
+              onClick: () => {
+                try {
+                  const incoming = parseBibTeX(state.input, fail),
+                    candidate = bibtexCandidate(entries, incoming, state.mode, currentKeys(), fail);
+                  state.preview = { incoming, candidate, baseline: JSON.stringify(entries) };
+                  setError('');
+                  refresh((n) => n + 1);
+                } catch (error) {
+                  state.preview = null;
+                  setError(error.message);
+                  refresh((n) => n + 1);
+                }
+              },
+            },
+            T('Preview BibTeX mapping'),
+          ),
+          error ? el('p', { role: 'alert' }, error) : null,
+          state.preview
+            ? el(
+                'div',
+                {},
+                el(
+                  'p',
+                  { role: 'status' },
+                  T(
+                    'Mapped entries are a preview. Existing unapplied edits are preserved until you choose this candidate.',
+                  ),
+                ),
+                ...state.preview.candidate.map((item, index) =>
+                  el(
+                    'details',
+                    { key: item.key, open: index === 0 },
+                    el('summary', {}, item.key + ' — ' + item.title),
+                    el(
+                      'dl',
+                      {},
+                      ...[
+                        ['Authors', item.authors.join('; ')],
+                        ['Year', item.year],
+                        ['Publication or source', item.source],
+                        ['Reference URL (HTTP or HTTPS)', item.url],
+                      ].flatMap(([label, value]) => [
+                        el('dt', { key: label + '-label' }, T(label)),
+                        el('dd', { key: label }, value),
+                      ]),
+                    ),
+                  ),
+                ),
+              )
+            : null,
+          el(
+            wp.components.Button,
+            {
+              variant: 'primary',
+              disabled: !state.preview,
+              onClick: () => {
+                try {
+                  const store = registry.select('core/block-editor');
+                  if (!store.getBlock(clientId) || store.getSelectedBlockClientId() !== clientId)
+                    throw Error(
+                      T('Select the same bibliography block before using this candidate'),
+                    );
+                  if (state.preview.baseline !== JSON.stringify(entries))
+                    throw Error(T('Bibliography edits changed. Preview the BibTeX mapping again'));
+                  const candidate = bibtexCandidate(
+                    entries,
+                    state.preview.incoming,
+                    state.mode,
+                    currentKeys(),
+                    fail,
+                  );
+                  change({ entries: candidate });
+                  state.preview = null;
+                  close();
+                } catch (error) {
+                  state.preview = null;
+                  setError(error.message);
+                  refresh((n) => n + 1);
+                }
+              },
+            },
+            T('Use bibliography candidate'),
+          ),
+          el(
+            wp.components.Button,
+            { variant: 'tertiary', onClick: close },
+            T('Cancel BibTeX import'),
+          ),
+        )
+      : null,
+  );
+}
 function BibliographyDraft({
   a,
   setAttributes,
@@ -413,6 +614,7 @@ function BibliographyDraft({
   return el(
     'div',
     {},
+    el(BibTeXImport, { entries, change, registry, clientId, session }),
     el(BibliographyFields, {
       a: { ...a, entries },
       setAttributes: change,

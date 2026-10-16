@@ -154,16 +154,20 @@
           ? T(
               'Original Markdown bytes, including header and code newlines, will be downloaded. Image URLs are preserved; images are not bundled.',
             )
-          : chosen === 'html'
+          : chosen === 'portable-zip'
             ? T(
-                'Static HTML embeds verified local images and typeset formulas for offline reading. External or unrelated images are refused. All stages and code versions are included; interactive demonstrations use their static fallback.',
+                'This preview creates a normalized cross-site copy without old attachment IDs. Import creates new local attachments and associations. The saved original is unchanged.',
               )
-            : F(
-                T(
-                  'The ZIP includes %1$s verified images. Only image targets are replaced with portable paths. External or unrelated images retain their URLs. Verify the copy below. The manifest contains no author, private notes, or source file paths.',
-                ),
-                value.resources.length,
-              );
+            : chosen === 'html'
+              ? T(
+                  'Static HTML embeds verified local images and typeset formulas for offline reading. External or unrelated images are refused. All stages and code versions are included; interactive demonstrations use their static fallback.',
+                )
+              : F(
+                  T(
+                    'The ZIP includes %1$s verified images. Only image targets are replaced with portable paths. External or unrelated images retain their URLs. Verify the copy below. The manifest contains no author, private notes, or source file paths.',
+                  ),
+                  value.resources.length,
+                );
     } catch (error) {
       if (session === epoch) status.textContent = E(error);
     } finally {
@@ -206,7 +210,8 @@
           download:
             value.format === 'html'
               ? 'markbridge.html'
-              : result.filename || 'markbridge.' + (value.format === 'zip' ? 'zip' : 'md'),
+              : result.filename ||
+                'markbridge.' + (['zip', 'portable-zip'].includes(value.format) ? 'zip' : 'md'),
         });
       document.body.append(anchor);
       anchor.click();
@@ -246,10 +251,12 @@
     format.append(
       el('option', { value: 'markdown' }, T('Markdown single file')),
       el('option', { value: 'zip' }, T('Markdown and images ZIP')),
+      el('option', { value: 'portable-zip' }, T('Cross-site Markdown and images ZIP')),
       el('option', { value: 'html' }, T('Static HTML for offline reading')),
     );
     if (cfg.exports?.zipAvailable === false) {
       format.options[1].disabled = true;
+      format.options[2].disabled = true;
       dialog.append(
         el(
           'p',

@@ -809,6 +809,10 @@ msgid "Authentication expired. Local candidates are preserved. Refresh or sign i
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Authors"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Authors (one per line, at most eight)"
 msgstr ""
 
@@ -853,6 +857,38 @@ msgid "Batch restored for the current account. Preview unfinished items again."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "BibTeX DOI values must be bounded DOI identifiers"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "BibTeX accent conversion requires Unicode normalization"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "BibTeX entries support at most eight authors"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "BibTeX input must be UTF-8 text within 64 KiB"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "BibTeX is outside the supported bounded data subset"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "BibTeX replacement must preserve every currently cited key"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "BibTeX source (up to 64 KiB)"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "BibTeX supports one to 64 entries"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Bibliography"
 msgstr ""
 
@@ -866,6 +902,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Bibliography author names are outside their bounds"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Bibliography edits changed. Preview the BibTeX mapping again"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1003,6 +1043,10 @@ msgid "Cancel"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Cancel BibTeX import"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Cancel export"
 msgstr ""
 
@@ -1091,6 +1135,14 @@ msgid "Child slot must be empty"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Chinese structural reading covers a limited set of mathematical structures."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Choose a .bib file within 64 KiB"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Choose a batch item and a plain title of at most 200 characters."
 msgstr ""
 
@@ -1168,6 +1220,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Choose every conflict explicitly"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Choose explicit BibTeX merge or replacement"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1541,6 +1597,14 @@ msgid "Cross-reference"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Cross-site Markdown and images ZIP"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Cross-site ZIP requires every image to be a verified local attachment of this article"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Current block types have conversion mappings. Check their conversion to confirm that attributes and formatting are preserved."
 msgstr ""
 
@@ -1703,6 +1767,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Document pagination"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Down enters a term; Left and Right move between terms; Up returns; Home reads the whole formula; Escape leaves exploration."
 msgstr ""
 
 #: plugin/i18n.js
@@ -1877,11 +1945,19 @@ msgid "Enter single-line TeX."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Enter term"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Entity-looking image alternative text would change under the current engine serialization"
 msgstr ""
 
 #: plugin/i18n.js
 msgid "Equation"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Every cross-site native image requires a verified association"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1956,6 +2032,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Explicitly apply edits. The server validates parameters against the registered schema when saving."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Explore with keyboard"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2376,6 +2456,14 @@ msgid "Images require src, alt and no children"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Import BibTeX"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Import BibTeX bibliography"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Import Markdown"
 msgstr ""
 
@@ -2385,6 +2473,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Import Markdown first for a new document."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Import operation"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2537,6 +2629,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Invalid component/version"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Invalid cross-site media association map"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2764,6 +2860,10 @@ msgid "Manual copying may normalize newlines. Download the original code to pres
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Mapped entries are a preview. Existing unapplied edits are preserved until you choose this candidate."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "MarkBridge image emoji"
 msgstr ""
 
@@ -2936,6 +3036,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Merge preparation failed"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Merge without overwriting keys"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3143,6 +3247,10 @@ msgid "Next stage"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Next term"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "No body changes."
 msgstr ""
 
@@ -3156,6 +3264,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "No proven preview range for this selection. Preview the current source again."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "No reading is available for this term."
 msgstr ""
 
 #: plugin/i18n.js
@@ -3412,6 +3524,10 @@ msgid "Parameters must be a JSON object"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Parent term"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Passed"
 msgstr ""
 
@@ -3480,6 +3596,10 @@ msgid "Preserve current component "
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Preview BibTeX mapping"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Preview and explicitly confirm the write for a source-managed article."
 msgstr ""
 
@@ -3516,6 +3636,10 @@ msgid "Preview the current source to enable navigation."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Preview the mapping to the existing six bibliography fields. The entry type and original BibTeX are not stored separately. Nothing is applied until you apply bibliography edits."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Preview the metadata selection again before confirming."
 msgstr ""
 
@@ -3541,6 +3665,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Previous stage"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Previous term"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3625,6 +3753,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Reading ZIP data failed"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Reading language"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3713,6 +3845,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Replace all"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Replace bibliography entries"
 msgstr ""
 
 #: plugin/i18n.js
@@ -4005,11 +4141,23 @@ msgid "Select a preview object, or use Tab and Enter, to locate its source."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Select the same bibliography block before using this candidate"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Selected mathematical expression"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Selected the containing structure."
 msgstr ""
 
 #: plugin/i18n.js
 msgid "Selected the source object."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Semantic exploration is unavailable for this formula."
 msgstr ""
 
 #: plugin/i18n.js
@@ -4253,6 +4401,10 @@ msgid "Structure"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Structured reading and exploration"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Sync by content anchors"
 msgstr ""
 
@@ -4455,6 +4607,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Text edits have not been applied. Apply or discard them before saving."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The BibTeX file could not be read as bounded UTF-8 text"
 msgstr ""
 
 #: plugin/i18n.js
@@ -5529,6 +5685,10 @@ msgid "The opening version is missing"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "The original English reading is available, but this expression cannot be explored structurally."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "The original categories or tags could not be read"
 msgstr ""
 
@@ -5730,6 +5890,26 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "The selection contains other formatting or objects. Select plain text first."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The semantic reading exceeds its budget."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The semantic tree contains an ambiguous identity."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The semantic tree contains an invalid relationship."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The semantic tree exceeds its depth budget."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The semantic tree is missing or exceeds the exploration budget."
 msgstr ""
 
 #: plugin/i18n.js
@@ -6149,6 +6329,10 @@ msgid "This candidate still references pending images. Upload the ZIP again or r
 msgstr ""
 
 #: plugin/i18n.js
+msgid "This cross-site ZIP creates new local attachment IDs; IDs from the source site are never reused."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "This document failed conversion. Correct the original file and prepare it again."
 msgstr ""
 
@@ -6185,6 +6369,10 @@ msgid "This new article already has unsaved content. Save or clear it before imp
 msgstr ""
 
 #: plugin/i18n.js
+msgid "This preview creates a normalized cross-site copy without old attachment IDs. Import creates new local attachments and associations. The saved original is unchanged."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "This registered field is required."
 msgstr ""
 
@@ -6202,6 +6390,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "This save request could not be verified. Reopen the editor and try again."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "This structure has no Chinese reading yet. The original English semantics are shown."
 msgstr ""
 
 #: plugin/i18n.js
@@ -6373,6 +6565,10 @@ msgstr ""
 msgid "Unsupported Markdown syntax"
 msgstr ""
 
+#: plugin/i18n.js
+msgid "Unsupported TeX command or math in BibTeX"
+msgstr ""
+
 #, php-format
 #: plugin/i18n.js
 msgid "Unsupported attribute %1$s.%2$s"
@@ -6472,7 +6668,15 @@ msgid "Upload Markdown or an image resource ZIP "
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Upload a .bib file"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Uploaded image URLs may become public, including for a draft."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Use bibliography candidate"
 msgstr ""
 
 #: plugin/i18n.js
@@ -6589,6 +6793,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Wait for successful typesetting before applying the formula."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Whole formula"
 msgstr ""
 
 #: plugin/i18n.js

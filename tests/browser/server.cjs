@@ -55,7 +55,7 @@ body{margin:0;font:16px/1.7 Arial,sans-serif}.mbb-reading{padding:20px;max-width
 </style>
 <style>${settings.inline.join('\n')}</style>
 <script>window.MBB_MATH_CONFIG=${settings.math_config}</script>
-<script defer src="${mapped('math.js')}"></script>
+<script defer src="${mapped('math-explorer.js')}"></script><script defer src="${mapped('math.js')}"></script>
 ${frontScripts(settings)}
 </head><body><main class="mbb-reading"><article class="mbb-document">
 <p id="inline-line">文字在前 <span class="mbb-math" data-mbb-tex="x^2+y^2=z^2">x^2+y^2=z^2</span> 文字在后</p>
@@ -76,7 +76,7 @@ window.MBB_REVISIONS={open(){}};window.MBB_EDITOR.navigationBridge=${JSON.string
     .update(fs.readFileSync(path.join(plugin, 'preview-navigation.js')))
     .digest('base64'),
 })};</script>
-<script defer src="${mapped('math.js')}"></script><script defer src="${mapped('resource-ui.js')}"></script><script defer src="${mapped('source-tools.js')}"></script><script defer src="${mapped('editor-ui.js')}"></script>
+<script defer src="${mapped('math-explorer.js')}"></script><script defer src="${mapped('math.js')}"></script><script defer src="${mapped('resource-ui.js')}"></script><script defer src="${mapped('source-tools.js')}"></script><script defer src="${mapped('editor-ui.js')}"></script>
 </head><body><button id="mbb-new" type="button">上传新文档</button><button class="mbb-open" data-post="12" type="button">编辑现有文档</button></body></html>`;
 
 // HTTP-only synthetic navigation API. Keeping this off Playwright routing lets

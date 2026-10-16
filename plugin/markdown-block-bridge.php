@@ -4,7 +4,7 @@
  * Plugin URI: https://github.com/wzf2000/MarkBridge
  * Author: wzf2000
  * Author URI: https://github.com/wzf2000
- * Version: 2.4.0-rc.1
+ * Version: 2.5.0-rc.1
  * License: GPL-3.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  * Requires at least: 7.1
@@ -41,9 +41,16 @@ function mbb_asset($file)
 add_action('init', function () {
     mbb_register_diagnostics();
     wp_register_script(
+        'mbb-math-explorer',
+        plugins_url(mbb_asset('math-explorer.js'), __FILE__),
+        ['mbb-i18n'],
+        substr(hash_file('sha256', __DIR__ . '/math-explorer.js'), 0, 12),
+        true,
+    );
+    wp_register_script(
         'mbb-math',
         plugins_url(mbb_asset('math.js'), __FILE__),
-        ['mbb-diagnostics'],
+        ['mbb-diagnostics', 'mbb-math-explorer'],
         substr(hash_file('sha256', __DIR__ . '/math.js'), 0, 12),
         true,
     );
@@ -161,6 +168,7 @@ require_once __DIR__ . '/publication.php';
 require_once __DIR__ . '/editor-bridge.php';
 require_once __DIR__ . '/footnotes.php';
 require_once __DIR__ . '/technical.php';
+require_once __DIR__ . '/bibtex.php';
 require_once __DIR__ . '/batch-import.php';
 
 require_once __DIR__ . '/revisions.php';

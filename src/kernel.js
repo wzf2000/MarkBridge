@@ -1219,6 +1219,79 @@ export function portableDocumentImages(base, mappings) {
     );
   return result;
 }
+// Explicit cross-site copy: normalization is previewed; the saved original is untouched.
+export function relocateDocumentImages(base, mappings, portable = false) {
+  exportDocument(base, base?.serialized);
+  const verified = importPairedDocument(base.source, base.serialized, base.documentId);
+  const map = new Map();
+  if (!Array.isArray(mappings) || mappings.length > 256)
+    fail('MEDIA_RELOCATION', 'Invalid cross-site media association map');
+  for (const item of mappings) {
+    const keys = Object.keys(item || {})
+      .sort()
+      .join(',');
+    if (
+      keys !== (portable ? 'from,to' : 'from,id,to') ||
+      typeof item.from !== 'string' ||
+      typeof item.to !== 'string' ||
+      (!portable && (!Number.isSafeInteger(item.id) || item.id < 1)) ||
+      map.has(item.from)
+    )
+      fail('MEDIA_RELOCATION', 'Invalid cross-site media association map');
+    map.set(item.from, item);
+  }
+  // Validate URLs/counts and require every mapping to address a real image.
+  rewriteSerializedImageURLs(
+    verified.serialized,
+    mappings.map(({ from, to }) => ({ from, to })),
+    fail,
+    portable,
+  );
+  const walk = (blocks) =>
+    blocks.map((block) => {
+      if (block.name === 'core/image') {
+        const mapping = map.get(block.attributes.url);
+        if (!mapping) {
+          if (portable || block.attributes.id)
+            fail(
+              'MEDIA_RELOCATION',
+              'Every cross-site native image requires a verified association',
+            );
+          return block;
+        }
+        const attrs = { ...block.attributes };
+        if (portable) delete attrs.id;
+        else attrs.id = mapping.id;
+        return api().createBlock(block.name, attrs);
+      }
+      return block.innerBlocks.length
+        ? api().cloneBlock(block, {}, walk(block.innerBlocks))
+        : block;
+    });
+  const serialized = rewriteSerializedImageURLs(
+    api().serialize(walk(api().parse(verified.serialized))),
+    mappings.map(({ from, to }) => ({ from, to })),
+    fail,
+    portable,
+  );
+  // Canonical copy, shared with PHP. Full source is shown before download/save.
+  const copyBlocks = (blocks) =>
+    blocks.map((block) => {
+      if (block.name === 'core/html') {
+        // Match PHP parseBlocks' ASCII wrapper-whitespace normalization in this explicit copy only.
+        const content = (block.innerContent?.join('') ?? block.attributes.content).replace(
+          /^[ \t\r\n\v\0]+|[ \t\r\n\v\0]+$/g,
+          '',
+        );
+        return { ...block, attributes: { ...block.attributes, content }, innerContent: [content] };
+      }
+      return { ...block, innerBlocks: copyBlocks(block.innerBlocks || []) };
+    });
+  return importDocument(
+    toMarkdown(copyBlocks(api().parse(serialized)), { origin: 'markdown_import' }),
+    base.documentId,
+  );
+}
 function snapshotKind(source, serialized) {
   for (const legacyFrontmatter of [false, true])
     for (const [legacyTasks, legacyFootnotes] of [
@@ -1567,3 +1640,5 @@ export function register() {
 const converterOnly = typeof window !== 'undefined' && window.MBB_CONVERTER_ONLY === true;
 if (!converterOnly) register();
 configureBlockAdapters(globalThis.MBB_ADAPTERS || [], !converterOnly);
+
+export { parseBibTeX, bibtexCandidate } from './bibtex.js';

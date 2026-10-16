@@ -25,6 +25,7 @@ asset(
   ),
 );
 asset('i18n.js');
+asset('math-explorer.js');
 asset('diagnostics.js');
 asset('diagnostics.css');
 asset('kernel.js');

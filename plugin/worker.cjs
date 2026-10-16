@@ -56,7 +56,9 @@ const { JSDOM, VirtualConsole } = require(path.join(ROOT, 'node_modules/jsdom'))
     }
     w.MBB.configureBlockAdapters(data.blockAdapters ?? '[]');
     const convert = (item) => {
-      if (item.mode === 'resource_images' || item.mode === 'portable_images') {
+      if (
+        ['resource_images', 'portable_images', 'portable_detach', 'media_bind'].includes(item.mode)
+      ) {
         if (
           !item.base ||
           item.base.documentId !== item.documentId ||
@@ -64,6 +66,12 @@ const { JSDOM, VirtualConsole } = require(path.join(ROOT, 'node_modules/jsdom'))
           item.base.origin !== 'markdown_import'
         )
           throw Error('DOCUMENT_MODEL');
+        if (['portable_detach', 'media_bind'].includes(item.mode))
+          return w.MBB.relocateDocumentImages(
+            item.base,
+            item.mappings,
+            item.mode === 'portable_detach',
+          );
         return item.mode === 'portable_images'
           ? w.MBB.portableDocumentImages(item.base, item.mappings)
           : w.MBB.rewriteDocumentImages(item.base, item.mappings);

@@ -507,15 +507,18 @@ function mbb_resource_extract(
                 mbb_t('The ZIP must contain one Markdown document'),
             );
         }
-        if ($sidecar !== null) {
-            mbb_resource_export_sidecar($sidecar, $markdown, $images);
-        }
-        return ['markdown' => $markdown, 'images' => $images, 'expandedBytes' => $expanded];
+        $rebind = $sidecar !== null && mbb_resource_export_sidecar($sidecar, $markdown, $images);
+        return [
+            'markdown' => $markdown,
+            'images' => $images,
+            'expandedBytes' => $expanded,
+            'mediaRebind' => $rebind,
+        ];
     } finally {
         $zip->close();
     }
 }
-function mbb_resource_export_sidecar(string $raw, array $markdown, array $images): void
+function mbb_resource_export_sidecar(string $raw, array $markdown, array $images): bool
 {
     try {
         $typed = json_decode($raw, false, 32, JSON_THROW_ON_ERROR);
@@ -542,8 +545,14 @@ function mbb_resource_export_sidecar(string $raw, array $markdown, array $images
             return $actual === $expected;
         };
         if (
-            !$keys($value, ['schema', 'kind', 'document', 'resources', 'metadata']) ||
-            $value['schema'] !== 1 ||
+            !$keys(
+                $value,
+                ($value['schema'] ?? null) === 2
+                    ? ['schema', 'kind', 'document', 'resources', 'metadata', 'mediaAssociation']
+                    : ['schema', 'kind', 'document', 'resources', 'metadata'],
+            ) ||
+            !in_array($value['schema'], [1, 2], true) ||
+            ($value['schema'] === 2 && ($value['mediaAssociation'] ?? null) !== 'create-new') ||
             $value['kind'] !== 'markbridge-portable' ||
             !is_array($value['document']) ||
             !is_array($value['resources']) ||
@@ -625,7 +634,8 @@ function mbb_resource_export_sidecar(string $raw, array $markdown, array $images
                 }
             }
         }
-        // Metadata is descriptive only. Never return or apply it as a write proposal.
+        // Metadata is descriptive only; only the bounded attachment-creation intention is returned.
+        return $value['schema'] === 2;
     } catch (Throwable $error) {
         mbb_resource_throw(
             'resource_sidecar',
@@ -902,7 +912,10 @@ function mbb_resource_prepare_file($r, string $archive)
                 'paths' => array_column($pack['images'], 'path'),
             ],
             'images' => mbb_resource_public_images($pack['images']),
-            'warnings' => ['publicMedia' => true],
+            'warnings' => [
+                'publicMedia' => true,
+                'mediaRebind' => ($pack['mediaRebind'] ?? false) === true,
+            ],
             'limits' => mbb_resource_config(),
         ];
     } catch (Throwable $e) {
@@ -1132,6 +1145,7 @@ function mbb_resource_plan($r, array $candidate): array
                 mbb_component_json([$m['scope'], $m['markdown'], $m['images']]),
             ),
             'projectedDocument' => $projected,
+            'mediaRebind' => ($m['mediaRebind'] ?? false) === true,
             'mappings' => $mappings,
             'images' => mbb_resource_public_images(array_values($used)),
             'ackPublicMedia' => $import['ack_public_media'],
@@ -1313,6 +1327,7 @@ function mbb_resource_media(array &$ctx, $r, array $candidate): array
     add_filter('upload_dir', $destination, PHP_INT_MAX);
     add_action('add_attachment', $capture, -PHP_INT_MAX);
     $final = [];
+    $bindings = [];
     try {
         $images = array_column($ctx['manifest']['images'], null, 'key');
         foreach ($candidate['resource_plan']['images'] as $image) {
@@ -1413,12 +1428,19 @@ function mbb_resource_media(array &$ctx, $r, array $candidate): array
                 );
             }
             $final[] = ['from' => 'mbb-import/' . $image['key'], 'to' => $url];
+            $bindings[] = [
+                'from' => 'mbb-import/' . $image['key'],
+                'to' => $url,
+                'id' => $attachment,
+            ];
         }
         $doc = mbb_convert([
-            'mode' => 'resource_images',
+            'mode' => !empty($candidate['resource_plan']['mediaRebind'])
+                ? 'media_bind'
+                : 'resource_images',
             'documentId' => $candidate['document']['documentId'],
             'base' => $candidate['resource_plan']['projectedDocument'],
-            'mappings' => $final,
+            'mappings' => !empty($candidate['resource_plan']['mediaRebind']) ? $bindings : $final,
         ]);
         if (is_wp_error($doc)) {
             mbb_resource_throw(

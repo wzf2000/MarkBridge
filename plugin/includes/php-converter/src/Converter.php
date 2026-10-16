@@ -111,6 +111,84 @@ final class Converter
         return $result;
     }
 
+    public function relocateImages(array $base, array $mappings, bool $portable): array
+    {
+        $verified = $this->restorePair($base['source'], $base['serialized'], $base['documentId']);
+        if (!array_is_list($mappings) || count($mappings) > 256) {
+            throw new ConversionError(
+                'MEDIA_RELOCATION',
+                'Invalid cross-site media association map',
+            );
+        }
+        $map = [];
+        $urls = [];
+        foreach ($mappings as $item) {
+            $keys = is_array($item) ? array_keys($item) : [];
+            sort($keys);
+            if (
+                $keys !== ($portable ? ['from', 'to'] : ['from', 'id', 'to']) ||
+                !is_string($item['from'] ?? null) ||
+                !is_string($item['to'] ?? null) ||
+                (!$portable &&
+                    (!is_int($item['id']) || $item['id'] < 1 || $item['id'] > 9007199254740991)) ||
+                isset($map[$item['from']])
+            ) {
+                throw new ConversionError(
+                    'MEDIA_RELOCATION',
+                    'Invalid cross-site media association map',
+                );
+            }
+            $map[$item['from']] = $item;
+            $urls[] = ['from' => $item['from'], 'to' => $item['to']];
+        }
+        ResourceImages::rewrite($verified['serialized'], $urls, $portable);
+        $serialized = preg_replace_callback(
+            '~<!-- wp:image(?: (\{[^\r\n]*\}))? -->\n([\s\S]*?)\n<!-- /wp:image -->~',
+            function ($block) use ($map, $portable) {
+                $attrs = isset($block[1]) && $block[1] !== '' ? Teaching::json($block[1]) : [];
+                $html = $block[2];
+                preg_match('~<img\b[^>]*\ssrc="([^"]*)"~', $html, $m);
+                $url = html_entity_decode($m[1] ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                if (!isset($map[$url])) {
+                    if ($portable || isset($attrs['id'])) {
+                        throw new ConversionError(
+                            'MEDIA_RELOCATION',
+                            'Every cross-site native image requires a verified association',
+                        );
+                    }
+                    return $block[0];
+                }
+                $mapping = $map[$url];
+                if (isset($attrs['id'])) {
+                    $html = str_replace(' class="wp-image-' . $attrs['id'] . '"', '', $html);
+                }
+                if ($portable) {
+                    unset($attrs['id']);
+                } else {
+                    $attrs['id'] = $mapping['id'];
+                }
+                if (!$portable) {
+                    $html = preg_replace(
+                        '~(<img\b[^>]*?)( title="|/>)~',
+                        '$1 class="wp-image-' . $mapping['id'] . '"$2',
+                        $html,
+                        1,
+                    );
+                }
+
+                $attrs = NativeMedia::attrs('image', $attrs);
+                return '<!-- wp:image' .
+                    ($attrs ? ' ' . self::commentJson($attrs) : '') .
+                    " -->\n" .
+                    $html .
+                    "\n<!-- /wp:image -->";
+            },
+            $verified['serialized'],
+        );
+        $serialized = ResourceImages::rewrite($serialized, $urls, $portable);
+        return $this->fromMarkdown($this->fromBlocks($serialized)['source']);
+    }
+
     public function fromMarkdown(string $source): array
     {
         $this->input($source);

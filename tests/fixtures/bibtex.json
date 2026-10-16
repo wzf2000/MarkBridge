@@ -1,0 +1,339 @@
+{
+  "cases": [
+    {
+      "name": "unicode-and-groups",
+      "input": "@article{PaperOne, title={A {中文😀} title}, author={Doe, Jane and {Research and Development}}, year=2024, journal={Journal}, volume={2}, number={3}, pages={10--20}}",
+      "entries": [
+        {
+          "key": "PaperOne",
+          "authors": ["Doe, Jane", "Research and Development"],
+          "title": "A 中文😀 title",
+          "year": "2024",
+          "source": "Journal: Journal; Volume: 2; Number: 3; Pages: 10--20",
+          "url": ""
+        }
+      ]
+    },
+    {
+      "name": "parentheses-quotes",
+      "input": "@book(BookOne, title=\"Quoted {nested title}\", publisher={Press}, year=\"1999\",)",
+      "entries": [
+        {
+          "key": "BookOne",
+          "authors": [],
+          "title": "Quoted nested title",
+          "year": "1999",
+          "source": "Publisher: Press",
+          "url": ""
+        }
+      ]
+    },
+    {
+      "name": "simple-tex",
+      "input": "@misc{Tex, title={\\LaTeX{} \\& G\\\"{o}del, Jos\\'e and \\ae{} \\% \\_ \\{x\\}}, author={Jos\\'e and M\\\"uller}}",
+      "entries": [
+        {
+          "key": "Tex",
+          "authors": ["José", "Müller"],
+          "title": "LaTeX & Gödel, José and æ % _ {x}",
+          "year": "",
+          "source": "",
+          "url": ""
+        }
+      ]
+    },
+    {
+      "name": "doi-map",
+      "input": "@article{Doi, title={Paper}, doi={10.1234/a_b}, year={2026}}",
+      "entries": [
+        {
+          "key": "Doi",
+          "authors": [],
+          "title": "Paper",
+          "year": "2026",
+          "source": "",
+          "url": "https://doi.org/10.1234/a_b"
+        }
+      ]
+    },
+    {
+      "name": "doi-with-url",
+      "input": "@inproceedings{Both,title={Both},booktitle={Proceedings},publisher={Press},doi={https://doi.org/10.1234/abc},url={https://example.invalid/paper}}",
+      "entries": [
+        {
+          "key": "Both",
+          "authors": [],
+          "title": "Both",
+          "year": "",
+          "source": "Book title: Proceedings; Publisher: Press; DOI: 10.1234/abc",
+          "url": "https://example.invalid/paper"
+        }
+      ]
+    },
+    {
+      "name": "comments-and-case",
+      "input": "﻿% comment\r\n@MISC{Alpha,TITLE={First}}\r\n% next\n@misc{Beta,title={Second}}",
+      "entries": [
+        {
+          "key": "Alpha",
+          "authors": [],
+          "title": "First",
+          "year": "",
+          "source": "",
+          "url": ""
+        },
+        {
+          "key": "Beta",
+          "authors": [],
+          "title": "Second",
+          "year": "",
+          "source": "",
+          "url": ""
+        }
+      ]
+    },
+    {
+      "name": "escaped-quote",
+      "input": "@misc{Quote,title=\"G\\\"odel\"}",
+      "entries": [
+        {
+          "key": "Quote",
+          "authors": [],
+          "title": "Gödel",
+          "year": "",
+          "source": "",
+          "url": ""
+        }
+      ]
+    },
+    {
+      "name": "corporate-author",
+      "input": "@book{Corp,title={Book},author={{A and B} and C}}",
+      "entries": [
+        {
+          "key": "Corp",
+          "authors": ["A and B", "C"],
+          "title": "Book",
+          "year": "",
+          "source": "",
+          "url": ""
+        }
+      ]
+    },
+    {
+      "name": "unknown-type",
+      "input": "@phdthesis{A,title={A}}",
+      "reject": true
+    },
+    {
+      "name": "string-macro",
+      "input": "@string{J={Journal}}",
+      "reject": true
+    },
+    {
+      "name": "preamble",
+      "input": "@preamble{{x}}",
+      "reject": true
+    },
+    {
+      "name": "comment-entry",
+      "input": "@comment{anything}",
+      "reject": true
+    },
+    {
+      "name": "unknown-field",
+      "input": "@misc{A,title={A},note={Hidden}}",
+      "reject": true
+    },
+    {
+      "name": "crossref",
+      "input": "@misc{A,title={A},crossref={B}}",
+      "reject": true
+    },
+    {
+      "name": "xdata",
+      "input": "@misc{A,title={A},xdata={B}}",
+      "reject": true
+    },
+    {
+      "name": "concat",
+      "input": "@misc{A,title={A} # {B}}",
+      "reject": true
+    },
+    {
+      "name": "bare-macro",
+      "input": "@misc{A,title=J}",
+      "reject": true
+    },
+    {
+      "name": "missing-title",
+      "input": "@misc{A,year=2024}",
+      "reject": true
+    },
+    {
+      "name": "empty-title",
+      "input": "@misc{A,title={}}",
+      "reject": true
+    },
+    {
+      "name": "empty-year",
+      "input": "@misc{A,title={A},year={}}",
+      "reject": true
+    },
+    {
+      "name": "empty-url",
+      "input": "@misc{A,title={A},url={}}",
+      "reject": true
+    },
+    {
+      "name": "year-letter",
+      "input": "@misc{A,title={A},year={2024a}}",
+      "reject": true
+    },
+    {
+      "name": "year-too-long",
+      "input": "@misc{A,title={A},year=12345}",
+      "reject": true
+    },
+    {
+      "name": "duplicate-fields",
+      "input": "@misc{A,title={A},TITLE={B}}",
+      "reject": true
+    },
+    {
+      "name": "duplicate-keys",
+      "input": "@misc{A,title={A}} @book{A,title={B}}",
+      "reject": true
+    },
+    {
+      "name": "numeric-key",
+      "input": "@misc{123,title={A}}",
+      "reject": true
+    },
+    {
+      "name": "unbalanced",
+      "input": "@misc{A,title={{A}}",
+      "reject": true
+    },
+    {
+      "name": "bad-quoted",
+      "input": "@misc{A,title=\"{A\"}",
+      "reject": true
+    },
+    {
+      "name": "unknown-tex",
+      "input": "@misc{A,title={\\input{file}}}",
+      "reject": true
+    },
+    {
+      "name": "tex-math",
+      "input": "@misc{A,title={$x$}}",
+      "reject": true
+    },
+    {
+      "name": "credential-url",
+      "input": "@misc{A,title={A},url={https://user:pass@example.invalid/a}}",
+      "reject": true
+    },
+    {
+      "name": "relative-url",
+      "input": "@misc{A,title={A},url={/a}}",
+      "reject": true
+    },
+    {
+      "name": "script-url",
+      "input": "@misc{A,title={A},url={javascript:bad}}",
+      "reject": true
+    },
+    {
+      "name": "normalizable-url",
+      "input": "@misc{A,title={A},url={http:example.invalid}}",
+      "reject": true
+    },
+    {
+      "name": "invalid-doi",
+      "input": "@misc{A,title={A},doi={bad}}",
+      "reject": true
+    },
+    {
+      "name": "doi-credentials",
+      "input": "@misc{A,title={A},doi={https://user@doi.org/10.1234/a}}",
+      "reject": true
+    },
+    {
+      "name": "empty-author",
+      "input": "@misc{A,title={A},author={}}",
+      "reject": true
+    },
+    {
+      "name": "nine-authors",
+      "input": "@misc{A,title={A},author={A and B and C and D and E and F and G and H and I}}",
+      "reject": true
+    },
+    {
+      "name": "unknown-style",
+      "input": "@misc{A,title={A},style={red}}",
+      "reject": true
+    },
+    {
+      "name": "trailing-garbage",
+      "input": "@misc{A,title={A}} garbage",
+      "reject": true
+    },
+    {
+      "name": "nul",
+      "input": "@misc{A,title={A\u0000}}",
+      "reject": true
+    },
+    {
+      "name": "accent-command-prefix",
+      "input": "@misc{A,title={\\copyright}}",
+      "reject": true
+    },
+    {
+      "name": "accent-long-command",
+      "input": "@misc{A,title={\\vspace}}",
+      "reject": true
+    },
+    {
+      "name": "eight-authors",
+      "input": "@misc{Eight,title={Eight},author={A and B and C and D and E and F and G and H}}",
+      "entries": [
+        {
+          "key": "Eight",
+          "authors": ["A", "B", "C", "D", "E", "F", "G", "H"],
+          "title": "Eight",
+          "year": "",
+          "source": "",
+          "url": ""
+        }
+      ]
+    },
+    {
+      "name": "doi-fragment",
+      "input": "@misc{A,title={A},doi={10.1234/a#fragment}}",
+      "reject": true
+    },
+    {
+      "name": "doi-query",
+      "input": "@misc{A,title={A},doi={10.1234/a?query}}",
+      "reject": true
+    },
+    {
+      "name": "doi-encoded",
+      "input": "@misc{A,title={A},doi={10.1234/a%20b}}",
+      "reject": true
+    },
+    {
+      "name": "control-data",
+      "input": "@misc{A,title={A\u0001}}",
+      "reject": true
+    }
+  ],
+  "limits": {
+    "maxBytes": 65536,
+    "maxEntries": 64,
+    "maxAuthors": 8,
+    "maxDepth": 16
+  }
+}

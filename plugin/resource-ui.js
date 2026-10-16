@@ -82,6 +82,12 @@
             : T(
                 'Pending resource hints were preserved. If these images are still referenced, upload the original ZIP again or remove them. Body content is preserved.',
               );
+        if (job?.warnings?.mediaRebind === true)
+          text.textContent +=
+            ' ' +
+            T(
+              'This cross-site ZIP creates new local attachment IDs; IDs from the source site are never reused.',
+            );
         ack.disabled = busy || readOnly || !job;
         label.hidden = !job;
         cancel.hidden = !job && !preparing;

@@ -427,7 +427,7 @@
         runId = null;
         status.textContent =
           data.type === 'complete'
-            ? T('Execution completed. The recorded trace is ready for playback.')
+            ? T('Component execution completed.')
             : data.type === 'stopped'
               ? T('Execution stopped.')
               : T('Execution failed. Static fallback content remains readable.');

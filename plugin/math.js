@@ -45,6 +45,7 @@
       style.textContent = outputStyle.textContent;
   }
   let reader, readerSource, readerRender, readerScale, readerStatus, readerOpener;
+  let readerExplorer;
   let readerSession = 0;
   let readerPercent = 150;
   const readerDefaultPercent = 150;
@@ -100,7 +101,10 @@
     readerStatus.className = 'mbb-math-reader-status';
     readerStatus.setAttribute('role', 'status');
     readerStatus.setAttribute('aria-live', 'polite');
-    reader.append(heading, toolbar, readerRender, sourceLabel, footer, readerStatus);
+    readerExplorer = window.MBBMathExplorer?.create(readerRender);
+    reader.append(heading, toolbar, readerRender);
+    if (readerExplorer) reader.append(readerExplorer.element);
+    reader.append(sourceLabel, footer, readerStatus);
     reader.addEventListener('click', async (event) => {
       const action = event.target.closest('[data-mbb-reader-action]')?.dataset.mbbReaderAction;
       if (action === 'close') reader.close();
@@ -127,6 +131,7 @@
             if (record) window.MBB_DIAGNOSTICS?.show(reader, record);
           } else {
             readerRender.replaceChildren(result.cloneNode(true));
+            readerExplorer?.load();
             readerStatus.textContent = '';
             window.MBB_DIAGNOSTICS?.clear(reader);
             retry.hidden = true;
@@ -168,6 +173,7 @@
       }
     });
     reader.addEventListener('close', () => {
+      readerExplorer?.clear();
       if (readerOpener?.isConnected) readerOpener.focus();
       readerOpener = null;
     });
@@ -197,6 +203,7 @@
           ? T('Formula typesetting failed; showing TeX source')
           : T('The formula is being typeset; showing TeX source temporarily');
     }
+    readerExplorer?.load();
     readerPercent = readerDefaultPercent;
     updateReaderScale();
     reader.showModal();

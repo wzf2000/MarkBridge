@@ -165,6 +165,7 @@ handles = [
     "mbb-i18n",
     "mbb-kernel",
     "mbb-math",
+    "mbb-math-explorer",
     "mbb-teaching",
     "mbb-components",
     "mbb-presentation",
