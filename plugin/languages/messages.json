@@ -1720,5 +1720,20 @@
   "Cross-site Markdown and images ZIP": "跨站 Markdown 与图片 ZIP",
   "This preview creates a normalized cross-site copy without old attachment IDs. Import creates new local attachments and associations. The saved original is unchanged.": "此预览生成规范化的跨站副本，并解除旧附件 ID；导入时会创建新本地附件及关联。已保存的原文章保持不变。",
   "The original English reading is available, but this expression cannot be explored structurally.": "可显示原始英文读法，但此表达式暂不支持逐项探索。",
-  "This cross-site ZIP creates new local attachment IDs; IDs from the source site are never reused.": "此跨站 ZIP 将创建新的本地附件 ID，不会复用源站 ID。"
+  "This cross-site ZIP creates new local attachment IDs; IDs from the source site are never reused.": "此跨站 ZIP 将创建新的本地附件 ID，不会复用源站 ID。",
+  "Show diagram": "显示图示",
+  "Collapse diagram": "收起图示",
+  "Undated": "未注明年份",
+  "Read source": "查看来源",
+  "View external image": "查看外部图片",
+  "An external image link is unsafe": "外部图片链接不安全",
+  "Static HTML preview": "静态 HTML 预览",
+  "The static HTML preview could not be loaded. Prepare the export again.": "静态 HTML 预览未能加载，请重新准备导出。",
+  "Static HTML embeds verified local images and typeset formulas for offline reading. External images become links and are not fetched; unverified local images are refused. All stages and code versions are included; interactive demonstrations use their static fallback.": "静态 HTML 内嵌经核验的本地图片与排版公式，供离线阅读。外部图片转为链接且不抓取；未核验的本地图片会被拒绝。所有阶段和代码版本完整保留；交互演示使用静态替代内容。",
+  "Static syntax resource timeout": "静态代码高亮资源加载超时",
+  "Static syntax resource unavailable": "静态代码高亮资源不可用",
+  "Static syntax engine unavailable": "静态代码高亮引擎不可用",
+  "Static syntax token budget": "静态代码高亮超出标记预算",
+  "Invalid static syntax token": "静态代码高亮标记无效",
+  "Invalid static syntax class": "静态代码高亮样式无效"
 }

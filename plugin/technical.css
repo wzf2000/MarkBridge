@@ -16,22 +16,66 @@
   text-align: center;
   overflow-wrap: anywhere;
 }
+/* AMS-inspired hierarchy: theorem emphasis, upright definitions and quiet proofs. */
 .mbb-technical-statement {
-  border-inline-start: 3px solid var(--mbb-quote-border, #93a58f);
-  padding-inline: var(--mbb-panel-padding, 1rem) 0;
+  --mbb-academic-font:
+    'STIX Two Text', 'Latin Modern Roman', 'Noto Serif CJK SC', 'Songti SC', SimSun,
+    'Times New Roman', serif;
+  border: 0;
+  padding: 0;
+  margin-block: 1.65em;
+  font-family: var(--mbb-font-academic, var(--mbb-academic-font));
+  font-synthesis: none;
+  line-height: 1.8;
 }
 .mbb-technical-heading,
 .mbb-bibliography-title {
-  margin-block: 0 0.65rem;
-  font-weight: 650;
+  margin-block: 0 0.4em;
+  font-size: 1em;
+  font-weight: 600;
   overflow-wrap: anywhere;
+}
+.mbb-technical-statement.mbb-statement-theorem > .mbb-technical-body {
+  font-style: italic;
+}
+.mbb-technical-statement
+  .mbb-technical-body
+  :is(pre, code, table, .mbb-typeset, .mbb-math, .mbb-technical-statement) {
+  font-style: normal;
+}
+.mbb-technical-statement.mbb-statement-proof > .mbb-technical-heading {
+  font-style: italic;
+  font-weight: 400;
+}
+.mbb-technical-statement.mbb-statement-proof .mbb-technical-number {
+  font-weight: 400;
 }
 details.mbb-technical-statement > summary {
   cursor: pointer;
-  padding-block: 0.4rem;
+  padding-block: 0.2rem;
+  list-style: none;
+}
+details.mbb-technical-statement > summary::-webkit-details-marker {
+  display: none;
+}
+details.mbb-technical-statement > summary::before {
+  content: '▸';
+  display: inline-block;
+  font: 0.8em/1 system-ui;
+  margin-inline-end: 0.5em;
+  color: var(--mbb-code-muted, #61716a);
+}
+details.mbb-technical-statement[open] > summary::before {
+  content: '▾';
 }
 details.mbb-technical-statement:not([open]) > summary {
   margin-block-end: 0;
+}
+.mbb-proof-end {
+  display: block;
+  text-align: end;
+  font: 1.1em/1.3 var(--mbb-font-academic, var(--mbb-academic-font));
+  margin-block-start: 0.2em;
 }
 .mbb-technical-body > :first-child {
   margin-block-start: 0;
@@ -62,16 +106,33 @@ details.mbb-technical-statement > summary:focus-visible {
 }
 .mbb-bibliography {
   border-block-start: 1px solid var(--mbb-border-color, #8884);
-  padding-block-start: var(--mbb-panel-padding, 1rem);
+  margin-block-start: 2rem;
+  padding-block-start: 1.25rem;
+  font-family: var(
+    --mbb-font-academic,
+    'STIX Two Text',
+    'Noto Serif CJK SC',
+    'Songti SC',
+    SimSun,
+    Georgia,
+    serif
+  );
 }
-.mbb-bibliography ol {
-  padding-inline-start: 1.6em;
+.mbb-bibliography > ol {
+  padding: 0;
+  margin: 0;
+  list-style: none;
 }
-.mbb-bibliography li {
-  margin-block: 0.65rem;
-  padding-inline-start: 0.25em;
+.mbb-bibliography > ol > li {
+  margin: 0.95em 0;
+  padding-inline-start: 1.25em;
+  text-indent: -1.25em;
+  line-height: 1.75;
   overflow-wrap: anywhere;
   scroll-margin-block-start: calc(var(--mbb-teaching-effective-offset, 4rem) + 1rem);
+}
+.mbb-bib-authors {
+  font-weight: 600;
 }
 .mbb-bib-title {
   font-style: italic;
@@ -81,6 +142,27 @@ details.mbb-technical-statement > summary:focus-visible {
 .mbb-bib-year:not(:empty)::after,
 .mbb-bib-source:not(:empty)::after {
   content: '. ';
+}
+.mbb-bib-url {
+  display: block;
+  margin-block-start: 0.12em;
+  font: 0.8em/1.6 var(--mbb-font-ui, system-ui, sans-serif);
+  text-indent: 0;
+}
+.mbb-bib-url a {
+  color: var(--mbb-code-muted, #526577);
+  text-decoration-thickness: 0.05em;
+}
+.mbb-cite {
+  font-family: inherit;
+  font-size: 0.92em;
+}
+.mbb-cite a {
+  text-decoration: none;
+  color: var(--mbb-reference-color, #356759);
+}
+.mbb-cite a:hover {
+  text-decoration: underline;
 }
 .mbb-technical-editor .mbb-bibliography ul {
   list-style: none;

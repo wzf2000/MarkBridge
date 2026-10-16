@@ -1,6 +1,7 @@
 # Optional Mermaid diagrams
 
-The separate `mermaid-extension` plugin registers `mermaid@0.1.0`. It is not
+The separate `mermaid-extension` plugin candidate **0.2.0-rc.1** registers both
+`mermaid@0.1.0` and `mermaid@0.2.0` with separate source admission. It is not
 required to read or save an article's static explanation. The main plugin keeps
 its existing format, permissions, resource limit and opaque component sandbox.
 See the extension README for the exact limited grammar, official source pin,
@@ -41,31 +42,98 @@ configuration and the static fallback. Existing node-diagram components are not
 converted into Mermaid. No external Mermaid services, URLs or article scripts
 are fetched.
 
+## Component versions and appearance
+
+The two complete examples above intentionally retain `0.1.0`. That version still
+accepts only `source` and its existing rectangular, rounded and diamond nodes,
+limited arrows and declared sequence participants. Installing the new extension
+does not opt an old component into new grammar or add parameters to its saved
+configuration. Use an explicit component version change for the expanded subset.
+
+For `mermaid@0.2.0`, this is an example parameter object:
+
+```json
+{
+  "source": "flowchart LR\nsubgraph Input[输入阶段]\ndirection TB\nA([开始]) --> B[(数据)]\nend\nsubgraph Work[处理阶段]\nC((计算)) <--> D{判断}\nend\nB -.-> C\nInput ==> Work",
+  "curve": "step",
+  "palette": "paper",
+  "font": "serif"
+}
+```
+
+Version `0.2.0` adds bounded `subgraph ID[Title]` / `end`: at most eight unique
+subgraphs and three nesting levels, with one local `direction TD|TB|BT|LR|RL`
+per group. Bare node references may connect across groups; group IDs may also be
+edge endpoints. Node/group ID collisions, unclosed groups, duplicate ownership
+and conflicting labels or shapes are rejected. Mermaid's own Dagre layout may
+ignore a group's local direction when its nodes link outside the group.
+
+Additional node forms are circle `A((Label))`, stadium `A([Label])` and cylinder
+`A[(Label)]`. Additional edge forms are `<-->`, `<==>`, `<-.->`, `===` and `-.-`,
+alongside the original `-->`, `---`, `==>` and `-.->`. Labels remain bounded
+plain text; use one declaration or edge per line and spaces around edge arrows.
+Chained edges, arbitrary shapes and unrestricted Mermaid syntax are not enabled.
+
+Optional appearance parameters are `curve`: `linear`, `basis` (default), `step`,
+`stepBefore`, `stepAfter`; `palette`: `paper` (default), `forest`, `slate`; and
+`font`: `serif` (default) or `sans`. These are fixed mappings to the official
+`base` theme's `themeVariables` and flowchart curve configuration, with local
+Chinese/Latin font fallbacks. Initial system color scheme selects light/dark
+colors; an already rendered frame needs reloading to pick up a later scheme
+change. No article-provided CSS, `themeCSS`, font URLs, HTML, links, `init`,
+`style`, `click` or external resources are accepted. The extension README is the
+exact grammar and parameter reference.
+
 ## Reading and limitations
 
-Start the component explicitly, then choose **Render diagram**. This runs the
-real official Mermaid 12.2.0 flowchart or sequence renderer with a strict source
-subset. The source is limited to 8 KiB, 96 nonblank lines, 24 nodes/participants,
-48 edges/messages and 80 code points per label. It excludes HTML, links, click
-handlers, configuration directives, comments, styles, subgraphs and all other
-diagram types. See the extension README for supported arrows and label syntax.
-Stop ignores any late result. On narrow screens the focusable diagram can scroll
-horizontally; author fallback is the accessible textual reading path. Browser
-support requires streaming gzip decompression and Web Crypto; failures retain
-fallback and do not claim success. Automated desktop/narrow Chromium coverage is
-not a claim of real phone, Safari or assistive-technology acceptance.
+On the current host, a provider registered with the trusted `readerMode: diagram`
+capability starts when its article component approaches the viewport. Only the
+front-end reading path sends `presentation: diagram`; the frame requests a run
+grant after ready. Successful output keeps a quiet figure presentation and small
+zoom controls. **Collapse diagram** records the reader's choice for that mounted
+component, so scrolling away and back does not reopen it; **Show diagram** opens
+it again. Offscreen diagrams unload to reuse iframe slots while retaining their
+layout height. The host keeps the four-iframe/two-execution limits and does not
+automatically start algorithm demonstrations.
 
-The single fixed local HTML remains below the existing 512 KiB host cap. It
-contains a compressed selected official bundle verified against a second fixed
-SHA-256 after bounded streaming decompression (1,100,000 decoded bytes). Existing
-`script-src 'unsafe-inline' blob:` allows loading that verified local code; no
-host CSP change or `unsafe-eval` is needed. Output passes a closed SVG audit,
-256 KiB output budget and geometry bounds. Large accepted graphs may still hit
-the host's existing execution deadline; no automatic retry expands it.
+Editor previews and hosts without the reader capability keep explicit startup
+and **Render diagram**. Both component versions still require protocol/run
+grants. A BUSY response may quietly retry three times at 150/400/900 ms; exhausted
+retries or failures offer recovery, without increasing the execution budget.
+Stop/cancel clears pending retries and ignores late results. The author-written
+static explanation remains available throughout and is used for print/static
+export; rendered Mermaid SVG is not embedded into that explanation.
+
+The real official Mermaid 12.2.0 flowchart/sequence engine remains bounded to
+8,192 UTF-8 bytes, 24 nodes/participants, 48 edges/messages and 80 code points per
+label. Version `0.1.0` permits 96 nonblank lines; `0.2.0` counts all physical lines
+against its 96-line limit, with the group limits above enforced separately.
+HTML, directives, styles, comments and other diagram types remain outside the
+subset. Sequence control constructs are not enabled by the flowchart expansion.
+
+On narrow screens, initial zoom preserves at least 75% of native diagram size
+and permits focusable horizontal scrolling. **Fit width** shows the whole graph,
+possibly making text smaller; +/- controls restore detail and support keyboard
+activation. The static explanation is the textual reading path. Streaming gzip
+decompression and Web Crypto are required; failures retain fallback rather than
+claiming success. Desktop/narrow browser fixtures do not establish real-phone,
+Safari or assistive-technology acceptance.
+
+The single fixed local HTML stays within the existing 512 KiB resource cap. It
+contains a compressed selected official bundle, verified against a second fixed
+SHA-256 after streaming decompression capped at 1,100,000 decoded bytes. The
+opaque iframe keeps `allow-scripts` only and its existing
+`script-src 'unsafe-inline' blob:` policy, with no same-origin access, network or
+`unsafe-eval`. Output passes the closed SVG audit, 256 KiB output cap and geometry
+bounds. Accepted graphs may still exceed the five-second startup or two-second
+execution deadline. Stop cannot preempt synchronous library work already running
+on the iframe thread; host termination remains the outer bound.
 
 ## Maintainer validation
 
-From the separate extension directory, `npm run build`, `npm test` and
+From the separate extension directory, explicitly populate the pinned source cache
+with `npm run fetch` when needed. `npm run build` reads/verifies that cache without
+writing it. `npm test` and
 `npm run test:browser` exercise fixed resource integrity, matching Node/PHP source
 admission, actual official rendering inside the host's unchanged opaque CSP,
 invalid input, corrupted code hash, canceled/denied execution and lack of

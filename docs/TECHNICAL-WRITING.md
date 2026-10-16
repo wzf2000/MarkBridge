@@ -113,10 +113,47 @@ with the same name must never consume the bracketed text inside a valid span.
 Inline references are allowed inside footnotes.
 
 Each object kind and each statement kind has a separate derived counter,
-including proofs. Bibliography numbering follows first citation in reading
-order, after footnote order is established; uncited entries follow in their
-original entry order. Multiple citation keys display in number order without
-range compression. Stored key/entry order never changes for display purposes.
+including proofs. Bibliography ordering follows first citation in reading order,
+after footnote order is established; uncited entries follow in their original
+entry order. Stored keys and entry order never change for display purposes.
+The reader-facing citation uses author/year labels rather than numeric brackets,
+with multiple entries separated by semicolons, for example
+`(A. Author, 2026a; A. Author, 2026b)`. Links still resolve through the stable
+bibliography keys to the matching derived entry anchors.
+
+The author label uses the authored joined author text, falling back to the title
+when no author was supplied; it does not guess family names, split Chinese names
+or infer an `et al.` convention. Labels longer than 64 Unicode characters visibly
+abbreviate to 63 characters plus an ellipsis. Missing years display `Undated`.
+Entries with matching displayed author text and year gain `a`, `b`, … suffixes in
+the derived citation order, also shown beside their bibliography years. This is a
+bounded presentation convention, not a full CSL/APA/BibTeX style processor.
+
+Generated citation labels sit in a `data-mbb-generated` descendant. A hidden
+`mbb-technical-source` span retains the original `[key-a,key-b]` marker, so
+paragraph/comment adapters that ignore generated descendants keep the authored
+paragraph identity. Author-year text, disambiguation suffixes, numbered headings
+and links are never saved back into author fields, source or paired blocks.
+
+## Reading presentation
+
+Definition, theorem and proof containers use an academic serif stack, overridable
+with `--mbb-font-academic`, with spacing and heading weight instead of a generic
+shaded panel or vertical quote rule. Definitions remain upright; theorem prose
+and proof headings request italic. `font-synthesis: none` uses a real italic face
+when one is installed and prevents fabricated oblique CJK glyphs when it is not.
+The plugin does not download an academic font, and the actual font/italic face
+therefore depends on local availability. Code, tables and math inside statements
+keep their own upright presentation.
+
+Proofs retain native `details`/`summary` and their authored open state in ordinary
+reading. Their body receives a quiet right-aligned `□` end mark, generated and
+hidden from duplicate accessibility exposure; it is not an extra authored
+paragraph. Print/static-export behavior opens the complete proof without changing
+the saved `open` attribute. Bibliography display uses hanging entries, emphasized
+authors and italic titles; a safe source URL displays a compact host label while
+retaining the complete href/title. These are reading-layer changes, not a rewrite
+of the structured six bibliography fields or the stable key namespace.
 
 ## Shared conversion acceptance cases
 
@@ -145,7 +182,7 @@ Apply/discard this candidate before renaming entry keys. Cited entries cannot be
 deleted through the structured form until their citations have been removed.
 
 Use the RichText toolbar's cross-reference/citation picker to choose existing
-valid targets. Its preview shows derived numbers; inline author text remains
+valid targets. Its target preview is separate from the reading label; inline author text remains
 `[stable-label]` or `[key-a,key-b]`. No generated number is inserted into the
 editable author marker. Invalid or duplicate targets are omitted and diagnosed;
 backend conversion independently rejects missing, malformed and duplicate data.
@@ -169,7 +206,8 @@ reader clone; the visual math remains hidden from duplicate accessibility
 exposure. Keyboard opening, closing and return focus are covered in browser
 regressions. Source TeX and stored blocks remain unchanged.
 
-This is evidence of semantic preservation, not a complete screen-reader
-certification. Chinese speech, advanced expression exploration and real
-assistive-technology reading remain unverified follow-up work. Math rendering
-failure keeps the source and retry tools available.
+Semantic preservation is not a complete screen-reader certification. The bounded
+Chinese structural guidance, expression exploration and English fallback are
+described in [Math reading](MATH-READING.md); they do not establish real
+assistive-technology acceptance. Math rendering failure keeps source and retry
+tools available.

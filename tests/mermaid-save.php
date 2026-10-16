@@ -37,16 +37,25 @@ try {
     mermaid_save_check($p && $p['status'] === 'available', 'Actual provider rejected');
     foreach (
         [
-            "flowchart LR\nA[Start] --> B[Finish]",
-            "sequenceDiagram\nparticipant A as Author\nparticipant B as Server\nA->>B: Request\nB-->>A: Response",
+            ['0.1.0', "flowchart LR\nA[Start] --> B[Finish]", []],
+            [
+                '0.2.0',
+                "flowchart LR\nsubgraph Group[Inputs]\ndirection TB\nA([Start]) --> B{Ready}\nend\nB --> C[(Store)]",
+                ['curve' => 'step', 'palette' => 'forest', 'font' => 'sans'],
+            ],
+            [
+                '0.1.0',
+                "sequenceDiagram\nparticipant A as Author\nparticipant B as Server\nA->>B: Request\nB-->>A: Response",
+                [],
+            ],
         ]
-        as $diagram
+        as [$version, $diagram, $options]
     ) {
         $c = [
             'id' => 'diagram-test',
             'component' => 'mermaid',
-            'componentVersion' => '0.1.0',
-            'params' => ['source' => $diagram],
+            'componentVersion' => $version,
+            'params' => array_merge(['source' => $diagram], $options),
         ];
         $source =
             ':::mbb:v1 collapse {"id":"diagram-fold","title":"Diagram","open":false}' .

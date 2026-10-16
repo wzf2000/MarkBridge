@@ -382,6 +382,27 @@
   border-radius: 12px;
   padding: 20px;
 }
+#mbb-export-dialog.mbb-export-html {
+  width: min(1080px, calc(100vw - 24px));
+}
+#mbb-export-dialog #mbb-export-html-preview h3 {
+  margin: 0.9rem 0 0.6rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+#mbb-export-dialog #mbb-export-html-preview iframe {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  height: clamp(320px, 58dvh, 620px);
+  border: 1px solid var(--mbb-editor-border, #c3c4c7);
+  border-radius: 6px;
+  background: #fff;
+}
+#mbb-export-dialog #mbb-export-html-preview[hidden],
+#mbb-export-dialog #mbb-export-projected-source[hidden] {
+  display: none;
+}
 #mbb-export-dialog::backdrop {
   background: rgb(0 0 0 / 45%);
 }

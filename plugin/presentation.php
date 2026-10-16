@@ -237,8 +237,14 @@ add_action(
                     'componentScript' => plugins_url(mbb_asset('components.js'), __FILE__),
                     'teachingScript' => plugins_url(mbb_asset('teaching.js'), __FILE__),
                     'teachingStyle' => plugins_url(mbb_asset('teaching.css'), __FILE__),
+                    'diagramStyle' => plugins_url(mbb_asset('reader-diagrams.css'), __FILE__),
                 ]) .
                 ';',
+            'before',
+        );
+        wp_add_inline_script(
+            'mbb-presentation-loader',
+            'window.MBB_COMPONENTS_READER=true;',
             'before',
         );
         // Archive and query-loop posts are all considered, not only the singular ID.

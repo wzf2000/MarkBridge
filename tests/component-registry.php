@@ -150,6 +150,27 @@ try {
             'Nonboolean locale capability accepted',
         );
     }
+    registry_assert(markbridge_teaching_supports_reader_diagrams(), 'Reader diagram probe missing');
+    $diagramProvider = $provider;
+    $diagramProvider['readerMode'] = 'diagram';
+    registry_assert(
+        markbridge_register_teaching_component('reader-diagram', $diagramProvider) &&
+            mbb_component_public(mbb_component_registry()['reader-diagram'])['readerMode'] ===
+                'diagram',
+        'Trusted reader diagram capability missing',
+    );
+    registry_assert(
+        !array_key_exists('readerMode', mbb_component_public(mbb_component_registry()['fixture'])),
+        'Legacy provider gained automatic presentation',
+    );
+    foreach ([null, true, 'auto', 'algorithm', []] as $badMode) {
+        $badDiagram = $provider;
+        $badDiagram['readerMode'] = $badMode;
+        registry_assert(
+            !markbridge_register_teaching_component('bad-reader', $badDiagram),
+            'Unrecognized automatic presentation accepted',
+        );
+    }
     $numeric = $provider;
     $numeric['schema'] = [
         'type' => 'object',

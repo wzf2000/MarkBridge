@@ -15,7 +15,8 @@ const manifest = JSON.parse(fs.readFileSync(path.join(root, 'assets/manifest.jso
 const data = fs.readFileSync(path.join(root, 'assets', manifest.resource.file));
 const sha = (x) => crypto.createHash('sha256').update(x).digest('hex');
 assert.equal(manifest.component, 'mermaid');
-assert.equal(manifest.componentVersion, '0.1.0');
+assert.equal(manifest.componentVersion, '0.2.0');
+assert.deepEqual(manifest.componentVersions, ['0.1.0', '0.2.0']);
 assert(data.length <= 524288);
 assert.equal(sha(data), manifest.resource.sha256);
 const packed = [...data.toString().matchAll(/"([A-Za-z0-9+/]{1000,}={0,2})"/g)].map((m) => m[1]);

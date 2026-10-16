@@ -75,7 +75,7 @@ test('plain static references, bibliography and native proof remain readable wit
   await page.locator('#proof-route summary').focus();
   await page.keyboard.press('Enter');
   await expect(page.locator('#proof-paragraph')).toBeVisible();
-  const link = page.getByRole('link', { name: 'Reference 1', exact: true });
+  const link = page.getByRole('link', { name: 'Reference: Example Author, 2026', exact: true });
   const target = (await link.getAttribute('href')).slice(1);
   await expect(page.locator('#' + target)).toContainText('A technical source');
 });

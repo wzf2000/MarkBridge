@@ -448,25 +448,40 @@ http
           encoding: 'utf8',
         }),
       );
-      response.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
-      let data;
-      if (pathname.endsWith('/context'))
-        data = { schema: 1, post_id: 12, expected: 'a'.repeat(64), documentId: 'STATIC' };
-      else if (request.method === 'DELETE') data = { schema: 1, cancelled: true };
-      else if (pathname.endsWith('/prepare'))
-        data = {
-          schema: 1,
-          format: 'html',
-          token: 'c'.repeat(64),
-          receipt: 'd'.repeat(64),
-          projectedSource: value.body,
-          resources: [],
-          retainedImages: [],
-          changes: [],
-        };
-      else if (pathname.endsWith('/download')) data = value;
-      else data = { code: 'fixture_unknown' };
-      return response.end(JSON.stringify(data));
+      value.body =
+        '<h2 id="preview-code">离线阅读示例</h2><pre><code class="language-python"># Python\ndef welcome(name):\n    return "你好 " + name\n\nwelcome("reader")\n</code></pre><table><thead><tr><th>语言</th><th>结果</th></tr></thead><tbody><tr><td>Python</td><td>保留全部代码</td></tr><tr><td>JavaScript</td><td>完整离线阅读</td></tr></tbody></table><p><a href="#preview-code">Internal anchor</a> · <a href="https://example.invalid/external" title="External reference">External reference</a></p>' +
+        value.body;
+      let raw = '';
+      request.on('data', (chunk) => {
+        raw += chunk;
+      });
+      request.on('end', () => {
+        const input = raw ? JSON.parse(raw) : {};
+        const markdown = input.format && input.format !== 'html';
+        let data;
+        if (pathname.endsWith('/context'))
+          data = { schema: 1, post_id: 12, expected: 'a'.repeat(64), documentId: 'STATIC' };
+        else if (request.method === 'DELETE') data = { schema: 1, cancelled: true };
+        else if (pathname.endsWith('/prepare'))
+          data = {
+            schema: 1,
+            format: markdown ? input.format : 'html',
+            token: (markdown ? 'e' : 'c').repeat(64),
+            receipt: (markdown ? 'f' : 'd').repeat(64),
+            projectedSource: markdown ? '# Original Markdown\r\n' : JSON.stringify(value),
+            resources: [],
+            retainedImages: [],
+            changes: [],
+          };
+        else if (pathname.endsWith('/download')) data = value;
+        else data = { code: 'fixture_unknown' };
+        response.writeHead(200, {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store',
+        });
+        response.end(JSON.stringify(data));
+      });
+      return;
     }
     if (pathname === '/static-export-descriptor') {
       response.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });

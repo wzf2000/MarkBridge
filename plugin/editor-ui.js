@@ -1205,7 +1205,7 @@
           (MBB_EDITOR.technicalStyle || '') +
           (MBB_EDITOR.nativeMediaStyle || '') +
           (MBB_EDITOR.codeDisplayStyle || '') +
-          'body{font:16px/1.7 system-ui;padding:16px;overflow-wrap:anywhere}pre{overflow:auto}table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:4px}img{max-width:100%}</style></head><body>' +
+          'body{font:16px/1.7 system-ui;padding:16px;overflow-wrap:anywhere}pre{overflow:auto}table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:4px}img{max-width:100%}</style></head><body data-mbb-content-view>' +
           previewContent.innerHTML +
           '</body></html>';
       candidate = payload;

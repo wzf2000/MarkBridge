@@ -139,14 +139,12 @@ try {
         'comment_approved' => 1,
     ]);
     $before = ex_snapshot($post);
+    $linkedHtml = ex_prepare($post, 'html');
+    $linkedDescriptor = json_decode($linkedHtml['projectedSource'], true, 64, JSON_THROW_ON_ERROR);
     ex_assert(
-        ex_request('/mbb/v1/export/prepare', [
-            'schema' => 1,
-            'post_id' => $post,
-            'expected' => mbb_token(get_post($post)),
-            'format' => 'html',
-        ])->get_status() >= 400,
-        'Static export silently omitted an external image',
+        str_contains($linkedDescriptor['body'], 'mbb-external-image-link') &&
+            !str_contains($linkedDescriptor['body'], '<img src="https://example.invalid'),
+        'External image was fetched or omitted instead of linked',
     );
     $md = ex_prepare($post, 'markdown');
     ex_assert($md['projectedSource'] === $source, 'MD preparation changed raw bytes');

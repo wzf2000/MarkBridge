@@ -1,5 +1,9 @@
 <?php
 /** Fixed-descriptor model: no WordPress DB or external requests. */
+function home_url($path = '/')
+{
+    return 'https://static-fixture.invalid' . $path;
+}
 function mbb_t($s)
 {
     return $s;
@@ -110,6 +114,65 @@ try {
                 $mappings,
             );
             throw new LogicException('Unsafe input accepted');
+        } catch (RuntimeException $e) {
+            if ($e instanceof LogicException) {
+                throw $e;
+            }
+        }
+    }
+    $external = 'https://external.invalid/a.png';
+    $linked = mbb_static_export_descriptor(
+        [
+            'document' => [
+                'serialized' =>
+                    '<figure><a href="https://reading.invalid/paper"><img src="' .
+                    $external .
+                    '" alt="External chart"></a><figcaption>Caption retained</figcaption></figure>',
+            ],
+            'post' => $snapshot['post'],
+        ],
+        [],
+        [],
+        [],
+        [['url' => $external]],
+    );
+    if (
+        str_contains($linked['body'], '<img') ||
+        !str_contains($linked['body'], 'Caption retained') ||
+        !str_contains($linked['body'], 'mbb-external-image-link') ||
+        !str_contains($linked['body'], 'noreferrer')
+    ) {
+        throw new RuntimeException('External image was not a linked, caption-preserving fallback');
+    }
+    [$linkedDoc, $linkedXpath] = mbb_static_export_fragment($linked['body']);
+    if ($linkedXpath->query('//a/a')->length || $linkedXpath->query('//a')->length !== 2) {
+        throw new RuntimeException('Authored image link became nested or lost');
+    }
+    foreach (
+        [
+            'https://static-fixture.invalid/unverified.png',
+            'https://user:password@external.invalid/image.png',
+            'javascript:alert(1)',
+            'data:image/png;base64,AAA',
+            '//external.invalid/image.png',
+        ]
+        as $unsafeImage
+    ) {
+        try {
+            mbb_static_export_descriptor(
+                [
+                    'document' => [
+                        'serialized' =>
+                            '<img src="' . htmlspecialchars($unsafeImage, ENT_QUOTES) . '">',
+                    ],
+                    'post' => $snapshot['post'],
+                ],
+                [],
+                [],
+                [],
+                [['url' => $unsafeImage]],
+            );
+            throw new LogicException('Unverified or unsafe image link accepted');
         } catch (RuntimeException $e) {
             if ($e instanceof LogicException) {
                 throw $e;

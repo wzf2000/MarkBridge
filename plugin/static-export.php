@@ -38,6 +38,29 @@ function mbb_static_export_url(string $url): bool
         !isset($p['pass']) &&
         (strtolower($p['scheme'] ?? '') === 'mailto' || !empty($p['host']));
 }
+/** External images become explicit links; never fetch or embed them. */
+function mbb_static_export_external_url(string $url): bool
+{
+    if (!mbb_static_export_url($url)) {
+        return false;
+    }
+    $parts = parse_url($url);
+    $home = function_exists('home_url') ? parse_url(home_url('/')) : false;
+    return is_array($parts) &&
+        is_array($home) &&
+        in_array(strtolower($parts['scheme'] ?? ''), ['http', 'https'], true) &&
+        !empty($parts['host']) &&
+        !empty($home['host']) &&
+        strtolower($parts['host']) !== strtolower($home['host']);
+}
+function mbb_static_export_styles(): string
+{
+    return file_get_contents(__DIR__ . '/static-export.css') .
+        "\n" .
+        file_get_contents(__DIR__ . '/technical.css') .
+        "\n" .
+        file_get_contents(__DIR__ . '/media-presentation.css');
+}
 function mbb_static_export_body(string $serialized): string
 {
     // Canonical HTML only: never call arbitrary render_block/the_content filters.
@@ -221,15 +244,11 @@ function mbb_static_export_descriptor(
     array $files,
     array $resources,
     array $mappings,
+    array $linkedImages = [],
 ): array {
     $body = mbb_static_export_body($snapshot['document']['serialized']);
     $images = [];
-    $encodedBytes =
-        strlen($body) +
-        strlen(
-            file_get_contents(__DIR__ . '/static-export.css') .
-                file_get_contents(__DIR__ . '/preview-media.css'),
-        );
+    $encodedBytes = strlen($body) + strlen(mbb_static_export_styles());
     foreach ($files as $path => $file) {
         $bytes = file_get_contents($file['file']);
         if (
@@ -259,8 +278,49 @@ function mbb_static_export_descriptor(
         $map[$m['from']] = 'mbb-static:' . pathinfo(basename($m['to']), PATHINFO_FILENAME);
     }
     [$doc, $xpath, $root] = mbb_static_export_fragment($body);
-    foreach ($xpath->query('.//img', $root) as $n) {
+    $external = [];
+    foreach ($linkedImages as $item) {
+        if (
+            !is_array($item) ||
+            !is_string($item['url'] ?? null) ||
+            !mbb_static_export_external_url($item['url'])
+        ) {
+            mbb_export_throw('export_images', mbb_t('An external image link is unsafe'));
+        }
+        $external[$item['url']] = true;
+    }
+    foreach (iterator_to_array($xpath->query('.//img', $root)) as $n) {
         $src = $n->getAttribute('src');
+        if (!isset($map[$src]) && isset($external[$src])) {
+            $text = trim($n->getAttribute('alt')) ?: mbb_t('View external image');
+            $link = $doc->createElement('a');
+            $link->setAttribute('class', 'mbb-external-image-link');
+            $link->setAttribute('href', $src);
+            $link->setAttribute('rel', 'noreferrer noopener');
+            $link->setAttribute('title', $src);
+            $link->appendChild($doc->createTextNode($text));
+            $ancestor = $n->parentNode;
+            while (
+                $ancestor &&
+                $ancestor !== $root &&
+                !($ancestor instanceof DOMElement && $ancestor->tagName === 'a')
+            ) {
+                $ancestor = $ancestor->parentNode;
+            }
+            if ($ancestor && $ancestor !== $root) {
+                // Keep an authored surrounding link and add a separate image link.
+                $n->parentNode->replaceChild($doc->createTextNode($text), $n);
+                $link->textContent = mbb_t('View external image');
+                $ancestor->parentNode->insertBefore(
+                    $doc->createTextNode(' · '),
+                    $ancestor->nextSibling,
+                );
+                $ancestor->parentNode->insertBefore($link, $ancestor->nextSibling?->nextSibling);
+            } else {
+                $n->parentNode->replaceChild($link, $n);
+            }
+            continue;
+        }
         if (!isset($map[$src])) {
             mbb_export_throw(
                 'export_images',
@@ -288,9 +348,7 @@ function mbb_static_export_descriptor(
         'title' => strip_tags($snapshot['post']->post_title),
         'lang' => $lang,
         'body' => $body,
-        'css' =>
-            file_get_contents(__DIR__ . '/static-export.css') .
-            file_get_contents(__DIR__ . '/preview-media.css'),
+        'css' => mbb_static_export_styles(),
         'images' => $images,
     ];
     $json = mbb_component_json($value);

@@ -235,7 +235,10 @@
       config.teachingScript &&
       within(root, '[data-mbb-teaching],details.wp-block-details').length
     ) {
-      load(config.teachingStyle, true).catch(() => {});
+      Promise.all([
+        load(config.teachingStyle, true),
+        ...(config.diagramStyle ? [load(config.diagramStyle, true)] : []),
+      ]).catch(() => {});
       load(config.teachingScript).catch(() => {});
       if (config.componentScript) {
         const diagnostics = config.diagnosticsScript

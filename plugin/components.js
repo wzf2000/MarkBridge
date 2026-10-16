@@ -18,6 +18,35 @@
     instances = new Map(),
     active = new Set(),
     slots = new Set();
+  const automaticStarting = new Set();
+  let readerPageActive = true,
+    readerPumpScheduled = false;
+  const readerNear = (node) => {
+    if (!node.isConnected || node.closest('[hidden]') || !node.getClientRects().length)
+      return false;
+    const bounds = node.getBoundingClientRect();
+    return bounds.bottom >= -240 && bounds.top <= innerHeight + 240;
+  };
+  function pumpReaders() {
+    if (readerPumpScheduled) return;
+    readerPumpScheduled = true;
+    queueMicrotask(() => {
+      readerPumpScheduled = false;
+      for (const instance of instances.values()) instance.readerVisibility?.();
+      if (!readerPageActive || document.visibilityState === 'hidden') return;
+      for (const instance of instances.values()) {
+        if (automaticStarting.size >= 2 || slots.size >= 4 || active.size >= 2) break;
+        instance.startAutomatic?.();
+      }
+    });
+  }
+  const readerObserver =
+    typeof IntersectionObserver === 'function'
+      ? new IntersectionObserver(pumpReaders, { rootMargin: '240px 0px' })
+      : null;
+  window.addEventListener('scroll', pumpReaders, { passive: true });
+  window.addEventListener('resize', pumpReaders);
+  document.addEventListener('visibilitychange', pumpReaders);
   const random = () =>
     Array.from(crypto.getRandomValues(new Uint8Array(16)), (v) =>
       v.toString(16).padStart(2, '0'),
@@ -85,6 +114,11 @@
     )
       config.status = 'incompatible';
     if (!validParams(config.params)) config.status = 'invalid-params';
+    const diagram =
+      window.MBB_COMPONENTS_READER === true && config.provider?.readerMode === 'diagram';
+    let readerClosed = false,
+      readerFailed = false;
+    if (diagram) node.classList.add('mbb-component-diagram');
     const controls = document.createElement('div');
     controls.dataset.mbbGenerated = '';
     controls.className = 'mbb-component-controls';
@@ -121,8 +155,14 @@
         return false;
       }
     };
-    function stop(reason) {
+    function stop(reason, preserveHeight = false) {
       const changedLayout = !!frame || loading;
+      if (diagram) {
+        if (preserveHeight && frame)
+          controls.style.minBlockSize = controls.getBoundingClientRect().height + 'px';
+        if (!preserveHeight) controls.style.removeProperty('min-block-size');
+        automaticStarting.delete(node);
+      }
       generation++;
       abort?.abort();
       abort = null;
@@ -147,6 +187,7 @@
       window.MBB_DIAGNOSTICS?.clear(controls);
       delete node.dataset.mbbFailureCode;
       if (changedLayout) changed();
+      pumpReaders();
     }
     function report(code) {
       node.dataset.mbbFailureCode = code;
@@ -154,6 +195,7 @@
       if (record) window.MBB_DIAGNOSTICS?.show(controls, record);
     }
     function failure(message, code = 'UNAVAILABLE') {
+      if (diagram) readerFailed = true;
       const record = diagnostic?.failure(code);
       stop(message + T(' Static fallback content remains readable. You can start again.'));
       node.dataset.mbbFailureCode = code;
@@ -222,8 +264,14 @@
         }
       }
     }
-    async function launchComponent() {
-      stop();
+    async function launchComponent(automatic = false) {
+      stop('', diagram && !readerClosed);
+      if (diagram && !controls.style.minBlockSize) controls.style.minBlockSize = '280px';
+      if (diagram) {
+        readerClosed = false;
+        readerFailed = false;
+        if (automatic) automaticStarting.add(node);
+      }
       const current = ++generation;
       diagnostic = window.MBB_DIAGNOSTICS?.begin('component', config.provider);
       if (config.status !== 'available' || !config.provider?.resource) {
@@ -231,6 +279,11 @@
           'The component is missing, incompatible, or failed resource verification. Static fallback content and configuration are preserved.',
         );
         report('UNAVAILABLE');
+        if (diagram) {
+          readerFailed = true;
+          automaticStarting.delete(node);
+          pumpReaders();
+        }
         return;
       }
       if (
@@ -243,6 +296,11 @@
           'This browser cannot safely verify the isolated component. Static fallback content is preserved.',
         );
         report('UNSUPPORTED');
+        if (diagram) {
+          readerFailed = true;
+          automaticStarting.delete(node);
+          pumpReaders();
+        }
         return;
       }
       if (slots.size >= 4) {
@@ -250,6 +308,11 @@
           'Four interactive previews are already open. Close another preview first.',
         );
         report('BUSY');
+        if (diagram) {
+          readerFailed = true;
+          automaticStarting.delete(node);
+          pumpReaders();
+        }
         return;
       }
       slots.add(node);
@@ -301,6 +364,7 @@
           send('init', {
             params: config.params,
             execution: EXECUTION_ENABLED,
+            ...(diagram ? { presentation: 'diagram' } : {}),
             ...(config.provider.supportsUiLocale === true
               ? { uiLocale: window.MBB_UI_LOCALE === 'zh_CN' ? 'zh_CN' : 'en_US' }
               : {}),
@@ -326,12 +390,15 @@
           );
       }
     }
-    const launch = button(T('Start interactive demonstration'), launchComponent),
-      close = button(T('Close interactive preview'), () => {
+    const launch = button(diagram ? T('Show diagram') : T('Start interactive demonstration'), () =>
+        launchComponent(),
+      ),
+      close = button(diagram ? T('Collapse diagram') : T('Close interactive preview'), () => {
+        if (diagram) readerClosed = true;
         stop();
         launch.focus();
       });
-    launch.className = close.className = 'mbb-component-toggle';
+    launch.className = close.className = diagram ? 'mbb-diagram-toggle' : 'mbb-component-toggle';
     launch.setAttribute('aria-expanded', 'false');
     close.setAttribute('aria-expanded', 'false');
     node.dataset.mbbComponentState = 'closed';
@@ -385,13 +452,16 @@
       }
       if (data.type === 'ready' && !ready) {
         clearTimeout(startup);
+        automaticStarting.delete(node);
+        pumpReaders();
         loading = false;
         ready = true;
         node.dataset.mbbComponentState = 'ready';
         status.textContent = '';
-      } else if (data.type === 'resize' && Number.isFinite(data.height))
-        frame.style.height = Math.min(1200, Math.max(280, data.height)) + 'px';
-      else if (data.type === 'run-request') {
+      } else if (data.type === 'resize' && Number.isFinite(data.height)) {
+        frame.style.height = Math.min(1200, Math.max(diagram ? 160 : 280, data.height)) + 'px';
+        if (diagram) controls.style.removeProperty('min-block-size');
+      } else if (data.type === 'run-request') {
         if (!/^[a-f0-9]{32}$/.test(data.runId || '')) return;
         if (runId === data.runId) return;
         if (!EXECUTION_ENABLED || !ready || runId) {
@@ -427,11 +497,15 @@
         runId = null;
         status.textContent =
           data.type === 'complete'
-            ? T('Component execution completed.')
+            ? diagram
+              ? ''
+              : T('Component execution completed.')
             : data.type === 'stopped'
               ? T('Execution stopped.')
               : T('Execution failed. Static fallback content remains readable.');
+        pumpReaders();
         if (data.type === 'error') {
+          if (diagram) readerFailed = true;
           node.dataset.mbbFailureCode = 'EXECUTION';
           const record = diagnostic?.failure('EXECUTION');
           if (record) window.MBB_DIAGNOSTICS?.show(controls, record);
@@ -443,7 +517,34 @@
       signature,
       controls,
       stop,
+      readerVisibility(force = false) {
+        if (!diagram || (!force && readerNear(node))) return;
+        if ((frame || loading) && document.activeElement !== frame) {
+          stop('', true);
+          launch.hidden = true;
+          node.dataset.mbbComponentState = 'suspended';
+        }
+      },
+      startAutomatic() {
+        if (
+          diagram &&
+          !readerClosed &&
+          !readerFailed &&
+          readerNear(node) &&
+          !frame &&
+          !loading &&
+          config.status === 'available'
+        )
+          void launchComponent(true);
+      },
       hidden() {
+        if (diagram) {
+          if (frame || loading) {
+            stop('', true);
+            launch.hidden = true;
+          }
+          return;
+        }
         if (frame || loading)
           stop(
             T(
@@ -455,9 +556,12 @@
         stop();
         window.removeEventListener('message', receive);
         controls.remove();
+        readerObserver?.unobserve(node);
+        node.classList.remove('mbb-component-diagram');
         instances.delete(node);
       },
     });
+    if (diagram) readerObserver?.observe(node);
   }
   function scan() {
     for (const [node, instance] of instances)
@@ -468,6 +572,7 @@
       )
         instance.dispose();
     for (const node of document.querySelectorAll('[data-mbb-teaching="component"]')) enhance(node);
+    pumpReaders();
   }
   const observer = new MutationObserver(scan);
   observer.observe(document.body, {
@@ -478,6 +583,7 @@
   });
   scan();
   window.addEventListener('pagehide', () => {
+    readerPageActive = false;
     for (const instance of instances.values())
       instance.stop(
         T('The page is suspended. Explicitly restart the interactive preview after returning.'),
@@ -486,7 +592,18 @@
   document.addEventListener('mbb:teaching-change', () => {
     for (const [node, instance] of instances) if (node.closest('[hidden]')) instance.hidden();
   });
-  window.addEventListener('pageshow', scan);
+  window.addEventListener('pageshow', () => {
+    readerPageActive = true;
+    scan();
+  });
+  window.addEventListener('beforeprint', () => {
+    readerPageActive = false;
+    for (const instance of instances.values()) instance.readerVisibility?.(true);
+  });
+  window.addEventListener('afterprint', () => {
+    readerPageActive = true;
+    pumpReaders();
+  });
   window.MarkBridgeComponents = {
     protocol: PROTOCOL,
     scan,

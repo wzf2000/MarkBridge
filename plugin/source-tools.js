@@ -602,7 +602,7 @@
       escape(csp) +
       '"><meta name="referrer" content="no-referrer"><style>' +
       styles +
-      'body{font:16px/1.7 system-ui;padding:16px;overflow-wrap:anywhere}pre{overflow:auto}table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:4px}img{max-width:100%}[data-mbb-preview-locate] [data-mbb-preview-range]:hover,[data-mbb-preview-highlight]{outline:2px solid #2271b1;outline-offset:3px}[data-mbb-preview-locate] [data-mbb-preview-range]{cursor:crosshair;scroll-margin-top:12px}</style></head><body>' +
+      'body{font:16px/1.7 system-ui;padding:16px;overflow-wrap:anywhere}pre{overflow:auto}table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:4px}img{max-width:100%}[data-mbb-preview-locate] [data-mbb-preview-range]:hover,[data-mbb-preview-highlight]{outline:2px solid #2271b1;outline-offset:3px}[data-mbb-preview-locate] [data-mbb-preview-range]{cursor:crosshair;scroll-margin-top:12px}</style></head><body data-mbb-content-view>' +
       container.innerHTML +
       bridge +
       '</body></html>'

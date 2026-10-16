@@ -1420,7 +1420,7 @@ function mbb_enqueue_ui()
         'footnoteStyle' => file_get_contents(__DIR__ . '/footnotes.css'),
         'teachingStyle' => file_get_contents(__DIR__ . '/teaching.css'),
         'technicalStyle' => file_get_contents(__DIR__ . '/technical.css'),
-        'nativeMediaStyle' => file_get_contents(__DIR__ . '/preview-media.css'),
+        'nativeMediaStyle' => file_get_contents(__DIR__ . '/media-presentation.css'),
         'codeDisplayStyle' => file_get_contents(__DIR__ . '/code-display.css'),
         'navigationBridge' => [
             'script' => file_get_contents(__DIR__ . '/preview-navigation.js'),
@@ -1443,9 +1443,31 @@ function mbb_enqueue_ui()
         'exports' => mbb_export_config(),
     ]);
     wp_enqueue_script(
+        'mbb-static-code',
+        plugins_url(mbb_asset('static-code.js'), __FILE__),
+        [],
+        substr(hash_file('sha256', __DIR__ . '/static-code.js'), 0, 12),
+        true,
+    );
+    wp_add_inline_script(
+        'mbb-static-code',
+        'window.MBB_STATIC_CODE=' .
+            wp_json_encode([
+                'core' => plugins_url('vendor/prism/components/prism-core.min.js', __FILE__),
+                'autoloader' => plugins_url(
+                    'vendor/prism/plugins/autoloader/prism-autoloader.min.js',
+                    __FILE__,
+                ),
+                'languages' => plugins_url('vendor/prism/components/', __FILE__),
+                'known' => mbb_code_languages(),
+            ]) .
+            ';',
+        'before',
+    );
+    wp_enqueue_script(
         'mbb-static-export',
         plugins_url(mbb_asset('static-export.js'), __FILE__),
-        ['mbb-math'],
+        ['mbb-math', 'mbb-static-code'],
         substr(hash_file('sha256', __DIR__ . '/static-export.js'), 0, 12),
         true,
     );

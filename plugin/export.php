@@ -444,7 +444,12 @@ function mbb_export_plan(array $snapshot, string $format): array
             mbb_export_throw('export_images', mbb_t('At most 32 actual images may be exported'));
         }
         if ($format === 'html') {
-            if ($retained) {
+            if (
+                array_filter(
+                    $retained,
+                    static fn($item) => !mbb_static_export_external_url($item['url']),
+                )
+            ) {
                 mbb_export_throw(
                     'export_images',
                     mbb_t(
@@ -452,14 +457,20 @@ function mbb_export_plan(array $snapshot, string $format): array
                     ),
                 );
             }
-            $descriptor = mbb_static_export_descriptor($snapshot, $files, $resources, $mappings);
+            $descriptor = mbb_static_export_descriptor(
+                $snapshot,
+                $files,
+                $resources,
+                $mappings,
+                $retained,
+            );
             $json = mbb_component_json($descriptor);
             return [
                 'source' => $json,
-                'preview' => $descriptor['body'],
+                'preview' => $json,
                 'document' => ['bytes' => strlen($json), 'sha256' => hash('sha256', $json)],
                 'resources' => $resources,
-                'retainedImages' => [],
+                'retainedImages' => $retained,
                 'mappings' => $mappings,
                 'files' => $files,
                 'sidecar' => '',

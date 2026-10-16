@@ -192,6 +192,8 @@
               'symmetric',
               'largeop',
               'movablelimits',
+              'limits',
+              'texclass',
               'scriptlevel',
               'scriptsizemultiplier',
               'minsize',
@@ -312,6 +314,8 @@
       )
     )
       fail('Formula typesetting failed. No incomplete HTML was downloaded');
+    if (window.MarkBridgeStaticCode?.render)
+      await window.MarkBridgeStaticCode.render(doc.body, { cancelled });
     audit(doc.body, true);
     check();
     const escape = (s) =>
@@ -331,10 +335,10 @@
       '</title><style>' +
       css +
       mathCSS +
-      '</style></head><body><h1>' +
+      '</style></head><body data-mbb-content-view><h1>' +
       escape(value.title) +
       '</h1>' +
-      doc.body.innerHTML +
+      doc.body.innerHTML.replace(/\r/g, '&#13;') +
       '</body></html>';
     if (size(html) > MAX) fail('The static HTML exceeds 32 MiB. Content was not truncated');
     check();

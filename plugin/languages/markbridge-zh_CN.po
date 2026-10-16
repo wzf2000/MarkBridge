@@ -685,6 +685,10 @@ msgid "An existing block with this name does not match the registered static tem
 msgstr "已有同名区块不属于登记静态模板；不会覆盖原区块"
 
 #: plugin/i18n.js
+msgid "An external image link is unsafe"
+msgstr "外部图片链接不安全"
+
+#: plugin/i18n.js
 msgid "An image changed during packaging. Export did not complete"
 msgstr "图片在打包期间变化，未完成导出"
 
@@ -1381,6 +1385,10 @@ msgstr "代码版本或组超过 64/128 KiB"
 #: plugin/i18n.js
 msgid "Code versions"
 msgstr "代码版本"
+
+#: plugin/i18n.js
+msgid "Collapse diagram"
+msgstr "收起图示"
 
 #: plugin/i18n.js
 msgid "Collapsible content"
@@ -2696,6 +2704,14 @@ msgid "Invalid stable teaching ID"
 msgstr "稳定教学 ID 非法"
 
 #: plugin/i18n.js
+msgid "Invalid static syntax class"
+msgstr "静态代码高亮样式无效"
+
+#: plugin/i18n.js
+msgid "Invalid static syntax token"
+msgstr "静态代码高亮标记无效"
+
+#: plugin/i18n.js
 msgid "Invalid table alignment"
 msgstr "表格对齐非法"
 
@@ -3748,6 +3764,10 @@ msgid "Read permissions"
 msgstr "读取权限"
 
 #: plugin/i18n.js
+msgid "Read source"
+msgstr "查看来源"
+
+#: plugin/i18n.js
 msgid "Read the latest server version again"
 msgstr "重新读取服务器最新版"
 
@@ -4182,6 +4202,10 @@ msgid "Show copy buttons in frontend code toolbars. Highlighting and language la
 msgstr "在前台代码工具栏中显示复制按钮；代码高亮与语言标签继续工作。"
 
 #: plugin/i18n.js
+msgid "Show diagram"
+msgstr "显示图示"
+
+#: plugin/i18n.js
 msgid "Show full text"
 msgstr "显示全文"
 
@@ -4321,12 +4345,20 @@ msgid "Statement %1$s requires body content."
 msgstr "声明 %1$s 需要正文内容。"
 
 #: plugin/i18n.js
+msgid "Static HTML embeds verified local images and typeset formulas for offline reading. External images become links and are not fetched; unverified local images are refused. All stages and code versions are included; interactive demonstrations use their static fallback."
+msgstr "静态 HTML 内嵌经核验的本地图片与排版公式，供离线阅读。外部图片转为链接且不抓取；未核验的本地图片会被拒绝。所有阶段和代码版本完整保留；交互演示使用静态替代内容。"
+
+#: plugin/i18n.js
 msgid "Static HTML embeds verified local images and typeset formulas for offline reading. External or unrelated images are refused. All stages and code versions are included; interactive demonstrations use their static fallback."
 msgstr "静态 HTML 内嵌已核验的本地图片及排版公式，供离线阅读；拒绝外部或无关联图片。包含全部阶段及代码版本，交互演示保留作者的静态替代内容。"
 
 #: plugin/i18n.js
 msgid "Static HTML for offline reading"
 msgstr "静态 HTML（离线阅读）"
+
+#: plugin/i18n.js
+msgid "Static HTML preview"
+msgstr "静态 HTML 预览"
 
 #: plugin/i18n.js
 msgid "Static HTML requires every image to be a verified local attachment of this article"
@@ -4383,6 +4415,22 @@ msgstr "原生候选准备期间静态登记已变化，请重新核对。"
 #: plugin/i18n.js
 msgid "Static registrations changed while rendering the preview. The candidate was not written. Preview again."
 msgstr "预览生成期间静态登记已变化，候选未写入；请重新预览。"
+
+#: plugin/i18n.js
+msgid "Static syntax engine unavailable"
+msgstr "静态代码高亮引擎不可用"
+
+#: plugin/i18n.js
+msgid "Static syntax resource timeout"
+msgstr "静态代码高亮资源加载超时"
+
+#: plugin/i18n.js
+msgid "Static syntax resource unavailable"
+msgstr "静态代码高亮资源不可用"
+
+#: plugin/i18n.js
+msgid "Static syntax token budget"
+msgstr "静态代码高亮超出标记预算"
 
 #: plugin/i18n.js
 msgid "Status"
@@ -6113,6 +6161,10 @@ msgid "The static HTML exporter is unavailable. Prepare again."
 msgstr "静态 HTML 导出器不可用，请重新准备。"
 
 #: plugin/i18n.js
+msgid "The static HTML preview could not be loaded. Prepare the export again."
+msgstr "静态 HTML 预览未能加载，请重新准备导出。"
+
+#: plugin/i18n.js
 msgid "The static adapter is missing or incompatible"
 msgstr "静态适配器缺失或版本不兼容"
 
@@ -6436,6 +6488,10 @@ msgstr "尚未应用的组件版本变化："
 #: plugin/i18n.js
 msgid "Unclosed teaching container"
 msgstr "教学容器未闭合"
+
+#: plugin/i18n.js
+msgid "Undated"
+msgstr "未注明年份"
 
 #: plugin/i18n.js
 msgid "Undo source change"
@@ -6778,6 +6834,10 @@ msgstr "查看差异与预览"
 #: plugin/i18n.js
 msgid "View differences first. Restoration requires successful verification."
 msgstr "请选择查看差异，校验通过后才能恢复。"
+
+#: plugin/i18n.js
+msgid "View external image"
+msgstr "查看外部图片"
 
 #: plugin/i18n.js
 msgid "View formula: "

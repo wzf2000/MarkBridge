@@ -206,6 +206,58 @@ function mbb_render_technical($html)
     foreach ($entries as $key => $_) {
         $order[$key] ??= count($order) + 1;
     }
+    $referenceLabels = [];
+    $labelGroups = [];
+    $referenceYears = [];
+    foreach ($order as $key => $_) {
+        $field = static function ($name) use ($xpath, $entries, $key): string {
+            return trim(
+                $xpath
+                    ->query(
+                        './span[contains(concat(" ",normalize-space(@class)," ")," mbb-bib-' .
+                            $name .
+                            ' ")]',
+                        $entries[$key],
+                    )
+                    ->item(0)?->textContent ?? '',
+            );
+        };
+        $author = $field('authors') ?: $field('title');
+        // Use authored text, not a guessed family name; long labels visibly abbreviate.
+        if (mb_strlen($author, 'UTF-8') > 64) {
+            $author = rtrim(mb_substr($author, 0, 63, 'UTF-8')) . '…';
+        }
+        $year = $field('year') ?: mbb_t('Undated');
+        $base = $author . "\0" . $year;
+        $labelGroups[$base][] = $key;
+        $referenceLabels[$key] = $author;
+        $referenceYears[$key] = $year;
+    }
+    foreach ($labelGroups as $group) {
+        if (count($group) < 2) {
+            continue;
+        }
+        foreach ($group as $i => $key) {
+            $n = $i + 1;
+            $suffix = '';
+            while ($n > 0) {
+                $n--;
+                $suffix = chr(97 + ($n % 26)) . $suffix;
+                $n = intdiv($n, 26);
+            }
+            $referenceYears[$key] .= $suffix;
+            $yearNode = $xpath
+                ->query(
+                    './span[contains(concat(" ",normalize-space(@class)," ")," mbb-bib-year ")]',
+                    $entries[$key],
+                )
+                ->item(0);
+            if ($yearNode) {
+                $yearNode->textContent = $referenceYears[$key];
+                $yearNode->setAttribute('data-mbb-generated', '');
+            }
+        }
+    }
     $counts = [];
     foreach ($objects as $id => &$item) {
         $kind = $item['kind'];
@@ -217,6 +269,27 @@ function mbb_render_technical($html)
         $prefix->appendChild($document->createTextNode($item['label'] . '. '));
         $item['heading']->insertBefore($prefix, $item['heading']->firstChild);
         $item['node']->setAttribute('data-mbb-technical-rendered', '1');
+        if (in_array($kind, ['definition', 'theorem', 'proof'], true)) {
+            $item['node']->setAttribute(
+                'class',
+                $item['node']->getAttribute('class') . ' mbb-statement-' . $kind,
+            );
+        }
+        if ($kind === 'proof') {
+            $body = $xpath
+                ->query(
+                    './div[contains(concat(" ",normalize-space(@class)," ")," mbb-technical-body ")]',
+                    $item['node'],
+                )
+                ->item(0);
+            if ($body) {
+                $end = $document->createElement('span', '□');
+                $end->setAttribute('class', 'mbb-proof-end');
+                $end->setAttribute('aria-hidden', 'true');
+                $end->setAttribute('data-mbb-generated', '');
+                $body->appendChild($end);
+            }
+        }
     }
     unset($item);
     $clear = static function (DOMElement $node) use ($document): DOMElement {
@@ -276,7 +349,12 @@ function mbb_render_technical($html)
                 $link = $document->createElement('a');
                 $link->setAttribute('href', $url);
                 $link->setAttribute('rel', 'noreferrer noopener');
-                $link->appendChild($document->createTextNode($url));
+                $link->setAttribute('title', $url);
+                $link->appendChild(
+                    $document->createTextNode(
+                        parse_url($url, PHP_URL_HOST) ?: mbb_t('Read source'),
+                    ),
+                );
                 $urlNode->textContent = '';
                 $urlNode->appendChild($link);
             }
@@ -289,6 +367,7 @@ function mbb_render_technical($html)
         // Entries are a view of structured data, not independently writable
         // paragraphs. Comment adapters must not replace their reference anchors.
         $list->setAttribute('data-mbb-generated', '');
+        $list->setAttribute('role', 'list');
         foreach ($bibliography->childNodes as $child) {
             if (
                 $child instanceof DOMElement &&
@@ -303,18 +382,20 @@ function mbb_render_technical($html)
         $keys = explode(',', $citation->getAttribute('data-mbb-keys'));
         usort($keys, static fn($a, $b) => $order[$a] <=> $order[$b]);
         $display = $clear($citation);
-        $display->appendChild($document->createTextNode('['));
+        $display->appendChild($document->createTextNode('('));
         foreach ($keys as $i => $key) {
             if ($i) {
-                $display->appendChild($document->createTextNode(', '));
+                $display->appendChild($document->createTextNode('; '));
             }
-            $link = $document->createElement('a', (string) $order[$key]);
+            $label = $referenceLabels[$key] . ', ' . $referenceYears[$key];
+            $link = $document->createElement('a');
+            $link->appendChild($document->createTextNode($label));
             $link->setAttribute('href', '#' . $targets[$key]);
             $link->setAttribute('role', 'doc-biblioref');
-            $link->setAttribute('aria-label', mbb_t('Reference') . ' ' . $order[$key]);
+            $link->setAttribute('aria-label', mbb_t('Reference') . ': ' . $label);
             $display->appendChild($link);
         }
-        $display->appendChild($document->createTextNode(']'));
+        $display->appendChild($document->createTextNode(')'));
     }
     $output = '';
     foreach ($root->childNodes as $child) {

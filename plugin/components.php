@@ -332,6 +332,11 @@ function markbridge_teaching_supports_component_versions(): bool
     return true;
 }
 /** Installed providers can add data-only domain checks after the strict generic schema. */
+/** Trusted providers may opt passive diagrams into automatic frontend presentation. */
+function markbridge_teaching_supports_reader_diagrams(): bool
+{
+    return true;
+}
 function mbb_component_domain_valid(string $id, string $version, mixed $params): bool
 {
     try {
@@ -363,9 +368,10 @@ function mbb_component_register_checked(string $id, array $provider): bool
     ];
     if (
         count($registry) >= 32 ||
-        array_diff(array_keys($provider), [...$fields, 'supportsUiLocale']) ||
+        array_diff(array_keys($provider), [...$fields, 'supportsUiLocale', 'readerMode']) ||
         (array_key_exists('supportsUiLocale', $provider) &&
             !is_bool($provider['supportsUiLocale'])) ||
+        (array_key_exists('readerMode', $provider) && $provider['readerMode'] !== 'diagram') ||
         array_diff($fields, array_keys($provider)) ||
         !preg_match('/^[a-z][a-z0-9-]{0,63}$/D', $id) ||
         !is_string($provider['version']) ||
@@ -537,6 +543,7 @@ function mbb_component_public(array $p): array
             'minMarkBridge',
             'budgets',
             'supportsUiLocale',
+            'readerMode',
         ]),
     ) + [
         'resource' => ['url' => $p['resource']['url'], 'sha256' => $p['resource']['sha256']],

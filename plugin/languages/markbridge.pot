@@ -685,6 +685,10 @@ msgid "An existing block with this name does not match the registered static tem
 msgstr ""
 
 #: plugin/i18n.js
+msgid "An external image link is unsafe"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "An image changed during packaging. Export did not complete"
 msgstr ""
 
@@ -1380,6 +1384,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Code versions"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Collapse diagram"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2696,6 +2704,14 @@ msgid "Invalid stable teaching ID"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Invalid static syntax class"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Invalid static syntax token"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Invalid table alignment"
 msgstr ""
 
@@ -3748,6 +3764,10 @@ msgid "Read permissions"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Read source"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Read the latest server version again"
 msgstr ""
 
@@ -4182,6 +4202,10 @@ msgid "Show copy buttons in frontend code toolbars. Highlighting and language la
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Show diagram"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Show full text"
 msgstr ""
 
@@ -4321,11 +4345,19 @@ msgid "Statement %1$s requires body content."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Static HTML embeds verified local images and typeset formulas for offline reading. External images become links and are not fetched; unverified local images are refused. All stages and code versions are included; interactive demonstrations use their static fallback."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Static HTML embeds verified local images and typeset formulas for offline reading. External or unrelated images are refused. All stages and code versions are included; interactive demonstrations use their static fallback."
 msgstr ""
 
 #: plugin/i18n.js
 msgid "Static HTML for offline reading"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Static HTML preview"
 msgstr ""
 
 #: plugin/i18n.js
@@ -4382,6 +4414,22 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Static registrations changed while rendering the preview. The candidate was not written. Preview again."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Static syntax engine unavailable"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Static syntax resource timeout"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Static syntax resource unavailable"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Static syntax token budget"
 msgstr ""
 
 #: plugin/i18n.js
@@ -6113,6 +6161,10 @@ msgid "The static HTML exporter is unavailable. Prepare again."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "The static HTML preview could not be loaded. Prepare the export again."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "The static adapter is missing or incompatible"
 msgstr ""
 
@@ -6435,6 +6487,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Unclosed teaching container"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Undated"
 msgstr ""
 
 #: plugin/i18n.js
@@ -6777,6 +6833,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "View differences first. Restoration requires successful verification."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "View external image"
 msgstr ""
 
 #: plugin/i18n.js

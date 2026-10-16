@@ -18,6 +18,9 @@
     preview,
     confirm,
     source,
+    htmlPreview,
+    previewURL = null,
+    cancelPreviewLoad = null,
     list,
     target = null,
     prepared = null,
@@ -70,11 +73,74 @@
   function controls() {
     preview.disabled = pending || !target;
     confirm.disabled = pending || !prepared;
-    format.disabled = pending;
+    format.disabled = pending && format.value !== 'html';
+    source.hidden = format.value === 'html';
+    dialog.classList.toggle('mbb-export-html', format.value === 'html');
+  }
+  function clearHTMLPreview() {
+    cancelPreviewLoad?.();
+    cancelPreviewLoad = null;
+    if (htmlPreview) {
+      htmlPreview.querySelector('iframe')?.remove();
+      htmlPreview.hidden = true;
+    }
+    if (previewURL) URL.revokeObjectURL(previewURL);
+    previewURL = null;
+  }
+  async function showHTMLPreview(blob, cancelled) {
+    if (!(blob instanceof Blob) || blob.size > 33554432)
+      throw Error(T('The static export descriptor exceeds its budget'));
+    const text = await blob.text();
+    if (cancelled()) return false;
+    const doc = new DOMParser().parseFromString(text, 'text/html');
+    // This is a read-only preview copy. The separately rebuilt download retains links.
+    for (const node of doc.querySelectorAll('[href]')) {
+      if (!/^#[^\x00-\x20\x7f]+$/.test(node.getAttribute('href'))) node.removeAttribute('href');
+    }
+    const csp = doc.createElement('meta');
+    csp.httpEquiv = 'Content-Security-Policy';
+    csp.content =
+      "default-src 'none'; script-src 'none'; connect-src 'none'; img-src data:; font-src data:; style-src 'unsafe-inline'; base-uri about:; form-action 'none'";
+    const base = doc.createElement('base');
+    base.href = 'about:srcdoc';
+    doc.head.prepend(csp, base);
+    const previewHTML = '<!doctype html>' + doc.documentElement.outerHTML.replace(/\r/g, '&#13;');
+    const previewBlob = new Blob([previewHTML], { type: 'text/html;charset=utf-8' });
+    if (cancelled()) return false;
+    clearHTMLPreview();
+    previewURL = URL.createObjectURL(previewBlob);
+    const frame = el('iframe', {
+      title: T('Static HTML preview'),
+      sandbox: '',
+      referrerpolicy: 'no-referrer',
+      src: previewURL,
+      // A fixed srcdoc base keeps # links within an opaque sandbox. Chromium blocks
+      // blob: fragment navigation there; src remains the legacy no-srcdoc fallback.
+      srcdoc: previewHTML,
+    });
+    htmlPreview.hidden = false;
+    const loaded = new Promise((resolve) => {
+      const finish = (value) => {
+        clearTimeout(timer);
+        frame.onload = frame.onerror = null;
+        if (cancelPreviewLoad === abort) cancelPreviewLoad = null;
+        resolve(value);
+      };
+      const abort = () => finish(false);
+      const timer = setTimeout(abort, 10000);
+      cancelPreviewLoad = abort;
+      frame.onload = () => finish(true);
+      frame.onerror = abort;
+    });
+    htmlPreview.append(frame);
+    return (await loaded) && !cancelled();
   }
   function discard(value = prepared) {
     if (value?.token) void api('export/' + value.token, null, 'DELETE').catch(() => {});
-    if (value === prepared) prepared = null;
+    if (value === prepared) {
+      prepared = null;
+      clearHTMLPreview();
+    }
   }
   function close() {
     ++epoch;
@@ -90,6 +156,7 @@
     target = null;
     pending = true;
     source.value = '';
+    clearHTMLPreview();
     list.replaceChildren();
     controls();
     if (!dialog.open) dialog.showModal();
@@ -123,6 +190,9 @@
     const session = ++epoch,
       chosen = format.value;
     discard();
+    clearHTMLPreview();
+    source.value = '';
+    list.replaceChildren();
     pending = true;
     controls();
     status.textContent = T('Preparing the export manifest…');
@@ -143,7 +213,29 @@
       )
         throw Error(T('The export manifest is incomplete. Download was not allowed.'));
       prepared = value;
-      source.value = value.projectedSource;
+      if (chosen === 'html') {
+        if (!window.MarkBridgeStaticExport?.build)
+          throw Error(T('The static HTML exporter is unavailable. Prepare again.'));
+        status.textContent = T('Typesetting the complete offline article…');
+        if (new TextEncoder().encode(value.projectedSource).length > 33554432)
+          throw Error(T('The static export descriptor exceeds its budget'));
+        const cancelled = () => session !== epoch || !dialog.open || format.value !== chosen;
+        const blob = await window.MarkBridgeStaticExport.build(JSON.parse(value.projectedSource), {
+          cancelled,
+        });
+        if (cancelled()) {
+          discard(value);
+          return;
+        }
+        if (!(await showHTMLPreview(blob, cancelled))) {
+          if (!cancelled())
+            throw Error(
+              T('The static HTML preview could not be loaded. Prepare the export again.'),
+            );
+          discard(value);
+          return;
+        }
+      } else source.value = value.projectedSource;
       list.replaceChildren();
       for (const resource of value.resources)
         list.append(el('li', {}, `${resource.path} · ${resource.mime} · ${resource.bytes} bytes`));
@@ -160,7 +252,7 @@
               )
             : chosen === 'html'
               ? T(
-                  'Static HTML embeds verified local images and typeset formulas for offline reading. External or unrelated images are refused. All stages and code versions are included; interactive demonstrations use their static fallback.',
+                  'Static HTML embeds verified local images and typeset formulas for offline reading. External images become links and are not fetched; unverified local images are refused. All stages and code versions are included; interactive demonstrations use their static fallback.',
                 )
               : F(
                   T(
@@ -169,7 +261,11 @@
                   value.resources.length,
                 );
     } catch (error) {
-      if (session === epoch) status.textContent = E(error);
+      if (session === epoch) {
+        discard();
+        clearHTMLPreview();
+        status.textContent = E(error);
+      }
     } finally {
       if (session === epoch) {
         pending = false;
@@ -218,6 +314,7 @@
       anchor.remove();
       setTimeout(() => URL.revokeObjectURL(object), 1000);
       prepared = null;
+      clearHTMLPreview();
       status.textContent = T(
         'Downloaded. The saved article, source file, and unsaved input are unchanged.',
       );
@@ -274,6 +371,8 @@
       readonly: '',
       'aria-label': T('Export body copy'),
     });
+    htmlPreview = el('section', { id: 'mbb-export-html-preview', hidden: '' });
+    htmlPreview.append(el('h3', {}, T('Static HTML preview')));
     preview = el(
       'button',
       { id: 'mbb-export-preview', type: 'button' },
@@ -288,12 +387,14 @@
     format.onchange = () => {
       ++epoch;
       discard();
+      clearHTMLPreview();
+      pending = false;
       source.value = '';
       list.replaceChildren();
       status.textContent = T('The format changed. Prepare the export again.');
       controls();
     };
-    dialog.append(label, format, preview, confirm, cancel, status, list, source);
+    dialog.append(label, format, preview, confirm, cancel, status, list, source, htmlPreview);
     document.body.append(dialog);
     const measured = new Set();
     const placeRecovery = () => {

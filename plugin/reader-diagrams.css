@@ -1,0 +1,62 @@
+/* Passive diagrams use the article's quiet figure rhythm. */
+.mbb-component-diagram > .mbb-component-controls {
+  position: relative;
+  box-sizing: border-box;
+  padding: 1.5rem 0 0;
+  border: 0;
+  background: transparent;
+}
+.mbb-component-diagram .mbb-diagram-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  padding: 0.2em 0.45em;
+  margin: 0 0 0.35rem;
+  border: 0;
+  border-radius: 0.3rem;
+  background: transparent;
+  color: var(--mbb-code-muted, #5d7069);
+  font: 0.78em/1.6 var(--mbb-font-ui, system-ui, sans-serif);
+  cursor: pointer;
+}
+.mbb-component-diagram .mbb-diagram-toggle[aria-expanded='true'] {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: 0;
+}
+.mbb-component-diagram .mbb-diagram-toggle::before {
+  content: '▸';
+}
+.mbb-component-diagram .mbb-diagram-toggle[aria-expanded='true']::before {
+  content: '▾';
+}
+.mbb-component-diagram .mbb-diagram-toggle:hover {
+  color: var(--mbb-code-text, #293630);
+  background: var(--mbb-control-hover, #edf1ed);
+}
+.mbb-component-diagram .mbb-diagram-toggle:focus-visible {
+  outline: 2px solid var(--mbb-focus-color, #2271b1);
+  outline-offset: 2px;
+}
+.mbb-component-diagram .mbb-component-frame {
+  display: block;
+  inline-size: 100%;
+  min-block-size: 160px;
+  border: 0;
+  background: transparent;
+}
+.mbb-component-diagram .mbb-component-status:empty {
+  display: none;
+}
+.mbb-component-diagram .mbb-component-status {
+  font-size: 0.85em;
+  color: var(--mbb-code-muted, #5d7069);
+}
+.mbb-component-diagram [hidden] {
+  display: none !important;
+}
+@media print {
+  .mbb-component-diagram > .mbb-component-controls {
+    display: none !important;
+  }
+}

@@ -56,6 +56,8 @@ function mbb_enqueue_teaching_assets()
                     mbb_component_available(),
                     JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT,
                 ) .
+                ';window.MBB_COMPONENTS_READER=' .
+                (!is_admin() ? 'true' : 'false') .
                 ';',
             'before',
         );
@@ -66,6 +68,12 @@ function mbb_enqueue_teaching_assets()
         [],
         substr(hash_file('sha256', __DIR__ . '/teaching.js'), 0, 12),
         true,
+    );
+    wp_enqueue_style(
+        'mbb-reader-diagrams',
+        plugins_url(mbb_asset('reader-diagrams.css'), __FILE__),
+        [],
+        substr(hash_file('sha256', __DIR__ . '/reader-diagrams.css'), 0, 12),
     );
     wp_enqueue_style(
         'mbb-teaching',

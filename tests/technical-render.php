@@ -97,8 +97,8 @@ technical_assert(
 );
 foreach ($xpath->query('//span[@class="mbb-cite"]/span[@data-mbb-generated]') as $cite) {
     technical_assert(
-        $cite->textContent === '[1, 2]',
-        'Groups are sorted by derived number without changing saved keys.',
+        $cite->textContent === '(A & B, 2026a; A & B, 2026b)',
+        'Groups use authored author/year labels and disambiguation without changing saved keys.',
     );
 }
 $keys = [];

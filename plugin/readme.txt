@@ -3,7 +3,7 @@ Tags: markdown, blocks, editor, mathjax, revisions
 Requires at least: 7.1
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 2.5.0-rc.1
+Stable tag: 2.5.0-rc.2
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -14,7 +14,7 @@ MarkBridge provides paired Markdown/block editing, previews, revisions, local Ma
 
 New installations use the bundled PHP converter with PHP 8.2+, DOM and mbstring on WordPress 7.1.x. No Node.js runtime or subprocess is required for supported content. Existing non-empty runtime settings retain Node until an administrator explicitly switches; unsupported environments or content are rejected without fallback.
 
-This readme applies to the MarkBridge 2.5.0-rc.1 isolated candidate. WordPress.org submission and approval are separate from a GitHub release. Download reviewed installation packages from GitHub Releases; source archives are not installation packages. Chinese and English interface text follows the WordPress user language in the editor and the site language for readers.
+This readme applies to the MarkBridge 2.5.0-rc.2 isolated candidate. WordPress.org submission and approval are separate from a GitHub release. Download reviewed installation packages from GitHub Releases; source archives are not installation packages. Chinese and English interface text follows the WordPress user language in the editor and the site language for readers.
 
 Core Markdown editing does not call an external service. Local recovery is off until an author explicitly enables browser storage; it is not encrypted or a server backup. Optional ZIP images use normal WordPress media storage: a draft or private article does not make the media URL private. Bound-file writeback requires separate trusted server configuration. A GitHub updater, if chosen, is a separate plugin requiring explicit consent; it is not included in this package.
 
@@ -25,7 +25,7 @@ Core Markdown editing does not call an external service. Local recovery is off u
 
 == Changelog ==
 
-= 2.5.0-rc.1 =
+= 2.5.0-rc.2 =
 Formula structural exploration, bounded BibTeX import, explicit cross-site media copies and optional Mermaid integration. Candidate validation is isolated; this is not a production release.
 
 = 2.0.3 =

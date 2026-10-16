@@ -395,7 +395,20 @@ try {
     ]);
     $GLOBALS['post']->post_content = $external['serialized'];
     $GLOBALS['post']->post_content_filtered = $external['source'];
-    check(prepareExport('html')->code === 'export_images', 'External static image accepted');
+    $externalHtml = prepareExport('html');
+    check(is_array($externalHtml), 'External static image link preparation failed');
+    $externalDescriptor = json_decode(
+        $externalHtml['projectedSource'],
+        true,
+        64,
+        JSON_THROW_ON_ERROR,
+    );
+    check(
+        str_contains($externalDescriptor['body'], 'mbb-external-image-link') &&
+            !str_contains($externalDescriptor['body'], '<img'),
+        'External image was not explicitly linked',
+    );
+    mbb_export_cancel(new ExportRequest(['token' => $externalHtml['token']]));
     $GLOBALS['post']->post_content = $originalContent;
     $GLOBALS['post']->post_content_filtered = $originalSource;
     if (mbb_export_config()['zipAvailable']) {
