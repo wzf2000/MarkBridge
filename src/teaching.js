@@ -1,3 +1,4 @@
+import { mediaKinds, mediaAttributes, assembleMedia, validateMedia } from './native-media.js';
 import {
   technicalSchemas,
   technicalKind,
@@ -23,6 +24,8 @@ import { componentParams } from './component-data.js';
 import { codeTabsAttributes, codeTabsMarkdown, registerCodeTabs } from './code-tabs.js';
 // Versioned teaching syntax has a closed schema. Bodies use the ordinary parser.
 export const teachingSchemas = {
+  image: {},
+  gallery: {},
   ...technicalSchemas,
   details: { summary: 'string', showContent: 'boolean' },
   buttons: {},
@@ -61,6 +64,7 @@ export const teachingKind = (name) =>
     ? name.slice(4)
     : null);
 export function teachingAttributes(kind, attrs, fail, source = false, blockName = null) {
+  if (mediaKinds.has(kind)) return mediaAttributes(kind, attrs, fail, source);
   if (nativeAdapterKinds.has(kind)) return nativeAttributes(kind, attrs, fail, source);
   if (kind === 'adapter') {
     if (source) {
@@ -343,7 +347,7 @@ export function teachingSource(source, fail, ignored = new Set(), nonce, fences 
       if (line === ':::mbb:end') data = { end: true };
       else {
         const match =
-          /^:::mbb:v1 (collapse|steps|step|code-compare|component|code-tabs|details|buttons|button|adapter|object|statement|bibliography) (\{[^\r\n]*\})$/.exec(
+          /^:::mbb:v1 (collapse|steps|step|code-compare|component|code-tabs|details|buttons|button|adapter|object|statement|bibliography|image|gallery) (\{[^\r\n]*\})$/.exec(
             line,
           );
         if (!match)
@@ -401,6 +405,10 @@ export function assembleTeaching(blocks, make, fail) {
     if (stack.length === 1)
       fail('TEACHING_STRUCTURE', 'The teaching closing marker has no corresponding opening marker');
     const item = stack.pop();
+    if (mediaKinds.has(item.kind)) {
+      stack.at(-1).children.push(assembleMedia(item, make, fail));
+      continue;
+    }
     if (nativeAdapterKinds.has(item.kind)) {
       let attrs = nativeBlockAttributes(item.kind, item.attrs, fail);
       if (item.kind === 'button') {
@@ -469,6 +477,7 @@ export function assembleTeaching(blocks, make, fail) {
   return root;
 }
 export function validateTeaching(blocks, fail) {
+  validateMedia(blocks, fail);
   const ids = new Set();
   let count = 0;
   let groups = 0;
@@ -686,7 +695,7 @@ export function registerTeaching() {
 
   for (const [kind, schema] of Object.entries(teachingSchemas)) {
     if (nativeAdapterKinds.has(kind) || kind === 'adapter') continue;
-    if (kind === 'code-tabs' || technicalKind('mbb/' + kind)) continue;
+    if (kind === 'code-tabs' || mediaKinds.has(kind) || technicalKind('mbb/' + kind)) continue;
     const name = 'mbb/' + kind;
     if (wp.blocks.getBlockType(name)) continue;
     wp.blocks.registerBlockType(name, {

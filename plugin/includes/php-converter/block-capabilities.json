@@ -5,7 +5,11 @@
   },
   "core/quote": {},
   "core/separator": {},
-  "core/image": {},
+  "core/image": {
+    "id": "integer",
+    "sizeSlug": "string",
+    "linkDestination": "string"
+  },
   "core/table": {},
   "core/html": {},
   "core/more": {},
@@ -120,5 +124,9 @@
     "id": "string",
     "entries": "array",
     "version": "integer"
+  },
+  "core/gallery": {
+    "columns": "integer",
+    "imageCrop": "boolean"
   }
 }

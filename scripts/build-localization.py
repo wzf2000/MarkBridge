@@ -174,6 +174,8 @@ handles = [
     "mbb-local-recovery",
     "mbb-resource-ui",
     "mbb-export-ui",
+    "mbb-static-export",
+    "mbb-batch-ui",
     "mbb-emoji",
 ]
 for handle in handles:

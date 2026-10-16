@@ -361,6 +361,43 @@ try {
     foreach ($GLOBALS['options'] as $key => $record) {
         mbb_export_drop($key, $record);
     }
+    // HTML uses the same receipt, snapshot and final claim flow as existing formats.
+    $html = prepareExport('html');
+    check(is_array($html), 'HTML descriptor preparation failed');
+    check(
+        !str_contains(serialize($GLOBALS['options']), 'data:image/'),
+        'Static image bytes leaked into options',
+    );
+    check(
+        downloadExport($html, str_repeat('0', 64))->code === 'export_receipt',
+        'HTML receipt tamper accepted',
+    );
+    $response = downloadExport($html);
+    check($response instanceof WP_REST_Response, 'HTML descriptor download failed');
+    $descriptor = json_decode($response->data, true, 64, JSON_THROW_ON_ERROR);
+    check(
+        $descriptor['kind'] === 'markbridge-static' && count($descriptor['images']) === 1,
+        'Static image descriptor missing',
+    );
+    check(!str_contains($response->data, $imageFile), 'Static descriptor leaked local file path');
+    check(downloadExport($html)->code === 'export_expired', 'HTML candidate claim reused');
+    $html = prepareExport('html');
+    $GLOBALS['post']->post_title = 'Concurrent static title';
+    check(downloadExport($html)->code === 'export_conflict', 'HTML snapshot change accepted');
+    $GLOBALS['post']->post_title = 'Saved title';
+    mbb_export_cancel(new ExportRequest(['token' => $html['token']]));
+    $originalContent = $GLOBALS['post']->post_content;
+    $originalSource = $GLOBALS['post']->post_content_filtered;
+    $external = mbb_convert([
+        'mode' => 'markdown',
+        'source' => '![external](https://external.invalid/image.png)\n',
+        'documentId' => 'EXPORT-MODEL',
+    ]);
+    $GLOBALS['post']->post_content = $external['serialized'];
+    $GLOBALS['post']->post_content_filtered = $external['source'];
+    check(prepareExport('html')->code === 'export_images', 'External static image accepted');
+    $GLOBALS['post']->post_content = $originalContent;
+    $GLOBALS['post']->post_content_filtered = $originalSource;
     if (mbb_export_config()['zipAvailable']) {
         $other = prepareExport();
         $unrelated = $GLOBALS['options'];

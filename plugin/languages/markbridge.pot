@@ -409,6 +409,10 @@ msgid "A ZIP may contain only one document and at most 32 images"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "A batch operation is in progress. Refresh its status after it completes."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "A batch requires at most five items"
 msgstr ""
 
@@ -453,6 +457,10 @@ msgid "A document may contain only one footnote definition section"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "A file did not finish uploading. No drafts were created."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "A footnote definition is not referenced"
 msgstr ""
 
@@ -462,6 +470,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "A footnote reference has no definition"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "A gallery requires 1 to 32 direct native images"
 msgstr ""
 
 #: plugin/i18n.js
@@ -509,6 +521,14 @@ msgid "A pending image path is invalid"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "A preview image changed or has the wrong content type."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "A preview image digest does not match."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "A real WordPress block runtime is required"
 msgstr ""
 
@@ -517,11 +537,19 @@ msgid "A reference marker is malformed. Correct it before saving."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "A relative image is missing. Include it in the single-document ZIP."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "A resource ZIP can only be imported as a Markdown candidate"
 msgstr ""
 
 #: plugin/i18n.js
 msgid "A resource candidate cannot be saved twice"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "A save result is uncertain. Keep this batch for verification before canceling."
 msgstr ""
 
 #: plugin/i18n.js
@@ -545,11 +573,23 @@ msgid "A stage must be a direct child of a stage group"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "A staged input changed. Prepare that file again."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "A staged input digest changed. Prepare that file again."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "A statement body must not be empty"
 msgstr ""
 
 #: plugin/i18n.js
 msgid "A statement requires a supported kind and title; only proofs may be closed"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "A static article link is unsafe"
 msgstr ""
 
 #: plugin/i18n.js
@@ -629,6 +669,14 @@ msgid "An anchor must begin with a letter and contain 1–64 ASCII letters, digi
 msgstr ""
 
 #: plugin/i18n.js
+msgid "An editable article already has this title. This operation only creates a new draft."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "An editable managed article has identical Markdown. This operation does not update it."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "An empty anchor must occupy a separate paragraph to prevent editor tag loss"
 msgstr ""
 
@@ -638,6 +686,14 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "An image changed during packaging. Export did not complete"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "An image changed during static export"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "An image directive requires exactly one ordinary Markdown image"
 msgstr ""
 
 #: plugin/i18n.js
@@ -670,6 +726,18 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Another save is in progress. Try again later."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Another selected file has identical Markdown."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Another selected file has the same name."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Another selected file has the same title."
 msgstr ""
 
 #: plugin/i18n.js
@@ -758,6 +826,30 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Awaiting selection"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Batch Markdown source"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Batch files"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Batch import drafts"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Batch item preview"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Batch ownership or its manifest could not be verified."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Batch restored for the current account. Preview unfinished items again."
 msgstr ""
 
 #: plugin/i18n.js
@@ -919,6 +1011,18 @@ msgid "Cancel image import and keep the document"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Cancel remaining items and remove staging"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Canceled"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Canceled. Created drafts and their media were preserved."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Candidate body or metadata exceeds its budget or has invalid types"
 msgstr ""
 
@@ -987,6 +1091,10 @@ msgid "Child slot must be empty"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Choose a batch item and a plain title of at most 200 characters."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Choose a different default version explicitly before deleting the default version."
 msgstr ""
 
@@ -1043,6 +1151,10 @@ msgid "Choose an option"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Choose between one and ten Markdown or single-document ZIP files."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Choose bibliography entries"
 msgstr ""
 
@@ -1059,11 +1171,23 @@ msgid "Choose every conflict explicitly"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Choose files to scan or resume one of your active batches."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Choose one of the registered values."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Choose one to ten files within the 16 MiB upload budget."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Choose this conflict"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Choose up to ten Markdown or single-document ZIP files. Scan first, preview each item, then create drafts one at a time. Header metadata is not applied."
 msgstr ""
 
 #: plugin/i18n.js
@@ -1303,6 +1427,10 @@ msgid "Confirm that original media URLs may be public, and preview the resource 
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Confirm that uploaded image URLs may be public, including for a draft."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Container must contain only its declared child blocks"
 msgstr ""
 
@@ -1397,7 +1525,15 @@ msgid "Copy the original code manually"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Create this draft"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Creates an unsaved structure. Preview before saving; reader state is not stored."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Creating this draft. If the connection is interrupted, refresh batch status before trying again."
 msgstr ""
 
 #: plugin/i18n.js
@@ -1593,6 +1729,14 @@ msgstr ""
 msgid "Draft"
 msgstr ""
 
+#: plugin/i18n.js
+msgid "Draft created"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Draft title"
+msgstr ""
+
 #, php-format
 #: plugin/i18n.js
 msgid "Duplicate bibliography key: %1$s"
@@ -1652,11 +1796,19 @@ msgid "Each document may contain only one nonempty top-level stage group"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Each document must be UTF-8 text within 256 KiB."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Each image is limited to 32 MP"
 msgstr ""
 
 #: plugin/i18n.js
 msgid "Each image is limited to 8 MiB"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Each item creates a separate draft after preview and confirmation. Existing articles are never overwritten."
 msgstr ""
 
 #: plugin/i18n.js
@@ -1757,6 +1909,10 @@ msgid "Execution stopped."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Existing image URLs are preserved; the server does not download them."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Expected a single code element"
 msgstr ""
 
@@ -1792,6 +1948,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Explicit export confirmation is required"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Explicit item confirmation is required."
 msgstr ""
 
 #: plugin/i18n.js
@@ -1856,6 +2016,14 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Figure"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "File needs correction"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "File validation failed."
 msgstr ""
 
 #: plugin/i18n.js
@@ -1983,6 +2151,10 @@ msgid "Formula typesetting engine"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Formula typesetting failed. No incomplete HTML was downloaded"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Formula typesetting failed; showing TeX source"
 msgstr ""
 
@@ -2036,6 +2208,14 @@ msgid "Full-text mode"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Gallery columns must be an integer from 1 to 8"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Gallery imageCrop must be a boolean"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "General settings"
 msgstr ""
 
@@ -2085,6 +2265,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "HTML span positions disagree"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Header metadata is retained in Markdown but is not applied by batch import."
 msgstr ""
 
 #: plugin/i18n.js
@@ -2452,6 +2636,10 @@ msgid "Isolated conversion passed."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Keep at most two active batches. Cancel an older batch or wait for expiry; the site also has a shared staging limit."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Keep my changes and continue from the latest version"
 msgstr ""
 
@@ -2525,6 +2713,14 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Literature citation"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Loading your active batches…"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Local attachment IDs cannot be imported from a batch. Use portable images without another site's IDs."
 msgstr ""
 
 #: plugin/i18n.js
@@ -2679,6 +2875,26 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Maximum three nested collapse containers"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Media attachment IDs must be positive safe integers"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Media caption HTML must be canonical and balanced"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Media captions exceed their structure budget"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Media captions only support text, strong, emphasis, deletion, code and line breaks"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Media captions require bounded single-line safe inline content"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2843,6 +3059,26 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Native details are limited to 8 nested levels"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Native footnotes require external post metadata and cannot be converted losslessly"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Native image attachment class and ID disagree"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Native image blocks cannot contain child blocks"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Native media attributes must be a closed object"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Native media exceeds the document structure budget"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3024,6 +3260,14 @@ msgid "Only steps are permitted in a steps group"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Only unlinked native images are supported in this version"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Open created draft"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Opening version"
 msgstr ""
 
@@ -3033,6 +3277,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Optional ZIP dependencies are unavailable. Markdown single-file download remains available."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Original Markdown"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3196,6 +3444,10 @@ msgid "Permissions changed while reading merge inputs"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Portable exports cannot carry local media attachment IDs"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Post-save content verification failed"
 msgstr ""
 
@@ -3216,6 +3468,10 @@ msgid "Preparing the export manifest…"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Preparing this item. No article or media is created by preview."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Presentation resources could not be loaded"
 msgstr ""
 
@@ -3233,6 +3489,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Preview image verification failed."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Preview images exceed their budget."
 msgstr ""
 
 #: plugin/i18n.js
@@ -3260,7 +3520,19 @@ msgid "Preview the metadata selection again before confirming."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Preview this item"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Preview this item again before creating its draft."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Preview, then confirm the source write"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Previewed; not saved"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3276,7 +3548,15 @@ msgid "Private Node.js is missing, outdated, or does not match the manifest."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Private batch staging is unavailable."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Private export staging could not be created"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Private input staging failed."
 msgstr ""
 
 #: plugin/i18n.js
@@ -3364,6 +3644,10 @@ msgid "Reading the server version…"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Ready for preview"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Rechecking permissions, the article, and images…"
 msgstr ""
 
@@ -3397,6 +3681,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Reference title"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Refresh batch status"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3552,6 +3840,10 @@ msgid "Restoring both representations together…"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Resume batch"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Retry formula typesetting"
 msgstr ""
 
@@ -3578,6 +3870,14 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Reverse conversion requires an explicit Markdown source document"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Review the content below, then create only this draft. A created draft remains saved if another item fails."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Review this item"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3661,6 +3961,10 @@ msgid "Save display settings"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Save needs verification; do not import again"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Save status"
 msgstr ""
 
@@ -3678,6 +3982,18 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Saving failed and rollback was unavailable. Contact an administrator."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Scan finished. Correct blocked originals or preview valid items. Duplicate warnings do not overwrite existing articles."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Scan selected files"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Scanning files. No articles or media are created."
 msgstr ""
 
 #: plugin/i18n.js
@@ -3735,6 +4051,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Sign in again with an account that can edit."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Sign in with an account that can create drafts."
 msgstr ""
 
 #: plugin/i18n.js
@@ -3853,6 +4173,18 @@ msgid "Statement %1$s requires body content."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Static HTML embeds verified local images and typeset formulas for offline reading. External or unrelated images are refused. All stages and code versions are included; interactive demonstrations use their static fallback."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Static HTML for offline reading"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Static HTML requires every image to be a verified local attachment of this article"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Static adapter "
 msgstr ""
 
@@ -3906,6 +4238,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Status"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Status refreshed. Preview unfinished items again before confirmation."
 msgstr ""
 
 #: plugin/i18n.js
@@ -4243,6 +4579,18 @@ msgid "The article changed. Preview again before importing"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "The article contains an unsafe HTML attribute"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The article contains an unsafe inline style"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The article contains content outside the static HTML subset"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "The article does not exist."
 msgstr ""
 
@@ -4308,6 +4656,46 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "The author or site identity changed. Local recovery is disabled."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The batch exceeds its file type, per-file or 16 MiB upload budget."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The batch exceeds the 128 MP image processing budget."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The batch exceeds the 32 MiB expanded budget."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The batch expired or is unavailable. Prepare the files again."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The batch expired. Saved drafts remain; prepare the remaining files again."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The batch identity is invalid."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The batch lock could not be opened."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The batch operation did not complete. Refresh its status before trying again."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The batch preview is incomplete. Refresh its status."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The batch staging directory could not be created."
 msgstr ""
 
 #: plugin/i18n.js
@@ -4896,11 +5284,19 @@ msgid "The formula is too long"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "The formula preview engine is unavailable for static export"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "The formula syntax cannot be typeset"
 msgstr ""
 
 #: plugin/i18n.js
 msgid "The header proposal changed. Previous metadata selections were reset; choose them again."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The image URL does not match its local attachment"
 msgstr ""
 
 #: plugin/i18n.js
@@ -4921,6 +5317,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "The image path must not contain symbolic links"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The image pixels exceed the remaining batch budget"
 msgstr ""
 
 #: plugin/i18n.js
@@ -4970,6 +5370,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "The local difference exceeds 12,000 cells. Compare manually"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The local image attachment is missing or is not available to this author"
 msgstr ""
 
 #: plugin/i18n.js
@@ -5201,7 +5605,15 @@ msgid "The recovery session or current account changed."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "The remaining expanded batch budget is exhausted"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "The replacement exceeds the source size limit."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The request failed. Sign in again if necessary, then refresh batch status."
 msgstr ""
 
 #: plugin/i18n.js
@@ -5282,6 +5694,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "The runtime does not match the current WordPress version."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The save result needs verification. Do not import this item again."
 msgstr ""
 
 #: plugin/i18n.js
@@ -5429,6 +5845,18 @@ msgid "The staged archive digest does not match"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "The staged document changed. Prepare that file again."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The staged document is unavailable."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The staged source could not be written."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "The staging directory contains unknown objects and was not cleaned"
 msgstr ""
 
@@ -5465,11 +5893,99 @@ msgid "The startup snapshot matches."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "The static HTML contains a forbidden attribute"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The static HTML contains a forbidden element"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The static HTML contains a forbidden node"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The static HTML contains an unsafe inline style"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The static HTML contains an unsafe link"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The static HTML contains an unverified image"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The static HTML descriptor exceeds 32 MiB. Content was not truncated"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The static HTML exceeds 32 MiB. Content was not truncated"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The static HTML exceeds its structure budget"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The static HTML exporter is unavailable. Prepare again."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "The static adapter is missing or incompatible"
 msgstr ""
 
 #: plugin/i18n.js
 msgid "The static adapter is missing or incompatible. Original configuration was not removed"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The static article contains an unresolved footnote"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The static article could not be parsed"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The static export descriptor exceeds its budget"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The static export descriptor is invalid or exceeds its budget"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The static export was canceled"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The static image descriptor is invalid"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The static image digest or type does not match"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The static image encoding is invalid"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The static math font is invalid"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The static math stylesheet is invalid"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The static stylesheet contains an external resource"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The static stylesheet is unsafe"
 msgstr ""
 
 #: plugin/i18n.js
@@ -5505,6 +6021,10 @@ msgid "The text length is outside the registered bounds."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "The title changed. Preview this item again."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "The title must be single-line text of 1–200 characters"
 msgstr ""
 
@@ -5514,6 +6034,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "The upgrade target is no longer registered. Discard the candidate or restore the extension."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The uploaded batch is incomplete."
 msgstr ""
 
 #: plugin/i18n.js
@@ -5589,6 +6113,18 @@ msgid "This article is synchronized from a source file. Use the controlled sourc
 msgstr ""
 
 #: plugin/i18n.js
+msgid "This batch belongs to another account."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "This batch expired. Verify pending saves; prepare other files again."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "This batch was canceled. Saved drafts are preserved."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "This block cannot yet be converted to Markdown"
 msgstr ""
 
@@ -5613,6 +6149,10 @@ msgid "This candidate still references pending images. Upload the ZIP again or r
 msgstr ""
 
 #: plugin/i18n.js
+msgid "This document failed conversion. Correct the original file and prepare it again."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "This document must be saved through the native article update route."
 msgstr ""
 
@@ -5630,6 +6170,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "This image does not belong to the resource candidate"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "This item cannot be previewed. Refresh its status or correct its original file."
 msgstr ""
 
 #: plugin/i18n.js
@@ -5687,6 +6231,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Transaction commit failed"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Typesetting the complete offline article…"
 msgstr ""
 
 #: plugin/i18n.js
@@ -5751,6 +6299,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Unknown or invalid teaching attribute"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Unknown staging objects were preserved for review."
 msgstr ""
 
 #: plugin/i18n.js
@@ -5875,6 +6427,14 @@ msgid "Unsupported list item structure"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Unsupported native image size"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Unsupported native media attribute"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Unsupported or inconsistent HTML attributes on "
 msgstr ""
 
@@ -5900,11 +6460,19 @@ msgid "Unsupported teaching block version"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Untitled draft"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Upgrade diagram to use the visual editor"
 msgstr ""
 
 #: plugin/i18n.js
 msgid "Upload Markdown or an image resource ZIP "
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Uploaded image URLs may become public, including for a draft."
 msgstr ""
 
 #: plugin/i18n.js
@@ -5957,6 +6525,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Verifying component resources…"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Verifying save result"
 msgstr ""
 
 #: plugin/i18n.js
@@ -6102,6 +6674,10 @@ msgstr ""
 #, php-format
 #: plugin/i18n.js
 msgid "Your title: %1$s; status: %2$s."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "ZIP batches require image upload permission and the existing ZIP dependencies."
 msgstr ""
 
 #: plugin/i18n.js

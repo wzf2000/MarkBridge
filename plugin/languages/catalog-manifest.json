@@ -1,10 +1,11 @@
 {
   "files": {
+    "markbridge-zh_CN-mbb-batch-ui.json": "9cd2e1301c4eae6a0b66bf1d37ce33db027b93d5c16a3fa0dbfae92af1fc5950",
     "markbridge-zh_CN-mbb-components.json": "9cd2e1301c4eae6a0b66bf1d37ce33db027b93d5c16a3fa0dbfae92af1fc5950",
     "markbridge-zh_CN-mbb-editor-ui.json": "9cd2e1301c4eae6a0b66bf1d37ce33db027b93d5c16a3fa0dbfae92af1fc5950",
     "markbridge-zh_CN-mbb-emoji.json": "9cd2e1301c4eae6a0b66bf1d37ce33db027b93d5c16a3fa0dbfae92af1fc5950",
     "markbridge-zh_CN-mbb-export-ui.json": "9cd2e1301c4eae6a0b66bf1d37ce33db027b93d5c16a3fa0dbfae92af1fc5950",
-    "markbridge-zh_CN-mbb-i18n.json": "49e399942f16cf4cb8e894f650debee316a48d7c143f180099ceb96069f950d4",
+    "markbridge-zh_CN-mbb-i18n.json": "6071bd2896d2657530cbdaa538e2e14b91199594c365d7defe33ec0dda314007",
     "markbridge-zh_CN-mbb-kernel.json": "9cd2e1301c4eae6a0b66bf1d37ce33db027b93d5c16a3fa0dbfae92af1fc5950",
     "markbridge-zh_CN-mbb-local-recovery.json": "9cd2e1301c4eae6a0b66bf1d37ce33db027b93d5c16a3fa0dbfae92af1fc5950",
     "markbridge-zh_CN-mbb-math.json": "9cd2e1301c4eae6a0b66bf1d37ce33db027b93d5c16a3fa0dbfae92af1fc5950",
@@ -12,11 +13,12 @@
     "markbridge-zh_CN-mbb-presentation.json": "9cd2e1301c4eae6a0b66bf1d37ce33db027b93d5c16a3fa0dbfae92af1fc5950",
     "markbridge-zh_CN-mbb-resource-ui.json": "9cd2e1301c4eae6a0b66bf1d37ce33db027b93d5c16a3fa0dbfae92af1fc5950",
     "markbridge-zh_CN-mbb-revisions-ui.json": "9cd2e1301c4eae6a0b66bf1d37ce33db027b93d5c16a3fa0dbfae92af1fc5950",
+    "markbridge-zh_CN-mbb-static-export.json": "9cd2e1301c4eae6a0b66bf1d37ce33db027b93d5c16a3fa0dbfae92af1fc5950",
     "markbridge-zh_CN-mbb-teaching.json": "9cd2e1301c4eae6a0b66bf1d37ce33db027b93d5c16a3fa0dbfae92af1fc5950",
-    "markbridge-zh_CN.mo": "c01fae9523f1682ae570b551fd1b6c8e6dd0c04a4a4e9158128be9447c9391fc",
-    "markbridge-zh_CN.po": "588bbd81d51959dfe5c43be4c9d8fa2ea6335e314de2fb9dcb5f4d5ae2bc732f",
-    "markbridge.pot": "9f59cc2e7727c2899ec1b72b38b437c7fe9fe8412e0ece6575966aa7849841eb"
+    "markbridge-zh_CN.mo": "1ed605e3899d65db4c7072816c00a4deb9a24f6110e05d7a0eb9c8966b9d9ce4",
+    "markbridge-zh_CN.po": "1b7a424841cd66a9a8f4da91026ddc6e05469b48d517fe70724ed8a041a02032",
+    "markbridge.pot": "f5f14a98cf29114478200a1fef5fd3691a4fd21edc2ee29a47f62249f474be47"
   },
   "schema": 1,
-  "sourceSha256": "c52805e11816b6e8d90a1a5b1e0d9dadb0f989bf3bed88da680796072f85e7ee"
+  "sourceSha256": "0b9c011d65ea859208f641ede41c71f6e6ccdc6e49e9df547e67a5854207c493"
 }

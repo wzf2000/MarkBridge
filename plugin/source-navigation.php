@@ -413,7 +413,13 @@ function mbb_source_navigation(string $source, array $blocks): array
             $coarseChildren($child, $p, $span);
         }
     };
-    $native = ['details' => 'core/details', 'buttons' => 'core/buttons', 'button' => 'core/button'];
+    $native = [
+        'details' => 'core/details',
+        'buttons' => 'core/buttons',
+        'button' => 'core/button',
+        'image' => 'core/image',
+        'gallery' => 'core/gallery',
+    ];
     $names = [
         'paragraph' => ['core/paragraph'],
         'heading' => ['core/heading'],
@@ -481,7 +487,11 @@ function mbb_source_navigation(string $source, array $blocks): array
             }
             if (
                 $span['kind'] === 'teaching' &&
-                in_array($span['teachingKind'], ['code-tabs', 'button', 'bibliography'], true) &&
+                in_array(
+                    $span['teachingKind'],
+                    ['code-tabs', 'button', 'bibliography', 'image'],
+                    true,
+                ) &&
                 $node['children']
             ) {
                 $blocked = true;
@@ -491,7 +501,11 @@ function mbb_source_navigation(string $source, array $blocks): array
             $add($node, $path, $span);
             if ($span['kind'] === 'teaching') {
                 if (
-                    in_array($span['teachingKind'], ['code-tabs', 'button', 'bibliography'], true)
+                    in_array(
+                        $span['teachingKind'],
+                        ['code-tabs', 'button', 'bibliography', 'image'],
+                        true,
+                    )
                 ) {
                     /* body is stored as attributes */
                 } elseif ($span['teachingKind'] === 'code-compare') {

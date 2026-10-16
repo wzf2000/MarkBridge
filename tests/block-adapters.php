@@ -285,6 +285,8 @@ function mbb_candidate_current($request)
         'title' => 'Model candidate',
     ];
 }
+define('ABSPATH', __DIR__ . '/');
+require dirname(__DIR__) . '/plugin/native-media.php';
 $api = file_get_contents(dirname(__DIR__) . '/plugin/editor-bridge.php');
 $begin = strpos($api, 'function mbb_candidate($r)');
 $end = strpos($api, 'function mbb_candidate_current($r)', $begin);

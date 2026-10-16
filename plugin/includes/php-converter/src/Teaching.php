@@ -8,6 +8,216 @@ if (!defined('ABSPATH')) {
     }
 }
 
+/** Pure fixed native-media v1 contract; attachment authorization is a host concern. */
+final class NativeMedia
+{
+    private static function fail(string $code, string $message): never
+    {
+        throw new ConversionError($code, $message);
+    }
+    public static function caption(mixed $value): string
+    {
+        if (
+            !is_string($value) ||
+            !mb_check_encoding($value, 'UTF-8') ||
+            strlen($value) > 4096 ||
+            preg_match('/[\x00\r\n]/', $value)
+        ) {
+            self::fail(
+                'MEDIA_CAPTION',
+                'Media captions require bounded single-line safe inline content',
+            );
+        }
+        $doc = new \DOMDocument();
+        $old = libxml_use_internal_errors(true);
+        try {
+            $doc->loadHTML(
+                '<!doctype html><html><head><meta charset="UTF-8"></head><body><div>' .
+                    $value .
+                    '</div></body></html>',
+                LIBXML_NONET,
+            );
+            $errors = libxml_get_errors();
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($old);
+        }
+        $body = $doc->getElementsByTagName('body')->item(0);
+        $root = $body?->firstChild;
+        if (!$root || $root->nodeName !== 'div' || $body->childNodes->length !== 1 || $errors) {
+            self::fail('MEDIA_CAPTION', 'Media caption HTML must be canonical and balanced');
+        }
+        $walk = function ($n, $depth = 0) use (&$walk) {
+            if ($depth > 16) {
+                self::fail('MEDIA_CAPTION', 'Media captions exceed their structure budget');
+            }
+            if ($n->nodeType === XML_TEXT_NODE) {
+                return;
+            }
+            if (
+                !($n instanceof \DOMElement) ||
+                !in_array($n->tagName, ['strong', 'em', 'del', 'code', 'br'], true) ||
+                $n->attributes->length
+            ) {
+                self::fail(
+                    'MEDIA_CAPTION',
+                    'Media captions only support text, strong, emphasis, deletion, code and line breaks',
+                );
+            }
+            foreach ($n->childNodes as $c) {
+                $walk($c, $depth + 1);
+            }
+        };
+        foreach ($root->childNodes as $n) {
+            $walk($n);
+        }
+        $out = '';
+        foreach ($root->childNodes as $n) {
+            $out .= $doc->saveHTML($n);
+        }
+        if (
+            preg_replace('~<br\s*/?\s*>~', '<br>', $out) !==
+            preg_replace('~<br\s*/?\s*>~', '<br>', $value)
+        ) {
+            self::fail('MEDIA_CAPTION', 'Media caption HTML must be canonical and balanced');
+        }
+        return $value;
+    }
+    public static function attrs(string $kind, mixed $input, bool $source = true): array
+    {
+        if ($input instanceof \stdClass) {
+            $input = get_object_vars($input);
+        }
+        if (!is_array($input) || (array_is_list($input) && $input !== [])) {
+            self::fail('MEDIA_ATTRIBUTES', 'Native media attributes must be a closed object');
+        }
+        // Only native editor input may carry Gutenberg's equivalent gallery default.
+        if (!$source && $kind === 'gallery' && ($input['linkTo'] ?? null) === 'none') {
+            unset($input['linkTo']);
+        }
+        $allowed =
+            $kind === 'image'
+                ? ['caption', 'id', 'sizeSlug', 'linkDestination']
+                : ['columns', 'imageCrop'];
+        if (array_diff(array_keys($input), $allowed)) {
+            self::fail('MEDIA_ATTRIBUTES', 'Unsupported native media attribute');
+        }
+        $a = [];
+        foreach ($allowed as $k) {
+            if (array_key_exists($k, $input)) {
+                $a[$k] = $input[$k];
+            }
+        }
+        if ($kind === 'image') {
+            if (array_key_exists('caption', $a)) {
+                self::caption($a['caption']);
+            }
+            if (
+                array_key_exists('id', $a) &&
+                (!is_numeric($a['id']) ||
+                    (!is_int($a['id']) && !is_float($a['id'])) ||
+                    !is_finite((float) $a['id']) ||
+                    floor($a['id']) != $a['id'] ||
+                    $a['id'] < 1 ||
+                    $a['id'] > 9007199254740991)
+            ) {
+                self::fail('MEDIA_ID', 'Media attachment IDs must be positive safe integers');
+            }
+            if (isset($a['id'])) {
+                $a['id'] = (int) $a['id'];
+            }
+            if (
+                array_key_exists('sizeSlug', $a) &&
+                !in_array($a['sizeSlug'], ['thumbnail', 'medium', 'large', 'full'], true)
+            ) {
+                self::fail('MEDIA_ATTRIBUTES', 'Unsupported native image size');
+            }
+            if (array_key_exists('linkDestination', $a) && $a['linkDestination'] !== 'none') {
+                self::fail(
+                    'MEDIA_LINK',
+                    'Only unlinked native images are supported in this version',
+                );
+            }
+            if (($a['caption'] ?? null) === '') {
+                unset($a['caption']);
+            }
+        } else {
+            if (
+                array_key_exists('columns', $a) &&
+                ((!is_int($a['columns']) && !is_float($a['columns'])) ||
+                    floor($a['columns']) != $a['columns'] ||
+                    $a['columns'] < 1 ||
+                    $a['columns'] > 8)
+            ) {
+                self::fail('MEDIA_ATTRIBUTES', 'Gallery columns must be an integer from 1 to 8');
+            }
+            if (isset($a['columns'])) {
+                $a['columns'] = (int) $a['columns'];
+            }
+            if (array_key_exists('imageCrop', $a) && !is_bool($a['imageCrop'])) {
+                self::fail('MEDIA_ATTRIBUTES', 'Gallery imageCrop must be a boolean');
+            }
+        }
+        return $a;
+    }
+    public static function assertPortable(string $serialized): void
+    {
+        preg_match_all('~<!-- wp:image(?: (\{[\s\S]*?\}))? -->~', $serialized, $matches);
+        foreach ($matches[1] as $raw) {
+            $a = json_decode($raw ?: '{}', true, 32, JSON_THROW_ON_ERROR);
+            if (isset($a['id'])) {
+                self::fail(
+                    'MEDIA_LOCAL_ID',
+                    'Portable exports cannot carry local media attachment IDs',
+                );
+            }
+        }
+    }
+    public static function directive(string $kind, array $a, string $body): string
+    {
+        return ':::mbb:v1 ' .
+            $kind .
+            ' ' .
+            Teaching::encode($a ?: new \stdClass()) .
+            "\n\n" .
+            rtrim($body) .
+            "\n\n:::mbb:end";
+    }
+    public static function assemble(array $item): array
+    {
+        $kind = $item['kind'];
+        $a = self::attrs($kind, $item['attrs']);
+        $children = $item['children'];
+        if ($kind === 'image') {
+            if (
+                count($children) !== 1 ||
+                $children[0]['name'] !== 'core/image' ||
+                ($children[0]['children'] ?? []) ||
+                $children[0]['attrs']
+            ) {
+                self::fail(
+                    'MEDIA_STRUCTURE',
+                    'An image directive requires exactly one ordinary Markdown image',
+                );
+            }
+            return [
+                'name' => 'core/image',
+                'attrs' => $a,
+                'children' => [],
+                'content' => $children[0]['content'],
+            ];
+        }
+        if (
+            !$children ||
+            count($children) > 32 ||
+            array_filter($children, fn($b) => $b['name'] !== 'core/image')
+        ) {
+            self::fail('MEDIA_STRUCTURE', 'A gallery requires 1 to 32 direct native images');
+        }
+        return ['name' => 'core/gallery', 'attrs' => $a, 'children' => $children, 'content' => ''];
+    }
+}
+
 final class TechnicalReference extends \League\CommonMark\Node\Inline\AbstractStringContainer {}
 final class TechnicalInlineParser implements \League\CommonMark\Parser\Inline\InlineParserInterface
 {
@@ -438,6 +648,8 @@ final class Teaching
 {
     public const SCHEMAS = [
         ...Technical::SCHEMAS,
+        'image' => [],
+        'gallery' => [],
         'details' => [],
         'buttons' => [],
         'button' => [],
@@ -494,6 +706,9 @@ final class Teaching
         bool $source = false,
         ?string $blockName = null,
     ): array {
+        if (in_array($kind, ['image', 'gallery'], true)) {
+            return NativeMedia::attrs($kind, $attrs);
+        }
         if (isset(BlockAdapters::NATIVE[$kind])) {
             return BlockAdapters::nativeAttrs($kind, $attrs, $source);
         }
@@ -1129,7 +1344,7 @@ final class Teaching
             } else {
                 if (
                     !preg_match(
-                        '/^:::mbb:v1 (collapse|steps|step|code-compare|component|code-tabs|details|buttons|button|adapter|object|statement|bibliography) (\{.*\})$/D',
+                        '/^:::mbb:v1 (collapse|steps|step|code-compare|component|code-tabs|details|buttons|button|adapter|object|statement|bibliography|image|gallery) (\{.*\})$/D',
                         $line,
                         $m,
                     )
@@ -1202,6 +1417,10 @@ final class Teaching
                 self::fail('TEACHING_STRUCTURE', 'Unexpected teaching closing marker');
             }
             $item = array_pop($stack);
+            if (in_array($item['kind'], ['image', 'gallery'], true)) {
+                $stack[count($stack) - 1]['children'][] = NativeMedia::assemble($item);
+                continue;
+            }
             if (isset(BlockAdapters::NATIVE[$item['kind']])) {
                 $a = BlockAdapters::nativeAttrs($item['kind'], $item['attrs'], true);
                 if ($item['kind'] === 'details') {

@@ -368,7 +368,7 @@ export function technicalRenamePlan(blocks, type, from, to, fail) {
   const ids = [];
   for (const block of list) {
     const a = block.attributes || {};
-    if (a.id) ids.push(a.id);
+    if (typeof a.id === 'string') ids.push(a.id);
     if (a.anchor) ids.push(a.anchor);
     for (const tab of a.tabs || []) if (tab.id) ids.push(tab.id);
     for (const field of parsedFields(block))
@@ -468,7 +468,7 @@ export function technicalDiagnostics(blocks) {
   for (const block of allBlocks(blocks)) {
     const a = block.attributes || {},
       kind = technicalKind(block.name);
-    count(ids, a.id);
+    if (typeof a.id === 'string') count(ids, a.id);
     count(ids, a.anchor);
     for (const tab of a.tabs || []) count(ids, tab.id);
     if (kind === 'object' || kind === 'statement') count(targetCounts, a.id);

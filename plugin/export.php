@@ -10,6 +10,7 @@ if (!defined('ABSPATH')) {
 require_once __DIR__ . '/includes/i18n.php';
 // Read-only saved-document export. No source-file reads and no article writes.
 require_once __DIR__ . '/includes/php-converter/ResourceImages.php';
+require_once __DIR__ . '/static-export.php';
 use MarkBridge\Probe\ResourceImages;
 
 function mbb_export_config(): array
@@ -327,8 +328,14 @@ function mbb_export_plan(array $snapshot, string $format): array
     $retained = [];
     $files = [];
     $mappings = [];
-    if ($format === 'zip') {
-        if (!mbb_export_config()['zipAvailable']) {
+    if (in_array($format, ['zip', 'html'], true)) {
+        if ($format === 'zip' && function_exists('mbb_native_media_portable_admission')) {
+            $admission = mbb_native_media_portable_admission($document['serialized']);
+            if (is_wp_error($admission)) {
+                mbb_export_throw('export_images', $admission->get_error_message());
+            }
+        }
+        if ($format === 'zip' && !mbb_export_config()['zipAvailable']) {
             mbb_export_throw(
                 'export_unavailable',
                 mbb_t(
@@ -433,6 +440,28 @@ function mbb_export_plan(array $snapshot, string $format): array
         if (count($resources) > 32) {
             mbb_export_throw('export_images', mbb_t('At most 32 actual images may be exported'));
         }
+        if ($format === 'html') {
+            if ($retained) {
+                mbb_export_throw(
+                    'export_images',
+                    mbb_t(
+                        'Static HTML requires every image to be a verified local attachment of this article',
+                    ),
+                );
+            }
+            $descriptor = mbb_static_export_descriptor($snapshot, $files, $resources, $mappings);
+            $json = mbb_component_json($descriptor);
+            return [
+                'source' => $json,
+                'preview' => $descriptor['body'],
+                'document' => ['bytes' => strlen($json), 'sha256' => hash('sha256', $json)],
+                'resources' => $resources,
+                'retainedImages' => [],
+                'mappings' => $mappings,
+                'files' => $files,
+                'sidecar' => '',
+            ];
+        }
         $projected = mbb_convert([
             'mode' => 'portable_images',
             'documentId' => $document['documentId'],
@@ -521,7 +550,7 @@ function mbb_export_prepare($r)
             $data['schema'] !== 1 ||
             !is_int($data['post_id']) ||
             !is_string($data['expected']) ||
-            !in_array($data['format'], ['markdown', 'zip'], true)
+            !in_array($data['format'], ['markdown', 'zip', 'html'], true)
         ) {
             mbb_export_throw('export_request', mbb_t('The export request has invalid field types'));
         }
@@ -621,7 +650,7 @@ function mbb_export_prepare($r)
             'document' => $plan['document'],
             'resources' => $plan['resources'],
             'retainedImages' => $plan['retainedImages'],
-            'projectedSource' => $plan['source'],
+            'projectedSource' => $plan['preview'] ?? $plan['source'],
             'changes' => $plan['mappings'],
             'receipt' => mbb_export_receipt($record),
             'limits' => mbb_export_config(),
@@ -740,11 +769,19 @@ function mbb_export_download($r)
         }
         return new WP_REST_Response($body, 200, [
             'Content-Type' =>
-                $record['format'] === 'zip' ? 'application/zip' : 'text/markdown; charset=UTF-8',
+                $record['format'] === 'zip'
+                    ? 'application/zip'
+                    : ($record['format'] === 'html'
+                        ? 'application/json; charset=UTF-8'
+                        : 'text/markdown; charset=UTF-8'),
             'Content-Disposition' =>
                 'attachment; filename="markbridge-' .
                 $record['documentId'] .
-                ($record['format'] === 'zip' ? '.zip' : '.md') .
+                ($record['format'] === 'zip'
+                    ? '.zip'
+                    : ($record['format'] === 'html'
+                        ? '.json'
+                        : '.md')) .
                 '"',
             'Cache-Control' => 'private, no-store',
             'X-Content-Type-Options' => 'nosniff',

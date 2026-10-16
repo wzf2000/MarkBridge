@@ -1194,6 +1194,7 @@
         (cfg.footnoteStyle || '') +
         (cfg.teachingStyle || '') +
         (cfg.technicalStyle || '') +
+        (cfg.nativeMediaStyle || '') +
         (cfg.codeDisplayStyle || '');
       preview.srcdoc = window.MBBSourceTools
         ? window.MBBSourceTools.frameDocument(previewContent.content, previewStyles, navigation)
@@ -1202,6 +1203,7 @@
           (MBB_EDITOR.footnoteStyle || '') +
           (MBB_EDITOR.teachingStyle || '') +
           (MBB_EDITOR.technicalStyle || '') +
+          (MBB_EDITOR.nativeMediaStyle || '') +
           (MBB_EDITOR.codeDisplayStyle || '') +
           'body{font:16px/1.7 system-ui;padding:16px;overflow-wrap:anywhere}pre{overflow:auto}table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:4px}img{max-width:100%}</style></head><body>' +
           previewContent.innerHTML +

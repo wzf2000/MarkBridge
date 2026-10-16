@@ -183,3 +183,16 @@ PHP 的单一实现位于 `plugin/includes/php-converter/`，Worker 适配 Markd
 `plugin/includes/admin-settings.php` 通过 WordPress Options API 保存单一 `markbridge_display_preferences` 选项。只有具备 `manage_options` 的账号通过专用 nonce 才能提交，四个字段按固定枚举／布尔值校验；未知字段、缺失字段或错误类型拒绝，读取损坏值按字段回到默认但不自动回写数据库。
 
 源码字号只传给 Markdown 输入框；公式阅读开关只控制前台阅读交互；代码行号／复制开关控制对应 Prism 资源及展示，保留高亮和语言标签。设置不参与转换、文章保存、修订或来源协议。显示选项、转换方案、旧运行目录及图片包选项保持独立；服务器常量优先级和旧配置升级兼容仍保留，后台转换方案不会提供关闭保存保护的选项。
+
+## 内容流转候选接口
+
+2.4 的 `native-media.php` 仅校验当前附件身份与URL，不负责网络取图或转换语法；纯格式
+子集由两端内核维护，详见 [原生媒体](NATIVE-MEDIA.md)。批量入口 `batch-import.php`
+只编排新草稿，候选、媒体票据与实际写入仍调用原 `mbb_preview`／`mbb_save`。新建来源
+凭据作为内部回调在同一数据库事务写入，固定每项文档身份和锁防止重复创建；未知提交
+结果保留原证据与额度，不用“找不到文章”推断安全重试。
+
+`static-export.php` 从已保存的 canonical HTML 派生封闭描述，不运行任意区块或文章过滤器；
+原导出票据、快照摘要与一次领取保护保持。`static-export.js` 仅在本地排版副本中完成
+CHTML/字体内嵌和严格审计，输出受限CSP的单文件，不上传客户端生成的HTML。
+具体预算和拒绝边界见 [批量导入](BATCH-IMPORT.md)、[静态导出](STATIC-EXPORT.md)。

@@ -304,8 +304,20 @@ function mbb_resource_remove_private(string $dir): void
         mbb_resource_throw('resource_storage', mbb_t('Staging directory cleanup did not complete'));
     }
 }
-function mbb_resource_extract(string $archive, string $dir): array
-{
+function mbb_resource_extract(
+    string $archive,
+    string $dir,
+    int $expandedLimit = 33554432,
+    int $pixelLimit = PHP_INT_MAX,
+    ?callable $consumePixels = null,
+    ?callable $consumeExpanded = null,
+): array {
+    if ($expandedLimit < 1 || $expandedLimit > 33554432) {
+        mbb_resource_throw(
+            'resource_size',
+            mbb_t('The remaining expanded batch budget is exhausted'),
+        );
+    }
     if (!is_file($archive) || is_link($archive) || filesize($archive) > 8388608) {
         mbb_resource_throw('resource_size', mbb_t('ZIP files are limited to 8 MiB'));
     }
@@ -318,6 +330,7 @@ function mbb_resource_extract(string $archive, string $dir): array
     $markdown = null;
     $sidecar = null;
     $expanded = 0;
+    $pixels = 0;
     try {
         if ($zip->numFiles < 1 || $zip->numFiles > 100) {
             mbb_resource_throw('resource_entries', mbb_t('ZIP files are limited to 100 entries'));
@@ -383,7 +396,7 @@ function mbb_resource_extract(string $archive, string $dir): array
                 );
             }
             $limit = $is_md || $is_sidecar ? 262144 : 8388608;
-            if ($stat['size'] > $limit || $stat['size'] + $expanded > 33554432) {
+            if ($stat['size'] > $limit || $stat['size'] + $expanded > $expandedLimit) {
                 mbb_resource_throw(
                     'resource_size',
                     mbb_t('The declared uncompressed ZIP size exceeds its budget'),
@@ -413,8 +426,11 @@ function mbb_resource_extract(string $archive, string $dir): array
                     }
                     $bytes += strlen($chunk);
                     $expanded += strlen($chunk);
+                    if ($consumeExpanded !== null && $chunk !== '') {
+                        $consumeExpanded(strlen($chunk));
+                    }
                     hash_update($crc, $chunk);
-                    if ($bytes > $limit || $expanded > 33554432) {
+                    if ($bytes > $limit || $expanded > $expandedLimit) {
                         mbb_resource_throw(
                             'resource_size',
                             mbb_t('The actual streamed ZIP expansion exceeds its budget'),
@@ -460,6 +476,19 @@ function mbb_resource_extract(string $archive, string $dir): array
                     'source' => $source,
                 ];
             } else {
+                $dimensions = @getimagesize($file);
+                if (is_array($dimensions)) {
+                    $pixels += $dimensions[0] * $dimensions[1];
+                    if ($pixels > $pixelLimit) {
+                        mbb_resource_throw(
+                            'resource_pixels',
+                            mbb_t('The image pixels exceed the remaining batch budget'),
+                        );
+                    }
+                    if ($consumePixels !== null) {
+                        $consumePixels($dimensions[0] * $dimensions[1]);
+                    }
+                }
                 $images[] = array_merge(
                     [
                         'key' => hash('sha256', $name . "\0" . $sha),
@@ -779,6 +808,30 @@ function mbb_resource_prepare($r)
     if ($guard !== true) {
         return $guard;
     }
+    $files = $r->get_file_params();
+    $upload = $files['archive'] ?? null;
+    if (
+        !is_array($upload) ||
+        ($upload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK ||
+        !is_string($upload['tmp_name'] ?? null) ||
+        (!(defined('WP_CLI') && WP_CLI) && !is_uploaded_file($upload['tmp_name']))
+    ) {
+        return mbb_error(
+            'resource_upload',
+            mbb_t('Choose a local ZIP. Also check this site\'s PHP upload limits'),
+            422,
+        );
+    }
+    return mbb_resource_prepare_file($r, $upload['tmp_name']);
+}
+// Internal adapter for an already authenticated, privately staged batch file.
+// The public route above must always enforce PHP uploaded-file admission.
+function mbb_resource_prepare_file($r, string $archive)
+{
+    $guard = mbb_resource_permission($r);
+    if ($guard !== true) {
+        return $guard;
+    }
     $dir = null;
     $ownerlock = null;
     try {
@@ -806,25 +859,12 @@ function mbb_resource_prepare($r)
                 ),
             );
         }
-        $files = $r->get_file_params();
-        $upload = $files['archive'] ?? null;
-        if (
-            !is_array($upload) ||
-            ($upload['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK ||
-            !is_string($upload['tmp_name'] ?? null) ||
-            (!(defined('WP_CLI') && WP_CLI) && !is_uploaded_file($upload['tmp_name']))
-        ) {
-            mbb_resource_throw(
-                'resource_upload',
-                mbb_t('Choose a local ZIP. Also check this site\'s PHP upload limits'),
-            );
-        }
         $token = bin2hex(random_bytes(32));
         $dir = $owner . '/' . $token;
         if (!mkdir($dir, 0700)) {
             mbb_resource_throw('resource_storage', mbb_t('Resource staging could not be created'));
         }
-        $pack = mbb_resource_extract($upload['tmp_name'], $dir);
+        $pack = mbb_resource_extract($archive, $dir);
         $source = $pack['markdown']['source'];
         unset($pack['markdown']['source']);
         $document = mbb_convert([

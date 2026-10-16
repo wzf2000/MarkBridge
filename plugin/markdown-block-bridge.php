@@ -4,7 +4,7 @@
  * Plugin URI: https://github.com/wzf2000/MarkBridge
  * Author: wzf2000
  * Author URI: https://github.com/wzf2000
- * Version: 2.3.0-rc.1
+ * Version: 2.4.0-rc.1
  * License: GPL-3.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  * Requires at least: 7.1
@@ -21,6 +21,7 @@ mbb_i18n_register();
 require_once __DIR__ . '/includes/runtime-settings.php';
 require_once __DIR__ . '/includes/admin-settings.php';
 require_once __DIR__ . '/block-adapters.php';
+require_once __DIR__ . '/native-media.php';
 require_once __DIR__ . '/components.php';
 require_once __DIR__ . '/teaching.php';
 require_once __DIR__ . '/diagnostics.php';
@@ -160,6 +161,7 @@ require_once __DIR__ . '/publication.php';
 require_once __DIR__ . '/editor-bridge.php';
 require_once __DIR__ . '/footnotes.php';
 require_once __DIR__ . '/technical.php';
+require_once __DIR__ . '/batch-import.php';
 
 require_once __DIR__ . '/revisions.php';
 

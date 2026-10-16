@@ -95,6 +95,7 @@ final class Converter
     public function portableImages(array $base, array $mappings): array
     {
         $verified = $this->restorePair($base['source'], $base['serialized'], $base['documentId']);
+        NativeMedia::assertPortable($verified['serialized']);
         $expected = ResourceImages::rewrite($verified['serialized'], $mappings, true);
         if (!$mappings) {
             return $verified;
@@ -138,6 +139,12 @@ final class Converter
     public function fromBlocks(string $serialized): array
     {
         $this->input($serialized);
+        if (preg_match('~<!-- wp:footnotes(?:\s|/)~', $serialized)) {
+            throw new ConversionError(
+                'NATIVE_FOOTNOTES',
+                'Native footnotes require external post metadata and cannot be converted losslessly',
+            );
+        }
         $blocks = $this->parseBlocks($serialized);
         $this->nodes = 0;
         $source = $this->decodeAll($blocks);
@@ -1072,8 +1079,40 @@ final class Converter
             case 'core/separator':
                 $html = '<hr class="wp-block-separator has-alpha-channel-opacity"/>';
                 break;
+            case 'core/gallery':
+                NativeMedia::attrs('gallery', $attrs);
+                $html =
+                    '<figure class="wp-block-gallery has-nested-images columns-' .
+                    ($attrs['columns'] ?? 'default') .
+                    ($attrs['imageCrop'] ?? true ? ' is-cropped' : '') .
+                    '">' .
+                    $children .
+                    '</figure>';
+                if (($attrs['imageCrop'] ?? null) === true) {
+                    unset($attrs['imageCrop']);
+                }
+                break;
             case 'core/image':
-                $html = '<figure class="wp-block-image">' . $content . '</figure>';
+                NativeMedia::attrs('image', $attrs);
+                if (isset($attrs['id'])) {
+                    $content = preg_replace(
+                        '~( title="|/>$)~',
+                        ' class="wp-image-' . $attrs['id'] . '"$1',
+                        $content,
+                        1,
+                    );
+                }
+                $caption = $attrs['caption'] ?? '';
+                unset($attrs['caption']);
+                $html =
+                    '<figure class="wp-block-image' .
+                    (isset($attrs['sizeSlug']) ? ' size-' . $attrs['sizeSlug'] : '') .
+                    '">' .
+                    $content .
+                    ($caption !== ''
+                        ? '<figcaption class="wp-element-caption">' . $caption . '</figcaption>'
+                        : '') .
+                    '</figure>';
                 break;
             case 'core/table':
                 $html = '<figure class="wp-block-table">' . $content . '</figure>';
@@ -1338,6 +1377,16 @@ final class Converter
         );
         if (($descriptor = BlockAdapters::descriptor($name, true)) !== null) {
             BlockAdapters::leafAttrs($descriptor, $attrs);
+            return;
+        }
+        if ($name === 'core/footnotes') {
+            throw new ConversionError(
+                'NATIVE_FOOTNOTES',
+                'Native footnotes require external post metadata and cannot be converted losslessly',
+            );
+        }
+        if (in_array($name, ['core/image', 'core/gallery'], true)) {
+            NativeMedia::attrs(substr($name, 5), $attrs, false);
             return;
         }
         if (!array_key_exists($name, $schemas)) {
@@ -1956,25 +2005,83 @@ final class Converter
                     'FOOTNOTE_STRUCTURE',
                     'Footnotes belong only in the footnote section',
                 );
-            case 'core/image':
-                if ($children !== []) {
+            case 'core/gallery':
+                $attrs = NativeMedia::attrs('gallery', $attrs, false);
+                if (
+                    !$children ||
+                    count($children) > 32 ||
+                    array_filter($children, fn($b) => $b['name'] !== 'core/image')
+                ) {
                     throw new ConversionError(
-                        'IMAGE_STRUCTURE',
-                        'Image blocks cannot contain child blocks',
+                        'MEDIA_STRUCTURE',
+                        'A gallery requires 1 to 32 direct native images',
                     );
                 }
-                $root = $this->outer($raw, 'figure', ['class' => 'wp-block-image']);
+                $root = $this->outer($raw, 'figure', [
+                    'class' =>
+                        'wp-block-gallery has-nested-images columns-' .
+                        ($attrs['columns'] ?? 'default') .
+                        ($attrs['imageCrop'] ?? true ? ' is-cropped' : ''),
+                ]);
+                if (($attrs['imageCrop'] ?? null) === true) {
+                    unset($attrs['imageCrop']);
+                }
+                return NativeMedia::directive(
+                    'gallery',
+                    $attrs,
+                    $this->childElements($root, $children, $depth),
+                );
+            case 'core/image':
+                if ($children) {
+                    throw new ConversionError(
+                        'MEDIA_STRUCTURE',
+                        'Native image blocks cannot contain child blocks',
+                    );
+                }
+                NativeMedia::attrs('image', $attrs);
+                $root = $this->outer($raw, 'figure', [
+                    'class' =>
+                        'wp-block-image' .
+                        (isset($attrs['sizeSlug']) ? ' size-' . $attrs['sizeSlug'] : ''),
+                ]);
                 if (
-                    $root->childNodes->length !== 1 ||
+                    $root->childNodes->length < 1 ||
+                    $root->childNodes->length > 2 ||
                     !($root->firstChild instanceof DOMElement) ||
                     $root->firstChild->tagName !== 'img'
                 ) {
                     throw new ConversionError(
-                        'IMAGE_STRUCTURE',
-                        'Image requires exactly one img element',
+                        'MEDIA_STRUCTURE',
+                        'An image directive requires exactly one ordinary Markdown image',
                     );
                 }
-                return $this->inlineNode($root->firstChild, $depth + 1);
+                $image = $root->firstChild;
+                if (isset($attrs['id'])) {
+                    if ($image->getAttribute('class') !== 'wp-image-' . $attrs['id']) {
+                        throw new ConversionError(
+                            'MEDIA_ID',
+                            'Native image attachment class and ID disagree',
+                        );
+                    }
+                    $image->removeAttribute('class');
+                }
+                if ($root->childNodes->length === 2) {
+                    $caption = $root->lastChild;
+                    if (!($caption instanceof DOMElement) || $caption->tagName !== 'figcaption') {
+                        throw new ConversionError(
+                            'MEDIA_CAPTION',
+                            'Media caption HTML must be canonical and balanced',
+                        );
+                    }
+                    $this->attrs($caption, ['class' => 'wp-element-caption']);
+                    $text = '';
+                    foreach ($caption->childNodes as $n) {
+                        $text .= $caption->ownerDocument->saveHTML($n);
+                    }
+                    $attrs = ['caption' => NativeMedia::caption($text)] + $attrs;
+                }
+                $body = $this->inlineNode($image, $depth + 1);
+                return $attrs ? NativeMedia::directive('image', $attrs, $body) : $body;
             case 'core/table':
                 if ($children !== []) {
                     throw new ConversionError(
@@ -2626,7 +2733,24 @@ final class Converter
                 return ['text', $node->textContent];
             }
             if ($node->nodeType === XML_COMMENT_NODE) {
-                return ['comment', $node->textContent];
+                $text = $node->textContent;
+                // Match the native-gallery comparison projection in the Node kernel.
+                // Noncanonical JSON (including duplicate keys) must remain unequal.
+                if (preg_match('/^ wp:gallery (\{[\s\S]*\}) $/D', $text, $match)) {
+                    $a = json_decode($match[1]);
+                    if (
+                        $a instanceof \stdClass &&
+                        ($a->linkTo ?? null) === 'none' &&
+                        Teaching::encode($a) === $match[1]
+                    ) {
+                        unset($a->linkTo);
+                        $text =
+                            ' wp:gallery' .
+                            (get_object_vars($a) ? ' ' . Teaching::encode($a) : '') .
+                            ' ';
+                    }
+                }
+                return ['comment', $text];
             }
             if (!($node instanceof DOMElement)) {
                 throw new ConversionError('UNSAFE_HTML', 'Unexpected DOM node');

@@ -1,3 +1,10 @@
+import {
+  mediaImageAttributes,
+  mediaGalleryAttributes,
+  mediaDirective,
+  validateMediaSerialized,
+  validateMedia,
+} from './native-media.js';
 export {
   technicalIndex,
   technicalDiagnostics,
@@ -98,6 +105,21 @@ const atLocation = (location, action) => {
 const canonical = (s) => {
   const t = document.createElement('template');
   t.innerHTML = s;
+  // Only Gutenberg's equivalent native-gallery default may disappear in comparison.
+  // Requiring canonical JSON keeps duplicate keys and all other comment differences visible.
+  const comments = document.createTreeWalker(t.content, 128);
+  for (let n; (n = comments.nextNode());) {
+    const match = /^ wp:gallery (\{[\s\S]*\}) $/.exec(n.data);
+    if (!match) continue;
+    try {
+      const attrs = JSON.parse(match[1]);
+      if (attrs.linkTo !== 'none' || JSON.stringify(attrs) !== match[1]) continue;
+      delete attrs.linkTo;
+      n.data = ' wp:gallery' + (Object.keys(attrs).length ? ' ' + JSON.stringify(attrs) : '') + ' ';
+    } catch (_error) {
+      // Invalid comments remain unequal and are rejected by the normal strict guards.
+    }
+  }
   for (const n of t.content.querySelectorAll('*')) {
     const attrs = [...n.attributes]
       .map((a) => [a.name, a.value])
@@ -986,8 +1008,15 @@ function rawMarkdown(blocks, path = 'blocks') {
               );
             case 'core/paragraph':
               return inlineMD(a.content);
-            case 'core/image':
-              return inlineMD(
+            case 'core/gallery':
+              return mediaDirective(
+                'gallery',
+                mediaGalleryAttributes(a, fail),
+                rawMarkdown(inner, at),
+              );
+            case 'core/image': {
+              const metadata = mediaImageAttributes(a, fail);
+              const imageSource = inlineMD(
                 '<img src="' +
                   esc(a.url) +
                   '" alt="' +
@@ -996,6 +1025,10 @@ function rawMarkdown(blocks, path = 'blocks') {
                   (a.title ? ' title="' + esc(a.title) + '"' : '') +
                   '>',
               );
+              return Object.keys(metadata).length
+                ? mediaDirective('image', metadata, imageSource)
+                : imageSource;
+            }
             case 'core/heading':
               return '#'.repeat(a.level || 2) + ' ' + inlineMD(a.content);
             case 'core/separator':
@@ -1172,6 +1205,7 @@ export function rewriteDocumentImages(base, mappings) {
   return importDocument(exportDocument(verified, serialized), base.documentId);
 }
 export function portableDocumentImages(base, mappings) {
+  validateMedia(api().parse(base?.serialized || ''), fail, true);
   exportDocument(base, base?.serialized);
   const verified = importPairedDocument(base.source, base.serialized, base.documentId);
   const expected = rewriteSerializedImageURLs(verified.serialized, mappings, fail, true);
@@ -1239,6 +1273,7 @@ export function exportDocument(document, serialized) {
   if (!kind) fail('SNAPSHOT_MISMATCH', 'The source and block snapshots do not match');
   if (kind === 'legacy' && canonical(serialized) === canonical(document.serialized))
     return document.source;
+  validateMediaSerialized(serialized, fail);
   validateTeachingSerialized(serialized, fail);
   validateAdaptersSerialized(serialized, fail, teachingJSON);
   validateFrontmatterSerialized(serialized, fail);

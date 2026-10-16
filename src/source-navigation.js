@@ -1,6 +1,12 @@
 /* Preview-only source provenance. Input must be the already validated source/block pair.
  * No rendered text search, source normalization, or block attribute mutation occurs here. */
-const NATIVE = { details: 'core/details', buttons: 'core/buttons', button: 'core/button' };
+const NATIVE = {
+  image: 'core/image',
+  gallery: 'core/gallery',
+  details: 'core/details',
+  buttons: 'core/buttons',
+  button: 'core/button',
+};
 const NAMES = {
   paragraph: ['core/paragraph'],
   heading: ['core/heading'],
@@ -333,7 +339,7 @@ export function sourceNavigation(source, blocks) {
       }
       if (
         span.kind === 'teaching' &&
-        ['code-tabs', 'button', 'bibliography'].includes(span.teachingKind) &&
+        ['code-tabs', 'button', 'bibliography', 'image'].includes(span.teachingKind) &&
         node.children.length
       ) {
         blocked = true;
@@ -342,7 +348,7 @@ export function sourceNavigation(source, blocks) {
       }
       add(node, path, span);
       if (span.kind === 'teaching') {
-        if (['code-tabs', 'button', 'bibliography'].includes(span.teachingKind)) {
+        if (['code-tabs', 'button', 'bibliography', 'image'].includes(span.teachingKind)) {
           /* body is stored as attributes */
         } else if (span.teachingKind === 'code-compare')
           bind(node.children, span.children.slice(2), path);

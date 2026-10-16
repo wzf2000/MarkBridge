@@ -253,6 +253,7 @@ function mbb_html_allowed($blocks)
             'core/list-item',
             'core/table',
             'core/image',
+            'core/gallery',
             'core/html',
             'core/more',
             'core/details',
@@ -301,6 +302,12 @@ function mbb_candidate($r)
 {
     $digest = mbb_block_adapter_digest();
     $candidate = mbb_candidate_current($r);
+    if (!is_wp_error($candidate)) {
+        $media = mbb_native_media_validate_candidate($candidate['document']['serialized']);
+        if (is_wp_error($media)) {
+            return $media;
+        }
+    }
     if (!is_wp_error($candidate)) {
         // Dependency inspection can invoke the real block_parser_class filter.
         // Keep the entry snapshot and compare only after every preparation/parse step.
@@ -624,7 +631,7 @@ function mbb_restore_source_filters($saved)
         }
     }
 }
-function mbb_save($r, $cli_source_path = null)
+function mbb_save($r, $cli_source_path = null, ?callable $new_document_provenance = null)
 {
     global $wpdb;
     if (!empty($GLOBALS['mbb_native_pair'])) {
@@ -899,6 +906,11 @@ function mbb_save($r, $cli_source_path = null)
             }
             update_post_meta($id, '_mbb_origin', 'markdown_import');
             update_post_meta($id, '_mbb_document_id', $docId);
+            // Internal new-document provenance participates in the same transaction;
+            // it is never supplied by REST fields or run for an existing article.
+            if (!$p && $new_document_provenance !== null) {
+                $new_document_provenance($id, $docId);
+            }
             $history = get_post_meta($id, '_mbb_source_history', true);
             if (!is_array($history)) {
                 $history = [];
@@ -1276,6 +1288,9 @@ add_action('admin_menu', function () {
             echo mbb_t(
                 '<div class="wrap"><h1>Markdown editing bridge</h1><p>Upload Markdown for editing in both representations. Preview differences before saving, publishing, or submitting for review. Set a featured image before publishing.</p><p><button class="button button-primary" id="mbb-new">Upload a new document</button></p><ul>',
             );
+            echo '<li><button class="button" id="mbb-batch-new">' .
+                esc_html(mbb_t('Batch import drafts')) .
+                '</button></li>';
             $page = max(1, absint($_GET['mbb_page'] ?? 1));
             $posts = get_posts([
                 'post_type' => 'post',
@@ -1343,6 +1358,19 @@ function mbb_enqueue_ui()
     }
     if ($tool) {
         mbb_enqueue_kernel(true);
+        wp_enqueue_style(
+            'mbb-batch-ui',
+            plugins_url(mbb_asset('batch-ui.css'), __FILE__),
+            [],
+            substr(hash_file('sha256', __DIR__ . '/batch-ui.css'), 0, 12),
+        );
+        wp_enqueue_script(
+            'mbb-batch-ui',
+            plugins_url(mbb_asset('batch-ui.js'), __FILE__),
+            ['mbb-editor-ui', 'mbb-source-tools', 'mbb-math'],
+            substr(hash_file('sha256', __DIR__ . '/batch-ui.js'), 0, 12),
+            true,
+        );
     }
     wp_enqueue_script(
         'mbb-resource-ui',
@@ -1392,6 +1420,7 @@ function mbb_enqueue_ui()
         'footnoteStyle' => file_get_contents(__DIR__ . '/footnotes.css'),
         'teachingStyle' => file_get_contents(__DIR__ . '/teaching.css'),
         'technicalStyle' => file_get_contents(__DIR__ . '/technical.css'),
+        'nativeMediaStyle' => file_get_contents(__DIR__ . '/preview-media.css'),
         'codeDisplayStyle' => file_get_contents(__DIR__ . '/code-display.css'),
         'navigationBridge' => [
             'script' => file_get_contents(__DIR__ . '/preview-navigation.js'),
@@ -1414,9 +1443,16 @@ function mbb_enqueue_ui()
         'exports' => mbb_export_config(),
     ]);
     wp_enqueue_script(
+        'mbb-static-export',
+        plugins_url(mbb_asset('static-export.js'), __FILE__),
+        ['mbb-math'],
+        substr(hash_file('sha256', __DIR__ . '/static-export.js'), 0, 12),
+        true,
+    );
+    wp_enqueue_script(
         'mbb-export-ui',
         plugins_url(mbb_asset('export-ui.js'), __FILE__),
-        ['mbb-editor-ui'],
+        ['mbb-editor-ui', 'mbb-static-export'],
         substr(hash_file('sha256', __DIR__ . '/export-ui.js'), 0, 12),
         true,
     );
