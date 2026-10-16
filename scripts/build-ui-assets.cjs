@@ -41,6 +41,7 @@ asset('footnotes.css');
 asset('teaching.js');
 asset('components.js');
 asset('teaching.css');
+asset('technical.css');
 asset('settings.css');
 asset('settings.js');
 asset('code-display.css');

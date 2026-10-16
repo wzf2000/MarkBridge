@@ -273,6 +273,9 @@ function mbb_html_allowed($blocks)
             'mbb/step',
             'mbb/code-compare',
             'mbb/code-tabs',
+            'mbb/object',
+            'mbb/statement',
+            'mbb/bibliography',
         ];
         foreach ($blocks as $b) {
             if ($b['blockName'] === null && trim($b['innerHTML']) === '') {
@@ -522,6 +525,9 @@ function mbb_kses_plain_block_sources($text, $allowed = 'post', $protocols = [])
                     'mbb/collapse' => ['title'],
                     'mbb/steps' => ['title'],
                     'mbb/step' => ['title'],
+                    'mbb/object' => ['caption'],
+                    'mbb/statement' => ['title'],
+                    'mbb/bibliography' => ['entries'],
                 ][$b['blockName']] ?? [];
             if (in_array($b['blockName'], mbb_block_adapter_names(), true)) {
                 $fields = array_keys($b['attrs']);
@@ -533,6 +539,9 @@ function mbb_kses_plain_block_sources($text, $allowed = 'post', $protocols = [])
                     isset($attrs[$field]) &&
                     (is_string($attrs[$field]) ||
                         ($b['blockName'] === 'mbb/component' && $field === 'params') ||
+                        ($b['blockName'] === 'mbb/bibliography' &&
+                            $field === 'entries' &&
+                            is_array($attrs[$field])) ||
                         ($b['blockName'] === 'mbb/code-tabs' &&
                             $field === 'tabs' &&
                             is_array($attrs[$field])))
@@ -1382,6 +1391,7 @@ function mbb_enqueue_ui()
         'state' => $tool || $new_post ? null : mbb_state($id),
         'footnoteStyle' => file_get_contents(__DIR__ . '/footnotes.css'),
         'teachingStyle' => file_get_contents(__DIR__ . '/teaching.css'),
+        'technicalStyle' => file_get_contents(__DIR__ . '/technical.css'),
         'codeDisplayStyle' => file_get_contents(__DIR__ . '/code-display.css'),
         'navigationBridge' => [
             'script' => file_get_contents(__DIR__ . '/preview-navigation.js'),

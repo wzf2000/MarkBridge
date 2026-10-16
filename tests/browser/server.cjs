@@ -131,13 +131,17 @@ const taskEditor = (source = '- [ ] Browser task\n- ordinary\n', options = {}) =
     '</head>',
     '<link rel="stylesheet" href="' +
       mapped('teaching.css') +
-      '"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/wp-includes/css/dashicons.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/components/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-editor/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-library/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-library/editor.min.css"><style>#task-editor{padding:90px 24px 24px;max-width:850px;margin:auto}#task-export{white-space:pre-wrap;overflow-wrap:anywhere;max-width:100%}</style></head>',
+      '"><link rel="stylesheet" href="' +
+      mapped('technical.css') +
+      '"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/wp-includes/css/dashicons.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/components/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-editor/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-library/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-library/editor.min.css"><style>#task-editor{padding:90px 24px 24px;max-width:850px;margin:auto}#task-export{white-space:pre-wrap;overflow-wrap:anywhere;max-width:100%;max-height:12rem;overflow:auto}</style></head>',
   );
   return html.replace(
     '</body>',
-    `<div id="task-editor"></div><button id="export-tasks">Export</button><pre id="task-export"></pre>
+    () => `<div id="task-editor"></div><button id="export-tasks">Export</button><pre id="task-export"></pre>
 <script>
 const e = wp.element.createElement;
+// Stable resolved assets keep attribute edits from navigating the canvas iframe.
+const taskEditorSettings = {allowedBlockTypes:true,__unstableResolvedAssets:{styles:'<link rel="stylesheet" href="/wp-includes/css/dist/block-editor/style.min.css">',scripts:''}};
 function EditorBody() {
   window.taskRegistry = wp.data.useRegistry();
   return e(wp.blockEditor.BlockTools, {}, ${options.iframe ? `e(wp.blockEditor.__unstableIframe,{name:'editor-canvas',title:'Editor canvas',style:{width:'100%',height:'500px'}},e(wp.blockEditor.BlockList)),e(wp.components.Panel,{},e(wp.blockEditor.InspectorControls.Slot))` : 'e(wp.blockEditor.BlockList), e(wp.blockEditor.ButtonBlockAppender)'});
@@ -146,7 +150,7 @@ function TaskEditorApp() {
   const [blocks,setBlocks] = wp.element.useState(() => MBB.toBlocks(${JSON.stringify(source)}));
   window.taskBlocks = blocks;
   return e(wp.components.SlotFillProvider, {}, e(wp.blockEditor.BlockEditorProvider, {
-    value:blocks,onInput:setBlocks,onChange:setBlocks,settings:{allowedBlockTypes:true,__unstableResolvedAssets:{styles:'<link rel="stylesheet" href="/wp-includes/css/dist/block-editor/style.min.css">',scripts:''}},
+    value:blocks,onInput:setBlocks,onChange:setBlocks,settings:taskEditorSettings,
   }, e(EditorBody)));
 }
 wp.element.createRoot(document.getElementById('task-editor')).render(e(TaskEditorApp));
@@ -239,6 +243,12 @@ http
       return;
     }
     if (pathname === '/health') return response.writeHead(200).end('ok');
+    if (pathname === '/technical-presentation') {
+      const html = execFileSync('php', [path.join(__dirname, 'technical-presentation.php')], {
+        encoding: 'utf8',
+      });
+      return response.writeHead(200, { 'Content-Type': 'text/html; charset=UTF-8' }).end(html);
+    }
     if (pathname === '/wp/v2/types')
       return response.writeHead(200, { 'Content-Type': 'application/json' }).end('{}');
     if (pathname === '/front') {
@@ -358,6 +368,22 @@ const e = wp.element.createElement;`,
       return response
         .writeHead(200, { 'Content-Type': 'text/html' })
         .end(fs.readFileSync(path.join(__dirname, 'fixtures/component.html'), 'utf8'));
+    if (pathname === '/technical-editor') {
+      const examples = JSON.parse(
+        fs.readFileSync(path.join(__dirname, '../fixtures/technical-writing.json'), 'utf8'),
+      ).cases;
+      const example = (name) => examples.find((item) => item.name === name).source;
+      const source =
+        example('equation-and-atomic-reference') +
+        '\n' +
+        example('three-independent-statement-kinds') +
+        '\n' +
+        example('bibliography-and-atomic-cite');
+      const html = taskEditor(source, { iframe: true });
+      return response
+        .writeHead(html ? 200 : 404, { 'Content-Type': 'text/html' })
+        .end(html || 'Core runtime required');
+    }
     if (pathname === '/component-editor') {
       const raw = fs.readFileSync(path.join(__dirname, 'fixtures/component.html'), 'utf8');
       const provider = {

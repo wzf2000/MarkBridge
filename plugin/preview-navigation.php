@@ -20,7 +20,7 @@ function mbb_preview_navigation(array $document, array $projected): array
 {
     $source = $document['source'];
     $fallback = static fn(): array => [
-        'html' => mbb_render_footnotes(do_blocks($projected['serialized'])),
+        'html' => mbb_render_technical(mbb_render_footnotes(do_blocks($projected['serialized']))),
         'navigation' => null,
     ];
     // Resource projection can rewrite source offsets. Never attach those to the original upload.
@@ -101,7 +101,10 @@ function mbb_preview_navigation(array $document, array $projected): array
                 return false;
             }),
         );
-        return ['html' => mbb_render_footnotes($html), 'navigation' => $navigation];
+        return [
+            'html' => mbb_render_technical(mbb_render_footnotes($html)),
+            'navigation' => $navigation,
+        ];
     } catch (Throwable $e) {
         // Position hints must never turn a valid preview into a failed conversion/save.
         return $fallback();

@@ -43,6 +43,16 @@ async function open(page, options = {}) {
     },
     { schema, params, options },
   );
+  // The fixture starts with the provider's two-field form. Wait for this
+  // test's replacement schema/attributes to commit before editing a field
+  // that exists in both forms; iframe visibility alone does not prove that.
+  if (
+    !options.otherVersion &&
+    !Object.keys(options.params || {}).some((key) => !schema.properties[key])
+  )
+    await expect(
+      page.getByRole('textbox', { name: 'params.details.title', exact: true }),
+    ).toHaveValue((options.params?.details || params.details).title);
 }
 const apply = (page) => page.getByRole('button', { name: 'Apply parameters', exact: true });
 const discard = (page) =>

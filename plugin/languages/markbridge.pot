@@ -151,6 +151,11 @@ msgstr ""
 
 #, php-format
 #: plugin/i18n.js
+msgid "%1$s reference markers will be updated. No change has been applied."
+msgstr ""
+
+#, php-format
+#: plugin/i18n.js
 msgid "%1$s · %2$s · %3$s×%4$s · %5$s bytes"
 msgstr ""
 
@@ -408,6 +413,10 @@ msgid "A batch requires at most five items"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "A bibliography requires 1–64 entries within 64 KiB"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "A button group requires 1–32 direct link buttons"
 msgstr ""
 
@@ -504,6 +513,10 @@ msgid "A real WordPress block runtime is required"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "A reference marker is malformed. Correct it before saving."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "A resource ZIP can only be imported as a Markdown candidate"
 msgstr ""
 
@@ -532,6 +545,14 @@ msgid "A stage must be a direct child of a stage group"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "A statement body must not be empty"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "A statement requires a supported kind and title; only proofs may be closed"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "A summary must be single-line plain text"
 msgstr ""
 
@@ -552,6 +573,10 @@ msgid "A teaching title must be single-line plain text of 1–200 characters"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "A technical reference has no matching object or bibliography entry"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "A valid article ID is required"
 msgstr ""
 
@@ -569,6 +594,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Add a trailing newline to the "
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Add bibliography entry"
 msgstr ""
 
 #: plugin/i18n.js
@@ -620,6 +649,14 @@ msgid "An invalid block cannot be exported"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "An object must contain exactly one matching supported block"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "An object requires a supported kind and a plain caption of 1–512 characters"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Annotate additional code lines"
 msgstr ""
 
@@ -644,6 +681,10 @@ msgid "Another window disabled recovery. Older verification cannot enable it or 
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Applied bibliography changed. The current candidate is preserved and unapplied."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Applied configuration changed. The current candidate is preserved and unapplied. Saving is paused."
 msgstr ""
 
@@ -652,11 +693,19 @@ msgid "Applied value: "
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Apply bibliography edits"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Apply formula"
 msgstr ""
 
 #: plugin/i18n.js
 msgid "Apply parameters"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Apply text edits"
 msgstr ""
 
 #: plugin/i18n.js
@@ -692,6 +741,10 @@ msgid "Authentication expired. Local candidates are preserved. Refresh or sign i
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Authors (one per line, at most eight)"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Automatic copy failed. Select the summary to copy it manually."
 msgstr ""
 
@@ -705,6 +758,38 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Awaiting selection"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Bibliography"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Bibliography URLs must use absolute HTTP or HTTPS"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Bibliography URLs must use absolute HTTP or HTTPS without credentials"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Bibliography author names are outside their bounds"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Bibliography edits have not been applied. Apply or discard them before saving or renaming keys."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Bibliography fields are incomplete, duplicated, or outside their bounds"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Bibliography keys (at most eight)"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Bibliography settings"
 msgstr ""
 
 #: plugin/i18n.js
@@ -854,6 +939,10 @@ msgid "Candidates must be valid UTF-8 text"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Caption"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Categories and tags require at most 100 unique existing term slugs"
 msgstr ""
 
@@ -875,6 +964,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Check formula delimiters and TeX source. Each block formula delimiter $$ must occupy its own line."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Check label rename"
 msgstr ""
 
 #: plugin/i18n.js
@@ -903,6 +996,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Choose a local ZIP. Also check this site's PHP upload limits"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Choose a reference target"
 msgstr ""
 
 #: plugin/i18n.js
@@ -943,6 +1040,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Choose an option"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Choose bibliography entries"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1300,6 +1401,10 @@ msgid "Creates an unsaved structure. Preview before saving; reader state is not 
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Cross-reference"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Current block types have conversion mappings. Check their conversion to confirm that attributes and formatting are preserved."
 msgstr ""
 
@@ -1368,6 +1473,14 @@ msgid "Default version must reference a group member"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Definition"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Definition, theorem or proof"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Delete candidate"
 msgstr ""
 
@@ -1421,7 +1534,15 @@ msgid "Disallowed URL scheme"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Discard bibliography edits"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Discard parameter input"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Discard text edits"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1472,6 +1593,11 @@ msgstr ""
 msgid "Draft"
 msgstr ""
 
+#, php-format
+#: plugin/i18n.js
+msgid "Duplicate bibliography key: %1$s"
+msgstr ""
+
 #: plugin/i18n.js
 msgid "Duplicate code group"
 msgstr ""
@@ -1486,6 +1612,11 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Duplicate footnote label"
+msgstr ""
+
+#, php-format
+#: plugin/i18n.js
+msgid "Duplicate stable label: %1$s"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1595,6 +1726,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Entity-looking image alternative text would change under the current engine serialization"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Equation"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1717,6 +1852,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Fenced code must preserve its trailing newline"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Figure"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2141,7 +2280,15 @@ msgid "Insert a teaching structure"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Insert cross-reference"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Insert example at selection"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Insert literature citation"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2309,6 +2456,10 @@ msgid "Keep my changes and continue from the latest version"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Labels and keys must begin with an ASCII letter and contain at most 64 letters, digits, underscores or hyphens"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Language"
 msgstr ""
 
@@ -2366,6 +2517,14 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "List items must start with a paragraph"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Listing"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Literature citation"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2591,6 +2750,11 @@ msgstr ""
 msgid "Mismatched code version count"
 msgstr ""
 
+#, php-format
+#: plugin/i18n.js
+msgid "Missing bibliography entry: %1$s"
+msgstr ""
+
 #: plugin/i18n.js
 msgid "Missing block closing comment"
 msgstr ""
@@ -2601,6 +2765,11 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Missing footnote definition"
+msgstr ""
+
+#, php-format
+#: plugin/i18n.js
+msgid "Missing reference target: %1$s"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2782,11 +2951,28 @@ msgid "Nothing is stored by default. When enabled, drafts are stored as unencryp
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Numbered object"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Numbers must be finite"
+msgstr ""
+
+#, php-format
+#: plugin/i18n.js
+msgid "Object %1$s must contain exactly one matching formula, image, table or code block. The existing body has been preserved."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Object or statement kind"
 msgstr ""
 
 #: plugin/i18n.js
 msgid "Old line number"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "One bibliography is allowed at top level before footnotes, without body blocks"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3098,7 +3284,23 @@ msgid "Process execution"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Proof"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Proposal: "
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Proposed reference key"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Proposed stable ID"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Publication or source"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3182,6 +3384,22 @@ msgid "Reduce document size or nesting and use UTF-8 text without NUL."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Reference"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Reference URL (HTTP or HTTPS)"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Reference target"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Reference title"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Refresh or sign in again to verify recovery permissions."
 msgstr ""
 
@@ -3190,11 +3408,19 @@ msgid "Registered teaching component"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Remove bibliography entry"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Remove field"
 msgstr ""
 
 #: plugin/i18n.js
 msgid "Remove item"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Rename label and references"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3621,6 +3847,11 @@ msgstr ""
 msgid "Start interactive demonstration"
 msgstr ""
 
+#, php-format
+#: plugin/i18n.js
+msgid "Statement %1$s requires body content."
+msgstr ""
+
 #: plugin/i18n.js
 msgid "Static adapter "
 msgstr ""
@@ -3691,6 +3922,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Synchronize horizontal scrolling"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Table"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3829,8 +4064,33 @@ msgstr ""
 msgid "Teaching title must be nonempty single-line text"
 msgstr ""
 
+#, php-format
+#: plugin/i18n.js
+msgid "Technical block %1$s has incomplete or invalid fields."
+msgstr ""
+
 #: plugin/i18n.js
 msgid "Technical details"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Technical object settings"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Technical objects and statements must not be inside footnotes"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Technical objects exceed the document budget"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Technical references exceed the document budget"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Technical references must not be inside links or images"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3855,6 +4115,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Text blocks cannot contain child blocks"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Text edits have not been applied. Apply or discard them before saving."
 msgstr ""
 
 #: plugin/i18n.js
@@ -4044,6 +4308,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "The author or site identity changed. Local recovery is disabled."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The bibliography must precede footnote definitions"
 msgstr ""
 
 #: plugin/i18n.js
@@ -4869,6 +5137,10 @@ msgid "The original component pair is damaged and cannot authorize preservation 
 msgstr ""
 
 #: plugin/i18n.js
+msgid "The original label or key is missing or duplicated"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "The page is suspended. Explicitly restart the interactive preview after returning."
 msgstr ""
 
@@ -4914,6 +5186,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "The proposed conversion backend failed verification. Original settings are unchanged."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The proposed label or key already exists"
 msgstr ""
 
 #: plugin/i18n.js
@@ -5030,6 +5306,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "The saved representations do not match and cannot be exported"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The selected reference target no longer exists."
 msgstr ""
 
 #: plugin/i18n.js
@@ -5257,6 +5537,14 @@ msgid "The version, source, or permissions changed. Reopen the article. The cand
 msgstr ""
 
 #: plugin/i18n.js
+msgid "The versioned reference marker is malformed or its text differs from its identity"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Theorem"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "There are unsaved changes. Save before restoring."
 msgstr ""
 
@@ -5330,6 +5618,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "This entry cannot import new ZIP media. Body and source save rules remain in effect."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "This entry is cited. Remove its citations before deleting it."
 msgstr ""
 
 #: plugin/i18n.js
@@ -5773,6 +6065,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Write the explanation and static fallback here."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Year"
 msgstr ""
 
 #: plugin/i18n.js

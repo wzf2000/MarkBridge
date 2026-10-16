@@ -333,7 +333,7 @@ export function sourceNavigation(source, blocks) {
       }
       if (
         span.kind === 'teaching' &&
-        ['code-tabs', 'button'].includes(span.teachingKind) &&
+        ['code-tabs', 'button', 'bibliography'].includes(span.teachingKind) &&
         node.children.length
       ) {
         blocked = true;
@@ -342,7 +342,7 @@ export function sourceNavigation(source, blocks) {
       }
       add(node, path, span);
       if (span.kind === 'teaching') {
-        if (['code-tabs', 'button'].includes(span.teachingKind)) {
+        if (['code-tabs', 'button', 'bibliography'].includes(span.teachingKind)) {
           /* body is stored as attributes */
         } else if (span.teachingKind === 'code-compare')
           bind(node.children, span.children.slice(2), path);

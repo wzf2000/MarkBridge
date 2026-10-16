@@ -10,7 +10,7 @@ const chromiumOptions = process.env.MARKBRIDGE_CHROMIUM_PATH
   ? { launchOptions: { executablePath: process.env.MARKBRIDGE_CHROMIUM_PATH } }
   : {};
 const compatibilityTests =
-  /(?:theme-contract|compatibility|diagnostics|source-navigation|component-parameters)\.spec\.cjs$/;
+  /(?:theme-contract|compatibility|diagnostics|source-navigation|component-parameters|technical-reading|technical-authoring|math-semantics)\.spec\.cjs$/;
 const additionalProjects =
   process.env.MARKBRIDGE_CROSS_BROWSER === '1'
     ? ['firefox', 'webkit'].flatMap((browserName) => [

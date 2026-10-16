@@ -296,6 +296,7 @@ final class Converter
             $environment->addBlockStartParser(new NamedFootnoteStartParser($registry), 101);
             $environment->addInlineParser(new NamedFootnoteInlineParser(), 36);
         }
+        $environment->addInlineParser(new TechnicalInlineParser(), 210);
         $environment->addInlineParser(new MathInlineParser(), 200);
         $environment->addInlineParser(new TaskMarkerParser(), 35);
         $document = (new MarkdownParser($environment))->parse($source);
@@ -308,6 +309,12 @@ final class Converter
             bool $inLink = false,
         ) use (&$validate, &$references, $registry): void {
             $this->tick($depth);
+            if ($inLink && $node instanceof TechnicalReference) {
+                Technical::fail(
+                    'TECHNICAL_REFERENCE',
+                    'Technical references must not be inside links or images',
+                );
+            }
             // The current link probe forbids literal markers even when raw
             // HTML <code> protects them from footnote parsing. Markdown Code
             // nodes retain their separate literal-code exemption.
@@ -670,6 +677,8 @@ final class Converter
                     '>[^' .
                     self::esc($label) .
                     ']</span>';
+            } elseif ($node instanceof TechnicalReference) {
+                $html .= Technical::storedReference($node->getLiteral());
             } elseif ($node instanceof HtmlInline) {
                 $literal = $node->getLiteral();
                 if (preg_match('/^<span(?:\s|>)/i', $literal)) {
@@ -965,6 +974,17 @@ final class Converter
                 ' -->';
         }
         if (($kind = Teaching::kind($name)) !== null) {
+            if (isset(Technical::SCHEMAS[$kind])) {
+                return '<!-- wp:' .
+                    $name .
+                    ' ' .
+                    self::commentJson($attrs) .
+                    " -->\n" .
+                    Technical::html($kind, $attrs, $children) .
+                    "\n<!-- /wp:" .
+                    $name .
+                    ' -->';
+            }
             $html =
                 '<div id="' .
                 self::attribute($attrs['id']) .
@@ -1416,7 +1436,12 @@ final class Converter
                     $error->code !== 801 ||
                     !in_array(
                         trim($error->message),
-                        ['Tag mbb-child invalid', 'Tag figure invalid', 'Tag section invalid'],
+                        [
+                            'Tag mbb-child invalid',
+                            'Tag figure invalid',
+                            'Tag figcaption invalid',
+                            'Tag section invalid',
+                        ],
                         true,
                     )
                 ) {
@@ -1551,6 +1576,7 @@ final class Converter
 
     private function safeHtml(string $html): DOMElement
     {
+        Technical::raw($html);
         $body = $this->dom($html);
         $count = 0;
         $walk = function (DOMNode $node, int $depth) use (&$walk, &$count): void {
@@ -1587,18 +1613,34 @@ final class Converter
                 $tag === 'span' &&
                 $node->getAttribute('class') === 'mbb-footnote-ref' &&
                 $node->hasAttribute('data-mbb-footnote');
-            $allowed = $math
-                ? ['class', 'data-mbb-tex']
-                : ($footnote
-                    ? ['class', 'data-mbb-footnote']
-                    : [
-                            'a' => ['href', 'title', 'id'],
-                            'img' => ['src', 'alt', 'title', 'style', 'width', 'height'],
-                            'p' => ['style'],
-                            'span' => ['style', 'class'],
-                            'font' => ['color', 'style'],
-                            'ol' => ['start'],
-                        ][$tag] ?? []);
+            $technical =
+                $tag === 'span' &&
+                in_array($node->getAttribute('class'), ['mbb-xref', 'mbb-cite'], true);
+            if ($technical) {
+                Technical::reference($node->ownerDocument->saveHTML($node));
+                for ($p = $node->parentNode; $p instanceof DOMElement; $p = $p->parentNode) {
+                    if ($p->tagName === 'a') {
+                        Technical::fail(
+                            'TECHNICAL_REFERENCE',
+                            'Technical references must not be inside links or images',
+                        );
+                    }
+                }
+            }
+            $allowed = $technical
+                ? ['class', 'data-mbb-target', 'data-mbb-keys', 'data-mbb-version']
+                : ($math
+                    ? ['class', 'data-mbb-tex']
+                    : ($footnote
+                        ? ['class', 'data-mbb-footnote']
+                        : [
+                                'a' => ['href', 'title', 'id'],
+                                'img' => ['src', 'alt', 'title', 'style', 'width', 'height'],
+                                'p' => ['style'],
+                                'span' => ['style', 'class'],
+                                'font' => ['color', 'style'],
+                                'ol' => ['start'],
+                            ][$tag] ?? []));
             foreach ($node->attributes as $attribute) {
                 $key = $attribute->name;
                 $value = $attribute->value;
@@ -1611,7 +1653,13 @@ final class Converter
                 if (in_array($key, ['href', 'src'], true)) {
                     self::safeUrl($value);
                 }
-                if ($key === 'class' && !$math && !$footnote && $value !== 'wzf-exercise-hint') {
+                if (
+                    $key === 'class' &&
+                    !$math &&
+                    !$footnote &&
+                    !$technical &&
+                    $value !== 'wzf-exercise-hint'
+                ) {
                     throw new ConversionError('HTML_ATTRIBUTES', 'Unsupported HTML class');
                 }
                 if ($key === 'style') {
@@ -2478,6 +2526,9 @@ final class Converter
                     : '';
                 return '![' . $alt . '](<' . $url . '>' . $title . ')';
             case 'span':
+                if (in_array($node->getAttribute('class'), ['mbb-xref', 'mbb-cite'], true)) {
+                    return Technical::reference($node->ownerDocument->saveHTML($node))['raw'];
+                }
                 if ($node->hasAttribute('data-mbb-footnote')) {
                     $label = FootnoteRegistry::label($node->getAttribute('data-mbb-footnote'));
                     $this->attrs($node, [
@@ -2545,6 +2596,7 @@ final class Converter
                         trim($error->message),
                         [
                             'Tag figure invalid',
+                            'Tag figcaption invalid',
                             'Tag section invalid',
                             'Tag details invalid',
                             'Tag summary invalid',

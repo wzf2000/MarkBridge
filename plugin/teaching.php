@@ -13,7 +13,20 @@ add_action('init', static function () {
         file_get_contents(__DIR__ . '/includes/php-converter/block-capabilities.json'),
         true,
     );
-    foreach (['collapse', 'steps', 'step', 'code-compare', 'component', 'code-tabs'] as $kind) {
+    foreach (
+        [
+            'collapse',
+            'steps',
+            'step',
+            'code-compare',
+            'component',
+            'code-tabs',
+            'object',
+            'statement',
+            'bibliography',
+        ]
+        as $kind
+    ) {
         $attrs = [];
         foreach ($schemas['mbb/' . $kind] as $key => $type) {
             $attrs[$key] = ['type' => $type === 'integer' ? 'number' : $type];

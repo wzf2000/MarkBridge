@@ -1,3 +1,11 @@
+export {
+  technicalIndex,
+  technicalDiagnostics,
+  technicalRenamePlan,
+  technicalReferenceSelection,
+  referenceHTML,
+} from './technical.js';
+import { installTechnicalInline, technicalRawHTML, technicalReference } from './technical.js';
 export { sourceNavigation } from './source-navigation.js';
 import { describeDiagnostic } from './diagnostics.js';
 import { translate as T, format as F } from './i18n.js';
@@ -187,6 +195,8 @@ const validFootnoteLabel = (label, location = '') => {
   return label;
 };
 md.use(footnotePlugin);
+installTechnicalInline(md, fail);
+installTechnicalInline(legacyMD, fail);
 md.inline.ruler.before('footnote_ref', 'mbb_literal_html_code_ref', (state, silent) => {
   const match = state.src.slice(state.pos, state.posMax).match(/^\[\^[^\]\n]+\]/u);
   if (!match) return false;
@@ -278,6 +288,7 @@ const attrs = {
   ol: ['start'],
 };
 function safeHTML(html, allowMath = false) {
+  technicalRawHTML(html, fail);
   if (/<!|<\/?(?:html|head|body)\b/i.test(html))
     fail('UNSAFE_HTML', 'HTML document containers are not allowed');
   const doc = new DOMParser().parseFromString('<body>' + html + '</body>', 'text/html');
@@ -295,15 +306,19 @@ function safeHTML(html, allowMath = false) {
       tag === 'span' &&
       node.className === 'mbb-footnote-ref' &&
       node.hasAttribute('data-mbb-footnote');
+    const technical = tag === 'span' && ['mbb-xref', 'mbb-cite'].includes(node.className);
+    if (technical) technicalReference(node.outerHTML, fail);
     if (!tags.has(tag) && !math) fail('UNSUPPORTED_HTML', F('Unsupported HTML tag %1$s', tag));
     for (const a of node.attributes) {
       if (
         !(
-          math
-            ? ['class', 'data-mbb-tex']
-            : footnote
-              ? ['class', 'data-mbb-footnote']
-              : attrs[tag] || []
+          technical
+            ? ['class', 'data-mbb-target', 'data-mbb-keys', 'data-mbb-version']
+            : math
+              ? ['class', 'data-mbb-tex']
+              : footnote
+                ? ['class', 'data-mbb-footnote']
+                : attrs[tag] || []
         ).includes(a.name)
       )
         fail('UNSAFE_HTML_ATTRIBUTE', F('Unsupported attribute %1$s.%2$s', tag, a.name));
@@ -324,7 +339,7 @@ function safeHTML(html, allowMath = false) {
           if (parts.length !== 2 || !values[key]?.test(value))
             fail('UNSAFE_STYLE', 'Unsupported or unsafe style');
         }
-      if (a.name === 'class' && !math && !footnote && a.value !== 'wzf-exercise-hint')
+      if (a.name === 'class' && !math && !footnote && !technical && a.value !== 'wzf-exercise-hint')
         fail('UNSAFE_HTML_ATTRIBUTE', 'Unsupported display class');
       if (a.name === 'color' && !/^(?:[a-z]+|#[0-9a-f]{3,8})$/i.test(a.value))
         fail('UNSAFE_STYLE', 'Unsafe color');
@@ -403,6 +418,7 @@ function inline(token) {
     'link_close',
     'image',
     'html_inline',
+    'mbb_technical_reference',
     'mbb_inline_math',
     'footnote_ref',
   ]);
@@ -410,6 +426,8 @@ function inline(token) {
     if (!allowed.has(t.type))
       fail('UNSUPPORTED_INLINE', F('Unsupported inline syntax %1$s', t.type), loc({ token }));
 
+    if (t.type === 'image' && t.children?.some((child) => child.type === 'mbb_technical_reference'))
+      fail('TECHNICAL_REFERENCE', 'Technical references must not be inside links or images');
     for (const [key, value] of t.attrs || []) if (['href', 'src'].includes(key)) safeURL(value);
     if (
       t.type === 'html_inline' &&
@@ -866,6 +884,8 @@ function inlineMD(html) {
       case 'font':
         return rawTag();
       case 'span':
+        if (['mbb-xref', 'mbb-cite'].includes(n.className))
+          return technicalReference(n.outerHTML, fail).raw;
         return n.hasAttribute('data-mbb-tex')
           ? '$' + n.getAttribute('data-mbb-tex') + '$'
           : n.hasAttribute('data-mbb-footnote')

@@ -102,5 +102,23 @@
     "rel": "string",
     "tagName": "string",
     "type": "string"
+  },
+  "mbb/object": {
+    "id": "string",
+    "kind": "string",
+    "caption": "string",
+    "version": "integer"
+  },
+  "mbb/statement": {
+    "id": "string",
+    "kind": "string",
+    "title": "string",
+    "open": "boolean",
+    "version": "integer"
+  },
+  "mbb/bibliography": {
+    "id": "string",
+    "entries": "array",
+    "version": "integer"
   }
 }

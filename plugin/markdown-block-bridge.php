@@ -4,7 +4,7 @@
  * Plugin URI: https://github.com/wzf2000/MarkBridge
  * Author: wzf2000
  * Author URI: https://github.com/wzf2000
- * Version: 2.2.0-rc.1
+ * Version: 2.3.0-rc.1
  * License: GPL-3.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  * Requires at least: 7.1
@@ -159,6 +159,7 @@ require_once __DIR__ . '/source-sync.php';
 require_once __DIR__ . '/publication.php';
 require_once __DIR__ . '/editor-bridge.php';
 require_once __DIR__ . '/footnotes.php';
+require_once __DIR__ . '/technical.php';
 
 require_once __DIR__ . '/revisions.php';
 

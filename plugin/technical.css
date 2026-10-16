@@ -1,0 +1,118 @@
+.mbb-technical-object,
+.mbb-technical-statement,
+.mbb-bibliography {
+  min-inline-size: 0;
+  margin: var(--mbb-block-space, 1.25rem) 0;
+  scroll-margin-block-start: calc(var(--mbb-teaching-effective-offset, 4rem) + 1rem);
+}
+.mbb-technical-object > .mbb-technical-body {
+  min-inline-size: 0;
+  max-inline-size: 100%;
+}
+.mbb-technical-object > .mbb-technical-caption {
+  margin-block: 0.65rem 0;
+  font-size: 0.9em;
+  line-height: 1.55;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.mbb-technical-statement {
+  border-inline-start: 3px solid var(--mbb-quote-border, #93a58f);
+  padding-inline: var(--mbb-panel-padding, 1rem) 0;
+}
+.mbb-technical-heading,
+.mbb-bibliography-title {
+  margin-block: 0 0.65rem;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+details.mbb-technical-statement > summary {
+  cursor: pointer;
+  padding-block: 0.4rem;
+}
+details.mbb-technical-statement:not([open]) > summary {
+  margin-block-end: 0;
+}
+.mbb-technical-body > :first-child {
+  margin-block-start: 0;
+}
+.mbb-technical-body > :last-child {
+  margin-block-end: 0;
+}
+.mbb-technical-number {
+  font-weight: 650;
+}
+.mbb-xref,
+.mbb-cite {
+  white-space: normal;
+}
+.mbb-technical-source[hidden] {
+  display: none !important;
+}
+.mbb-xref a,
+.mbb-cite a {
+  text-underline-offset: 0.16em;
+}
+.mbb-xref a:focus-visible,
+.mbb-cite a:focus-visible,
+.mbb-bibliography a:focus-visible,
+details.mbb-technical-statement > summary:focus-visible {
+  outline: 2px solid var(--mbb-focus-color, #2271b1);
+  outline-offset: 3px;
+}
+.mbb-bibliography {
+  border-block-start: 1px solid var(--mbb-border-color, #8884);
+  padding-block-start: var(--mbb-panel-padding, 1rem);
+}
+.mbb-bibliography ol {
+  padding-inline-start: 1.6em;
+}
+.mbb-bibliography li {
+  margin-block: 0.65rem;
+  padding-inline-start: 0.25em;
+  overflow-wrap: anywhere;
+  scroll-margin-block-start: calc(var(--mbb-teaching-effective-offset, 4rem) + 1rem);
+}
+.mbb-bib-title {
+  font-style: italic;
+}
+.mbb-bib-authors:not(:empty)::after,
+.mbb-bib-title:not(:empty)::after,
+.mbb-bib-year:not(:empty)::after,
+.mbb-bib-source:not(:empty)::after {
+  content: '. ';
+}
+.mbb-technical-editor .mbb-bibliography ul {
+  list-style: none;
+  padding-inline-start: 0;
+}
+.mbb-technical-settings fieldset {
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0.75rem 0 0;
+  border: 0;
+}
+.mbb-technical-settings details {
+  border-block-start: 1px solid var(--mbb-border-color, #8884);
+  margin-block-start: 0.75rem;
+}
+.mbb-technical-settings summary {
+  padding-block: 0.75rem;
+  cursor: pointer;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+@media print {
+  .mbb-technical-object,
+  .mbb-technical-heading,
+  .mbb-technical-caption {
+    break-inside: avoid;
+  }
+  details.mbb-technical-statement::details-content {
+    content-visibility: visible;
+    display: block;
+  }
+  .mbb-bibliography a {
+    color: inherit;
+  }
+}

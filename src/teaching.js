@@ -1,3 +1,10 @@
+import {
+  technicalSchemas,
+  technicalKind,
+  technicalAttributes,
+  validateTechnical,
+} from './technical.js';
+import { registerTechnical } from './technical-editor.js';
 import { createParameterEditor } from './component-parameters.js';
 import { translate as T, format as F } from './i18n.js';
 import {
@@ -16,6 +23,7 @@ import { componentParams } from './component-data.js';
 import { codeTabsAttributes, codeTabsMarkdown, registerCodeTabs } from './code-tabs.js';
 // Versioned teaching syntax has a closed schema. Bodies use the ordinary parser.
 export const teachingSchemas = {
+  ...technicalSchemas,
   details: { summary: 'string', showContent: 'boolean' },
   buttons: {},
   button: { url: 'string' },
@@ -90,6 +98,7 @@ export function teachingAttributes(kind, attrs, fail, source = false, blockName 
   if (Object.values(attrs).some((v) => typeof v === 'string' && /[\uD800-\uDFFF]/u.test(v)))
     fail('TEACHING_ATTRIBUTES', 'Teaching attributes must be valid Unicode');
   const out = Object.fromEntries(Object.keys(schema).map((key) => [key, attrs[key]]));
+  if (technicalKind('mbb/' + kind)) technicalAttributes(kind, out, fail);
   if (kind === 'code-tabs') out.tabs = codeTabsAttributes(out, source, fail);
   if (!/^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(out.id))
     fail(
@@ -162,7 +171,7 @@ export function teachingJSON(raw, fail) {
 }
 export function validateTeachingSerialized(serialized, fail) {
   for (const m of serialized.matchAll(
-    /<!-- wp:mbb\/(collapse|steps|step|code-compare|component|code-tabs)(?: (\{[\s\S]*?\}))? -->/g,
+    /<!-- wp:mbb\/(collapse|steps|step|code-compare|component|code-tabs|object|statement|bibliography)(?: (\{[\s\S]*?\}))? -->/g,
   ))
     teachingAttributes(m[1], teachingJSON(m[2] || '{}', fail), fail);
 }
@@ -309,6 +318,7 @@ export function teachingSource(source, fail, ignored = new Set(), nonce, fences 
     for (let n = begin + 1; n <= end; n++) replacements.set(n, '');
   }
   let offset = 0;
+  let definitionBeforeBibliography = false;
   return source
     .match(/[^\r\n]*(?:\r\n|\r|\n|$)/g)
     .map((raw, index) => {
@@ -320,12 +330,20 @@ export function teachingSource(source, fail, ignored = new Set(), nonce, fences 
         return line;
       if (/^ {0,3}<!--mbb-teaching/.test(line))
         fail('TEACHING_SYNTAX', 'Reserved internal teaching markers cannot be Markdown input');
+      if (/^ {0,3}\[\^[^\]\r\n]+\]:[ \t]*:::mbb:v1 (?:object|statement) \{/.test(line))
+        fail(
+          'TECHNICAL_STRUCTURE',
+          'Technical objects and statements must not be inside footnotes',
+        );
+      if (/^ {0,3}\[\^[^\]\r\n]+\]:/.test(line)) definitionBeforeBibliography = true;
+      if (definitionBeforeBibliography && /^:::mbb:v1 bibliography /.test(line))
+        fail('TECHNICAL_STRUCTURE', 'The bibliography must precede footnote definitions');
       if (!line.startsWith(':::mbb:')) return line;
       let data;
       if (line === ':::mbb:end') data = { end: true };
       else {
         const match =
-          /^:::mbb:v1 (collapse|steps|step|code-compare|component|code-tabs|details|buttons|button|adapter) (\{[^\r\n]*\})$/.exec(
+          /^:::mbb:v1 (collapse|steps|step|code-compare|component|code-tabs|details|buttons|button|adapter|object|statement|bibliography) (\{[^\r\n]*\})$/.exec(
             line,
           );
         if (!match)
@@ -545,6 +563,7 @@ export function validateTeaching(blocks, fail) {
   }
   collect(blocks);
   walk(blocks);
+  validateTechnical(blocks, fail);
   if (anchors.some((id) => ids.has(id)))
     fail('TEACHING_ID', 'A teaching ID conflicts with a body anchor');
 }
@@ -654,6 +673,7 @@ export function registerTeaching() {
       state.check();
     };
   };
+  registerTechnical({ drafts, syncDraftLock, retainDraftOwner });
   const ParameterEditor = createParameterEditor({
     wp,
     drafts,
@@ -666,7 +686,7 @@ export function registerTeaching() {
 
   for (const [kind, schema] of Object.entries(teachingSchemas)) {
     if (nativeAdapterKinds.has(kind) || kind === 'adapter') continue;
-    if (kind === 'code-tabs') continue;
+    if (kind === 'code-tabs' || technicalKind('mbb/' + kind)) continue;
     const name = 'mbb/' + kind;
     if (wp.blocks.getBlockType(name)) continue;
     wp.blocks.registerBlockType(name, {
