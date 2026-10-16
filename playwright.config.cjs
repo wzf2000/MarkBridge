@@ -9,7 +9,8 @@ const fixtureOrigin = 'http://127.0.0.1:' + fixturePort;
 const chromiumOptions = process.env.MARKBRIDGE_CHROMIUM_PATH
   ? { launchOptions: { executablePath: process.env.MARKBRIDGE_CHROMIUM_PATH } }
   : {};
-const compatibilityTests = /(?:theme-contract|compatibility|diagnostics)\.spec\.cjs$/;
+const compatibilityTests =
+  /(?:theme-contract|compatibility|diagnostics|source-navigation|component-parameters)\.spec\.cjs$/;
 const additionalProjects =
   process.env.MARKBRIDGE_CROSS_BROWSER === '1'
     ? ['firefox', 'webkit'].flatMap((browserName) => [

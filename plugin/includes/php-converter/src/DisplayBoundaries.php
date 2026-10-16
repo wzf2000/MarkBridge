@@ -26,11 +26,28 @@ final class DisplayBoundaries
         if (!str_contains($source, '$$')) {
             return $source;
         }
+        // Match JS's UTF-16 projection using byte offsets on PHP. Newlines and
+        // the original source remain unchanged; only header data is hidden.
+        $projection = preg_replace_callback(
+            '/(^|[\r\n])(:::mbb:v1 [a-z][a-z0-9-]* (\{[^\r\n]*\}))(?=[\r\n]|$)/',
+            static function (array $match): string {
+                try {
+                    $value = json_decode($match[3], false, 32, JSON_THROW_ON_ERROR);
+                    if (!($value instanceof \stdClass)) {
+                        return $match[0];
+                    }
+                    return $match[1] . str_repeat(' ', strlen($match[2]));
+                } catch (\Throwable) {
+                    return $match[0];
+                }
+            },
+            $source,
+        );
         $environment = new Environment(['max_nesting_level' => Converter::MAX_DEPTH + 1]);
         $environment->addExtension(new CommonMarkCoreExtension());
         $registry = new FootnoteRegistry();
         $environment->addBlockStartParser(new NamedFootnoteStartParser($registry), 101);
-        $document = (new MarkdownParser($environment))->parse($source);
+        $document = (new MarkdownParser($environment))->parse($projection);
         $ignored = [];
         $nodes = 0;
         $visit = function (Node $node, int $depth) use (&$visit, &$ignored, &$nodes): void {
@@ -59,7 +76,7 @@ final class DisplayBoundaries
         // policy. It does not authorize HTML; the DOM policy validates it later.
         preg_match_all(
             '/<(pre|code)\b[^>]*>[\s\S]*?<\/\1>/i',
-            $source,
+            $projection,
             $htmlCode,
             PREG_OFFSET_CAPTURE,
         );
@@ -71,10 +88,23 @@ final class DisplayBoundaries
         $offset = 0;
         $inlineCode = 0;
         $protectedIndex = 0;
-        foreach (explode("\n", $source) as $lineIndex => $line) {
+        foreach (explode("\n", $projection) as $lineIndex => $line) {
             if (isset($ignored[$lineIndex])) {
                 $offset += strlen($line) + 1;
                 continue;
+            }
+            // An invalid reserved header must be rejected by Teaching itself.
+            if (str_starts_with($line, ':::mbb:') && rtrim($line, "\r") !== ':::mbb:end') {
+                $insideCode = false;
+                foreach ($protected as [$begin, $end]) {
+                    if ($offset >= $begin && $offset < $end) {
+                        $insideCode = true;
+                        break;
+                    }
+                }
+                if (!$insideCode) {
+                    return $source;
+                }
             }
             for ($i = 0, $length = strlen($line); $i < $length; $i++) {
                 while (

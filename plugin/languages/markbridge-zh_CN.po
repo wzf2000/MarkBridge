@@ -576,8 +576,20 @@ msgid "Add code version"
 msgstr "添加代码版本"
 
 #: plugin/i18n.js
+msgid "Add field"
+msgstr "添加字段"
+
+#: plugin/i18n.js
+msgid "Add item"
+msgstr "添加项目"
+
+#: plugin/i18n.js
 msgid "Adopt unsaved merge candidate"
 msgstr "采用未保存合并候选"
+
+#: plugin/i18n.js
+msgid "Advanced JSON"
+msgstr "高级 JSON"
 
 #: plugin/i18n.js
 msgid "All whitespace is preserved. Empty code and code without a trailing newline are allowed."
@@ -926,6 +938,10 @@ msgid "Choose an existing article."
 msgstr "请选择已有文章。"
 
 #: plugin/i18n.js
+msgid "Choose an existing line."
+msgstr "请选择存在的行号。"
+
+#: plugin/i18n.js
 msgid "Choose an option"
 msgstr "请选择"
 
@@ -940,6 +956,10 @@ msgstr "请逐项选择全部正文和元数据冲突。采用只生成未保存
 #: plugin/i18n.js
 msgid "Choose every conflict explicitly"
 msgstr "请逐项选择全部冲突"
+
+#: plugin/i18n.js
+msgid "Choose one of the registered values."
+msgstr "请选择已登记的选项。"
 
 #: plugin/i18n.js
 msgid "Choose this conflict"
@@ -1276,6 +1296,10 @@ msgid "Copy the original code manually"
 msgstr "请手动复制原始代码"
 
 #: plugin/i18n.js
+msgid "Creates an unsaved structure. Preview before saving; reader state is not stored."
+msgstr "创建未保存的结构。保存前请预览；读者状态不会写入文章。"
+
+#: plugin/i18n.js
 msgid "Current block types have conversion mappings. Check their conversion to confirm that attributes and formatting are preserved."
 msgstr "当前区块类型已有转换映射；请检查当前区块转换，确认其属性和格式也能保留。"
 
@@ -1298,6 +1322,10 @@ msgstr "当前公式大小"
 #: plugin/i18n.js
 msgid "Current metadata was written to the header candidate but has not been saved. Preview again. Source-managed articles still require the source write workflow."
 msgstr "当前元数据已写入头部候选，尚未保存；请重新预览，来源文章仍须经源文件写回流程。"
+
+#: plugin/i18n.js
+msgid "Current value is outside the registered choices"
+msgstr "当前值不在已登记的选项中"
 
 #: plugin/i18n.js
 msgid "Current: "
@@ -1538,6 +1566,10 @@ msgid "Empty anchors must occupy their own paragraph"
 msgstr "空锚点必须独立成段"
 
 #: plugin/i18n.js
+msgid "Enable a compatible diagram extension before inserting a diagram."
+msgstr "请先启用兼容的图示扩展，再插入节点图。"
+
+#: plugin/i18n.js
 msgid "Enable local recovery in this browser "
 msgstr "启用此浏览器的本地恢复 "
 
@@ -1620,6 +1652,10 @@ msgid "Expected table row"
 msgstr "需要表格行"
 
 #: plugin/i18n.js
+msgid "Explanation"
+msgstr "解释"
+
+#: plugin/i18n.js
 msgid "Explicit export confirmation is required"
 msgstr "需要明确确认导出"
 
@@ -1686,6 +1722,14 @@ msgstr "围栏代码必须保留结尾换行"
 #: plugin/i18n.js
 msgid "Final media HTML does not satisfy the save allowlist"
 msgstr "最终媒体 HTML 不符合保存允许列表"
+
+#: plugin/i18n.js
+msgid "Find text"
+msgstr "查找文本"
+
+#: plugin/i18n.js
+msgid "Find, replace and navigate"
+msgstr "查找、替换与定位"
 
 #: plugin/i18n.js
 msgid "Footnote"
@@ -1855,6 +1899,14 @@ msgstr "全文模式"
 #: plugin/i18n.js
 msgid "General settings"
 msgstr "常规设置"
+
+#: plugin/i18n.js
+msgid "Go"
+msgstr "跳转"
+
+#: plugin/i18n.js
+msgid "Go to line"
+msgstr "跳转行号"
 
 #: plugin/i18n.js
 msgid "HTML blocks cannot contain child blocks"
@@ -2085,12 +2137,24 @@ msgid "Insert a checkable task list."
 msgstr "插入可勾选的任务列表。"
 
 #: plugin/i18n.js
+msgid "Insert a teaching structure"
+msgstr "插入教学结构"
+
+#: plugin/i18n.js
+msgid "Insert example at selection"
+msgstr "在选区插入样例"
+
+#: plugin/i18n.js
 msgid "Insert or edit footnote reference"
 msgstr "插入或修改脚注引用"
 
 #: plugin/i18n.js
 msgid "Insert reference"
 msgstr "插入引用"
+
+#: plugin/i18n.js
+msgid "Inserts an unsaved example with new stable IDs. Playback and reader choices are never saved. Edit the explanation, then preview and confirm through the normal save workflow."
+msgstr "插入具有新稳定标识的未保存样例。播放进度和读者选择不写回文章。编辑解释后，按正常流程预览并确认保存。"
 
 #: plugin/i18n.js
 msgid "Interactive editor preview. Edit the static fallback body below."
@@ -2317,6 +2381,26 @@ msgid "Local recovery is not enabled."
 msgstr "本地恢复尚未启用。"
 
 #: plugin/i18n.js
+msgid "Locate error line"
+msgstr "定位错误所在行"
+
+#: plugin/i18n.js
+msgid "Locate selection in preview"
+msgstr "在预览中定位选区"
+
+#: plugin/i18n.js
+msgid "Locate source"
+msgstr "定位源码"
+
+#: plugin/i18n.js
+msgid "Located the containing structure."
+msgstr "已定位所属结构。"
+
+#: plugin/i18n.js
+msgid "Located the source object."
+msgstr "已定位源码对象。"
+
+#: plugin/i18n.js
 msgid "Long code differences estimated by matching line positions: "
 msgstr "长代码按相同行位置估计差异："
 
@@ -2407,8 +2491,16 @@ msgid "Markdown source / preview"
 msgstr "Markdown 原文 / 预览"
 
 #: plugin/i18n.js
+msgid "Match case"
+msgstr "区分大小写"
+
+#: plugin/i18n.js
 msgid "Matches the verified WordPress 7.1 templates."
 msgstr "匹配已验证的 WordPress 7.1 模板。"
+
+#: plugin/i18n.js
+msgid "Matches: "
+msgstr "匹配数："
 
 #: plugin/i18n.js
 msgid "Math (MathJax)"
@@ -2569,6 +2661,10 @@ msgid "Namespaced dependencies and the standalone loading map are loaded."
 msgstr "已加载命名空间隔离后的依赖与独立加载表。"
 
 #: plugin/i18n.js
+msgid "Narrow the search to at most 10000 matches."
+msgstr "请缩小查找范围，使匹配数不超过 10000。"
+
+#: plugin/i18n.js
 msgid "Native adapter serialized attributes or HTML cannot round-trip exactly"
 msgstr "原生适配区块序列化属性或 HTML 不能精确往返"
 
@@ -2634,6 +2730,10 @@ msgid "New-window links must include noopener"
 msgstr "新窗口链接必须含 noopener"
 
 #: plugin/i18n.js
+msgid "Next match"
+msgstr "下一个匹配"
+
+#: plugin/i18n.js
 msgid "Next stage"
 msgstr "下一阶段"
 
@@ -2644,6 +2744,14 @@ msgstr "正文无变化。"
 #: plugin/i18n.js
 msgid "No fields are applied by default. Select fields and preview again. Clearing a selection changes neither current article settings nor the header."
 msgstr "默认不应用。逐项选择后须重新预览；取消选择不会改写当前文章设置或头部。"
+
+#: plugin/i18n.js
+msgid "No matching text."
+msgstr "未找到匹配文本。"
+
+#: plugin/i18n.js
+msgid "No proven preview range for this selection. Preview the current source again."
+msgstr "此选区没有可靠的位置映射，请重新预览当前源码。"
 
 #: plugin/i18n.js
 msgid "No recoverable candidate exists for the current identity and version."
@@ -2664,6 +2772,10 @@ msgstr "没有版本化元数据提案；旧无版本头继续作为正文。"
 #: plugin/i18n.js
 msgid "Node (private server runtime)"
 msgstr "Node（服务器私有运行环境）"
+
+#: plugin/i18n.js
+msgid "Node diagram"
+msgstr "节点图"
 
 #: plugin/i18n.js
 msgid "Nothing is stored by default. When enabled, drafts are stored as unencrypted text in this browser and may be accessible to other users of a shared device. At most 8 records and 1 MiB total, expiring after 7 days. This is not a substitute for saving to the site."
@@ -2834,6 +2946,10 @@ msgid "Parameter JSON (data only; verified on save)"
 msgstr "参数 JSON（纯数据，保存时验证）"
 
 #: plugin/i18n.js
+msgid "Parameter form"
+msgstr "参数表单"
+
+#: plugin/i18n.js
 msgid "Parameter structure exceeds budget"
 msgstr "参数结构超出预算"
 
@@ -2848,6 +2964,10 @@ msgstr "参数尚未应用，文章保存已暂停。应用或撤销后继续。
 #: plugin/i18n.js
 msgid "Parameters exceed 16 KiB"
 msgstr "参数超过 16 KiB"
+
+#: plugin/i18n.js
+msgid "Parameters exceed the supported depth."
+msgstr "参数超过支持的深度。"
 
 #: plugin/i18n.js
 msgid "Parameters have not been applied. Apply or discard the parameter input before saving."
@@ -2946,12 +3066,20 @@ msgid "Preview resources expired. Upload the ZIP again"
 msgstr "预览资源已失效，请重新上传 ZIP"
 
 #: plugin/i18n.js
+msgid "Preview the current source to enable navigation."
+msgstr "预览当前源码后可使用定位。"
+
+#: plugin/i18n.js
 msgid "Preview the metadata selection again before confirming."
 msgstr "元数据选择须重新预览后确认。"
 
 #: plugin/i18n.js
 msgid "Preview, then confirm the source write"
 msgstr "先预览，再确认写回"
+
+#: plugin/i18n.js
+msgid "Previous match"
+msgstr "上一个匹配"
 
 #: plugin/i18n.js
 msgid "Previous stage"
@@ -2980,6 +3108,10 @@ msgstr "私密发布"
 #: plugin/i18n.js
 msgid "Published publicly"
 msgstr "公开发布"
+
+#: plugin/i18n.js
+msgid "Question"
+msgstr "题目"
 
 #: plugin/i18n.js
 msgid "Raw FrontMatter header"
@@ -3042,6 +3174,10 @@ msgid "Recovery permissions could not be verified again. Local recovery is pause
 msgstr "无法重新校验恢复权限；本地恢复已暂停，编辑内容仍在页面中。"
 
 #: plugin/i18n.js
+msgid "Redo source change"
+msgstr "重做源码修改"
+
+#: plugin/i18n.js
 msgid "Reduce document size or nesting and use UTF-8 text without NUL."
 msgstr "请减少文档大小或嵌套层数，并使用不含 NUL 的 UTF-8 文本。"
 
@@ -3052,6 +3188,30 @@ msgstr "请刷新页面或重新登录后校验恢复权限。"
 #: plugin/i18n.js
 msgid "Registered teaching component"
 msgstr "登记的教学组件"
+
+#: plugin/i18n.js
+msgid "Remove field"
+msgstr "删除字段"
+
+#: plugin/i18n.js
+msgid "Remove item"
+msgstr "删除项目"
+
+#: plugin/i18n.js
+msgid "Replace all"
+msgstr "全部替换"
+
+#: plugin/i18n.js
+msgid "Replace selection"
+msgstr "替换选中匹配"
+
+#: plugin/i18n.js
+msgid "Replace with"
+msgstr "替换为"
+
+#: plugin/i18n.js
+msgid "Replaced matches: "
+msgstr "已替换："
 
 #: plugin/i18n.js
 msgid "Request and base documentId must match"
@@ -3299,6 +3459,18 @@ msgid "Scroll horizontally to read long lines. Focus the code and use the arrow 
 msgstr "长行可横向滚动；聚焦代码后可使用方向键。"
 
 #: plugin/i18n.js
+msgid "Select a preview object, or use Tab and Enter, to locate its source."
+msgstr "点击预览对象，或使用 Tab 和 Enter，定位其源码。"
+
+#: plugin/i18n.js
+msgid "Selected the containing structure."
+msgstr "已选中所属结构。"
+
+#: plugin/i18n.js
+msgid "Selected the source object."
+msgstr "已选中源码对象。"
+
+#: plugin/i18n.js
 msgid "Separator must be empty"
 msgstr "分隔符必须为空"
 
@@ -3356,12 +3528,20 @@ msgid "Some interrupted media could not be cleaned. Try later"
 msgstr "中断媒体未能全部清理，请稍后重试"
 
 #: plugin/i18n.js
+msgid "Some structures have only partial position hints."
+msgstr "部分结构仅提供保守的位置提示。"
+
+#: plugin/i18n.js
 msgid "Source and differences"
 msgstr "源稿与差异"
 
 #: plugin/i18n.js
 msgid "Source and serialized snapshot do not match"
 msgstr "原文与序列化快照不匹配"
+
+#: plugin/i18n.js
+msgid "Source beside preview"
+msgstr "源码与预览并排"
 
 #: plugin/i18n.js
 msgid "Source binding verification failed."
@@ -3502,6 +3682,14 @@ msgid "Step must be a direct child of steps"
 msgstr "阶段必须为阶段组直接子块"
 
 #: plugin/i18n.js
+msgid "Structure"
+msgstr "结构"
+
+#: plugin/i18n.js
+msgid "Sync by content anchors"
+msgstr "按内容锚点同步滚动"
+
+#: plugin/i18n.js
 msgid "Synchronize horizontal scrolling"
 msgstr "联动横向滚动"
 
@@ -3616,6 +3804,10 @@ msgstr "教学容器总深度不得超过 31 层"
 #: plugin/i18n.js
 msgid "Teaching containers require a complete :::mbb:v1 name and JSON attributes"
 msgstr "教学容器需使用完整的 :::mbb:v1 名称 JSON 属性"
+
+#: plugin/i18n.js
+msgid "Teaching example"
+msgstr "教学样例"
 
 #: plugin/i18n.js
 msgid "Teaching nesting exceeds the structural limit"
@@ -3957,6 +4149,10 @@ msgstr "候选 JSON 超过 256 KiB；编辑内容仍在页面中，可下载保�
 #: plugin/i18n.js
 msgid "The candidate body exceeds 256 KiB or has an unsupported format. Edited content remains on the page and can be downloaded."
 msgstr "候选正文超过 256 KiB 或格式不受支持；编辑内容仍在页面中，可下载保留。"
+
+#: plugin/i18n.js
+msgid "The candidate changed. Preview the differences again before saving."
+msgstr "候选已修改。保存前请重新预览差异。"
 
 #: plugin/i18n.js
 msgid "The candidate could not be restored as blocks."
@@ -4364,6 +4560,10 @@ msgid "The featured image must be a nonnegative safe integer"
 msgstr "特色图片需为非负安全整数"
 
 #: plugin/i18n.js
+msgid "The field has an invalid type."
+msgstr "字段类型无效。"
+
+#: plugin/i18n.js
 msgid "The file is too large."
 msgstr "文件过大。"
 
@@ -4474,6 +4674,10 @@ msgstr "隔离组件发生未授权导航。"
 #: plugin/i18n.js
 msgid "The isolated component is ready."
 msgstr "隔离组件已就绪。"
+
+#: plugin/i18n.js
+msgid "The item count is outside the registered bounds."
+msgstr "项目数量超出已登记的范围。"
 
 #: plugin/i18n.js
 msgid "The latest server signature is incomplete"
@@ -4637,6 +4841,10 @@ msgid "The new media directory contains links or objects outside its boundary"
 msgstr "新媒体目录包含链接或越界对象"
 
 #: plugin/i18n.js
+msgid "The number is outside the registered bounds."
+msgstr "数值超出已登记的范围。"
+
+#: plugin/i18n.js
 msgid "The opening baseline expired. Preserve the candidate and reconcile again"
 msgstr "打开基线已过期，请保留候选并重新协调"
 
@@ -4715,6 +4923,10 @@ msgstr "恢复会话已变化。"
 #: plugin/i18n.js
 msgid "The recovery session or current account changed."
 msgstr "恢复会话或当前账号已变化。"
+
+#: plugin/i18n.js
+msgid "The replacement exceeds the source size limit."
+msgstr "替换后超过源码大小限制。"
 
 #: plugin/i18n.js
 msgid "The request is too large."
@@ -5009,12 +5221,20 @@ msgid "The terminal newline marker must be boolean"
 msgstr "末尾换行标记需为布尔值"
 
 #: plugin/i18n.js
+msgid "The text length is outside the registered bounds."
+msgstr "文本长度超出已登记的范围。"
+
+#: plugin/i18n.js
 msgid "The title must be single-line text of 1–200 characters"
 msgstr "标题需为 1–200 字符的单行文字"
 
 #: plugin/i18n.js
 msgid "The uncompressed export exceeds its budget. Content was not truncated"
 msgstr "导出展开体积超限，未截断内容"
+
+#: plugin/i18n.js
+msgid "The upgrade target is no longer registered. Discard the candidate or restore the extension."
+msgstr "升级目标已不再登记。请放弃候选，或恢复相应扩展。"
 
 #: plugin/i18n.js
 msgid "The uploaded file is a known older version and cannot overwrite the current edits."
@@ -5039,6 +5259,10 @@ msgstr "版本、来源或权限已变化，请重新打开文章，候选未应
 #: plugin/i18n.js
 msgid "There are unsaved changes. Save before restoring."
 msgstr "有未保存修改，请先保存后再恢复。"
+
+#: plugin/i18n.js
+msgid "These parameters use the JSON editor. All fields are preserved; the server verifies them when saving."
+msgstr "这些参数使用 JSON 编辑，保留所有字段，由服务器在保存时校验。"
 
 #: plugin/i18n.js
 msgid "This Markdown cannot be represented without a block roundtrip change"
@@ -5109,6 +5333,10 @@ msgid "This entry cannot import new ZIP media. Body and source save rules remain
 msgstr "此入口不能导入 ZIP 新媒体；正文和来源保存规则保持不变。"
 
 #: plugin/i18n.js
+msgid "This field is not in the registered schema."
+msgstr "此字段不在已登记的结构中。"
+
+#: plugin/i18n.js
 msgid "This image does not belong to the resource candidate"
 msgstr "此图片不属于资源候选"
 
@@ -5119,6 +5347,10 @@ msgstr "本地恢复记录没有可信的打开时签名基线，需手动比较
 #: plugin/i18n.js
 msgid "This new article already has unsaved content. Save or clear it before importing Markdown."
 msgstr "当前新文章已有未保存内容，请先保存或清空后再导入 Markdown。"
+
+#: plugin/i18n.js
+msgid "This registered field is required."
+msgstr "此字段为必填项。"
 
 #: plugin/i18n.js
 msgid "This resource import was canceled. The document is preserved. Upload the ZIP again or remove pending images."
@@ -5166,8 +5398,16 @@ msgid "Transaction commit failed"
 msgstr "事务提交失败"
 
 #: plugin/i18n.js
+msgid "Unapplied component version change:"
+msgstr "尚未应用的组件版本变化："
+
+#: plugin/i18n.js
 msgid "Unclosed teaching container"
 msgstr "教学容器未闭合"
+
+#: plugin/i18n.js
+msgid "Undo source change"
+msgstr "撤销源码修改"
 
 #: plugin/i18n.js
 msgid "Unexpected DOM node"
@@ -5368,6 +5608,10 @@ msgid "Unsupported teaching block version"
 msgstr "不支持的教学区块版本"
 
 #: plugin/i18n.js
+msgid "Upgrade diagram to use the visual editor"
+msgstr "升级图示以使用可视化编辑"
+
+#: plugin/i18n.js
 msgid "Upload Markdown or an image resource ZIP "
 msgstr "上传 Markdown 或图片资源 ZIP "
 
@@ -5476,6 +5720,10 @@ msgid "View restoration differences and preview"
 msgstr "查看恢复差异与预览"
 
 #: plugin/i18n.js
+msgid "Visual editor"
+msgstr "可视化编辑"
+
+#: plugin/i18n.js
 msgid "Wait for successful typesetting before applying the formula."
 msgstr "请等待公式排版成功后再应用。"
 
@@ -5522,6 +5770,10 @@ msgstr "标题会被 WordPress 改写，请修改提案。"
 #: plugin/i18n.js
 msgid "Write current metadata into the header"
 msgstr "将当前元数据写入头部"
+
+#: plugin/i18n.js
+msgid "Write the explanation and static fallback here."
+msgstr "在此填写解释和静态替代内容。"
 
 #: plugin/i18n.js
 msgid "You cannot assign categories or tags to this article."

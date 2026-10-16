@@ -576,7 +576,19 @@ msgid "Add code version"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Add field"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Add item"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Adopt unsaved merge candidate"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Advanced JSON"
 msgstr ""
 
 #: plugin/i18n.js
@@ -926,6 +938,10 @@ msgid "Choose an existing article."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Choose an existing line."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Choose an option"
 msgstr ""
 
@@ -939,6 +955,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Choose every conflict explicitly"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Choose one of the registered values."
 msgstr ""
 
 #: plugin/i18n.js
@@ -1276,6 +1296,10 @@ msgid "Copy the original code manually"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Creates an unsaved structure. Preview before saving; reader state is not stored."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Current block types have conversion mappings. Check their conversion to confirm that attributes and formatting are preserved."
 msgstr ""
 
@@ -1297,6 +1321,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Current metadata was written to the header candidate but has not been saved. Preview again. Source-managed articles still require the source write workflow."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Current value is outside the registered choices"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1538,6 +1566,10 @@ msgid "Empty anchors must occupy their own paragraph"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Enable a compatible diagram extension before inserting a diagram."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Enable local recovery in this browser "
 msgstr ""
 
@@ -1620,6 +1652,10 @@ msgid "Expected table row"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Explanation"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Explicit export confirmation is required"
 msgstr ""
 
@@ -1685,6 +1721,14 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Final media HTML does not satisfy the save allowlist"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Find text"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Find, replace and navigate"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1854,6 +1898,14 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "General settings"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Go"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Go to line"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2085,11 +2137,23 @@ msgid "Insert a checkable task list."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Insert a teaching structure"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Insert example at selection"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Insert or edit footnote reference"
 msgstr ""
 
 #: plugin/i18n.js
 msgid "Insert reference"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Inserts an unsaved example with new stable IDs. Playback and reader choices are never saved. Edit the explanation, then preview and confirm through the normal save workflow."
 msgstr ""
 
 #: plugin/i18n.js
@@ -2317,6 +2381,26 @@ msgid "Local recovery is not enabled."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Locate error line"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Locate selection in preview"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Locate source"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Located the containing structure."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Located the source object."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Long code differences estimated by matching line positions: "
 msgstr ""
 
@@ -2407,7 +2491,15 @@ msgid "Markdown source / preview"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Match case"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Matches the verified WordPress 7.1 templates."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Matches: "
 msgstr ""
 
 #: plugin/i18n.js
@@ -2569,6 +2661,10 @@ msgid "Namespaced dependencies and the standalone loading map are loaded."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Narrow the search to at most 10000 matches."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Native adapter serialized attributes or HTML cannot round-trip exactly"
 msgstr ""
 
@@ -2634,6 +2730,10 @@ msgid "New-window links must include noopener"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Next match"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Next stage"
 msgstr ""
 
@@ -2643,6 +2743,14 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "No fields are applied by default. Select fields and preview again. Clearing a selection changes neither current article settings nor the header."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "No matching text."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "No proven preview range for this selection. Preview the current source again."
 msgstr ""
 
 #: plugin/i18n.js
@@ -2663,6 +2771,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Node (private server runtime)"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Node diagram"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2834,6 +2946,10 @@ msgid "Parameter JSON (data only; verified on save)"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Parameter form"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Parameter structure exceeds budget"
 msgstr ""
 
@@ -2847,6 +2963,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Parameters exceed 16 KiB"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Parameters exceed the supported depth."
 msgstr ""
 
 #: plugin/i18n.js
@@ -2946,11 +3066,19 @@ msgid "Preview resources expired. Upload the ZIP again"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Preview the current source to enable navigation."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Preview the metadata selection again before confirming."
 msgstr ""
 
 #: plugin/i18n.js
 msgid "Preview, then confirm the source write"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Previous match"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2979,6 +3107,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Published publicly"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Question"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3042,6 +3174,10 @@ msgid "Recovery permissions could not be verified again. Local recovery is pause
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Redo source change"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Reduce document size or nesting and use UTF-8 text without NUL."
 msgstr ""
 
@@ -3051,6 +3187,30 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Registered teaching component"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Remove field"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Remove item"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Replace all"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Replace selection"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Replace with"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Replaced matches: "
 msgstr ""
 
 #: plugin/i18n.js
@@ -3299,6 +3459,18 @@ msgid "Scroll horizontally to read long lines. Focus the code and use the arrow 
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Select a preview object, or use Tab and Enter, to locate its source."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Selected the containing structure."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Selected the source object."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Separator must be empty"
 msgstr ""
 
@@ -3356,11 +3528,19 @@ msgid "Some interrupted media could not be cleaned. Try later"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Some structures have only partial position hints."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Source and differences"
 msgstr ""
 
 #: plugin/i18n.js
 msgid "Source and serialized snapshot do not match"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Source beside preview"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3502,6 +3682,14 @@ msgid "Step must be a direct child of steps"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Structure"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Sync by content anchors"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Synchronize horizontal scrolling"
 msgstr ""
 
@@ -3615,6 +3803,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Teaching containers require a complete :::mbb:v1 name and JSON attributes"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Teaching example"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3956,6 +4148,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "The candidate body exceeds 256 KiB or has an unsupported format. Edited content remains on the page and can be downloaded."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The candidate changed. Preview the differences again before saving."
 msgstr ""
 
 #: plugin/i18n.js
@@ -4364,6 +4560,10 @@ msgid "The featured image must be a nonnegative safe integer"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "The field has an invalid type."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "The file is too large."
 msgstr ""
 
@@ -4473,6 +4673,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "The isolated component is ready."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The item count is outside the registered bounds."
 msgstr ""
 
 #: plugin/i18n.js
@@ -4637,6 +4841,10 @@ msgid "The new media directory contains links or objects outside its boundary"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "The number is outside the registered bounds."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "The opening baseline expired. Preserve the candidate and reconcile again"
 msgstr ""
 
@@ -4714,6 +4922,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "The recovery session or current account changed."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The replacement exceeds the source size limit."
 msgstr ""
 
 #: plugin/i18n.js
@@ -5009,11 +5221,19 @@ msgid "The terminal newline marker must be boolean"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "The text length is outside the registered bounds."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "The title must be single-line text of 1–200 characters"
 msgstr ""
 
 #: plugin/i18n.js
 msgid "The uncompressed export exceeds its budget. Content was not truncated"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The upgrade target is no longer registered. Discard the candidate or restore the extension."
 msgstr ""
 
 #: plugin/i18n.js
@@ -5038,6 +5258,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "There are unsaved changes. Save before restoring."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "These parameters use the JSON editor. All fields are preserved; the server verifies them when saving."
 msgstr ""
 
 #: plugin/i18n.js
@@ -5109,6 +5333,10 @@ msgid "This entry cannot import new ZIP media. Body and source save rules remain
 msgstr ""
 
 #: plugin/i18n.js
+msgid "This field is not in the registered schema."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "This image does not belong to the resource candidate"
 msgstr ""
 
@@ -5118,6 +5346,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "This new article already has unsaved content. Save or clear it before importing Markdown."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "This registered field is required."
 msgstr ""
 
 #: plugin/i18n.js
@@ -5166,7 +5398,15 @@ msgid "Transaction commit failed"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Unapplied component version change:"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Unclosed teaching container"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Undo source change"
 msgstr ""
 
 #: plugin/i18n.js
@@ -5368,6 +5608,10 @@ msgid "Unsupported teaching block version"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Upgrade diagram to use the visual editor"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Upload Markdown or an image resource ZIP "
 msgstr ""
 
@@ -5476,6 +5720,10 @@ msgid "View restoration differences and preview"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Visual editor"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Wait for successful typesetting before applying the formula."
 msgstr ""
 
@@ -5521,6 +5769,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Write current metadata into the header"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Write the explanation and static fallback here."
 msgstr ""
 
 #: plugin/i18n.js

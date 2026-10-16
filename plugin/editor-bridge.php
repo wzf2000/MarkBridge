@@ -16,6 +16,7 @@ require_once __DIR__ . '/resource-import.php';
 require_once __DIR__ . '/save-commit.php';
 require_once __DIR__ . '/export.php';
 require_once __DIR__ . '/merge.php';
+require_once __DIR__ . '/preview-navigation.php';
 function mbb_managed($id)
 {
     return get_post_meta($id, '_mbb_origin', true) === 'markdown_import' &&
@@ -477,9 +478,12 @@ function mbb_preview($r)
     $receipt_request = clone $r;
     $receipt_request['frontmatter_receipt'] = $c['frontmatter_receipt'];
     $c['resource_receipt'] = mbb_resource_receipt($receipt_request, $c);
-    $c['html'] = mbb_render_footnotes(
-        do_blocks(($c['resource_plan']['projectedDocument'] ?? $c['document'])['serialized']),
+    $rendered = mbb_preview_navigation(
+        $c['document'],
+        $c['resource_plan']['projectedDocument'] ?? $c['document'],
     );
+    $c['html'] = $rendered['html'];
+    $c['navigation'] = $rendered['navigation'];
     if (!hash_equals($c['_adapter_registry_digest'], mbb_block_adapter_digest())) {
         return mbb_error(
             'adapter_conflict',
@@ -1339,9 +1343,24 @@ function mbb_enqueue_ui()
         true,
     );
     wp_enqueue_script(
+        'mbb-source-tools',
+        plugins_url(mbb_asset('source-tools.js'), __FILE__),
+        [],
+        substr(hash_file('sha256', __DIR__ . '/source-tools.js'), 0, 12),
+        true,
+    );
+    wp_enqueue_script(
         'mbb-editor-ui',
         plugins_url(mbb_asset('editor-ui.js'), __FILE__),
-        ['wp-data', 'wp-blocks', 'wp-api-fetch', 'mbb-math', 'mbb-resource-ui', 'mbb-kernel'],
+        [
+            'wp-data',
+            'wp-blocks',
+            'wp-api-fetch',
+            'mbb-math',
+            'mbb-resource-ui',
+            'mbb-kernel',
+            'mbb-source-tools',
+        ],
         substr(hash_file('sha256', __DIR__ . '/editor-ui.js'), 0, 12),
         true,
     );
@@ -1364,6 +1383,12 @@ function mbb_enqueue_ui()
         'footnoteStyle' => file_get_contents(__DIR__ . '/footnotes.css'),
         'teachingStyle' => file_get_contents(__DIR__ . '/teaching.css'),
         'codeDisplayStyle' => file_get_contents(__DIR__ . '/code-display.css'),
+        'navigationBridge' => [
+            'script' => file_get_contents(__DIR__ . '/preview-navigation.js'),
+            'sha256' => base64_encode(
+                hash_file('sha256', __DIR__ . '/preview-navigation.js', true),
+            ),
+        ],
         'supportedBlocks' => array_merge(
             array_keys(
                 json_decode(

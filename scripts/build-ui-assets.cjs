@@ -31,6 +31,7 @@ asset('kernel.js');
 asset('emoji.js');
 asset('presentation-loader.js');
 asset('editor-ui.js');
+asset('source-tools.js');
 asset('resource-ui.js');
 asset('export-ui.js');
 asset('local-recovery.js');

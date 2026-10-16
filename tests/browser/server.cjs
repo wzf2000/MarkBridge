@@ -69,9 +69,52 @@ const editor = `<!doctype html><html><head><meta charset="utf-8"><meta name="vie
 <link rel="stylesheet" href="${mapped('editor-ui.css')}">
 <script>window.MBB_MATH_CONFIG={front:false};window.MBB_EDITOR={root:location.origin+'/wp-json/mbb/v1/',nonce:'fixture',postId:0,canPublish:true,sourceFontSize:'14',state:null,footnoteStyle:${JSON.stringify(fs.readFileSync(path.join(plugin, 'footnotes.css'), 'utf8'))}};
 window.wp={blocks:{serialize:()=>''},data:{select:()=>({getEditedPostAttribute:()=>0,getEditedPostContent:()=>'',getBlocks:()=>[]})}};
-window.MBB_REVISIONS={open(){}};</script>
-<script defer src="${mapped('math.js')}"></script><script defer src="${mapped('resource-ui.js')}"></script><script defer src="${mapped('editor-ui.js')}"></script>
+window.MBB_REVISIONS={open(){}};window.MBB_EDITOR.navigationBridge=${JSON.stringify({
+  script: fs.readFileSync(path.join(plugin, 'preview-navigation.js'), 'utf8'),
+  sha256: require('node:crypto')
+    .createHash('sha256')
+    .update(fs.readFileSync(path.join(plugin, 'preview-navigation.js')))
+    .digest('base64'),
+})};</script>
+<script defer src="${mapped('math.js')}"></script><script defer src="${mapped('resource-ui.js')}"></script><script defer src="${mapped('source-tools.js')}"></script><script defer src="${mapped('editor-ui.js')}"></script>
 </head><body><button id="mbb-new" type="button">上传新文档</button><button class="mbb-open" data-post="12" type="button">编辑现有文档</button></body></html>`;
+
+// HTTP-only synthetic navigation API. Keeping this off Playwright routing lets
+// WebKit load the real sandboxed MathJax engine's blob scripts normally.
+const navigationRaw =
+  '# 中文😀\r\n\r\n重复段落。\r\n\r\n重复段落。\r\n\r\n```python\r\nprint(1)\r\n```\r\n\r\n$$\r\n\\frac{a}{d}\r\n$$\r\n';
+function navigationResponse(source) {
+  const starts = [
+    0,
+    source.indexOf('重复'),
+    source.lastIndexOf('重复'),
+    source.indexOf('```'),
+    source.indexOf('$$'),
+  ];
+  const ends = [source.indexOf('\r\n'), starts[1] + 5, starts[2] + 5, starts[4], source.length];
+  return {
+    before: navigationRaw,
+    document: { source },
+    post_status: 'draft',
+    html: '<h1 data-mbb-preview-range="r0">中文😀</h1><p data-mbb-preview-range="r1">重复段落。</p><p data-mbb-preview-range="r2">重复段落。</p><pre tabindex="0" data-mbb-preview-range="r3"><code>print(1)</code></pre><pre class="wp-block-mbb-math" data-mbb-preview-range="r4"><code>\\frac{a}{d}</code></pre><script>parent.document.body.dataset.previewInjection="yes"</script>',
+    navigation: {
+      schema: 1,
+      offsetUnit: 'utf16',
+      sourceSha256: require('node:crypto').createHash('sha256').update(source).digest('hex'),
+      ranges: starts.map((start, i) => ({
+        id: 'r' + i,
+        blockPath: [i],
+        kind: i === 0 ? 'heading' : i === 3 ? 'code' : i === 4 ? 'math' : 'paragraph',
+        start,
+        end: ends[i],
+        startLine: source.slice(0, start).split('\n').length,
+        endLine: source.slice(0, ends[i]).split('\n').length,
+        precision: 'exact',
+      })),
+      unmapped: [],
+    },
+  };
+}
 
 // Optional real WordPress block editor fixture, using only a sanitized core-script runtime.
 const wpRuntime = process.env.MARKBRIDGE_TEST_RUNTIME;
@@ -151,6 +194,50 @@ http
         .end(boot + '\n' + fs.readFileSync(path.join(plugin, 'i18n.js'), 'utf8'));
     }
 
+    if (pathname === '/navigation-editor')
+      return response
+        .writeHead(200, { 'Content-Type': 'text/html' })
+        .end(
+          editor.replace(
+            "root:location.origin+'/wp-json/mbb/v1/'",
+            "root:location.origin+'/navigation-fixture/'",
+          ),
+        );
+    if (pathname.startsWith('/navigation-fixture/')) {
+      const json = (status, value) =>
+        response
+          .writeHead(status, { 'Content-Type': 'application/json' })
+          .end(JSON.stringify(value));
+      if (pathname === '/navigation-fixture/document' && request.method === 'GET')
+        return json(200, {
+          post_id: 12,
+          expected: 'one',
+          title: 'Navigation',
+          post_status: 'draft',
+          featured_media: 0,
+          document: { source: navigationRaw, documentId: 'Navigation' },
+        });
+      if (pathname !== '/navigation-fixture/preview' || request.method !== 'POST')
+        return json(404, { code: 'fixture_only' });
+      let body = '',
+        size = 0;
+      request.setEncoding('utf8');
+      request.on('data', (chunk) => {
+        size += Buffer.byteLength(chunk);
+        if (size <= 65536) body += chunk;
+      });
+      request.on('end', () => {
+        if (size > 65536) return json(413, { code: 'fixture_limit' });
+        try {
+          const data = JSON.parse(body);
+          if (typeof data.source !== 'string') return json(400, { code: 'fixture_source' });
+          json(200, navigationResponse(data.source));
+        } catch {
+          json(400, { code: 'fixture_json' });
+        }
+      });
+      return;
+    }
     if (pathname === '/health') return response.writeHead(200).end('ok');
     if (pathname === '/wp/v2/types')
       return response.writeHead(200, { 'Content-Type': 'application/json' }).end('{}');

@@ -126,7 +126,10 @@ add_filter(
                     $attrs['params'] = $params;
                 }
             }
-            $p = mbb_component_registry()[$attrs['component'] ?? ''] ?? null;
+            $p = mbb_component_provider(
+                $attrs['component'] ?? '',
+                $attrs['componentVersion'] ?? '',
+            );
             $config = [
                 'component' => $attrs['component'] ?? '',
                 'componentVersion' => $attrs['componentVersion'] ?? '',
@@ -141,7 +144,12 @@ add_filter(
                 $config['status'] === 'available' &&
                 (!$paramsConsistent ||
                     !mbb_component_pure_params($config['params']) ||
-                    !mbb_component_schema($config['params'], $p['schema']))
+                    !mbb_component_schema($config['params'], $p['schema']) ||
+                    !mbb_component_domain_valid(
+                        $attrs['component'],
+                        $attrs['componentVersion'],
+                        $config['params'],
+                    ))
             ) {
                 $config['status'] = 'invalid-params';
             }

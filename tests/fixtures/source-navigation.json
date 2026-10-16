@@ -1,0 +1,798 @@
+{
+  "schema": 1,
+  "cases": [
+    {
+      "id": "repeated-crlf-nonbmp",
+      "source": "重复😀。\r\n\r\n重复😀。\r\n\r\n# 标题\r\n",
+      "blocks": [
+        {
+          "name": "core/paragraph"
+        },
+        {
+          "name": "core/paragraph"
+        },
+        {
+          "name": "core/heading"
+        }
+      ],
+      "expected": {
+        "schema": 1,
+        "offsetUnit": "utf16",
+        "ranges": [
+          {
+            "id": "r0",
+            "blockPath": [0],
+            "kind": "paragraph",
+            "start": 0,
+            "end": 7,
+            "startLine": 1,
+            "endLine": 1,
+            "precision": "exact"
+          },
+          {
+            "id": "r1",
+            "blockPath": [1],
+            "kind": "paragraph",
+            "start": 9,
+            "end": 16,
+            "startLine": 3,
+            "endLine": 3,
+            "precision": "exact"
+          },
+          {
+            "id": "r2",
+            "blockPath": [2],
+            "kind": "heading",
+            "start": 18,
+            "end": 24,
+            "startLine": 5,
+            "endLine": 5,
+            "precision": "exact"
+          }
+        ],
+        "unmapped": []
+      }
+    },
+    {
+      "id": "frontmatter",
+      "source": "---\r\nmarkbridge: 1\r\ntitle: \"样例😀\"\r\n---\r\n\r\n# 内容\r\n\r\n正文。\r\n",
+      "blocks": [
+        {
+          "name": "mbb/frontmatter"
+        },
+        {
+          "name": "core/heading"
+        },
+        {
+          "name": "core/paragraph"
+        }
+      ],
+      "expected": {
+        "schema": 1,
+        "offsetUnit": "utf16",
+        "ranges": [
+          {
+            "id": "r0",
+            "blockPath": [0],
+            "kind": "frontmatter",
+            "start": 0,
+            "end": 40,
+            "startLine": 1,
+            "endLine": 4,
+            "precision": "exact"
+          },
+          {
+            "id": "r1",
+            "blockPath": [1],
+            "kind": "heading",
+            "start": 42,
+            "end": 48,
+            "startLine": 6,
+            "endLine": 6,
+            "precision": "exact"
+          },
+          {
+            "id": "r2",
+            "blockPath": [2],
+            "kind": "paragraph",
+            "start": 50,
+            "end": 55,
+            "startLine": 8,
+            "endLine": 8,
+            "precision": "exact"
+          }
+        ],
+        "unmapped": []
+      }
+    },
+    {
+      "id": "display-split",
+      "source": "前文 $$x^2$$ 后文。\n\n结尾。\n",
+      "blocks": [
+        {
+          "name": "core/paragraph"
+        },
+        {
+          "name": "mbb/math"
+        },
+        {
+          "name": "core/paragraph"
+        },
+        {
+          "name": "core/paragraph"
+        }
+      ],
+      "expected": {
+        "schema": 1,
+        "offsetUnit": "utf16",
+        "ranges": [
+          {
+            "id": "r0",
+            "blockPath": [0],
+            "kind": "paragraph",
+            "start": 0,
+            "end": 15,
+            "startLine": 1,
+            "endLine": 1,
+            "precision": "coarse"
+          },
+          {
+            "id": "r1",
+            "blockPath": [1],
+            "kind": "math",
+            "start": 0,
+            "end": 15,
+            "startLine": 1,
+            "endLine": 1,
+            "precision": "coarse"
+          },
+          {
+            "id": "r2",
+            "blockPath": [2],
+            "kind": "paragraph",
+            "start": 0,
+            "end": 15,
+            "startLine": 1,
+            "endLine": 1,
+            "precision": "coarse"
+          },
+          {
+            "id": "r3",
+            "blockPath": [3],
+            "kind": "paragraph",
+            "start": 16,
+            "end": 20,
+            "startLine": 3,
+            "endLine": 3,
+            "precision": "exact"
+          }
+        ],
+        "unmapped": []
+      }
+    },
+    {
+      "id": "display-math",
+      "source": "$$\r\nx^2+😀\r\n$$\r\n\r\n结束。\r\n",
+      "blocks": [
+        {
+          "name": "mbb/math"
+        },
+        {
+          "name": "core/paragraph"
+        }
+      ],
+      "expected": {
+        "schema": 1,
+        "offsetUnit": "utf16",
+        "ranges": [
+          {
+            "id": "r0",
+            "blockPath": [0],
+            "kind": "math",
+            "start": 0,
+            "end": 16,
+            "startLine": 1,
+            "endLine": 3,
+            "precision": "exact"
+          },
+          {
+            "id": "r1",
+            "blockPath": [1],
+            "kind": "paragraph",
+            "start": 18,
+            "end": 23,
+            "startLine": 5,
+            "endLine": 5,
+            "precision": "exact"
+          }
+        ],
+        "unmapped": []
+      }
+    },
+    {
+      "id": "nested-teaching",
+      "source": ":::mbb:v1 collapse {\"id\":\"outer\",\"title\":\"外层\",\"open\":false}\n\n前文。\n\n:::mbb:v1 collapse {\"id\":\"inner\",\"title\":\"内层\",\"open\":false}\n\n# 内标题\n\n:::mbb:end\n\n:::mbb:end\n\n末尾。\n",
+      "blocks": [
+        {
+          "name": "mbb/collapse",
+          "innerBlocks": [
+            {
+              "name": "core/paragraph"
+            },
+            {
+              "name": "mbb/collapse",
+              "innerBlocks": [
+                {
+                  "name": "core/heading"
+                }
+              ],
+              "attributes": {
+                "id": "inner"
+              }
+            }
+          ],
+          "attributes": {
+            "id": "outer"
+          }
+        },
+        {
+          "name": "core/paragraph"
+        }
+      ],
+      "expected": {
+        "schema": 1,
+        "offsetUnit": "utf16",
+        "ranges": [
+          {
+            "id": "r0",
+            "blockPath": [0],
+            "kind": "teaching",
+            "start": 0,
+            "end": 157,
+            "startLine": 1,
+            "endLine": 11,
+            "precision": "coarse"
+          },
+          {
+            "id": "r1",
+            "blockPath": [0, 0],
+            "kind": "paragraph",
+            "start": 61,
+            "end": 65,
+            "startLine": 3,
+            "endLine": 3,
+            "precision": "exact"
+          },
+          {
+            "id": "r2",
+            "blockPath": [0, 1],
+            "kind": "teaching",
+            "start": 66,
+            "end": 145,
+            "startLine": 5,
+            "endLine": 9,
+            "precision": "coarse"
+          },
+          {
+            "id": "r3",
+            "blockPath": [0, 1, 0],
+            "kind": "heading",
+            "start": 127,
+            "end": 133,
+            "startLine": 7,
+            "endLine": 7,
+            "precision": "exact"
+          },
+          {
+            "id": "r4",
+            "blockPath": [1],
+            "kind": "paragraph",
+            "start": 158,
+            "end": 162,
+            "startLine": 13,
+            "endLine": 13,
+            "precision": "exact"
+          }
+        ],
+        "unmapped": []
+      }
+    },
+    {
+      "id": "fenced-false-markers",
+      "source": "```md\n:::mbb:v1 collapse {}\n:::mbb:end\n$$\n```not-a-close\n```\n\nAfter.\n",
+      "blocks": [
+        {
+          "name": "mbb/code"
+        },
+        {
+          "name": "core/paragraph"
+        }
+      ],
+      "expected": {
+        "schema": 1,
+        "offsetUnit": "utf16",
+        "ranges": [
+          {
+            "id": "r0",
+            "blockPath": [0],
+            "kind": "code",
+            "start": 0,
+            "end": 61,
+            "startLine": 1,
+            "endLine": 6,
+            "precision": "exact"
+          },
+          {
+            "id": "r1",
+            "blockPath": [1],
+            "kind": "paragraph",
+            "start": 62,
+            "end": 69,
+            "startLine": 8,
+            "endLine": 8,
+            "precision": "exact"
+          }
+        ],
+        "unmapped": []
+      }
+    },
+    {
+      "id": "footnote-labels",
+      "source": "引用[^b] 和[^a]。\n\n[^a]: 第一个😀。\n\n[^b]: 第二个。\n",
+      "blocks": [
+        {
+          "name": "core/paragraph"
+        },
+        {
+          "name": "mbb/footnotes",
+          "innerBlocks": [
+            {
+              "name": "mbb/footnote",
+              "innerBlocks": [
+                {
+                  "name": "core/paragraph"
+                }
+              ],
+              "attributes": {
+                "label": "b"
+              }
+            },
+            {
+              "name": "mbb/footnote",
+              "innerBlocks": [
+                {
+                  "name": "core/paragraph"
+                }
+              ],
+              "attributes": {
+                "label": "a"
+              }
+            }
+          ]
+        }
+      ],
+      "expected": {
+        "schema": 1,
+        "offsetUnit": "utf16",
+        "ranges": [
+          {
+            "id": "r0",
+            "blockPath": [0],
+            "kind": "paragraph",
+            "start": 0,
+            "end": 14,
+            "startLine": 1,
+            "endLine": 1,
+            "precision": "exact"
+          },
+          {
+            "id": "r1",
+            "blockPath": [1, 0],
+            "kind": "footnote",
+            "start": 29,
+            "end": 40,
+            "startLine": 5,
+            "endLine": 5,
+            "precision": "exact"
+          },
+          {
+            "id": "r2",
+            "blockPath": [1, 0, 0],
+            "kind": "footnote",
+            "start": 29,
+            "end": 40,
+            "startLine": 5,
+            "endLine": 5,
+            "precision": "coarse"
+          },
+          {
+            "id": "r3",
+            "blockPath": [1, 1],
+            "kind": "footnote",
+            "start": 15,
+            "end": 28,
+            "startLine": 3,
+            "endLine": 3,
+            "precision": "exact"
+          },
+          {
+            "id": "r4",
+            "blockPath": [1, 1, 0],
+            "kind": "footnote",
+            "start": 15,
+            "end": 28,
+            "startLine": 3,
+            "endLine": 3,
+            "precision": "coarse"
+          }
+        ],
+        "unmapped": [
+          {
+            "blockPath": [1],
+            "reason": "definition-group"
+          }
+        ]
+      },
+      "footnoteOrder": ["b", "a"]
+    },
+    {
+      "id": "coarse-quote-list",
+      "source": "> 引用😀\n> 第二行\n\n- one\n- two\n\n# Next\n",
+      "blocks": [
+        {
+          "name": "core/quote",
+          "innerBlocks": [
+            {
+              "name": "core/paragraph"
+            }
+          ]
+        },
+        {
+          "name": "core/list",
+          "innerBlocks": [
+            {
+              "name": "core/list-item"
+            },
+            {
+              "name": "core/list-item"
+            }
+          ]
+        },
+        {
+          "name": "core/heading"
+        }
+      ],
+      "expected": {
+        "schema": 1,
+        "offsetUnit": "utf16",
+        "ranges": [
+          {
+            "id": "r0",
+            "blockPath": [0],
+            "kind": "quote",
+            "start": 0,
+            "end": 13,
+            "startLine": 1,
+            "endLine": 2,
+            "precision": "coarse"
+          },
+          {
+            "id": "r1",
+            "blockPath": [0, 0],
+            "kind": "quote",
+            "start": 0,
+            "end": 13,
+            "startLine": 1,
+            "endLine": 2,
+            "precision": "coarse"
+          },
+          {
+            "id": "r2",
+            "blockPath": [1],
+            "kind": "list",
+            "start": 14,
+            "end": 26,
+            "startLine": 4,
+            "endLine": 5,
+            "precision": "coarse"
+          },
+          {
+            "id": "r3",
+            "blockPath": [1, 0],
+            "kind": "list",
+            "start": 14,
+            "end": 26,
+            "startLine": 4,
+            "endLine": 5,
+            "precision": "coarse"
+          },
+          {
+            "id": "r4",
+            "blockPath": [1, 1],
+            "kind": "list",
+            "start": 14,
+            "end": 26,
+            "startLine": 4,
+            "endLine": 5,
+            "precision": "coarse"
+          },
+          {
+            "id": "r5",
+            "blockPath": [2],
+            "kind": "heading",
+            "start": 27,
+            "end": 34,
+            "startLine": 7,
+            "endLine": 7,
+            "precision": "exact"
+          }
+        ],
+        "unmapped": []
+      }
+    },
+    {
+      "id": "inline-literal-dollar",
+      "source": "`$$literal$$` and escaped \\$\\$ text.\n\n标题\n===\n",
+      "blocks": [
+        {
+          "name": "core/paragraph"
+        },
+        {
+          "name": "core/heading"
+        }
+      ],
+      "expected": {
+        "schema": 1,
+        "offsetUnit": "utf16",
+        "ranges": [
+          {
+            "id": "r0",
+            "blockPath": [0],
+            "kind": "paragraph",
+            "start": 0,
+            "end": 37,
+            "startLine": 1,
+            "endLine": 1,
+            "precision": "exact"
+          },
+          {
+            "id": "r1",
+            "blockPath": [1],
+            "kind": "heading",
+            "start": 38,
+            "end": 45,
+            "startLine": 3,
+            "endLine": 4,
+            "precision": "exact"
+          }
+        ],
+        "unmapped": []
+      }
+    },
+    {
+      "id": "unsupported-no-shift",
+      "source": "Before.\n\n<a id=\"raw-anchor\"></a>\n\n# After\n",
+      "blocks": [
+        {
+          "name": "core/paragraph"
+        },
+        {
+          "name": "core/html"
+        },
+        {
+          "name": "core/heading"
+        }
+      ],
+      "expected": {
+        "schema": 1,
+        "offsetUnit": "utf16",
+        "ranges": [],
+        "unmapped": [
+          {
+            "blockPath": [0],
+            "reason": "unsupported-syntax"
+          },
+          {
+            "blockPath": [1],
+            "reason": "unsupported-syntax"
+          },
+          {
+            "blockPath": [2],
+            "reason": "unsupported-syntax"
+          }
+        ]
+      }
+    },
+    {
+      "id": "mismatched-display-no-guess",
+      "source": "Before $$x$$ after.\n\nTail.\n",
+      "blocks": [
+        {
+          "name": "core/paragraph"
+        },
+        {
+          "name": "core/paragraph"
+        }
+      ],
+      "expected": {
+        "schema": 1,
+        "offsetUnit": "utf16",
+        "ranges": [],
+        "unmapped": [
+          {
+            "blockPath": [0],
+            "reason": "structure-mismatch"
+          },
+          {
+            "blockPath": [1],
+            "reason": "structure-mismatch"
+          }
+        ]
+      },
+      "conversion": false
+    },
+    {
+      "id": "teaching-id-mismatch",
+      "source": ":::mbb:v1 collapse {\"id\":\"source\",\"title\":\"T\",\"open\":false}\n\nBody.\n\n:::mbb:end\n",
+      "blocks": [
+        {
+          "name": "mbb/collapse",
+          "innerBlocks": [
+            {
+              "name": "core/paragraph"
+            }
+          ],
+          "attributes": {
+            "id": "other"
+          }
+        }
+      ],
+      "expected": {
+        "schema": 1,
+        "offsetUnit": "utf16",
+        "ranges": [],
+        "unmapped": [
+          {
+            "blockPath": [0],
+            "reason": "unsupported-structure"
+          },
+          {
+            "blockPath": [0, 0],
+            "reason": "unsupported-structure"
+          }
+        ]
+      },
+      "conversion": false
+    },
+    {
+      "id": "code-compare-body",
+      "source": ":::mbb:v1 code-compare {\"id\":\"compare\",\"leftTitle\":\"Before\",\"rightTitle\":\"After\",\"leftHighlights\":\"\",\"rightHighlights\":\"\"}\n\n```js\na();\n```\n\n```python\nb()\n```\n\nExplanation.\n\n:::mbb:end\n\nTail.\n",
+      "blocks": [
+        {
+          "name": "mbb/code-compare",
+          "attributes": {
+            "id": "compare"
+          },
+          "innerBlocks": [
+            {
+              "name": "core/paragraph"
+            }
+          ]
+        },
+        {
+          "name": "core/paragraph"
+        }
+      ],
+      "expected": {
+        "schema": 1,
+        "offsetUnit": "utf16",
+        "ranges": [
+          {
+            "id": "r0",
+            "blockPath": [0],
+            "kind": "teaching",
+            "start": 0,
+            "end": 184,
+            "startLine": 1,
+            "endLine": 13,
+            "precision": "coarse"
+          },
+          {
+            "id": "r1",
+            "blockPath": [0, 0],
+            "kind": "paragraph",
+            "start": 159,
+            "end": 172,
+            "startLine": 11,
+            "endLine": 11,
+            "precision": "exact"
+          },
+          {
+            "id": "r2",
+            "blockPath": [1],
+            "kind": "paragraph",
+            "start": 185,
+            "end": 191,
+            "startLine": 15,
+            "endLine": 15,
+            "precision": "exact"
+          }
+        ],
+        "unmapped": []
+      }
+    },
+    {
+      "id": "code-tabs-fenced-false-end",
+      "source": ":::mbb:v1 code-tabs {\"id\":\"examples\",\"defaultTab\":\"variant2\",\"tabs\":[{\"id\":\"variant0\",\"title\":\"\",\"terminalNewline\":true},{\"id\":\"variant1\",\"title\":\"版本 1\",\"terminalNewline\":true},{\"id\":\"variant2\",\"title\":\"\",\"terminalNewline\":true}]}\n\n````javascript\n```\n:::mbb:end\n~~~\n````\n\n```python\n<script> & </code>\n```\n\n```javascript\n😀  \t\n\n```\n\n:::mbb:end\n",
+      "blocks": [
+        {
+          "name": "mbb/code-tabs",
+          "attributes": {
+            "id": "examples"
+          }
+        }
+      ],
+      "expected": {
+        "schema": 1,
+        "offsetUnit": "utf16",
+        "ranges": [
+          {
+            "id": "r0",
+            "blockPath": [0],
+            "kind": "teaching",
+            "start": 0,
+            "end": 343,
+            "startLine": 1,
+            "endLine": 18,
+            "precision": "coarse"
+          }
+        ],
+        "unmapped": []
+      }
+    },
+    {
+      "id": "native-details",
+      "source": ":::mbb:v1 details {\"summary\":\"Details\",\"showContent\":false,\"anchor\":\"fold\"}\n\nText.\n\n:::mbb:end\n",
+      "blocks": [
+        {
+          "name": "core/details",
+          "attributes": {
+            "anchor": "fold"
+          },
+          "innerBlocks": [
+            {
+              "name": "core/paragraph"
+            }
+          ]
+        }
+      ],
+      "expected": {
+        "schema": 1,
+        "offsetUnit": "utf16",
+        "ranges": [
+          {
+            "id": "r0",
+            "blockPath": [0],
+            "kind": "teaching",
+            "start": 0,
+            "end": 95,
+            "startLine": 1,
+            "endLine": 5,
+            "precision": "coarse"
+          },
+          {
+            "id": "r1",
+            "blockPath": [0, 0],
+            "kind": "paragraph",
+            "start": 77,
+            "end": 83,
+            "startLine": 3,
+            "endLine": 3,
+            "precision": "exact"
+          }
+        ],
+        "unmapped": []
+      }
+    }
+  ]
+}

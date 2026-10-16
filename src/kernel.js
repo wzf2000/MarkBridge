@@ -1,3 +1,4 @@
+export { sourceNavigation } from './source-navigation.js';
 import { describeDiagnostic } from './diagnostics.js';
 import { translate as T, format as F } from './i18n.js';
 import {
@@ -600,12 +601,28 @@ function checkSource(source) {
   if (source.includes('\0')) fail('INVALID_INPUT', 'The source contains NUL');
 }
 // Normalize legacy display delimiters without scanning fenced or inline code.
+function directiveDataProjection(source) {
+  return source.replace(
+    /(^|[\r\n])(:::mbb:v1 [a-z][a-z0-9-]* (\{[^\r\n]*\}))(?=[\r\n]|$)/g,
+    (whole, prefix, header, raw) => {
+      try {
+        const value = JSON.parse(raw);
+        if (!value || typeof value !== 'object' || Array.isArray(value)) return whole;
+        return prefix + ' '.repeat(header.length);
+      } catch {
+        return whole;
+      }
+    },
+  );
+}
 function displayBoundaries(source) {
+  // All scanners see the same data-only projection; slicing still uses source.
+  const projection = directiveDataProjection(source);
   const ignored = new Set();
-  for (const t of boundaryMD.parse(source, {}))
+  for (const t of boundaryMD.parse(projection, {}))
     if (['fence', 'code_block'].includes(t.type) && t.map)
       for (let i = t.map[0]; i < t.map[1]; i++) ignored.add(i);
-  const htmlCode = [...source.matchAll(/<(pre|code)\b[^>]*>[\s\S]*?<\/\1>/gi)].map((m) => [
+  const htmlCode = [...projection.matchAll(/<(pre|code)\b[^>]*>[\s\S]*?<\/\1>/gi)].map((m) => [
     m.index,
     m.index + m[0].length,
   ]);
@@ -614,11 +631,19 @@ function displayBoundaries(source) {
     fence = null,
     code = 0,
     lineIndex = 0;
-  for (const line of source.split('\n')) {
+  for (const line of projection.split('\n')) {
     if (ignored.has(lineIndex++)) {
       offset += line.length + 1;
       continue;
     }
+    // Malformed reserved directives belong to Teaching's grammar diagnostics.
+    // Do not let their data (or later normalization) replace that error with math.
+    if (
+      line.startsWith(':::mbb:') &&
+      line.replace(/\r$/, '') !== ':::mbb:end' &&
+      !htmlCode.some(([a, b]) => offset >= a && offset < b)
+    )
+      return source;
     const f = line.match(/^\s*(`{3,}|~{3,})/);
     if (f && !code) {
       if (!fence) fence = f[1];
@@ -689,7 +714,9 @@ function parseSource(
     // The legacy link parser would treat [^id]: as an ordinary link target,
     // changing the nesting of [link[^id]](url). Mask only that definition
     // prefix while preserving other reference-style link definitions.
-    const linkProbe = normalized.replace(/^([ \t]{0,3})\[\^[^\]\n]+\]:/gm, '$1MBBFOOTNOTE:');
+    const linkProbe = directiveDataProjection(normalized)
+      .replace(/^:::mbb:[^\r\n]*/gm, (header) => ' '.repeat(header.length))
+      .replace(/^([ \t]{0,3})\[\^[^\]\n]+\]:/gm, '$1MBBFOOTNOTE:');
     for (const token of legacyMD.parse(linkProbe, {})) {
       if (token.type !== 'inline') continue;
       let linkDepth = 0;
@@ -712,7 +739,7 @@ function parseSource(
     }
   }
   const ignoredTeaching = new Set();
-  const teachingFences = boundaryMD.parse(normalized, {});
+  const teachingFences = boundaryMD.parse(directiveDataProjection(normalized), {});
   for (const token of teachingFences)
     if (['fence', 'code_block'].includes(token.type) && token.map)
       for (let line = token.map[0]; line < token.map[1]; line++) ignoredTeaching.add(line);

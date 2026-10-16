@@ -396,8 +396,11 @@ test('dialog keeps actions visible and separates scrolling source from the sandb
   const geometry = await frame.evaluate((node) => ({
     frame: node.clientHeight,
     region: node.parentElement.clientHeight,
+    toolbar:
+      node.parentElement.querySelector('.mbb-preview-tools')?.getBoundingClientRect().height || 0,
   }));
-  expect(geometry.frame).toBeGreaterThan(geometry.region - 30);
+  expect(geometry.frame).toBeGreaterThan(geometry.region - geometry.toolbar - 30);
+  expect(geometry.frame + geometry.toolbar).toBeLessThanOrEqual(geometry.region + 2);
   expect(await inViewport(page.locator('#mbb-save'))).toBe(true);
   await page.locator('#mbb-edit-toggle').click();
   await expect(page.locator('#mbb-source')).toBeVisible();

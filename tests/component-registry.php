@@ -5,6 +5,16 @@ mkdir($directory);
 mkdir($directory . '/fixture');
 define('WP_PLUGIN_DIR', $directory);
 function add_action(...$args) {}
+function apply_filters($name, $value, ...$args)
+{
+    if ($name === 'markbridge_validate_component_params') {
+        if (($GLOBALS['domain_result'] ?? null) === 'throw') {
+            throw new RuntimeException('Synthetic validator failure');
+        }
+        return $GLOBALS['domain_result'] ?? $value;
+    }
+    return $value;
+}
 function wp_normalize_path($path)
 {
     return str_replace('\\', '/', $path);
@@ -84,7 +94,36 @@ try {
         mbb_component_registry()['fixture']['defaults']->n === 3,
         'Duplicate changed defaults',
     );
+    $next_provider = $provider;
+    $next_provider['version'] = '0.2.0';
+    registry_assert(
+        markbridge_register_teaching_component('fixture', $next_provider),
+        'A distinct exact version was rejected',
+    );
+    registry_assert(
+        !markbridge_register_teaching_component('fixture', $next_provider),
+        'Duplicate exact version replaced its provider',
+    );
+    registry_assert(
+        mbb_component_provider('fixture', '0.1.0')['version'] === '0.1.0' &&
+            mbb_component_provider('fixture', '0.2.0')['version'] === '0.2.0' &&
+            mbb_component_provider('fixture', '0.3.0') === null &&
+            mbb_component_registry()['fixture']['version'] === '0.1.0',
+        'Exact-version resolution changed the legacy default or guessed a version',
+    );
     registry_assert(markbridge_teaching_supports_ui_locale(), 'Locale capability probe missing');
+    foreach ([false, 1, 'throw'] as $domainResult) {
+        $GLOBALS['domain_result'] = $domainResult;
+        registry_assert(
+            !mbb_component_domain_valid('fixture', '0.1.0', (object) ['n' => 3]),
+            'Domain validator failure was not closed',
+        );
+    }
+    unset($GLOBALS['domain_result']);
+    registry_assert(
+        mbb_component_domain_valid('fixture', '0.1.0', (object) ['n' => 3]),
+        'Default domain admission failed',
+    );
     registry_assert(
         !array_key_exists(
             'supportsUiLocale',

@@ -269,6 +269,14 @@ function do_blocks($serialized)
     ba_mutate_registry('render');
     return $serialized;
 }
+function mbb_preview_navigation($document, $projected)
+{
+    // This model checks registry mutation during render. Real navigation uses the WP lab suite.
+    return [
+        'html' => mbb_render_footnotes(do_blocks($projected['serialized'])),
+        'navigation' => null,
+    ];
+}
 function mbb_candidate_current($request)
 {
     return [

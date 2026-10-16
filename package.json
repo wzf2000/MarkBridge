@@ -1,6 +1,6 @@
 {
   "name": "markbridge",
-  "version": "2.1.0-rc.1",
+  "version": "2.2.0-rc.1",
   "private": true,
   "scripts": {
     "build": "npm run build:localization && node scripts/copy-math-assets.cjs && esbuild src/kernel.js --bundle --format=iife --global-name=MBB --external:@wordpress/latex-to-mathml --outfile=plugin/kernel.js && esbuild src/emoji.js --bundle --format=iife --outfile=plugin/emoji.js && node scripts/build-ui-assets.cjs && node scripts/build-runtime-contract.cjs && php scripts/build-php-converter.php",
@@ -8,7 +8,7 @@
     "build:php": "composer install --working-dir=tools/php-scoper --no-dev --no-interaction --no-plugins --no-scripts --prefer-dist --optimize-autoloader && composer install --working-dir=plugin/includes/php-converter --no-dev --no-interaction --no-plugins --no-scripts --prefer-dist --optimize-autoloader && node scripts/scope-php-converter.cjs",
     "format": "node scripts/format.cjs",
     "format:check": "node scripts/format.cjs --check",
-    "test": "node tests/kernel.cjs && node tests/r10-04.cjs && node tests/task-lists.cjs && node tests/footnotes.cjs && node tests/conversion-diagnostics.cjs && node tests/teaching.cjs && node tests/components.cjs && php tests/component-registry.php && node tests/local-recovery.cjs && php tests/local-recovery.php && node tests/frontmatter.cjs && php tests/frontmatter.php && node tests/resource-import.cjs && php tests/resource-import.php && node tests/code-tabs.cjs && php tests/code-tabs.php && node tests/export.cjs && php tests/export.php && node tests/merge.cjs && php tests/merge.php && node tests/editor-ui-races.cjs && node tests/block-adapters.cjs && php tests/block-adapters.php && node tests/localization.cjs && php tests/localization.php",
+    "test": "node tests/kernel.cjs && node tests/r10-04.cjs && node tests/task-lists.cjs && node tests/footnotes.cjs && node tests/conversion-diagnostics.cjs && node tests/teaching.cjs && node tests/components.cjs && php tests/component-registry.php && node tests/local-recovery.cjs && php tests/local-recovery.php && node tests/frontmatter.cjs && php tests/frontmatter.php && node tests/resource-import.cjs && php tests/resource-import.php && node tests/code-tabs.cjs && php tests/code-tabs.php && node tests/export.cjs && php tests/export.php && node tests/merge.cjs && php tests/merge.php && node tests/editor-ui-races.cjs && node tests/block-adapters.cjs && php tests/block-adapters.php && node tests/localization.cjs && php tests/localization.php && node tests/source-navigation.cjs && php tests/source-navigation.php && node tests/component-parameters.cjs && node tests/source-tools.cjs && node tests/directive-data.cjs",
     "test:browser": "npm run build && playwright test",
     "check": "npm run format:check && npm run build && python3 scripts/build-localization.py --check && python3 scripts/check_release.py",
     "package": "python3 scripts/package.py",

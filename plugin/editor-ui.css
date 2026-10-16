@@ -539,12 +539,14 @@ body:has(#mbb-toolbar:not([hidden]):not(.mbb-keyboard-open) #mbb-recovery-open:n
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
+  flex-direction: column;
   padding: 0 18px 12px;
 }
 #mbb-dialog .mbb-preview-body iframe {
   flex: 1;
   min-width: 0;
-  height: 100%;
+  height: 0;
+  min-height: 0;
   box-sizing: border-box;
 }
 .mbb-dialog-body[hidden],
@@ -767,5 +769,97 @@ body:has(#mbb-toolbar:not([hidden]):not(.mbb-keyboard-open) #mbb-recovery-open:n
   :is(#mbb-dialog, #mbb-revisions-dialog, #mbb-export-dialog) select {
     appearance: auto;
     background-image: none;
+  }
+}
+.mbb-dialog-workspace {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.mbb-dialog-workspace > * {
+  min-width: 0;
+  width: 100%;
+}
+.mbb-workspace-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+}
+.mbb-source-tools {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border: 1px solid #dcdcde;
+  border-radius: 6px;
+}
+.mbb-source-tools summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.mbb-source-tools-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 12px;
+  margin-top: 10px;
+}
+.mbb-source-tools-fields label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.mbb-source-tools-fields input:not([type='checkbox']) {
+  width: 100%;
+  min-width: 0;
+}
+.mbb-source-tools-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.mbb-source-tools-status {
+  margin: 8px 0 0;
+}
+.mbb-insert-example > label {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0;
+}
+.mbb-insert-example > label > input,
+.mbb-insert-example > label > select {
+  width: 100%;
+  min-width: 0;
+}
+.mbb-preview-tools {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 8px;
+  border-bottom: 1px solid #dcdcde;
+}
+.mbb-preview-tools label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mbb-preview-tools button[aria-pressed='true'] {
+  background: #f0f6fc;
+  border: 1px solid #2271b1;
+  color: #135e96;
+}
+.mbb-preview-tools [role='status'] {
+  color: #646970;
+  font-size: 12px;
+}
+@media (max-width: 899px) {
+  .mbb-split-toggle {
+    display: none !important;
+  }
+}
+@media (max-width: 600px) {
+  .mbb-source-tools-fields {
+    grid-template-columns: 1fr;
   }
 }

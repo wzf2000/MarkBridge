@@ -1,6 +1,6 @@
 # 教学扩展接口
 
-本页描述 MarkBridge 2.0.3 的 v1 组件合同。作者操作见[教学内容](TEACHING.md)。主插件保存教学结构、引用、参数和静态替代；算法、课程样例、Worker 与播放控制由独立受信插件提供。文章不能自行登记脚本或运行地址。
+本页描述 MarkBridge 2.2.0-rc.1 的 v1 组件合同。作者操作见[教学内容](TEACHING.md)。主插件保存教学结构、引用、参数和静态替代；算法、课程样例、Worker 与播放控制由独立受信插件提供。文章不能自行登记脚本或运行地址。
 
 ## 内容与提供者
 
@@ -61,7 +61,7 @@ add_action('markbridge_register_teaching_components', static function () {
 
 `$fixedBuildManifest` 来自扩展构建产物，不是用户输入。资源摘要必须由已审阅构建生成；不要每次请求对当前资源重新计算“期望摘要”，那会失去检查构建内容的意义。
 
-每个提供者必须声明全部上述字段，未知字段拒绝。类型标识为 1–64 个小写 ASCII 字母、数字或连字符，以字母开头；最多登记 32 个类型，一个类型同时只有一个组件版本。组件版本为 `X.Y.Z`；协议当前为 `1`，最低主插件版本可为 `X.Y.Z` 或本地 `X.Y.Z-dev.N`。升级不自动改写文章的组件版本；需要同类型多版本或迁移时应先另行扩展合同。
+每个提供者必须声明全部上述字段，未知字段拒绝。类型标识为 1–64 个小写 ASCII 字母、数字或连字符，以字母开头；最多登记 32 个精确类型／版本组合；同类型可同时登记多个不同版本，精确版本重复仍拒绝。首个登记是新插入的默认项，已有文章按类型和版本精确查找。组件版本为 `X.Y.Z`；协议当前为 `1`，最低主插件版本可为 `X.Y.Z` 或本地 `X.Y.Z-dev.N`。升级不自动改写文章的组件版本；扩展须先检测 `markbridge_teaching_supports_component_versions()` 存在且返回 true，才登记同类型的额外版本。旧主插件只登记原版本，避免占用类型导致旧文章失去提供者。
 
 资源必须是插件目录内的固定本地 `.html` 或（2.0.3 起）`.html.txt`，URL 与其 WordPress 插件地址一致。登记检查真实路径、可读性、大小及固定 SHA-256；浏览器在加载前再次有界读取并核对摘要。资源不写入正文，不从参数取得地址，不下载或自动安装远端提供者。缺失、超限或摘要错误时显示静态替代，管理员可修复对应扩展后重新启动。
 
@@ -125,3 +125,9 @@ add_action('markbridge_register_teaching_components', static function () {
 主题可调用 `MarkBridgeTeaching.revealTarget(target)`，监听 `mbb:teaching-change`；作者隐藏正文仍参与目录与段落身份，临时控件与结果使用 `data-mbb-generated` 排除。全文、打印、无脚本、手机、键盘与减少动画下题意仍可读，交互出错不能阻止继续阅读整篇文章。
 
 > [工作原理](ARCHITECTURE.md) · [验证范围](VALIDATION.md) · [参与开发](../CONTRIBUTING.md)
+
+## 作者界面扩展
+
+2.2 的参数表单从当前服务器登记的精确类型／版本 schema 生成，只支持封闭对象、有限文本／数字／布尔／枚举与有界数组。未知字段或超出可编辑范围时保留全部 JSON，不静默丢值。字段校验为即时辅助，服务器仍是最终准入依据。
+
+已安装的受信扩展可在依赖 `mbb-kernel` 的固定脚本中调用 `MarkBridgeComponentAuthors.register({apiVersion:1,component,componentVersion,Editor,supports,upgrade?})`。32 项上限，精确键不能覆盖。`Editor` 是受信 React 组件，收到候选参数 `value`、`onChange` 和会话状态；只能更新同一草稿。`upgrade` 可声明目标 `componentVersion` 和纯 `migrate`，仅作者明确点击后产生未应用候选，Apply 原子更新参数与版本，Discard 保留旧版。正文不能登记这些回调。读者播放、选中与作者撤销记录都不持久化；服务端登记、配对校验和保存锁不变。

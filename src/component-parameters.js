@@ -1,0 +1,585 @@
+import { componentAuthor } from './component-authors.js';
+import { componentParams } from './component-data.js';
+import { translate as T, translateError as E } from './i18n.js';
+
+const own = (value, key) => Object.prototype.hasOwnProperty.call(value, key);
+const object = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
+const forbidden = new Set(['__proto__', 'prototype', 'constructor']);
+const clone = (value) => JSON.parse(JSON.stringify(value));
+const keyOf = (path) => JSON.stringify(path);
+const labelOf = (path) => ['params', ...path].join('.');
+const equal = (a, b) => {
+  if (typeof a !== typeof b || a === null || b === null) return a === b;
+  if (Array.isArray(a) || Array.isArray(b))
+    return (
+      Array.isArray(a) &&
+      Array.isArray(b) &&
+      a.length === b.length &&
+      a.every((v, i) => equal(v, b[i]))
+    );
+  if (object(a)) {
+    const keys = Object.keys(a);
+    return (
+      keys.length === Object.keys(b).length && keys.every((k) => own(b, k) && equal(a[k], b[k]))
+    );
+  }
+  return a === b;
+};
+
+// A closed subset of the server's data-only schema contract. No callbacks/HTML.
+export function parameterSchemaKnown(schema) {
+  let nodes = 0;
+  const walk = (s, depth) => {
+    if (
+      ++nodes > 1024 ||
+      depth > 8 ||
+      !object(s) ||
+      !['object', 'array', 'string', 'number', 'integer', 'boolean', 'null'].includes(s.type)
+    )
+      return false;
+    const fields = {
+      object: ['properties', 'required', 'additionalProperties'],
+      array: ['items', 'minItems', 'maxItems'],
+      string: ['minLength', 'maxLength'],
+      number: ['minimum', 'maximum'],
+      integer: ['minimum', 'maximum'],
+      boolean: [],
+      null: [],
+    };
+    if (Object.keys(s).some((k) => !['type', 'enum', ...fields[s.type]].includes(k))) return false;
+    for (const k of ['minItems', 'maxItems', 'minLength', 'maxLength'])
+      if (own(s, k) && (!Number.isInteger(s[k]) || s[k] < 0 || s[k] > 1024)) return false;
+    for (const k of ['minimum', 'maximum'])
+      if (own(s, k) && (typeof s[k] !== 'number' || !Number.isFinite(s[k]))) return false;
+    for (const [min, max] of [
+      ['minItems', 'maxItems'],
+      ['minLength', 'maxLength'],
+      ['minimum', 'maximum'],
+    ])
+      if (own(s, min) && own(s, max) && s[min] > s[max]) return false;
+    if (s.type === 'object') {
+      if (
+        s.additionalProperties !== false ||
+        !object(s.properties) ||
+        Object.keys(s.properties).some((k) => forbidden.has(k))
+      )
+        return false;
+      if (
+        own(s, 'required') &&
+        (!Array.isArray(s.required) ||
+          new Set(s.required).size !== s.required.length ||
+          s.required.some((k) => typeof k !== 'string' || !own(s.properties, k)))
+      )
+        return false;
+      if (!Object.values(s.properties).every((child) => walk(child, depth + 1))) return false;
+    }
+    if (s.type === 'array' && !walk(s.items, depth + 1)) return false;
+    if (own(s, 'enum')) {
+      if (!Array.isArray(s.enum) || !s.enum.length) return false;
+      const { enum: choices, ...base } = s;
+      if (choices.some((value) => validateParameterSchema(value, base).length)) return false;
+    }
+    return true;
+  };
+  return walk(schema, 0);
+}
+
+/** Matches the server's type/bounds/required/enum rules; unknown schemas defer to it. */
+export function validateParameterSchema(value, schema) {
+  if (!parameterSchemaKnown(schema)) return [];
+  const errors = [];
+  const error = (path, code, message) => {
+    if (errors.length < 32) errors.push({ path, code, message });
+  };
+  const walk = (v, s, path, depth) => {
+    if (depth > 8) {
+      error(path, 'depth', 'Parameters exceed the supported depth.');
+      return;
+    }
+    const valid = {
+      object: object(v),
+      array: Array.isArray(v),
+      string: typeof v === 'string',
+      number: typeof v === 'number' && Number.isFinite(v),
+      integer: typeof v === 'number' && Number.isInteger(v),
+      boolean: typeof v === 'boolean',
+      null: v === null,
+    }[s.type];
+    if (!valid) {
+      error(path, 'type', 'The field has an invalid type.');
+      return;
+    }
+    if (s.enum && !s.enum.some((candidate) => equal(v, candidate)))
+      error(path, 'enum', 'Choose one of the registered values.');
+    if (
+      typeof v === 'number' &&
+      ((own(s, 'minimum') && v < s.minimum) || (own(s, 'maximum') && v > s.maximum))
+    )
+      error(path, 'bounds', 'The number is outside the registered bounds.');
+    if (
+      typeof v === 'string' &&
+      ((own(s, 'minLength') && [...v].length < s.minLength) ||
+        (own(s, 'maxLength') && [...v].length > s.maxLength))
+    )
+      error(path, 'length', 'The text length is outside the registered bounds.');
+    if (s.type === 'object') {
+      for (const k of s.required || [])
+        if (!own(v, k)) error([...path, k], 'required', 'This registered field is required.');
+      for (const [k, child] of Object.entries(v)) {
+        if (!own(s.properties, k))
+          error([...path, k], 'unknown', 'This field is not in the registered schema.');
+        else walk(child, s.properties[k], [...path, k], depth + 1);
+      }
+    }
+    if (s.type === 'array') {
+      if (v.length < (s.minItems || 0) || v.length > (s.maxItems ?? 1024))
+        error(path, 'items', 'The item count is outside the registered bounds.');
+      v.forEach((child, i) => walk(child, s.items, [...path, i], depth + 1));
+    }
+  };
+  walk(value, schema, [], 0);
+  return errors;
+}
+
+/** UI admission never deletes unsupported data. Larger/unknown structures use JSON. */
+export function parameterFormSupport(schema, value) {
+  if (!parameterSchemaKnown(schema) || schema.type !== 'object') return false;
+  let controls = 0;
+  const walk = (s, v, depth) => {
+    if (++controls > 128 || depth > 6 || s.type === 'null') return false;
+    if (s.enum && s.enum.some((item) => item !== null && typeof item === 'object')) return false;
+    if (s.type === 'object') {
+      if (v !== undefined && !object(v)) return false;
+      if (
+        Object.keys(s.properties).length > 32 ||
+        (v && Object.keys(v).some((k) => !own(s.properties, k)))
+      )
+        return false;
+      return Object.entries(s.properties).every(([k, child]) => walk(child, v?.[k], depth + 1));
+    }
+    if (s.type === 'array') {
+      if (
+        !Number.isInteger(s.maxItems) ||
+        s.maxItems > 64 ||
+        (v !== undefined && !Array.isArray(v))
+      )
+        return false;
+      return (v || []).every((child) => walk(s.items, child, depth + 1));
+    }
+    return true;
+  };
+  return walk(schema, value, 0);
+}
+
+export function updateParameterValue(value, path, next, remove = false) {
+  if (!path.length) return next;
+  if (path.some((k) => forbidden.has(String(k)))) throw Error('Invalid component property name');
+  const [key, ...rest] = path;
+  const copy = Array.isArray(value) ? [...value] : { ...value };
+  if (rest.length) copy[key] = updateParameterValue(value?.[key], rest, next, remove);
+  else if (remove) {
+    if (Array.isArray(copy)) copy.splice(Number(key), 1);
+    else delete copy[key];
+  } else copy[key] = next;
+  return copy;
+}
+
+function initialValue(schema, seed) {
+  if (seed !== undefined) return clone(seed);
+  if (schema.enum) return clone(schema.enum[0]);
+  if (schema.type === 'object')
+    return Object.fromEntries(
+      (schema.required || []).map((k) => [k, initialValue(schema.properties[k])]),
+    );
+  if (schema.type === 'array')
+    return Array.from({ length: schema.minItems || 0 }, () => initialValue(schema.items));
+  if (schema.type === 'string') return '';
+  if (schema.type === 'boolean') return false;
+  if (schema.type === 'null') return null;
+  return schema.minimum ?? Math.min(0, schema.maximum ?? 0);
+}
+
+export function createParameterEditor({
+  wp,
+  drafts,
+  syncDraftLock,
+  parse,
+  providers = () => window.MBBComponents || [],
+}) {
+  const el = wp.element.createElement;
+  const find = (component, version) =>
+    providers().find((p) => p.id === component && p.version === version);
+  return function ParameterEditor({ value, onCommit, clientId, component, componentVersion }) {
+    const original = JSON.stringify(value || {}, null, 2);
+    const identity = component + '@' + componentVersion;
+    const [candidateVersion, setCandidateVersion] = wp.element.useState(
+      drafts.get(clientId)?.componentVersion ?? componentVersion,
+    );
+    const provider = find(component, candidateVersion);
+    const schema = provider?.schema;
+    const [raw, setRaw] = wp.element.useState(drafts.get(clientId)?.raw ?? original);
+    const [error, setError] = wp.element.useState(drafts.get(clientId)?.error || '');
+    const [mode, setMode] = wp.element.useState('form');
+    const authorSession = wp.element.useRef({});
+    let candidate, parseError;
+    try {
+      candidate = parse(raw);
+    } catch (e) {
+      parseError = E(e);
+    }
+    const schemaErrors = candidate === undefined ? [] : validateParameterSchema(candidate, schema);
+    const errors = new Map(schemaErrors.map((e) => [keyOf(e.path), T(e.message)]));
+    const form = candidate !== undefined && parameterFormSupport(schema, candidate);
+    const author = provider ? componentAuthor(component, candidateVersion) : undefined;
+    let authorSupported = false;
+    try {
+      authorSupported = candidate !== undefined && !!author?.supports(clone(candidate));
+    } catch {}
+
+    const upgrade =
+      authorSupported && author?.upgrade && find(component, author.upgrade.componentVersion);
+    const currentIssues = (text, currentSchema = schema) => {
+      try {
+        const parsed = parse(text);
+        componentParams(parsed, (code, message) => {
+          throw Error(message);
+        });
+        return validateParameterSchema(parsed, currentSchema);
+      } catch (e) {
+        return [{ path: [], message: E(e) }];
+      }
+    };
+    wp.element.useEffect(() => {
+      const pending = drafts.get(clientId);
+      if (pending) {
+        // A replacement inspector can render before the previous instance's
+        // final input event commits. Read the shared candidate again at commit
+        // time, rather than relying only on the useState initializer.
+        setRaw(pending.raw);
+        setCandidateVersion(pending.componentVersion ?? componentVersion);
+        setError(pending.error || '');
+      } else {
+        setRaw(original);
+        setCandidateVersion(componentVersion);
+        setError('');
+        if (currentIssues(original, find(component, componentVersion)?.schema).length) {
+          drafts.set(clientId, { raw: original, baseline: original, identity });
+          syncDraftLock();
+        }
+      }
+    }, [original, identity, JSON.stringify(schema)]);
+    const change = (text, targetVersion = candidateVersion) => {
+      setCandidateVersion(targetVersion);
+      setRaw(text);
+      setError('');
+      const prior = drafts.get(clientId);
+      if (text === original && targetVersion === componentVersion && !currentIssues(text).length)
+        drafts.delete(clientId);
+      else
+        drafts.set(clientId, {
+          raw: text,
+          componentVersion: targetVersion,
+          error: '',
+          baseline: prior?.baseline ?? original,
+          identity: prior?.identity ?? identity,
+        });
+      syncDraftLock();
+    };
+    const commit = () => {
+      try {
+        // Re-read the currently registered exact id/version, not author-supplied metadata.
+        const registered = find(component, candidateVersion);
+        if (candidateVersion !== componentVersion && !registered)
+          throw Error(
+            T(
+              'The upgrade target is no longer registered. Discard the candidate or restore the extension.',
+            ),
+          );
+        const parsed = parse(raw);
+        componentParams(parsed, (code, message) => {
+          throw Error(message);
+        });
+        const issues = validateParameterSchema(parsed, registered?.schema);
+        if (issues.length) throw Error(labelOf(issues[0].path) + ': ' + T(issues[0].message));
+        if (!equal(parsed, value) || candidateVersion !== componentVersion)
+          onCommit(parsed, { componentVersion: candidateVersion });
+        drafts.delete(clientId);
+        syncDraftLock();
+        setError('');
+      } catch (e) {
+        const message = E(e);
+        setError(message);
+        drafts.set(clientId, {
+          raw,
+          componentVersion: candidateVersion,
+          error: message,
+          baseline: drafts.get(clientId)?.baseline ?? original,
+          identity: drafts.get(clientId)?.identity ?? identity,
+        });
+        syncDraftLock();
+      }
+    };
+    const set = (path, next, remove) =>
+      change(JSON.stringify(updateParameterValue(candidate, path, next, remove), null, 2));
+    const render = (s, v, path, required = true, seed) => {
+      const label = labelOf(path),
+        issue = errors.get(keyOf(path));
+      if (v === undefined)
+        return el(
+          'div',
+          { key: keyOf(path), className: 'mbb-parameter-missing' },
+          el(
+            wp.components.Button,
+            { variant: 'secondary', onClick: () => set(path, initialValue(s, seed)) },
+            T('Add field') + ': ' + label,
+          ),
+          issue ? el('p', { role: 'alert' }, issue) : null,
+        );
+      const common = {
+        key: keyOf(path),
+        label,
+        help: issue,
+        'aria-invalid': issue ? 'true' : undefined,
+      };
+      let control;
+      if (s.enum) {
+        const options = s.enum.map((item, i) => ({
+          label: typeof item === 'string' ? item : JSON.stringify(item),
+          value: String(i),
+        }));
+        const index = s.enum.findIndex((item) => equal(v, item));
+        if (index < 0)
+          options.unshift({
+            label: T('Current value is outside the registered choices'),
+            value: '',
+          });
+        control = el(wp.components.SelectControl, {
+          ...common,
+          options,
+          value: index < 0 ? '' : String(index),
+          onChange: (n) => {
+            if (n !== '') set(path, clone(s.enum[Number(n)]));
+          },
+        });
+      } else if (s.type === 'object')
+        control = el(
+          'fieldset',
+          { key: keyOf(path) },
+          el('legend', {}, label),
+          ...Object.entries(s.properties).map(([k, child]) =>
+            render(child, v[k], [...path, k], (s.required || []).includes(k), seed?.[k]),
+          ),
+        );
+      else if (s.type === 'array')
+        control = el(
+          'fieldset',
+          { key: keyOf(path) },
+          el('legend', {}, label),
+          issue ? el('p', { role: 'alert' }, issue) : null,
+          ...v.map((child, i) =>
+            el(
+              'div',
+              { key: i, className: 'mbb-parameter-array-item' },
+              render(s.items, child, [...path, i], true, seed?.[i]),
+              el(
+                wp.components.Button,
+                {
+                  variant: 'tertiary',
+                  disabled: v.length <= (s.minItems || 0),
+                  onClick: () => set([...path, i], undefined, true),
+                },
+                T('Remove item') + ' ' + (i + 1),
+              ),
+            ),
+          ),
+          el(
+            wp.components.Button,
+            {
+              variant: 'secondary',
+              disabled: v.length >= s.maxItems,
+              onClick: () => set(path, [...v, initialValue(s.items)]),
+            },
+            T('Add item') + ': ' + label,
+          ),
+        );
+      else if (s.type === 'boolean')
+        control = el(wp.components.ToggleControl, {
+          ...common,
+          checked: v === true,
+          onChange: (next) => set(path, next),
+        });
+      else if (s.type === 'number' || s.type === 'integer')
+        control = el(wp.components.TextControl, {
+          ...common,
+          type: 'text',
+          inputMode: 'decimal',
+          value: String(v),
+          onChange: (text) => {
+            const valid =
+              /^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/.test(text) &&
+              Number.isFinite(Number(text));
+            set(path, valid ? Number(text) : text);
+          },
+        });
+      else
+        control = el(wp.components.TextareaControl, {
+          ...common,
+          rows: 2,
+          value: typeof v === 'string' ? v : JSON.stringify(v),
+          onChange: (text) => set(path, text),
+        });
+      return required || !path.length
+        ? control
+        : el(
+            'div',
+            { key: keyOf(path) },
+            control,
+            el(
+              wp.components.Button,
+              { variant: 'tertiary', onClick: () => set(path, undefined, true) },
+              T('Remove field') + ': ' + label,
+            ),
+          );
+    };
+    const draft = drafts.get(clientId);
+    const notice =
+      error ||
+      (draft
+        ? draft.baseline !== original || (draft.identity && draft.identity !== identity)
+          ? T(
+              'Applied configuration changed. The current candidate is preserved and unapplied. Saving is paused.',
+            )
+          : T(
+              'Parameters are unapplied; article saving is paused. Apply or discard them to continue.',
+            )
+        : '');
+    return el(
+      'div',
+      { className: 'mbb-parameter-editor' },
+      form || (authorSupported && author?.Editor)
+        ? el(
+            'div',
+            { className: 'mbb-parameter-modes' },
+            authorSupported && author?.Editor
+              ? el(
+                  wp.components.Button,
+                  {
+                    variant: mode === 'author' ? 'primary' : 'secondary',
+                    'aria-pressed': mode === 'author',
+                    onClick: () => setMode('author'),
+                  },
+                  T('Visual editor'),
+                )
+              : null,
+            form
+              ? el(
+                  wp.components.Button,
+                  {
+                    variant: mode === 'form' ? 'primary' : 'secondary',
+                    'aria-pressed': mode === 'form',
+                    onClick: () => setMode('form'),
+                  },
+                  T('Parameter form'),
+                )
+              : null,
+            el(
+              wp.components.Button,
+              {
+                variant: mode === 'json' ? 'primary' : 'secondary',
+                'aria-pressed': mode === 'json',
+                onClick: () => setMode('json'),
+              },
+              T('Advanced JSON'),
+            ),
+          )
+        : null,
+      authorSupported && author?.Editor && mode === 'author'
+        ? el(author.Editor, {
+            wp,
+            session: authorSession.current,
+            value: clone(candidate),
+            onChange: (next) => {
+              try {
+                componentParams(next, (code, message) => {
+                  throw Error(message);
+                });
+                change(JSON.stringify(next, null, 2));
+              } catch (e) {
+                setError(E(e));
+              }
+            },
+          })
+        : form && mode === 'form'
+          ? el(
+              'div',
+              { className: 'mbb-parameter-form' },
+              render(schema, candidate, [], true, provider?.defaults),
+            )
+          : el(wp.components.TextareaControl, {
+              label: T('Parameter JSON (data only)'),
+              value: raw,
+              onChange: change,
+              help: form
+                ? undefined
+                : T(
+                    'These parameters use the JSON editor. All fields are preserved; the server verifies them when saving.',
+                  ),
+            }),
+      upgrade
+        ? el(
+            wp.components.Button,
+            {
+              variant: 'secondary',
+              onClick: () => {
+                try {
+                  const next = author.upgrade.migrate(clone(candidate));
+                  componentParams(next, (code, message) => {
+                    throw Error(message);
+                  });
+                  const issues = validateParameterSchema(next, upgrade.schema);
+                  if (issues.length) throw Error(T(issues[0].message));
+                  change(JSON.stringify(next, null, 2), upgrade.version);
+                  setMode('author');
+                } catch (e) {
+                  setError(E(e));
+                }
+              },
+            },
+            T('Upgrade diagram to use the visual editor'),
+          )
+        : null,
+      candidateVersion !== componentVersion
+        ? el(
+            'p',
+            { role: 'status' },
+            T('Unapplied component version change:') +
+              ' ' +
+              componentVersion +
+              ' → ' +
+              candidateVersion,
+          )
+        : null,
+      notice || parseError
+        ? el('p', { role: error ? 'alert' : 'status' }, notice || parseError)
+        : null,
+      el(wp.components.Button, { variant: 'secondary', onClick: commit }, T('Apply parameters')),
+      el(
+        wp.components.Button,
+        {
+          variant: 'tertiary',
+          onClick: () => {
+            drafts.delete(clientId);
+            setCandidateVersion(componentVersion);
+            authorSession.current = {};
+            if (currentIssues(original, find(component, componentVersion)?.schema).length)
+              drafts.set(clientId, { raw: original, baseline: original, identity });
+            syncDraftLock();
+            setRaw(original);
+            setError('');
+          },
+        },
+        T('Discard parameter input'),
+      ),
+    );
+  };
+}

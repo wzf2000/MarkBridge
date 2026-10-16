@@ -13,6 +13,16 @@ function mbb_component_registry(): array
 {
     return $GLOBALS['mbb_components'] ?? [];
 }
+/** Resolve authored versions exactly; first registration remains the legacy/default entry. */
+function mbb_component_provider(string $id, string $version): ?array
+{
+    foreach (mbb_component_registry() as $provider) {
+        if ($provider['id'] === $id && $provider['version'] === $version) {
+            return $provider;
+        }
+    }
+    return null;
+}
 function mbb_component_json(mixed $value, int $flags = 0): string|false
 {
     $precision = ini_get('serialize_precision');
@@ -317,10 +327,28 @@ function markbridge_teaching_supports_ui_locale(): bool
 {
     return true;
 }
+function markbridge_teaching_supports_component_versions(): bool
+{
+    return true;
+}
+/** Installed providers can add data-only domain checks after the strict generic schema. */
+function mbb_component_domain_valid(string $id, string $version, mixed $params): bool
+{
+    try {
+        return !function_exists('apply_filters') ||
+            apply_filters('markbridge_validate_component_params', true, $id, $version, $params) ===
+                true;
+    } catch (Throwable) {
+        return false;
+    }
+}
 function mbb_component_register_checked(string $id, array $provider): bool
 {
     $registry = mbb_component_registry();
-    if (isset($registry[$id])) {
+    if (
+        is_string($provider['version'] ?? null) &&
+        mbb_component_provider($id, $provider['version'])
+    ) {
         return mbb_component_reject($id, 'duplicate-provider');
     }
     $fields = [
@@ -436,7 +464,9 @@ function mbb_component_register_checked(string $id, array $provider): bool
                         : (hash_equals($provider['resource']['sha256'], hash_file('sha256', $path))
                             ? 'available'
                             : 'resource-integrity'))));
-    $GLOBALS['mbb_components'][$id] = $provider;
+    $GLOBALS['mbb_components'][
+        isset($registry[$id]) ? $id . '@' . $provider['version'] : $id
+    ] = $provider;
     return true;
 }
 add_action(
@@ -470,7 +500,7 @@ function mbb_component_admit(string $serialized, string $base)
         ) {
             continue;
         }
-        $p = mbb_component_registry()[$a->component] ?? null;
+        $p = mbb_component_provider($a->component, $a->componentVersion);
         if (!$p || $p['status'] !== 'available' || $p['version'] !== $a->componentVersion) {
             return mbb_error(
                 'component_unavailable',
@@ -480,7 +510,10 @@ function mbb_component_admit(string $serialized, string $base)
                 422,
             );
         }
-        if (!mbb_component_schema($a->params, $p['schema'])) {
+        if (
+            !mbb_component_schema($a->params, $p['schema']) ||
+            !mbb_component_domain_valid($a->component, $a->componentVersion, $a->params)
+        ) {
             return mbb_error(
                 'component_params',
                 mbb_t('Component parameters do not satisfy the registered strict schema.'),

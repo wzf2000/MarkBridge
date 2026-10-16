@@ -1,4 +1,5 @@
-import { translate as T, format as F, translateError as E } from './i18n.js';
+import { createParameterEditor } from './component-parameters.js';
+import { translate as T, format as F } from './i18n.js';
 import {
   nativeAdapterKind,
   nativeAdapterName,
@@ -601,82 +602,67 @@ export function registerTeaching() {
       else editor.unlockPostSaving('mbb-component-params');
     } catch {}
   };
-  const ParameterEditor = ({ value, onCommit, clientId }) => {
-    const original = JSON.stringify(value || {}, null, 2);
-    const [raw, setRaw] = wp.element.useState(drafts.get(clientId)?.raw ?? original);
-    const [error, setError] = wp.element.useState(drafts.get(clientId)?.error || '');
-    wp.element.useEffect(() => {
-      if (!drafts.has(clientId)) {
-        setRaw(original);
-        setError('');
-      }
-    }, [original]);
-    const change = (text) => {
-      setRaw(text);
-      setError('');
-      if (text === original) drafts.delete(clientId);
-      else drafts.set(clientId, { raw: text, error: '', baseline: original });
-      syncDraftLock();
+  // An Edit can remount while its block remains in the provider (notably when
+  // the editor iframe is established). Draft lifetime follows that provider's
+  // block store, rather than a particular React instance.
+  const draftRegistries = new WeakMap();
+  const draftOwners = new Map();
+  const retainDraftOwner = (registry, clientId) => {
+    let state = draftRegistries.get(registry);
+    if (!state) {
+      state = { clients: new Map(), checking: false, unsubscribe: null };
+      const release = () => {
+        if (!state.clients.size) {
+          state.unsubscribe?.();
+          draftRegistries.delete(registry);
+        }
+      };
+      const check = () => {
+        if (state.checking) return;
+        state.checking = true;
+        let changed = false;
+        try {
+          const blocks = registry.select('core/block-editor');
+          for (const [id, mounted] of state.clients) {
+            if (draftOwners.get(id) !== registry) {
+              state.clients.delete(id);
+              continue;
+            }
+            if (drafts.has(id) && !blocks.getBlock(id)) {
+              drafts.delete(id);
+              changed = true;
+            }
+            if (!mounted && !drafts.has(id)) {
+              state.clients.delete(id);
+              draftOwners.delete(id);
+            }
+          }
+          if (changed) syncDraftLock();
+          release();
+        } finally {
+          state.checking = false;
+        }
+      };
+      state.check = check;
+      draftRegistries.set(registry, state);
+      state.unsubscribe = registry.subscribe(check, 'core/block-editor');
+    }
+    draftOwners.set(clientId, registry);
+    state.clients.set(clientId, (state.clients.get(clientId) || 0) + 1);
+    return () => {
+      state.clients.set(clientId, Math.max(0, (state.clients.get(clientId) || 1) - 1));
+      state.check();
     };
-    const commit = () => {
-      try {
-        const parsed = teachingJSON(raw, (code, message) => {
-          throw new Error(message);
-        });
-        componentParams(parsed, (code, message) => {
-          throw new Error(message);
-        });
-        onCommit(parsed);
-        drafts.delete(clientId);
-        syncDraftLock();
-        setError('');
-      } catch (e) {
-        setError(E(e));
-        drafts.set(clientId, {
-          raw,
-          error: E(e),
-          baseline: drafts.get(clientId)?.baseline || original,
-        });
-        syncDraftLock();
-      }
-    };
-    return el(
-      'div',
-      {},
-      el(wp.components.TextareaControl, {
-        label: T('Parameter JSON (data only)'),
-        value: raw,
-        help:
-          (error ? error + T(' Input has not been applied. Article saving is paused.') : '') ||
-          (drafts.has(clientId)
-            ? drafts.get(clientId).baseline !== original
-              ? T(
-                  'Applied configuration changed. The current candidate is preserved and unapplied. Saving is paused.',
-                )
-              : T(
-                  'Parameters are unapplied; article saving is paused. Apply or discard them to continue.',
-                )
-            : T(
-                'Explicitly apply edits. The server validates parameters against the registered schema when saving.',
-              )),
-        onChange: change,
-      }),
-      el(wp.components.Button, { variant: 'secondary', onClick: commit }, T('Apply parameters')),
-      el(
-        wp.components.Button,
-        {
-          variant: 'tertiary',
-          onClick: () => {
-            drafts.delete(clientId);
-            syncDraftLock();
-            setRaw(original);
-            setError('');
-          },
-        },
-        T('Discard parameter input'),
-      ),
-    );
   };
+  const ParameterEditor = createParameterEditor({
+    wp,
+    drafts,
+    syncDraftLock,
+    parse: (raw) =>
+      teachingJSON(raw, (code, message) => {
+        throw Error(message);
+      }),
+  });
 
   for (const [kind, schema] of Object.entries(teachingSchemas)) {
     if (nativeAdapterKinds.has(kind) || kind === 'adapter') continue;
@@ -703,13 +689,8 @@ export function registerTeaching() {
       ),
       supports: { html: false, customClassName: false, anchor: false },
       edit: ({ attributes: a, setAttributes, clientId }) => {
-        wp.element.useEffect(
-          () => () => {
-            drafts.delete(clientId);
-            syncDraftLock();
-          },
-          [],
-        );
+        const registry = wp.data.useRegistry();
+        wp.element.useEffect(() => retainDraftOwner(registry, clientId), [registry, clientId]);
         wp.element.useEffect(() => {
           const initial = a.version === undefined ? { version: 1 } : {};
           for (const [key, type] of Object.entries(schema))
@@ -753,8 +734,16 @@ export function registerTeaching() {
               ? el(ParameterEditor, {
                   key,
                   value: a.params,
+                  component: a.component,
+                  componentVersion: a.componentVersion,
                   clientId,
-                  onCommit: (params) => setAttributes({ params }),
+                  onCommit: (params, meta) =>
+                    setAttributes({
+                      params,
+                      ...(meta?.componentVersion
+                        ? { componentVersion: meta.componentVersion }
+                        : {}),
+                    }),
                 })
               : el(
                   key === 'mode'
