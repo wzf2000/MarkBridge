@@ -330,6 +330,11 @@ function batchFixture(request, response, pathname) {
         source: '$$\n\\frac{a}{d}\n$$\n',
         receipt: 'b'.repeat(64),
         documentId: 'BatchFixtureDocument',
+        identityStrategy: 'copy',
+        identityMappings: [1, 2].map((i) => ({
+          before: { namespace: 'S_' + 'a'.repeat(32), document: 'D_' + String(i).repeat(32) },
+          after: { namespace: 'S_' + 'b'.repeat(32), document: 'D_' + String(i + 2).repeat(32) },
+        })),
         resourceToken: 'c'.repeat(64),
         images: item.images
           ? [

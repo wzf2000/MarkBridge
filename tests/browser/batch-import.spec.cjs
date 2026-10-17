@@ -38,6 +38,11 @@ async function preview(page, name) {
 test('mixed scan, real formula/image review, title invalidation, partial success and cancel/resume', async ({
   page,
 }, info) => {
+  await page.setViewportSize(
+    info.project.name.startsWith('mobile')
+      ? { width: 390, height: 844 }
+      : { width: 1440, height: 900 },
+  );
   await open(page);
   await expect(status(page)).toContainText('Choose files to scan');
   await scan(page);
@@ -94,7 +99,17 @@ test('mixed scan, real formula/image review, title invalidation, partial success
   await expect(create).toBeDisabled();
   await dialog(page).getByRole('checkbox').check();
   await expect(create).toBeEnabled();
+  const mapping = page.locator('.mbb-batch-identity-map');
+  await expect(mapping).toContainText('Documents receiving new logical identities: 2.');
+  await expect(mapping).toContainText('References within this batch point to its new drafts.');
+  await expect(mapping.locator('details')).not.toHaveAttribute('open');
   await page.screenshot({ path: info.outputPath('batch-media-review.png'), fullPage: true });
+  await mapping.locator('summary').click();
+  await expect(mapping.locator('pre')).toBeVisible();
+  await mapping.locator('pre').scrollIntoViewIfNeeded();
+  expect(await dialog(page).evaluate((e) => e.scrollWidth <= e.clientWidth + 1)).toBe(true);
+  await page.screenshot({ path: info.outputPath('batch-identity-details.png'), fullPage: true });
+  await mapping.locator('summary').click();
   await control(page, { conflict: true });
   await create.click();
   await expect(status(page)).toContainText('Preview this item again before creating its draft.');

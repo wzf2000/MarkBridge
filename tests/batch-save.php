@@ -77,7 +77,10 @@ try {
     $paths[] = $zip;
     $archive = new ZipArchive();
     batch_check($archive->open($zip, ZipArchive::OVERWRITE) === true, 'ZIP create');
-    $archive->addFromString('document.md', "# Images\n\n![Chart](images/chart.png)\n");
+    $archive->addFromString(
+        'document.md',
+        "---\nmarkbridge: 1\ntitle: \"Image proposal\"\nstatus: \"publish\"\n---\n\n# Images\n\n![Chart](images/chart.png)\n",
+    );
     $chunk = static fn($type, $data) => pack('N', strlen($data)) .
         $type .
         $data .
@@ -230,6 +233,10 @@ try {
     batch_check(count($attachments) === 1, 'Media ownership/parent mismatch');
     $posts = array_merge($posts, $attachments);
     $imagePost = get_post($imageResult['post_id']);
+    batch_check(
+        $imagePost->post_status === 'draft' && $imagePost->post_title === 'Image synthetic draft',
+        'ZIP FrontMatter remains an unapplied proposal',
+    );
     batch_check(
         !str_contains($imagePost->post_content_filtered, 'mbb-import/') &&
             str_contains($imagePost->post_content_filtered, '/uploads/'),

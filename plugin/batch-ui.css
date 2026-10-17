@@ -98,10 +98,13 @@
 }
 .mbb-batch-identity-map {
   margin-block: 1rem;
+  min-inline-size: 0;
+  max-inline-size: 100%;
 }
 .mbb-batch-identity-map pre {
   max-height: 20rem;
+  max-inline-size: 100%;
   overflow: auto;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
+  white-space: pre;
+  overflow-wrap: normal;
 }

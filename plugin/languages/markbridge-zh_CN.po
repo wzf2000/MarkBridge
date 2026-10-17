@@ -1894,6 +1894,14 @@ msgid "Document references"
 msgstr "文档引用"
 
 #: plugin/i18n.js
+msgid "Documents receiving new logical identities: "
+msgstr "分配新逻辑身份的文章数："
+
+#: plugin/i18n.js
+msgid "Documents retaining their logical identities: "
+msgstr "保留原逻辑身份的文章数："
+
+#: plugin/i18n.js
 msgid "Down enters a term; Left and Right move between terms; Up returns; Home reads the whole formula; Escape leaves exploration."
 msgstr "↓ 进入子项，← → 切换相邻项，↑ 返回上层，Home 返回完整公式，Esc 退出探索。"
 
@@ -2127,6 +2135,10 @@ msgstr "执行失败；静态替代仍可阅读。"
 #: plugin/i18n.js
 msgid "Execution stopped."
 msgstr "执行已停止。"
+
+#: plugin/i18n.js
+msgid "Existing identities are retained only if unclaimed; occupied identities block saving."
+msgstr "仅在原身份未被占用时保留；已占用的身份会阻止保存。"
 
 #: plugin/i18n.js
 msgid "Existing image URLs are preserved; the server does not download them."
@@ -4162,6 +4174,10 @@ msgstr "需要引用事务保护。"
 #: plugin/i18n.js
 msgid "Reference verification failed. Current input is preserved."
 msgstr "引用校验失败，当前输入已保留。"
+
+#: plugin/i18n.js
+msgid "References within this batch point to its new drafts. References outside the batch are preserved."
+msgstr "本批文章之间的引用将指向本批新草稿，批外引用保持原目标。"
 
 #: plugin/i18n.js
 msgid "Refresh batch status"

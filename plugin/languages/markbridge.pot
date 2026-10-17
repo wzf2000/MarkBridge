@@ -1894,6 +1894,14 @@ msgid "Document references"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Documents receiving new logical identities: "
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Documents retaining their logical identities: "
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Down enters a term; Left and Right move between terms; Up returns; Home reads the whole formula; Escape leaves exploration."
 msgstr ""
 
@@ -2126,6 +2134,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Execution stopped."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Existing identities are retained only if unclaimed; occupied identities block saving."
 msgstr ""
 
 #: plugin/i18n.js
@@ -4161,6 +4173,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Reference verification failed. Current input is preserved."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "References within this batch point to its new drafts. References outside the batch are preserved."
 msgstr ""
 
 #: plugin/i18n.js

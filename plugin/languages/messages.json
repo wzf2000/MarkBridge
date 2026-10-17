@@ -1853,5 +1853,9 @@
   "Logical identity copy mapping": "逻辑身份复制映射",
   "Choose copy or explicit identity migration.": "请选择复制或显式身份迁移。",
   "Selected files repeat a logical identity. Correct the ambiguous originals before preparing the batch.": "所选文件含重复逻辑身份，请先修正歧义再准备批量导入。",
-  "The transformed reference candidate exceeds the existing document budget.": "引用转换候选超过既有正文预算。"
+  "The transformed reference candidate exceeds the existing document budget.": "引用转换候选超过既有正文预算。",
+  "Documents retaining their logical identities: ": "保留原逻辑身份的文章数：",
+  "Documents receiving new logical identities: ": "分配新逻辑身份的文章数：",
+  "Existing identities are retained only if unclaimed; occupied identities block saving.": "仅在原身份未被占用时保留；已占用的身份会阻止保存。",
+  "References within this batch point to its new drafts. References outside the batch are preserved.": "本批文章之间的引用将指向本批新草稿，批外引用保持原目标。"
 }

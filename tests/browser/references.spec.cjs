@@ -85,6 +85,25 @@ test('reference panel uses opening CAS, inserts closed marker and remains bounde
   await expect(panel).toContainText('The article has newer changes. Reload and merge them.');
   expect(prepares).toBe(0);
   expect(await panel.evaluate((n) => n.scrollWidth <= n.clientWidth)).toBe(true);
+  await page
+    .locator('#mbb-dialog')
+    .getByRole('button', { name: 'Close editing bridge', exact: true })
+    .click();
+  await page.locator('#mbb-more > summary').click();
+  const nativeTools = page.locator('#mbb-toolbar .mbb-writing-tools');
+  await nativeTools.locator(':scope > summary').click();
+  const nativePanel = nativeTools.locator('.mbb-reference-tools');
+  await nativePanel.locator(':scope > summary').click();
+  await nativePanel.getByRole('button', { name: 'Search reference targets', exact: true }).click();
+  await expect(nativePanel.locator('.mbb-reference-result > span')).toBeVisible();
+  await expect(nativePanel.locator('.mbb-reference-result > span')).toHaveText(
+    'Energy conservation · Readable draft',
+  );
+  await nativePanel.locator('.mbb-reference-result').scrollIntoViewIfNeeded();
+  await page.screenshot({
+    path: info.outputPath('native-reference-target-picker.png'),
+    fullPage: true,
+  });
 });
 test('neutral reader rechecks target before navigation and clears on revocation', async ({
   page,

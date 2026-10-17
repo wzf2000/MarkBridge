@@ -183,7 +183,7 @@
     bottom: 8px;
     font-size: 12px;
   }
-  #mbb-toolbar span {
+  #mbb-toolbar > span {
     display: none;
   }
   .mbb-fields {

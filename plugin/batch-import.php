@@ -815,6 +815,7 @@ function mbb_batch_preview($r)
         $item['preview'] = [
             'identity' => bin2hex(random_bytes(16)),
             'adapterDigest' => $preview['adapter_digest'] ?? null,
+            'frontmatterReceipt' => $preview['frontmatter_receipt'] ?? null,
             'resourceReceipt' => $preview['resource_receipt'] ?? null,
             'resourceDigest' => $preview['resource_plan']['manifestDigest'] ?? null,
             'expires' => min(
@@ -879,6 +880,7 @@ function mbb_batch_confirm($r)
         $source = mbb_batch_source($dir, $i, $item);
         $request = mbb_batch_request($item, $source);
         $request['adapter_digest'] = $item['preview']['adapterDigest'];
+        $request['frontmatter_receipt'] = $item['preview']['frontmatterReceipt'] ?? null;
         $request['resource_receipt'] = $item['preview']['resourceReceipt'];
         $guard = mbb_permission($request);
         if ($guard !== true) {

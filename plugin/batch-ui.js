@@ -285,12 +285,31 @@
     const previousMap = previewPanel.querySelector('.mbb-batch-identity-map');
     previousMap?.remove();
     if (result.identityMappings?.length) {
-      const details = node('details', '', { class: 'mbb-batch-identity-map', open: '' });
+      const mapping = node('div', '', { class: 'mbb-batch-identity-map' });
+      const details = node('details');
+      mapping.append(
+        node(
+          'p',
+          (result.identityStrategy === 'migrate'
+            ? T('Documents retaining their logical identities: ')
+            : T('Documents receiving new logical identities: ')) +
+            result.identityMappings.length +
+            '. ' +
+            (result.identityStrategy === 'migrate'
+              ? T(
+                  'Existing identities are retained only if unclaimed; occupied identities block saving.',
+                )
+              : T(
+                  'References within this batch point to its new drafts. References outside the batch are preserved.',
+                )),
+        ),
+        details,
+      );
       details.append(
         node('summary', T('Logical identity copy mapping')),
         node('pre', JSON.stringify(result.identityMappings, null, 2)),
       );
-      previewPanel.append(details);
+      previewPanel.append(mapping);
     }
     ack.checked = false;
     ack.closest('label').hidden = result.images.length === 0;

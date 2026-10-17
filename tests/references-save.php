@@ -50,6 +50,7 @@ function reference_save(array $payload): array
     );
     return $saved;
 }
+global $wpdb;
 $previous = get_current_user_id();
 $posts = [];
 $paths = [];
@@ -288,22 +289,44 @@ try {
     $uploads = ['name' => [], 'tmp_name' => [], 'error' => [], 'size' => [], 'type' => []];
     foreach ([[$a, $b], [$b, $a]] as $i => [$own, $other]) {
         $body = mbb_references_insert_identity(
-            ":::mbb:v1 object {\"id\":\"eq-one\",\"kind\":\"equation\",\"caption\":\"Batch equation\"}\n\n$$\nx\n$$\n\n:::mbb:end\n\n" .
+            ($i === 1
+                ? "---\nmarkbridge: 1\ntitle: \"ZIP proposal\"\nstatus: \"publish\"\n---\n\n"
+                : '') .
+                ":::mbb:v1 object {\"id\":\"eq-one\",\"kind\":\"equation\",\"caption\":\"Batch equation\"}\n\n$$\nx\n$$\n\n:::mbb:end\n\n" .
                 mbb_references_marker($other + ['target' => 'eq-one', 'kind' => 'equation']) .
                 "\n",
             $own,
         );
         $path = tempnam(sys_get_temp_dir(), 'reference-batch-');
-        file_put_contents($path, $body);
+        if ($i === 1) {
+            $body .= "\n![Pixel](images/pixel.png)\n";
+            $zip = new ZipArchive();
+            reference_assert($zip->open($path, ZipArchive::OVERWRITE) === true, 'ZIP fixture');
+            $zip->addFromString('document.md', $body);
+            $chunk = static fn($type, $data) => pack('N', strlen($data)) .
+                $type .
+                $data .
+                pack('N', crc32($type . $data));
+            $zip->addFromString(
+                'images/pixel.png',
+                "\x89PNG\r\n\x1a\n" .
+                    $chunk('IHDR', pack('NNCCCCC', 1, 1, 8, 2, 0, 0, 0)) .
+                    $chunk('IDAT', gzcompress("\0\x20\x80\xc0")) .
+                    $chunk('IEND', ''),
+            );
+            $zip->close();
+        } else {
+            file_put_contents($path, $body);
+        }
         chmod($path, 0600);
         $paths[] = $path;
         foreach (
             [
-                'name' => 'reference-' . $i . '.md',
+                'name' => 'reference-' . $i . ($i === 1 ? '.zip' : '.md'),
                 'tmp_name' => $path,
                 'error' => UPLOAD_ERR_OK,
-                'size' => strlen($body),
-                'type' => 'text/markdown',
+                'size' => filesize($path),
+                'type' => $i === 1 ? 'application/zip' : 'text/markdown',
             ]
             as $key => $value
         ) {
@@ -364,7 +387,44 @@ try {
             $confirm->get_status() === 200,
             'batch confirm: ' . wp_json_encode($confirm->get_data()),
         );
-        $posts[] = $confirm->get_data()['post_id'];
+        $created = $confirm->get_data()['post_id'];
+        $posts[] = $created;
+        $post = get_post($created);
+        reference_assert(
+            $post->post_status === 'draft' && $post->post_title === 'Reference batch ' . $i,
+            'copied ZIP proposal stays unapplied',
+        );
+        $children = get_posts([
+            'post_type' => 'attachment',
+            'post_status' => 'inherit',
+            'post_parent' => $created,
+            'numberposts' => 10,
+            'fields' => 'ids',
+        ]);
+        $posts = array_merge($posts, $children);
+        reference_assert(
+            count($children) === ($i === 1 ? 1 : 0),
+            'copied ZIP has exactly one owned image',
+        );
+        $stored = mbb_references_projection($post->post_content);
+        reference_assert(
+            $stored['identity'] === $batch['identityMappings'][$i]['after'] &&
+                $stored['edges'][0]['document'] ===
+                    $batch['identityMappings'][1 - $i]['after']['document'],
+            'saved resource pair retains union identity map',
+        );
+        $again = rest_do_request(
+            reference_request('batch/' . $batch['token'] . '/confirm', [
+                'schema' => 1,
+                'index' => $i,
+                'receipt' => $value['receipt'],
+                'ack_public_media' => true,
+            ]),
+        );
+        reference_assert(
+            $again->get_status() === 200 && $again->get_data()['post_id'] === $created,
+            'copied ZIP retry reuses existing draft',
+        );
     }
     echo "References lifecycle, candidate/no early write, FrontMatter/footnotes, identity claim/save, draft privacy/preview, preidentity history and copy passed.\n";
 } finally {
