@@ -1,5 +1,11 @@
 # 当前验证范围
 
+## 2.8.0-rc.8：原生 core 注释投影
+
+`tests/native-component-comments.cjs` 调用只读 WordPress core 的真实 PHP parse／serialize／KSES，与当前 Node 内核及实际 Gutenberg parse／serialize 对照。覆盖 v1／v2 小数与小容差、空／嵌套对象、嵌套组件、真实配置／metadata／类型／结构变化、重复实例与重复／畸形 JSON、KSES 危险 HTML，以及正好 262,144 B 配对的临时指数膨胀。恢复只作用于符合精确 core 投影的注释，最终仍通过原严格配对转换。运行需 `MARKBRIDGE_TEST_WORDPRESS_ROOT`（仅读核心文件）和既有 `MARKBRIDGE_TEST_RUNTIME`；无数据库或站点写入。
+
+本次定向复验活动、组件、登记和原生模型链；未修改转换内核或旧提供者资源。固定包的实际 REST 保存由隔离 WordPress 独立验收，不把纯 core 模型称为真实站点保存。
+
 ## 2.8.0-rc.7：活动静态关系与文章工作台
 
 完整主模型集与独立教学模型／双后端格式集通过；后续只调整新活动控件的 DOM 锚点，并针对真实宿主和三个固定读者资源复验。首次回归捕获的 PHP 空 adapter attrs 守卫遗漏已经修复，原失败保留，既有 adapter 全链及最终完整模型通过。

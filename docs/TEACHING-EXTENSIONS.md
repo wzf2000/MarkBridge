@@ -1,6 +1,6 @@
 # 教学扩展接口
 
-本页描述 MarkBridge 2.8.0-rc.7 的 v1 组件与显式 v2 活动合同。作者操作见[教学内容](TEACHING.md)。主插件保存教学结构、引用、参数和静态替代；算法、课程样例、Worker 与播放控制由独立受信插件提供。文章不能自行登记脚本或运行地址。
+本页描述 MarkBridge 2.8.0-rc.8 的 v1 组件与显式 v2 活动合同。作者操作见[教学内容](TEACHING.md)。主插件保存教学结构、引用、参数和静态替代；算法、课程样例、Worker 与播放控制由独立受信插件提供。文章不能自行登记脚本或运行地址。
 
 ## 内容与提供者
 
@@ -155,3 +155,9 @@ add_action('markbridge_register_teaching_components', static function () {
 受信作者登记 `apiVersion:2`，另提供 `validate(params,activity)` 和 `create({id})`。Editor 收到 `activity`、只读 `parts`（id/title/open/direct）与 `onActivityChange`，通过共享未应用候选一次 Apply 更新参数和关系；不直接保存文章。`MarkBridgeComponentAuthors.activityVersion` 为 1，原 `apiVersion` 能力仍为 1 以兼容旧脚本。`templates()` 返回受信类型/精确版本，`MBB.createActivity` 校验厂商模板；`MBB.copyActivity` 仅复制所选子树，重分配全局 DOM 锚点并映射其内部引用。code-tabs 的默认页签和 href 同步，代码字面量及外部引用保留。
 
 主宿主在新 init 的 activity 中派生有界短标签和随机句柄，不发送可写富文本副本。`reveal-target` 只含 protocol/session/type/handle，验证当前 frame、会话、实例配置和准许目标；展开同实例必要祖先。ready 状态可持续思考；五秒只约束初始化和待授权，不限制阅读寿命。活动授权期间完成消息也同步检查两秒期限；关闭、隐藏、销毁、替换后的旧句柄失效。不会写分数、完成记录或第二正文。全部静态角色在无脚本、全文、打印与静态导出中可读，运行标记和临时作答不导出。
+
+### 原生保存的 core 注释投影
+
+WordPress REST 的块钩子可能把 JSON `1e-8` 写为 `1.0e-8`、把空对象投影为空数组。托管原生保存仅在唯一实例 ID、对应位置与祖先身份、完整组件子树的实际 core 投影精确一致，且预备内容已是 core 序列化定点时恢复浏览器原始组件开注释。所有资格比较先于替换；不恢复 HTML，也不覆盖真正属性、metadata、类型或结构变化。恢复后仍经原严格转换及权限／基线保存链。源码、CLI 和转换器 canonical 不变。
+
+临时 core 投影工作串最多 1,500,000 B、10,000 个块、32 层；这不是可保存预算。作者源稿和最终配对仍各最多 256 KiB，接近上限的指数拼写膨胀仅在临时阶段容纳。

@@ -8,6 +8,124 @@ if (!defined('ABSPATH')) {
 }
 
 require_once __DIR__ . '/includes/i18n.php';
+// Undo only the exact core block-comment projection, never a filter's content/configuration change.
+// Core REST block hooks serialize attributes before pre-insert (e.g. 1e-8 -> 1.0e-8,
+// or nested {} -> []). The original browser comment remains subject to strict conversion.
+// Temporary core projection may exceed 256 KiB by a few bytes: scratch input is capped
+// at the existing 1.5 MB REST bound; saved source/blocks still pass the 256 KiB converter.
+function mbb_native_component_comment_bytes(string $prepared, string $incoming): string
+{
+    if (
+        strlen($prepared) > 1500000 ||
+        strlen($incoming) > 1500000 ||
+        !str_contains($incoming, '<!-- wp:mbb/component ') ||
+        preg_match_all('/<!--\s+wp:/', $incoming) > 10000 ||
+        preg_match_all('/<!--\s+wp:/', $prepared) > 10000
+    ) {
+        return $prepared;
+    }
+    $originalBlocks = parse_blocks($incoming);
+    $preparedBlocks = parse_blocks($prepared);
+    $pattern = '/<!-- wp:mbb\/component (\{[\s\S]*?\}) -->/';
+    $originalComments = [];
+    preg_match_all($pattern, $incoming, $matches, PREG_SET_ORDER);
+    foreach ($matches as $match) {
+        try {
+            $attrs = json_decode($match[1], true, 32, JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            continue;
+        }
+        $id = $attrs['id'] ?? null;
+        if (is_string($id)) {
+            $originalComments[$id][] = $match[0];
+        }
+    }
+    $count = static function (array $blocks) {
+        $ids = [];
+        $nodes = 0;
+        $walk = static function (array $list, int $depth) use (&$walk, &$ids, &$nodes): bool {
+            foreach ($list as $block) {
+                if (
+                    $depth > 32 ||
+                    ++$nodes > 10000 ||
+                    !is_array($block) ||
+                    !array_key_exists('blockName', $block) ||
+                    !is_array($block['attrs'] ?? null) ||
+                    !is_array($block['innerBlocks'] ?? null)
+                ) {
+                    return false;
+                }
+                if (
+                    ($block['blockName'] ?? '') === 'mbb/component' &&
+                    is_string($block['attrs']['id'] ?? null)
+                ) {
+                    $id = $block['attrs']['id'];
+                    $ids[$id] = ($ids[$id] ?? 0) + 1;
+                }
+                if (!$walk($block['innerBlocks'] ?? [], $depth + 1)) {
+                    return false;
+                }
+            }
+            return true;
+        };
+        return $walk($blocks, 0) ? $ids : null;
+    };
+    $originalIds = $count($originalBlocks);
+    $preparedIds = $count($preparedBlocks);
+    if (
+        $originalIds === null ||
+        $preparedIds === null ||
+        serialize_blocks($preparedBlocks) !== $prepared
+    ) {
+        return $prepared;
+    }
+    $eligible = [];
+    $pair = static function (array $original, array $current) use (
+        &$pair,
+        &$eligible,
+        $originalIds,
+        $preparedIds,
+        $originalComments,
+    ): void {
+        foreach ($original as $index => $before) {
+            $after = $current[$index] ?? null;
+            if (!$after || $before['blockName'] !== $after['blockName']) {
+                continue;
+            }
+            // Changed enclosing identities/structure are not a correspondence proof.
+            foreach (['id', 'anchor'] as $key) {
+                if (($before['attrs'][$key] ?? null) !== ($after['attrs'][$key] ?? null)) {
+                    continue 2;
+                }
+            }
+            if ($before['blockName'] === 'mbb/component') {
+                $id = $before['attrs']['id'] ?? null;
+                if (
+                    !is_string($id) ||
+                    ($originalIds[$id] ?? 0) !== 1 ||
+                    ($preparedIds[$id] ?? 0) !== 1 ||
+                    count($originalComments[$id] ?? []) !== 1 ||
+                    serialize_block($before) !== serialize_block($after)
+                ) {
+                    continue;
+                }
+                $eligible[$id] = $originalComments[$id][0];
+            }
+            $pair($before['innerBlocks'] ?? [], $after['innerBlocks'] ?? []);
+        }
+    };
+    $pair($originalBlocks, $preparedBlocks);
+    return preg_replace_callback(
+        $pattern,
+        static function ($match) use ($eligible) {
+            $attrs = json_decode($match[1], true, 32);
+            $id = $attrs['id'] ?? null;
+            return is_string($id) && isset($eligible[$id]) ? $eligible[$id] : $match[0];
+        },
+        $prepared,
+    );
+}
+
 // Keep a managed document paired while the normal WordPress REST controller saves all fields.
 function mbb_native_pre_insert($prepared, $request)
 {
@@ -26,6 +144,16 @@ function mbb_native_pre_insert($prepared, $request)
             mbb_t('The article has newer changes. Reload and merge them.'),
         );
     }
+    $serialized = property_exists($prepared, 'post_content')
+        ? $prepared->post_content
+        : $current->post_content;
+    $incoming = $request->get_param('content');
+    if (is_array($incoming)) {
+        $incoming = $incoming['raw'] ?? null;
+    }
+    if (is_string($serialized) && is_string($incoming)) {
+        $serialized = mbb_native_component_comment_bytes($serialized, $incoming);
+    }
     $review = new WP_REST_Request('POST', '/mbb/v1/preview');
     $review->set_body((string) $request->get_body());
     foreach (
@@ -33,9 +161,7 @@ function mbb_native_pre_insert($prepared, $request)
             'post_id' => $scope['id'],
             'expected' => $scope['expected'],
             'mode' => 'blocks',
-            'serialized' => property_exists($prepared, 'post_content')
-                ? $prepared->post_content
-                : $current->post_content,
+            'serialized' => $serialized,
             'title' => property_exists($prepared, 'post_title')
                 ? $prepared->post_title
                 : $current->post_title,
