@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.0.0-rc.4
+
+- Align current candidate documentation and validation scope without changing application behavior or client assets.
+
+## 3.0.0-rc.3
+
+- Plan collection image resources separately from Markdown ZIP admission, supporting native images and galleries with local attachment IDs while preserving external-image links.
+- Retain attachment ownership, current permissions, file/path/digest checks and unchanged ZIP/portable ZIP safety boundaries; do not alter saved source or media relationships.
+
 ## 3.0.0-rc.2
 
 - Treat inherited JavaScript object method names as unknown display labels, preserving readable fallback for valid schema keys such as `toString` and all original parameter data.
