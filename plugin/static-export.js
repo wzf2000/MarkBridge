@@ -160,7 +160,7 @@
         // Remove only the pinned node/key and finite tree syntax, never source attributes.
         if (
           rendered &&
-          node.localName === 'mjx-math' &&
+          ['mjx-math', 'mjx-msubsup'].includes(node.localName) &&
           k === 'data-semantic-collapsed' &&
           v.length <= 8192 &&
           /^[() c0-9]+$/.test(v)

@@ -192,3 +192,181 @@ test('optional retained publication input projects through the real Publisher an
   await offline.screenshot({ path: info.outputPath('book.png'), fullPage: true });
   await context.close();
 });
+
+const subsupExpressions = ['x_i^2', 'x_{i_j}^{n^2}', '\\sum_{i=1}^{n} x_i^2'];
+const subsupBody = subsupExpressions
+  .map(
+    (tex, i) =>
+      '<pre id="subsup-' + i + '" class="wp-block-mbb-math"><code>' + tex + '</code></pre>',
+  )
+  .join('');
+
+test('pinned subsup and largeop formulas retain real CHTML offline without collapse bookkeeping', async ({
+  page,
+  browser,
+}, info) => {
+  await setup(page);
+  const value = await (await page.request.get('/static-export-descriptor')).json();
+  value.body = subsupBody + value.body;
+  const result = await page.evaluate(async (value) => {
+    const rendered = await MBB_MATH.preview(value.body),
+      doc = new DOMParser().parseFromString(rendered, 'text/html');
+    return {
+      subsup: doc.querySelectorAll('mjx-msubsup[data-semantic-collapsed]').length,
+      html: await (await MarkBridgeStaticExport.build(value)).text(),
+    };
+  }, value);
+  expect(result.subsup).toBeGreaterThan(0);
+  expect(result.html).not.toContain('data-semantic-collapsed');
+  const file = info.outputPath('subsup.html');
+  await fs.writeFile(file, result.html);
+  const context = await browser.newContext({
+    javaScriptEnabled: false,
+    offline: true,
+    viewport: info.project.use.viewport,
+  });
+  try {
+    const offline = await context.newPage();
+    await offline.goto(pathToFileURL(file).href);
+    for (const [i, tex] of subsupExpressions.entries()) {
+      await expect(offline.locator('#subsup-' + i + ' mjx-container')).toBeVisible();
+      await expect(offline.locator('#subsup-' + i + ' .mbb-typeset')).toHaveAttribute(
+        'aria-label',
+        tex,
+      );
+    }
+    expect(await offline.locator('mjx-msubsup').count()).toBeGreaterThan(0);
+    expect(await offline.locator('script').count()).toBe(0);
+    await offline.evaluate(() => document.fonts.ready);
+    await offline.screenshot({ path: info.outputPath('subsup.png'), fullPage: true });
+  } finally {
+    await context.close();
+  }
+});
+
+test('subsup collapse stripping rejects unsafe values, other nodes and authored attributes', async ({
+  page,
+}) => {
+  await setup(page);
+  const value = await (await page.request.get('/static-export-descriptor')).json();
+  value.body = subsupBody + value.body;
+  const result = await page.evaluate(async (value) => {
+    const original = MBB_MATH.preview,
+      rendered = await original(value.body),
+      errors = [];
+    try {
+      for (const [tag, key, attribute] of [
+        ['mjx-msubsup', 'data-semantic-collapsed', 'javascript:bad()'],
+        ['mjx-msubsup', 'data-semantic-collapsed', '(1 invalid)'],
+        ['mjx-msubsup', 'data-semantic-collapsed', ''],
+        ['mjx-msubsup', 'data-semantic-collapsed', '1'.repeat(8193)],
+        ['mjx-msubsup', 'data-semantic-unknown', '(3 (c 2) 0 1)'],
+        ['mjx-mi', 'data-semantic-collapsed', '(3 (c 2) 0 1)'],
+        ['span', 'data-semantic-collapsed', '(3 (c 2) 0 1)'],
+      ]) {
+        const doc = new DOMParser().parseFromString(rendered, 'text/html');
+        doc.querySelector(tag).setAttribute(key, attribute);
+        MBB_MATH.preview = async () => doc.body.innerHTML;
+        try {
+          await MarkBridgeStaticExport.build(value);
+          errors.push('accepted');
+        } catch {
+          errors.push('refused');
+        }
+      }
+      MBB_MATH.preview = original;
+      for (const body of [
+        '<span data-semantic-collapsed="(3 (c 2) 0 1)">author</span>',
+        '<mjx-msubsup data-semantic-collapsed="(3 (c 2) 0 1)">author</mjx-msubsup>',
+      ]) {
+        try {
+          await MarkBridgeStaticExport.build({ ...value, body: value.body + body });
+          errors.push('accepted');
+        } catch {
+          errors.push('refused');
+        }
+      }
+    } finally {
+      MBB_MATH.preview = original;
+    }
+    return errors;
+  }, value);
+  expect(result).toEqual(Array(9).fill('refused'));
+});
+
+test('optional frozen Publisher renders subsup formulas across chapters into a scriptless book', async ({
+  page,
+  browser,
+}, info) => {
+  test.skip(
+    !process.env.MARKBRIDGE_TEST_PUBLISHER_ROOT,
+    'Supply the fixed Publisher source root; this verifies client projection, not server authorization.',
+  );
+  const publisher = path.resolve(process.env.MARKBRIDGE_TEST_PUBLISHER_ROOT),
+    fixture = require(path.join(publisher, 'tests/browser/fixtures.cjs')),
+    ZIP = require(path.join(publisher, 'plugin/zip.js'));
+  await fixture.setup(page);
+  await fixture.input(page);
+  const encoded = await page.evaluate(async (body) => {
+    const enc = new TextEncoder(),
+      files = MBBPublisherZIP.read(new Uint8Array(await bookInput.blob.arrayBuffer())),
+      manifest = JSON.parse(new TextDecoder().decode(files.get('manifest.json'))),
+      digest = async (bytes) =>
+        [...new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))]
+          .map((n) => n.toString(16).padStart(2, '0'))
+          .join('');
+    for (const chapter of manifest.chapters) {
+      const bytes = enc.encode(body + new TextDecoder().decode(files.get(chapter.path)));
+      files.set(chapter.path, bytes);
+      chapter.bodyBytes = bytes.length;
+      chapter.bodySha256 = await digest(bytes);
+    }
+    const mb = enc.encode(JSON.stringify(manifest));
+    files.set('manifest.json', mb);
+    const input = MBBPublisherZIP.write(files),
+      output = await MarkBridgePublisher.build(input, {
+        prepared: {
+          client: MBB_PUBLISHER.client,
+          snapshot_sha256: await digest(mb),
+          artifact: { bytes: input.size, sha256: await digest(await input.arrayBuffer()) },
+        },
+      }),
+      raw = new Uint8Array(await output.blob.arrayBuffer());
+    let binary = '';
+    for (let i = 0; i < raw.length; i += 8192)
+      binary += String.fromCharCode(...raw.subarray(i, i + 8192));
+    return btoa(binary);
+  }, subsupBody);
+  const bytes = Buffer.from(encoded, 'base64'),
+    directory = info.outputPath('subsup-book');
+  await fs.writeFile(info.outputPath('subsup-book.zip'), bytes);
+  for (const [name, value] of ZIP.read(bytes)) {
+    const file = path.join(directory, name);
+    await fs.mkdir(path.dirname(file), { recursive: true });
+    await fs.writeFile(file, value);
+  }
+  const context = await browser.newContext({
+    javaScriptEnabled: false,
+    offline: true,
+    viewport: info.project.use.viewport,
+  });
+  try {
+    const offline = await context.newPage();
+    await offline.goto(pathToFileURL(path.join(directory, 'index.html')).href);
+    expect(await offline.locator('mjx-msubsup').count()).toBeGreaterThanOrEqual(6);
+    expect(await offline.locator('[data-semantic-collapsed],script').count()).toBe(0);
+    for (const tex of subsupExpressions)
+      expect(
+        await offline
+          .locator('.mbb-typeset')
+          .evaluateAll(
+            (nodes, tex) => nodes.filter((n) => n.getAttribute('aria-label') === tex).length,
+            tex,
+          ),
+      ).toBe(2);
+    await offline.evaluate(() => document.fonts.ready);
+    await offline.screenshot({ path: info.outputPath('subsup-book.png'), fullPage: true });
+  } finally {
+    await context.close();
+  }
+});

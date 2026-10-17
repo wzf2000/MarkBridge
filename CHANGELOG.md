@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.0.0-rc.5
+
+- Strip bounded generated CHTML collapse bookkeeping on the pinned `mjx-msubsup` node as well as `mjx-math`, preserving subscript/superscript formulas in static HTML and publication clients.
+- Keep authored attributes, other node types, invalid metadata syntax and over-budget values rejected; retain the candidate documentation alignment.
+
 ## 3.0.0-rc.4
 
 - Align current candidate documentation and validation scope without changing application behavior or client assets.

@@ -3,7 +3,7 @@ Tags: markdown, blocks, editor, mathjax, revisions
 Requires at least: 7.1
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 3.0.0-rc.4
+Stable tag: 3.0.0-rc.5
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -24,6 +24,9 @@ Private paired candidate backups for existing managed articles are stored in non
 3. Import a test Markdown draft, preview, save and reopen. Existing Node installations should review the upgrade guide before changing their backend.
 
 == Changelog ==
+
+= 3.0.0-rc.5 =
+* Remove only finite generated CHTML collapse metadata on pinned math/subsup nodes; preserve formula rendering and strict authored-attribute admission.
 
 = 3.0.0-rc.4 =
 * Align candidate documentation and validation scope; application code and client assets are unchanged.
