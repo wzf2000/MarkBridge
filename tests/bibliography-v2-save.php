@@ -39,7 +39,11 @@ function bibliography_save_pair(array $payload): array
         'preview: ' . wp_json_encode($preview->get_data()),
     );
     $view = $preview->get_data();
-    foreach (['adapter_digest', 'frontmatter_receipt', 'resource_receipt'] as $k) {
+    $bindings = ['adapter_digest', 'frontmatter_receipt'];
+    if (($payload['mode'] ?? 'markdown') !== 'restore') {
+        $bindings[] = 'resource_receipt';
+    }
+    foreach ($bindings as $k) {
         $payload[$k] = $view[$k] ?? null;
     }
     $response = bibliography_save_request('save', $payload);
