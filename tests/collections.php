@@ -123,11 +123,31 @@ function mbb_component_provider(...$args)
 }
 function get_posts($args)
 {
-    return [];
+    return ($args['post_type'] ?? '') === 'post' ? $GLOBALS['companionPosts'] ?? [] : [];
 }
 function get_post_meta($id, $key, $single = true)
 {
-    return '';
+    return $GLOBALS['companionMeta'][$id][$key] ?? '';
+}
+function metadata_exists($type, $id, $key)
+{
+    return array_key_exists($key, $GLOBALS['companionMeta'][$id] ?? []);
+}
+function get_locale()
+{
+    return 'en_US';
+}
+function pagenest_companion_feature($feature)
+{
+    return $GLOBALS['companionEnabled'] ?? true;
+}
+function pagenest_companion_config($key)
+{
+    return ['document_meta' => '_model_doc', 'series_order' => $GLOBALS['companionRank'] ?? []];
+}
+function pagenest_companion_post_setting($id, $key)
+{
+    return $GLOBALS['companionValues'][$id][$key] ?? '';
 }
 function get_post_field($key, $id)
 {
@@ -639,6 +659,69 @@ try {
     unset($GLOBALS['capHook']);
     $GLOBALS['snapshots'][14]['post']->post_status = 'publish';
     unlink($asset);
+    $GLOBALS['companionPosts'] = [
+        $GLOBALS['snapshots'][12]['post'],
+        $GLOBALS['snapshots'][14]['post'],
+    ];
+    $GLOBALS['companionMeta'] = [12 => ['_model_doc' => 'B'], 14 => ['_model_doc' => 'A']];
+    $GLOBALS['companionValues'] = [
+        12 => ['series' => 'Series', 'order' => '1'],
+        14 => ['series' => 'Series', 'order' => '2'],
+    ];
+    $GLOBALS['companionRank'] = ['A', 'B'];
+    $importRequest = new CollectionRequest(['schema' => 1, 'post_id' => 12]);
+    $imported = mbb_collections_import_companion($importRequest);
+    check(
+        array_column($imported['config']['chapters'], 'post_id') === [14, 12],
+        'Companion explicit rank before numeric order',
+    );
+    $GLOBALS['companionRank'] = [];
+    $imported = mbb_collections_import_companion($importRequest);
+    check(
+        array_column($imported['config']['chapters'], 'post_id') === [12, 14],
+        'Companion numeric order',
+    );
+    $GLOBALS['companionValues'][12]['order'] = '2';
+    $imported = mbb_collections_import_companion($importRequest);
+    check(
+        array_column($imported['config']['chapters'], 'post_id') === [14, 12],
+        'Companion doc marker tie break',
+    );
+    $GLOBALS['companionValues'][12]['series'] = '';
+    $imported = mbb_collections_import_companion($importRequest);
+    check(
+        count($imported['config']['chapters']) === 2,
+        'Empty seed series includes marked public candidates as Companion does',
+    );
+    $GLOBALS['companionPosts'] = array_fill(0, 201, $GLOBALS['snapshots'][12]['post']);
+    check(
+        (mbb_collections_import_companion($importRequest)['error'] ?? '') ===
+            'collection_companion',
+        'bounded candidate admission',
+    );
+    $GLOBALS['companionPosts'] = [
+        $GLOBALS['snapshots'][12]['post'],
+        $GLOBALS['snapshots'][14]['post'],
+    ];
+    $GLOBALS['companionEnabled'] = false;
+    check(
+        (mbb_collections_import_companion($importRequest)['error'] ?? '') ===
+            'collection_companion',
+        'disabled provider',
+    );
+    $GLOBALS['companionEnabled'] = true;
+    $GLOBALS['companionValues'][12]['order'] = '1';
+    $GLOBALS['convertHook'] = function ($id) {
+        if ($id === 14) {
+            $GLOBALS['denied'] = ['edit_post:12'];
+        }
+    };
+    check(
+        (mbb_collections_import_companion($importRequest)['error'] ?? '') === 'collection_changed',
+        'Companion late first chapter permission revoke',
+    );
+    unset($GLOBALS['convertHook']);
+    $GLOBALS['denied'] = [];
     echo "Collection config, exact CAS, scoped references, fresh permissions, bounded slots and cleanup models passed\n";
 } finally {
     foreach (glob($GLOBALS['privateRoot'] . '/collections-v1/*') ?: [] as $d) {

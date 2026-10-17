@@ -329,6 +329,7 @@ function mbb_collections_import_companion($r)
         }
         $s = mbb_collections_post($data['post_id'], false);
         $title = $s['post']->post_title;
+        $stamps = [$data['post_id'] => mbb_collections_stamp($s)];
         unset($s);
         $settings = pagenest_companion_config('chapters');
         $series = (string) pagenest_companion_post_setting($data['post_id'], 'series');
@@ -405,9 +406,15 @@ function mbb_collections_import_companion($r)
         ];
         foreach ($config['chapters'] as $chapter) {
             $s = mbb_collections_post($chapter['post_id'], false);
+            $stamps[$chapter['post_id']] = mbb_collections_stamp($s);
             unset($s);
         }
         mbb_collections_owner($owner);
+        foreach ($stamps as $stamp) {
+            if (!mbb_collections_final_stamp($stamp, true, false)) {
+                mbb_collections_fail('collection_changed');
+            }
+        }
         return ['schema' => 1, 'config' => mbb_collections_config($config), 'importedOnce' => true];
     } catch (Throwable $e) {
         return mbb_collections_error($e);

@@ -4,7 +4,7 @@
   <a href="LICENSE"><img alt="License: GPL-3.0-or-later" src="https://img.shields.io/badge/license-GPL--3.0--or--later-818cf8"></a>
   <img alt="WordPress 7.1" src="https://img.shields.io/badge/WordPress-7.1-21759b">
   <img alt="PHP 8.2+" src="https://img.shields.io/badge/PHP-8.2%2B-777bb4">
-  <img alt="Version 2.8.0-rc.1" src="https://img.shields.io/badge/version-2.8.0--rc.1-818cf8">
+  <img alt="Version 2.8.0-rc.2" src="https://img.shields.io/badge/version-2.8.0--rc.2-818cf8">
 </p>
 
 <p align="center"><strong>用 Markdown 写作，用区块调整。保存时，让两种格式保持一致。</strong></p>
@@ -38,7 +38,7 @@ flowchart LR
 
 ## 开始使用
 
-本分支为 2.8.0-rc.1 隔离候选，尚未发行；在线 Wiki 仍对应已公开稳定版。候选说明见 [文档索引](docs/index.md)。
+本分支为 2.8.0-rc.2 隔离候选，尚未发行；在线 Wiki 仍对应已公开稳定版。候选说明见 [文档索引](docs/index.md)。
 
 安装请使用对应 [Release](https://github.com/wzf2000/MarkBridge/releases) 的插件 ZIP，版本变化见[更新记录](CHANGELOG.md)。新安装在 WordPress 7.1.x、PHP 8.2+ 且具备 DOM／mbstring 扩展时使用包内 PHP 转换器，基础编辑不要求额外 Node 运行环境。已有 Node 配置升级后继续使用 Node；管理员可在 **设置 → MarkBridge** 选择 PHP／Node，Node 需预先准备环境并通过验证。尚未提交 WordPress.org 插件目录。
 
