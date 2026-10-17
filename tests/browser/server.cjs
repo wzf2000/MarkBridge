@@ -509,6 +509,20 @@ http
       });
       return response.writeHead(200, { 'Content-Type': 'text/html; charset=UTF-8' }).end(html);
     }
+    if (pathname === '/bibliography-presentation') {
+      const query = new URL(request.url, 'http://localhost').searchParams;
+      const style = query.get('style') === 'numeric' ? 'numeric' : 'author-year';
+      const html = execFileSync(
+        'php',
+        [
+          path.join(__dirname, 'technical-presentation.php'),
+          style,
+          query.has('static') ? 'static' : 'front',
+        ],
+        { encoding: 'utf8' },
+      );
+      return response.writeHead(200, { 'Content-Type': 'text/html; charset=UTF-8' }).end(html);
+    }
     if (pathname === '/wp/v2/types')
       return response.writeHead(200, { 'Content-Type': 'application/json' }).end('{}');
     if (pathname === '/front') {

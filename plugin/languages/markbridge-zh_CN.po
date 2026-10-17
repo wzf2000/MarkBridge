@@ -393,6 +393,26 @@ msgid "<p>Unicode is used by default; external resources are not automatically d
 msgstr "<p>默认使用 Unicode，不自动下载外部资源。当前没有预置下载源；可导入具有明确来源与许可的图片数据包。导入不授予资源使用许可。</p>"
 
 #: plugin/i18n.js
+msgid "A CSL-JSON author is invalid"
+msgstr "CSL-JSON 作者数据无效"
+
+#: plugin/i18n.js
+msgid "A CSL-JSON issue date is invalid"
+msgstr "CSL-JSON 出版日期无效"
+
+#: plugin/i18n.js
+msgid "A CSL-JSON record has an unsupported or missing type"
+msgstr "CSL-JSON 记录的类型缺失或不受支持"
+
+#: plugin/i18n.js
+msgid "A CSL-JSON record requires a bounded string or safe integer id"
+msgstr "CSL-JSON 记录需有界字符串或安全整数 ID"
+
+#: plugin/i18n.js
+msgid "A DOI must be a bounded supported DOI identifier, without a URL prefix"
+msgstr "DOI 必须是有界且受支持的标识符，不含网址前缀"
+
+#: plugin/i18n.js
 msgid "A FrontMatter header is limited to 16 KiB"
 msgstr "FrontMatter 头最多 16 KiB"
 
@@ -497,6 +517,14 @@ msgid "A list contains a non-list item"
 msgstr "列表包含非列表项"
 
 #: plugin/i18n.js
+msgid "A literal author name requires 1–120 plain characters"
+msgstr "原文作者名必须是 1–120 个普通字符"
+
+#: plugin/i18n.js
+msgid "A literal issue date must be bounded single-line text"
+msgstr "原文出版日期必须是有界单行文字"
+
+#: plugin/i18n.js
 msgid "A local image reference is not present in the ZIP: "
 msgstr "本地图引用在 ZIP 中不存在："
 
@@ -535,6 +563,10 @@ msgstr "预览图片已变化或内容类型不符。"
 #: plugin/i18n.js
 msgid "A preview image digest does not match."
 msgstr "预览图片摘要不匹配。"
+
+#: plugin/i18n.js
+msgid "A proposed CSL-JSON key is invalid"
+msgstr "CSL-JSON 候选引用键无效"
 
 #: plugin/i18n.js
 msgid "A real WordPress block runtime is required"
@@ -601,6 +633,14 @@ msgid "A static article link is unsafe"
 msgstr "静态文章链接不安全"
 
 #: plugin/i18n.js
+msgid "A structured author requires an explicit family name within the existing 120-character name budget"
+msgstr "结构化作者需明确填写姓氏，完整姓名不超过既有的 120 字符上限"
+
+#: plugin/i18n.js
+msgid "A structured issue date requires one or two year/month/day parts"
+msgstr "结构化出版日期需一组或两组年月日数据"
+
+#: plugin/i18n.js
 msgid "A summary must be single-line plain text"
 msgstr "摘要只允许单行纯文字"
 
@@ -645,6 +685,10 @@ msgid "Add a trailing newline to the "
 msgstr "为"
 
 #: plugin/i18n.js
+msgid "Add author or institution"
+msgstr "添加作者或机构"
+
+#: plugin/i18n.js
 msgid "Add bibliography entry"
 msgstr "添加文献条目"
 
@@ -653,12 +697,28 @@ msgid "Add code version"
 msgstr "添加代码版本"
 
 #: plugin/i18n.js
+msgid "Add end date"
+msgstr "添加结束日期"
+
+#: plugin/i18n.js
+msgid "Add entries"
+msgstr "添加条目"
+
+#: plugin/i18n.js
 msgid "Add field"
 msgstr "添加字段"
 
 #: plugin/i18n.js
 msgid "Add item"
 msgstr "添加项目"
+
+#: plugin/i18n.js
+msgid "Additional identifiers"
+msgstr "其他标识符"
+
+#: plugin/i18n.js
+msgid "Additional source text"
+msgstr "补充来源文字"
 
 #: plugin/i18n.js
 msgid "Administrator permission is required."
@@ -841,6 +901,14 @@ msgid "Authors (one per line, at most eight)"
 msgstr "作者（每行一位，最多八位）"
 
 #: plugin/i18n.js
+msgid "Authors and institutions"
+msgstr "作者与机构"
+
+#: plugin/i18n.js
+msgid "Author–year"
+msgstr "作者—年份"
+
+#: plugin/i18n.js
 msgid "Automatic copy failed. Select the summary to copy it manually."
 msgstr "自动复制失败，请选择摘要后手动复制。"
 
@@ -933,6 +1001,10 @@ msgid "Bibliography edits changed. Preview the BibTeX mapping again"
 msgstr "文献草稿已变化，请重新预览 BibTeX 映射"
 
 #: plugin/i18n.js
+msgid "Bibliography edits changed. Preview the CSL-JSON mapping again."
+msgstr "文献候选已变化，请重新预览 CSL-JSON 映射。"
+
+#: plugin/i18n.js
 msgid "Bibliography edits have not been applied. Apply or discard them before saving or renaming keys."
 msgstr "参考文献修改尚未应用，请先应用或放弃，再保存文章或更改文献键。"
 
@@ -941,12 +1013,28 @@ msgid "Bibliography fields are incomplete, duplicated, or outside their bounds"
 msgstr "文献字段不完整、重复或超出限制"
 
 #: plugin/i18n.js
+msgid "Bibliography identifiers require bounded ISBN, ISSN, PMID and PMCID text fields"
+msgstr "文献标识符需完整且有界的 ISBN、ISSN、PMID、PMCID 文本字段"
+
+#: plugin/i18n.js
 msgid "Bibliography keys (at most eight)"
 msgstr "文献键（最多八个）"
 
 #: plugin/i18n.js
+msgid "Bibliography keys must be unique"
+msgstr "文献引用键必须唯一"
+
+#: plugin/i18n.js
 msgid "Bibliography settings"
 msgstr "参考文献设置"
+
+#: plugin/i18n.js
+msgid "Bibliography v2 entries require closed fields, a stable key, a supported type and a title"
+msgstr "文献 v2 条目需完整闭合字段、稳定引用键、支持的类型和标题"
+
+#: plugin/i18n.js
+msgid "Bibliography v2 requires a fixed supported style and 1–64 entries within 64 KiB"
+msgstr "文献 v2 需受支持的固定样式，以及总量不超过 64 KiB 的 1–64 条记录"
 
 #: plugin/i18n.js
 msgid "Block "
@@ -1019,6 +1107,14 @@ msgid "Body conflict %1$s (opening line %2$s%3$s)"
 msgstr "正文冲突 %1$s（打开时第 %2$s 行%3$s）"
 
 #: plugin/i18n.js
+msgid "Book"
+msgstr "图书"
+
+#: plugin/i18n.js
+msgid "Book chapter"
+msgstr "图书章节"
+
+#: plugin/i18n.js
 msgid "Both representations match. Check the differences and confirm restoration."
 msgstr "两种格式校验一致。请检查差异，再确认恢复。"
 
@@ -1067,12 +1163,76 @@ msgid "By stage"
 msgstr "分阶段"
 
 #: plugin/i18n.js
+msgid "CSL-JSON contains a duplicate property"
+msgstr "CSL-JSON 含重复属性"
+
+#: plugin/i18n.js
+msgid "CSL-JSON contains invalid Unicode or a nonfinite number"
+msgstr "CSL-JSON 含无效 Unicode 或非有限数值"
+
+#: plugin/i18n.js
+msgid "CSL-JSON data exceeds its bounded node budget"
+msgstr "CSL-JSON 数据超过有界节点预算"
+
+#: plugin/i18n.js
+msgid "CSL-JSON file (optional)"
+msgstr "CSL-JSON 文件（可选）"
+
+#: plugin/i18n.js
+msgid "CSL-JSON has more than 256 unsupported fields; simplify the input before importing"
+msgstr "CSL-JSON 有超过 256 个不支持的字段，请先精简输入再导入"
+
+#: plugin/i18n.js
+msgid "CSL-JSON input must be UTF-8 JSON within 64 KiB"
+msgstr "CSL-JSON 输入必须是 64 KiB 以内的 UTF-8 JSON"
+
+#: plugin/i18n.js
+msgid "CSL-JSON is invalid"
+msgstr "CSL-JSON 无效"
+
+#: plugin/i18n.js
+msgid "CSL-JSON key mappings are invalid"
+msgstr "CSL-JSON 引用键映射无效"
+
+#: plugin/i18n.js
+msgid "CSL-JSON nesting exceeds sixteen levels"
+msgstr "CSL-JSON 嵌套超过 16 层"
+
+#: plugin/i18n.js
+msgid "CSL-JSON numeric fields require text or safe integers"
+msgstr "CSL-JSON 数值字段需文本或安全整数"
+
+#: plugin/i18n.js
+msgid "CSL-JSON property names are invalid or too long"
+msgstr "CSL-JSON 属性名无效或过长"
+
+#: plugin/i18n.js
+msgid "CSL-JSON record ids are duplicated"
+msgstr "CSL-JSON 记录 ID 重复"
+
+#: plugin/i18n.js
+msgid "CSL-JSON requires an array of 1–64 records"
+msgstr "CSL-JSON 需由 1–64 条记录构成的数组"
+
+#: plugin/i18n.js
+msgid "CSL-JSON source (up to 64 KiB)"
+msgstr "CSL-JSON 源码（最多 64 KiB）"
+
+#: plugin/i18n.js
+msgid "CSL-JSON supports at most eight authors"
+msgstr "CSL-JSON 最多支持 8 位作者"
+
+#: plugin/i18n.js
 msgid "Cancel"
 msgstr "取消"
 
 #: plugin/i18n.js
 msgid "Cancel BibTeX import"
 msgstr "取消 BibTeX 导入"
+
+#: plugin/i18n.js
+msgid "Cancel CSL-JSON import"
+msgstr "取消 CSL-JSON 导入"
 
 #: plugin/i18n.js
 msgid "Cancel export"
@@ -1199,6 +1359,10 @@ msgid "Choose a featured image in article settings before publishing, then previ
 msgstr "发布前请在文章设置中选择特色图片，再预览并保存。"
 
 #: plugin/i18n.js
+msgid "Choose a literal date or structured date parts, not both"
+msgstr "请选择原文日期或结构化年月日，不能同时使用两者"
+
+#: plugin/i18n.js
 msgid "Choose a local ZIP. Also check this site's PHP upload limits"
 msgstr "请选择本地 ZIP；请同时检查本站 PHP 上传限制"
 
@@ -1287,6 +1451,10 @@ msgid "Choose files to scan or resume one of your active batches."
 msgstr "请选择文件进行扫描，或恢复一个活动批次。"
 
 #: plugin/i18n.js
+msgid "Choose merge or replace for CSL-JSON import"
+msgstr "请选择 CSL-JSON 的添加或替换方式"
+
+#: plugin/i18n.js
 msgid "Choose one of the registered values."
 msgstr "请选择已登记的选项。"
 
@@ -1301,6 +1469,14 @@ msgstr "请选择此冲突"
 #: plugin/i18n.js
 msgid "Choose up to ten Markdown or single-document ZIP files. Scan first, preview each item, then create drafts one at a time. Header metadata is not applied."
 msgstr "最多选择 10 个 Markdown 或单文档 ZIP 文件。先扫描，再逐项预览并创建草稿。不会应用头部元数据。"
+
+#: plugin/i18n.js
+msgid "Citation key mappings:"
+msgstr "引用键映射："
+
+#: plugin/i18n.js
+msgid "Citation style"
+msgstr "引文样式"
 
 #: plugin/i18n.js
 msgid "Clear this account's local candidates"
@@ -1509,6 +1685,10 @@ msgstr "组件类型"
 #: plugin/i18n.js
 msgid "Component version"
 msgstr "组件版本"
+
+#: plugin/i18n.js
+msgid "Conference paper"
+msgstr "会议论文"
 
 #: plugin/i18n.js
 msgid "Confirm download"
@@ -1753,6 +1933,10 @@ msgid "Custom more-separator attributes are not supported"
 msgstr "更多分隔符自定义属性暂不支持"
 
 #: plugin/i18n.js
+msgid "DOI identifier (without URL prefix)"
+msgstr "DOI 标识符（不含网址前缀）"
+
+#: plugin/i18n.js
 msgid "DOM and mbstring are available."
 msgstr "DOM 与 mbstring 可用。"
 
@@ -1775,6 +1959,14 @@ msgstr "数据库事务和源文件回退均未成功，请核对两份内容。
 #: plugin/i18n.js
 msgid "Database rollback failed; the save state is uncertain. Verify the article."
 msgstr "数据库事务回退未成功，不能确认保存状态；请重新核对文章。"
+
+#: plugin/i18n.js
+msgid "Dataset"
+msgstr "数据集"
+
+#: plugin/i18n.js
+msgid "Day (optional)"
+msgstr "日期（可选）"
 
 #: plugin/i18n.js
 msgid "Default code version"
@@ -1870,6 +2062,10 @@ msgid "Display math requires paired $$ delimiters"
 msgstr "行间公式需要配对的 $$ 分隔符"
 
 #: plugin/i18n.js
+msgid "Document"
+msgstr "文档"
+
+#: plugin/i18n.js
 msgid "Document containers and declarations are unsupported"
 msgstr "不支持文档容器和声明"
 
@@ -1906,6 +2102,10 @@ msgid "Down enters a term; Left and Right move between terms; Up returns; Home r
 msgstr "↓ 进入子项，← → 切换相邻项，↑ 返回上层，Home 返回完整公式，Esc 退出探索。"
 
 #: plugin/i18n.js
+msgid "Download CSL-JSON subset"
+msgstr "下载 CSL-JSON 子集"
+
+#: plugin/i18n.js
 msgid "Download current candidate .md"
 msgstr "下载当前候选 .md"
 
@@ -1940,6 +2140,10 @@ msgstr "草稿恢复"
 #: plugin/i18n.js
 msgid "Draft title"
 msgstr "草稿标题"
+
+#: plugin/i18n.js
+msgid "Dropping particle"
+msgstr "可省略前缀"
 
 #, php-format
 #: plugin/i18n.js
@@ -2081,6 +2285,10 @@ msgid "Enabled: candidates are stored only in this browser and expire after 7 da
 msgstr "已启用：候选只保存在本浏览器，7 天到期。"
 
 #: plugin/i18n.js
+msgid "End date"
+msgstr "结束日期"
+
+#: plugin/i18n.js
 msgid "Enter a title without HTML, or explicitly select the header title proposal."
 msgstr "请输入不含 HTML 的标题，或明确选择头部标题提案。"
 
@@ -2191,6 +2399,10 @@ msgid "Explicit migration retaining identities"
 msgstr "显式迁移并保留身份"
 
 #: plugin/i18n.js
+msgid "Explicit person name"
+msgstr "明确拆分的人名"
+
+#: plugin/i18n.js
 msgid "Explicitly apply edits. The server validates parameters against the registered schema when saving."
 msgstr "编辑后明确应用；保存时由服务端登记 schema 校验。"
 
@@ -2237,6 +2449,10 @@ msgstr "导出当前服务器已保存的双格式文章。请准备清单并确
 #: plugin/i18n.js
 msgid "Failed"
 msgstr "失败"
+
+#: plugin/i18n.js
+msgid "Family name (explicit)"
+msgstr "姓氏（明确填写）"
 
 #: plugin/i18n.js
 msgid "Featured image"
@@ -2472,6 +2688,10 @@ msgid "General settings"
 msgstr "常规设置"
 
 #: plugin/i18n.js
+msgid "Given name"
+msgstr "名字"
+
+#: plugin/i18n.js
 msgid "Go"
 msgstr "跳转"
 
@@ -2538,6 +2758,14 @@ msgstr "重点行超出对应代码范围"
 #: plugin/i18n.js
 msgid "Highlighted lines must be unique positive integers separated by commas"
 msgstr "重点行需为不重复的正整数，以逗号分隔"
+
+#: plugin/i18n.js
+msgid "I reviewed and accept the listed CSL-JSON field losses"
+msgstr "我已核对并接受列出的 CSL-JSON 字段损失"
+
+#: plugin/i18n.js
+msgid "I reviewed and accept the proposed citation keys"
+msgstr "我已核对并接受候选引用键"
 
 #: plugin/i18n.js
 msgid "Image alternative text cannot contain footnote markers"
@@ -2640,6 +2868,10 @@ msgid "Import BibTeX bibliography"
 msgstr "导入 BibTeX 文献"
 
 #: plugin/i18n.js
+msgid "Import CSL-JSON"
+msgstr "导入 CSL-JSON"
+
+#: plugin/i18n.js
 msgid "Import Markdown"
 msgstr "导入 Markdown"
 
@@ -2650,6 +2882,14 @@ msgstr "导入 Markdown 文件"
 #: plugin/i18n.js
 msgid "Import Markdown first for a new document."
 msgstr "新文档请先导入Markdown。"
+
+#: plugin/i18n.js
+msgid "Import behavior"
+msgstr "导入方式"
+
+#: plugin/i18n.js
+msgid "Import bounded CSL-JSON"
+msgstr "导入受限 CSL-JSON"
 
 #: plugin/i18n.js
 msgid "Import operation"
@@ -2936,6 +3176,22 @@ msgid "Isolated conversion passed."
 msgstr "隔离转换通过。"
 
 #: plugin/i18n.js
+msgid "Issue"
+msgstr "期"
+
+#: plugin/i18n.js
+msgid "Issue date"
+msgstr "出版日期"
+
+#: plugin/i18n.js
+msgid "Issue date form"
+msgstr "出版日期形式"
+
+#: plugin/i18n.js
+msgid "Journal article"
+msgstr "期刊论文"
+
+#: plugin/i18n.js
 msgid "Keep as plain text"
 msgstr "保留为纯文本"
 
@@ -3024,6 +3280,22 @@ msgid "Listing"
 msgstr "代码清单"
 
 #: plugin/i18n.js
+msgid "Literal date"
+msgstr "原文日期"
+
+#: plugin/i18n.js
+msgid "Literal issue date"
+msgstr "原文出版日期"
+
+#: plugin/i18n.js
+msgid "Literal name or institution"
+msgstr "原文姓名或机构"
+
+#: plugin/i18n.js
+msgid "Literal names stay literal. Switching to person fields starts empty; enter the authored name parts explicitly."
+msgstr "原文姓名不会自动拆分。切换到人名字段时从空字段开始，请明确填写各部分。"
+
+#: plugin/i18n.js
 msgid "Literature citation"
 msgstr "文献引用"
 
@@ -3094,6 +3366,10 @@ msgstr "手动复制可能规范化换行；下载原代码保留字节"
 #: plugin/i18n.js
 msgid "Mapped entries are a preview. Existing unapplied edits are preserved until you choose this candidate."
 msgstr "映射条目仅为预览；选用此候选前，现有未应用修改会保留。"
+
+#: plugin/i18n.js
+msgid "Mapped publication fields"
+msgstr "已映射的出版字段"
 
 #: plugin/i18n.js
 msgid "MarkBridge image emoji"
@@ -3337,6 +3613,10 @@ msgid "Missing table header"
 msgstr "缺少表头"
 
 #: plugin/i18n.js
+msgid "Month (optional)"
+msgstr "月份（可选）"
+
+#: plugin/i18n.js
 msgid "More"
 msgstr "更多"
 
@@ -3388,6 +3668,14 @@ msgstr "我的候选"
 #: plugin/i18n.js
 msgid "My candidate: %1$s; latest server version: %2$s"
 msgstr "我的候选：%1$s；服务器最新版：%2$s"
+
+#: plugin/i18n.js
+msgid "Name form"
+msgstr "姓名形式"
+
+#: plugin/i18n.js
+msgid "Name suffix"
+msgstr "姓名后缀"
 
 #: plugin/i18n.js
 msgid "Named footnotes are not implemented in this prototype"
@@ -3555,6 +3843,10 @@ msgid "Node diagram"
 msgstr "节点图"
 
 #: plugin/i18n.js
+msgid "Non-dropping particle"
+msgstr "不可省略前缀"
+
+#: plugin/i18n.js
 msgid "Nothing is stored by default. When enabled, drafts are stored as unencrypted text in this browser and may be accessible to other users of a shared device. At most 8 records and 1 MiB total, expiring after 7 days. This is not a substitute for saving to the site."
 msgstr "默认不保存。启用后，草稿以未加密文字保存在这个浏览器；共享设备上的其他使用者可能访问。最多 8 条、合计 1 MiB，7 天到期；不能替代站点保存。"
 
@@ -3565,6 +3857,10 @@ msgstr "编号对象"
 #: plugin/i18n.js
 msgid "Numbers must be finite"
 msgstr "数字必须有限"
+
+#: plugin/i18n.js
+msgid "Numeric"
+msgstr "数字编号"
 
 #, php-format
 #: plugin/i18n.js
@@ -3744,6 +4040,10 @@ msgid "PHP version"
 msgstr "PHP 版本"
 
 #: plugin/i18n.js
+msgid "Pages"
+msgstr "页码"
+
+#: plugin/i18n.js
 msgid "Paired backup failed. Current input remains in the editor. "
 msgstr "配对备份失败。当前输入仍在编辑器中。"
 
@@ -3872,6 +4172,10 @@ msgid "Prepare a copy with a new identity"
 msgstr "准备使用新身份的副本"
 
 #: plugin/i18n.js
+msgid "Prepare bibliography v2 candidate"
+msgstr "准备文献 v2 候选"
+
+#: plugin/i18n.js
 msgid "Prepare conflict repair with a new identity"
 msgstr "准备使用新身份的冲突修复候选"
 
@@ -3918,6 +4222,10 @@ msgstr "保留当前组件 "
 #: plugin/i18n.js
 msgid "Preview BibTeX mapping"
 msgstr "预览 BibTeX 映射"
+
+#: plugin/i18n.js
+msgid "Preview CSL-JSON mapping"
+msgstr "预览 CSL-JSON 映射"
 
 #: plugin/i18n.js
 msgid "Preview and explicitly confirm the write for a source-managed article."
@@ -4024,6 +4332,10 @@ msgid "Proposal: "
 msgstr "提案："
 
 #: plugin/i18n.js
+msgid "Proposed citation key"
+msgstr "候选引用键"
+
+#: plugin/i18n.js
 msgid "Proposed reference key"
 msgstr "拟使用的新文献键"
 
@@ -4032,8 +4344,16 @@ msgid "Proposed stable ID"
 msgstr "拟使用的新稳定标识"
 
 #: plugin/i18n.js
+msgid "Publication and source fields are limited to 512 plain characters"
+msgstr "出版与来源字段最多 512 个普通字符"
+
+#: plugin/i18n.js
 msgid "Publication or source"
 msgstr "发表刊物或出处"
+
+#: plugin/i18n.js
+msgid "Publication title"
+msgstr "刊物或会议名称"
 
 #: plugin/i18n.js
 msgid "Published privately"
@@ -4042,6 +4362,10 @@ msgstr "私密发布"
 #: plugin/i18n.js
 msgid "Published publicly"
 msgstr "公开发布"
+
+#: plugin/i18n.js
+msgid "Publisher"
+msgstr "出版者"
 
 #: plugin/i18n.js
 msgid "Question"
@@ -4172,6 +4496,10 @@ msgid "Reference transaction required."
 msgstr "需要引用事务保护。"
 
 #: plugin/i18n.js
+msgid "Reference type"
+msgstr "文献类型"
+
+#: plugin/i18n.js
 msgid "Reference verification failed. Current input is preserved."
 msgstr "引用校验失败，当前输入已保留。"
 
@@ -4200,8 +4528,16 @@ msgid "Registered teaching component"
 msgstr "登记的教学组件"
 
 #: plugin/i18n.js
+msgid "Remove author"
+msgstr "移除作者"
+
+#: plugin/i18n.js
 msgid "Remove bibliography entry"
 msgstr "删除文献条目"
+
+#: plugin/i18n.js
+msgid "Remove end date"
+msgstr "移除结束日期"
 
 #: plugin/i18n.js
 msgid "Remove field"
@@ -4238,6 +4574,10 @@ msgstr "替换为"
 #: plugin/i18n.js
 msgid "Replaced matches: "
 msgstr "已替换："
+
+#: plugin/i18n.js
+msgid "Report"
+msgstr "报告"
 
 #: plugin/i18n.js
 msgid "Request and base documentId must match"
@@ -4387,6 +4727,14 @@ msgstr "返回页签阅读"
 #: plugin/i18n.js
 msgid "Reverse conversion requires an explicit Markdown source document"
 msgstr "只有明确Markdown来源文档允许反向转换"
+
+#: plugin/i18n.js
+msgid "Review and explicitly acknowledge the proposed citation keys before adopting the candidate"
+msgstr "采用候选前，请核对并明确确认候选引用键"
+
+#: plugin/i18n.js
+msgid "Review and explicitly acknowledge unsupported CSL-JSON fields before adopting the candidate"
+msgstr "采用候选前，请核对并明确确认不支持的 CSL-JSON 字段"
 
 #: plugin/i18n.js
 msgid "Review the conflicting article and prepare a new identity."
@@ -4618,6 +4966,10 @@ msgid "Simple task lists were unsupported by the historical parser"
 msgstr "历史解析器不支持简单任务列表"
 
 #: plugin/i18n.js
+msgid "Software"
+msgstr "软件"
+
+#: plugin/i18n.js
 msgid "Some interrupted media could not be cleaned. Try later"
 msgstr "中断媒体未能全部清理，请稍后重试"
 
@@ -4710,6 +5062,10 @@ msgstr "暂存目录清理未完成"
 #: plugin/i18n.js
 msgid "Staging directory permissions could not be restricted"
 msgstr "无法限制暂存目录权限"
+
+#: plugin/i18n.js
+msgid "Start date"
+msgstr "开始日期"
 
 #: plugin/i18n.js
 msgid "Start interactive demonstration"
@@ -4831,6 +5187,10 @@ msgstr "结构"
 #: plugin/i18n.js
 msgid "Structured reading and exploration"
 msgstr "结构读法与逐项探索"
+
+#: plugin/i18n.js
+msgid "Structured year, month and day"
+msgstr "结构化年月日"
 
 #: plugin/i18n.js
 msgid "Sync by content anchors"
@@ -6253,6 +6613,10 @@ msgid "The replacement exceeds the source size limit."
 msgstr "替换后超过源码大小限制。"
 
 #: plugin/i18n.js
+msgid "The replacement would remove currently cited keys"
+msgstr "此替换会移除当前已引用的键"
+
+#: plugin/i18n.js
 msgid "The request failed. Sign in again if necessary, then refresh batch status."
 msgstr "请求失败。如有需要，请重新登录，再刷新批次状态。"
 
@@ -6657,6 +7021,10 @@ msgid "The static stylesheet is unsafe"
 msgstr "静态样式表不安全"
 
 #: plugin/i18n.js
+msgid "The structured issue date is invalid"
+msgstr "结构化出版日期无效"
+
+#: plugin/i18n.js
 msgid "The teaching block version must be 1"
 msgstr "教学区块版本需为 1"
 
@@ -6753,6 +7121,10 @@ msgid "These parameters use the JSON editor. All fields are preserved; the serve
 msgstr "这些参数使用 JSON 编辑，保留所有字段，由服务器在保存时校验。"
 
 #: plugin/i18n.js
+msgid "Thesis"
+msgstr "学位论文"
+
+#: plugin/i18n.js
 msgid "This Markdown cannot be represented without a block roundtrip change"
 msgstr "此 Markdown 无法在不改变区块往返结果的前提下表示"
 
@@ -6817,6 +7189,10 @@ msgid "This batch was canceled. Saved drafts are preserved."
 msgstr "此批次已取消，已保存的草稿仍保留。"
 
 #: plugin/i18n.js
+msgid "This bibliography uses the original six-field format. It stays unchanged until you explicitly upgrade or adopt a CSL-JSON candidate."
+msgstr "此文献使用原六字段格式；在明确升级或采用 CSL-JSON 候选前保持原样。"
+
+#: plugin/i18n.js
 msgid "This block cannot yet be converted to Markdown"
 msgstr "此区块尚不能转换为 Markdown"
 
@@ -6863,6 +7239,10 @@ msgstr "此条目仍被引用，请先移除对应引用再删除。"
 #: plugin/i18n.js
 msgid "This field is not in the registered schema."
 msgstr "此字段不在已登记的结构中。"
+
+#: plugin/i18n.js
+msgid "This finite subset imports up to 64 records within 64 KiB. Review unsupported fields and key mappings explicitly. The original JSON is not stored, and import does not save the article."
+msgstr "此有限子集最多导入 64 条记录，总输入不超过 64 KiB。请明确核对不支持的字段和引用键映射；原始 JSON 不会另存，导入也不会保存文章。"
 
 #: plugin/i18n.js
 msgid "This image does not belong to the resource candidate"
@@ -7120,6 +7500,10 @@ msgid "Unsupported display class"
 msgstr "不支持的显示类名"
 
 #: plugin/i18n.js
+msgid "Unsupported fields that will not be stored:"
+msgstr "以下不支持的字段不会保存："
+
+#: plugin/i18n.js
 msgid "Unsupported footnote definition structure"
 msgstr "脚注定义结构不受支持"
 
@@ -7186,6 +7570,10 @@ msgstr "不支持的教学区块版本"
 #: plugin/i18n.js
 msgid "Untitled draft"
 msgstr "未命名草稿"
+
+#: plugin/i18n.js
+msgid "Untitled reference"
+msgstr "未命名文献"
 
 #: plugin/i18n.js
 msgid "Upgrade diagram to use the visual editor"
@@ -7332,8 +7720,20 @@ msgid "Visual editor"
 msgstr "可视化编辑"
 
 #: plugin/i18n.js
+msgid "Volume"
+msgstr "卷"
+
+#: plugin/i18n.js
+msgid "Volume, issue and pages are limited to 128 plain characters"
+msgstr "卷、期、页码最多 128 个普通字符"
+
+#: plugin/i18n.js
 msgid "Wait for successful typesetting before applying the formula."
 msgstr "请等待公式排版成功后再应用。"
+
+#: plugin/i18n.js
+msgid "Web page"
+msgstr "网页"
 
 #: plugin/i18n.js
 msgid "Whole formula"

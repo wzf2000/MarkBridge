@@ -3,7 +3,7 @@ Tags: markdown, blocks, editor, mathjax, revisions
 Requires at least: 7.1
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 2.7.0-rc.3
+Stable tag: 2.7.0-rc.4
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -14,7 +14,7 @@ MarkBridge provides paired Markdown/block editing, previews, revisions, local Ma
 
 New installations use the bundled PHP converter with PHP 8.2+, DOM and mbstring on WordPress 7.1.x. No Node.js runtime or subprocess is required for supported content. Existing non-empty runtime settings retain Node until an administrator explicitly switches; unsupported environments or content are rejected without fallback.
 
-This readme applies to the MarkBridge 2.7.0-rc.3 isolated candidate. WordPress.org submission and approval are separate from a GitHub release. Download reviewed installation packages from GitHub Releases; source archives are not installation packages. Chinese and English interface text follows the WordPress user language in the editor and the site language for readers.
+This readme applies to the MarkBridge 2.7.0-rc.4 isolated candidate. WordPress.org submission and approval are separate from a GitHub release. Download reviewed installation packages from GitHub Releases; source archives are not installation packages. Chinese and English interface text follows the WordPress user language in the editor and the site language for readers.
 
 Private paired candidate backups for existing managed articles are stored in non-autoloaded database options, up to 10 per account/article for 7 days within a 32 MiB site quota. They never save a post or write a source file. Core Markdown editing does not call an external service. Local recovery is off until an author explicitly enables browser storage; it is not encrypted or a server backup. Optional ZIP images use normal WordPress media storage: a draft or private article does not make the media URL private. Bound-file writeback requires separate trusted server configuration. A GitHub updater, if chosen, is a separate plugin requiring explicit consent; it is not included in this package.
 
@@ -24,6 +24,9 @@ Private paired candidate backups for existing managed articles are stored in non
 3. Import a test Markdown draft, preview, save and reopen. Existing Node installations should review the upgrade guide before changing their backend.
 
 == Changelog ==
+
+= 2.7.0-rc.4 =
+Add explicitly adopted bibliography v2, a bounded CSL-JSON subset with field-loss/key review, and two fixed citation styles across PHP, Node and static HTML. Original v1 records remain unchanged.
 
 = 2.7.0-rc.3 =
 Retain the exact previewed FrontMatter receipt when confirming resource ZIP batches; keep logical identity mappings collapsed with a concise explanation.

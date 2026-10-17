@@ -122,6 +122,7 @@
   },
   "mbb/bibliography": {
     "id": "string",
+    "style": "string",
     "entries": "array",
     "version": "integer"
   },

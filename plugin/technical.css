@@ -134,6 +134,10 @@ details.mbb-technical-statement > summary:focus-visible {
 .mbb-bib-authors {
   font-weight: 600;
 }
+.mbb-bib-number {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 .mbb-bib-title {
   font-style: italic;
 }

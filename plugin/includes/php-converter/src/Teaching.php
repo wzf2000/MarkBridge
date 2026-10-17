@@ -1,5 +1,6 @@
 <?php
 namespace MarkBridge\Probe;
+require_once __DIR__ . '/Bibliography.php';
 
 // Standalone CLI conversion and model tests remain supported; direct web access requires WordPress.
 if (!defined('ABSPATH')) {
@@ -311,6 +312,9 @@ final class Technical
             );
         }
         if ($kind === 'bibliography') {
+            if (($a['version'] ?? 1) === 2 || array_key_exists('style', $a)) {
+                return Bibliography::attrs($a);
+            }
             $entries = $a['entries'];
             if (
                 !is_array($entries) ||
@@ -667,8 +671,15 @@ final class Technical
         $html =
             '<section id="' .
             $id .
-            '" class="mbb-bibliography"><p class="mbb-bibliography-title">Bibliography</p><ol>';
+            '" class="mbb-bibliography"' .
+            (($a['version'] ?? 1) === 2
+                ? ' data-mbb-bibliography-version="2" data-mbb-citation-style="' . $a['style'] . '"'
+                : '') .
+            '><p class="mbb-bibliography-title">Bibliography</p><ol>';
         foreach ($a['entries'] as $entry) {
+            if (($a['version'] ?? 1) === 2) {
+                $entry = Bibliography::projection($entry);
+            }
             $html .=
                 '<li data-mbb-bib-key="' .
                 $attr(is_array($entry) ? $entry['key'] : $entry->key) .
@@ -781,8 +792,15 @@ final class Teaching
             }
             return BlockAdapters::leafAttrs($d, $attrs);
         }
+        if (!is_array($attrs)) {
+            self::fail('TEACHING_ATTRIBUTES', 'Incomplete teaching attributes');
+        }
         $schema =
             self::SCHEMAS[$kind] +
+            ($kind === 'bibliography' &&
+            (($attrs['version'] ?? 1) === 2 || ($source && array_key_exists('style', $attrs)))
+                ? ['style' => 'string']
+                : []) +
             (!$source ? ['version' => 'integer'] : []) +
             ($kind === 'code-compare' && !$source ? self::SOURCE_FIELDS : []);
         if (!is_array($attrs) || count($schema) !== count($attrs)) {
@@ -793,7 +811,11 @@ final class Teaching
                 self::fail('TEACHING_ATTRIBUTES', 'Unknown or invalid teaching attribute');
             }
         }
-        if (!$source && $attrs['version'] !== 1) {
+        if (
+            !$source &&
+            $attrs['version'] !== 1 &&
+            !($kind === 'bibliography' && $attrs['version'] === 2)
+        ) {
             self::fail('TEACHING_VERSION', 'Unsupported teaching block version');
         }
         $out = [];
@@ -1392,7 +1414,7 @@ final class Teaching
             }
             if (
                 ($definitionBeforeBibliography ?? false) &&
-                str_starts_with($line, ':::mbb:v1 bibliography ')
+                preg_match('/^:::mbb:v[12] bibliography /', $line)
             ) {
                 self::fail(
                     'TECHNICAL_STRUCTURE',
@@ -1407,7 +1429,7 @@ final class Teaching
             } else {
                 if (
                     !preg_match(
-                        '/^:::mbb:v1 (identity|collapse|steps|step|code-compare|component|code-tabs|details|buttons|button|adapter|object|statement|bibliography|image|gallery) (\{.*\})$/D',
+                        '/^:::mbb:v([12]) (identity|collapse|steps|step|code-compare|component|code-tabs|details|buttons|button|adapter|object|statement|bibliography|image|gallery) (\{.*\})$/D',
                         $line,
                         $m,
                     )
@@ -1415,11 +1437,21 @@ final class Teaching
                     self::fail('TEACHING_SYNTAX', 'Invalid versioned teaching directive');
                 }
                 try {
-                    $a = self::json($m[2]);
+                    $a = self::json($m[3]);
                 } catch (\JsonException $e) {
                     self::fail('TEACHING_ATTRIBUTES', 'Invalid JSON attributes');
                 }
-                $data = ['kind' => $m[1], 'attrs' => self::attrs($m[1], $a, true)];
+                if ($m[1] === '2' && $m[2] !== 'bibliography') {
+                    self::fail('TEACHING_VERSION', 'Unsupported teaching block version');
+                }
+                if ($m[2] === 'bibliography' && ($m[1] === '2') !== array_key_exists('style', $a)) {
+                    self::fail('TEACHING_ATTRIBUTES', 'Incomplete teaching attributes');
+                }
+                $data = [
+                    'kind' => $m[2],
+                    'version' => (int) $m[1],
+                    'attrs' => self::attrs($m[2], $a, true),
+                ];
             }
             $line =
                 '<!--mbb-teaching ' .
@@ -1534,7 +1566,7 @@ final class Teaching
                 ];
                 continue;
             }
-            $item['attrs']['version'] = 1;
+            $item['attrs']['version'] = $item['version'] ?? 1;
             if ($item['kind'] === 'code-tabs') {
                 if (count($item['children']) !== count($item['attrs']['tabs'])) {
                     self::fail('CODE_TABS_STRUCTURE', 'Mismatched code version count');
@@ -1825,6 +1857,9 @@ final class Teaching
         foreach (self::SCHEMAS[$kind] as $key => $type) {
             $attrs[$key] = $a[$key];
         }
+        if ($kind === 'bibliography' && $a['version'] === 2) {
+            $attrs['style'] = $a['style'];
+        }
         $codes = '';
         if ($kind === 'code-compare') {
             foreach (['Left', 'Right'] as $side) {
@@ -1838,7 +1873,9 @@ final class Teaching
                 $codes .= $f . $a['language' . $side] . "\n" . $code . $f . "\n\n";
             }
         }
-        return ':::mbb:v1 ' .
+        return ':::mbb:v' .
+            ($kind === 'bibliography' ? $a['version'] : 1) .
+            ' ' .
             $kind .
             ' ' .
             self::encode($attrs) .

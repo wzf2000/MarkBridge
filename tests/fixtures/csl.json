@@ -1,0 +1,131 @@
+{
+  "cases": [
+    {
+      "name": "structured-person-institution-all-fields",
+      "input": "[{\"id\":\"Paper\",\"type\":\"article-journal\",\"title\":\"Explicit metadata\",\"author\":[{\"family\":\"Lovelace\",\"given\":\"Ada\",\"non-dropping-particle\":\"de\",\"suffix\":\"Jr.\"},{\"literal\":\"研究机构\"}],\"issued\":{\"date-parts\":[[2024,2,29]]},\"container-title\":\"Proceedings\",\"publisher\":\"Press\",\"volume\":0,\"issue\":2,\"page\":\"1–9\",\"DOI\":\"10.1234/example\",\"URL\":\"https://example.org/paper\",\"ISBN\":\"123\",\"ISSN\":\"456\",\"PMID\":\"789\",\"PMCID\":\"PMC1\",\"source\":\"Author supplied source\"}]"
+    },
+    {
+      "name": "literal-date-and-raw-names",
+      "input": "[{\"id\":\"Old\",\"type\":\"book\",\"title\":\"A & B <text> 😀\",\"author\":[{\"literal\":\"Ludwig van Beethoven\"}],\"issued\":{\"literal\":\"Spring 2026\"}}]"
+    },
+    {
+      "name": "numeric-id-proposes-key",
+      "input": "[{\"id\":42,\"type\":\"dataset\",\"title\":\"Dataset\"}]"
+    },
+    {
+      "name": "explicit-key-map",
+      "input": "[{\"id\":\"10.1234/source\",\"type\":\"report\",\"title\":\"Mapped\"}]",
+      "keyMap": {
+        "0": "MappedReport"
+      }
+    },
+    {
+      "name": "unsupported-fields-visible",
+      "input": "[{\"id\":\"Paper\",\"type\":\"article-journal\",\"title\":\"Explicit metadata\",\"author\":[{\"family\":\"Doe\",\"given\":\"Jane\",\"ORCID\":\"unregistered\"}],\"issued\":{\"date-parts\":[[2026]],\"circa\":true},\"container-title\":\"Proceedings\",\"publisher\":\"Press\",\"volume\":0,\"issue\":2,\"page\":\"1–9\",\"DOI\":\"10.1234/example\",\"URL\":\"https://example.org/paper\",\"ISBN\":\"123\",\"ISSN\":\"456\",\"PMID\":\"789\",\"PMCID\":\"PMC1\",\"source\":\"Author supplied source\",\"abstract\":\"Not retained\",\"language\":\"en\"}]"
+    },
+    {
+      "name": "raw-date-loss",
+      "input": "[{\"id\":\"A\",\"type\":\"software\",\"title\":\"Raw date\",\"issued\":{\"raw\":\"Spring 2026\",\"season\":1}}]"
+    },
+    {
+      "name": "string-date-parts",
+      "input": "[{\"id\":\"Paper\",\"type\":\"article-journal\",\"title\":\"Explicit metadata\",\"author\":[{\"family\":\"Lovelace\",\"given\":\"Ada\",\"non-dropping-particle\":\"de\",\"suffix\":\"Jr.\"},{\"literal\":\"研究机构\"}],\"issued\":{\"date-parts\":[[\"2024\",\"02\",\"29\"],[\"2025\",\"03\"]]},\"container-title\":\"Proceedings\",\"publisher\":\"Press\",\"volume\":0,\"issue\":2,\"page\":\"1–9\",\"DOI\":\"10.1234/example\",\"URL\":\"https://example.org/paper\",\"ISBN\":\"123\",\"ISSN\":\"456\",\"PMID\":\"789\",\"PMCID\":\"PMC1\",\"source\":\"Author supplied source\"}]"
+    },
+    {
+      "name": "safe-float-numbers",
+      "input": "[{\"id\":42.0,\"type\":\"book\",\"title\":\"T\",\"volume\":2.0,\"issued\":{\"date-parts\":[[2024.0,2.0,29.0]]}}]"
+    },
+    {
+      "name": "utf8-bom",
+      "input": "﻿[{\"id\": \"BOM\", \"type\": \"document\", \"title\": \"T\"}]"
+    },
+    {
+      "name": "unsupported-type",
+      "input": "[{\"id\":\"A\",\"type\":\"legal_case\",\"title\":\"T\"}]",
+      "reject": true
+    },
+    {
+      "name": "invalid-leap",
+      "input": "[{\"id\":\"Paper\",\"type\":\"article-journal\",\"title\":\"Explicit metadata\",\"author\":[{\"family\":\"Lovelace\",\"given\":\"Ada\",\"non-dropping-particle\":\"de\",\"suffix\":\"Jr.\"},{\"literal\":\"研究机构\"}],\"issued\":{\"date-parts\":[[2023,2,29]]},\"container-title\":\"Proceedings\",\"publisher\":\"Press\",\"volume\":0,\"issue\":2,\"page\":\"1–9\",\"DOI\":\"10.1234/example\",\"URL\":\"https://example.org/paper\",\"ISBN\":\"123\",\"ISSN\":\"456\",\"PMID\":\"789\",\"PMCID\":\"PMC1\",\"source\":\"Author supplied source\"}]",
+      "reject": true
+    },
+    {
+      "name": "invalid-month",
+      "input": "[{\"id\":\"Paper\",\"type\":\"article-journal\",\"title\":\"Explicit metadata\",\"author\":[{\"family\":\"Lovelace\",\"given\":\"Ada\",\"non-dropping-particle\":\"de\",\"suffix\":\"Jr.\"},{\"literal\":\"研究机构\"}],\"issued\":{\"date-parts\":[[2024,13]]},\"container-title\":\"Proceedings\",\"publisher\":\"Press\",\"volume\":0,\"issue\":2,\"page\":\"1–9\",\"DOI\":\"10.1234/example\",\"URL\":\"https://example.org/paper\",\"ISBN\":\"123\",\"ISSN\":\"456\",\"PMID\":\"789\",\"PMCID\":\"PMC1\",\"source\":\"Author supplied source\"}]",
+      "reject": true
+    },
+    {
+      "name": "ambiguous-date",
+      "input": "[{\"id\":\"Paper\",\"type\":\"article-journal\",\"title\":\"Explicit metadata\",\"author\":[{\"family\":\"Lovelace\",\"given\":\"Ada\",\"non-dropping-particle\":\"de\",\"suffix\":\"Jr.\"},{\"literal\":\"研究机构\"}],\"issued\":{\"literal\":\"2026\",\"date-parts\":[[2026]]},\"container-title\":\"Proceedings\",\"publisher\":\"Press\",\"volume\":0,\"issue\":2,\"page\":\"1–9\",\"DOI\":\"10.1234/example\",\"URL\":\"https://example.org/paper\",\"ISBN\":\"123\",\"ISSN\":\"456\",\"PMID\":\"789\",\"PMCID\":\"PMC1\",\"source\":\"Author supplied source\"}]",
+      "reject": true
+    },
+    {
+      "name": "null-name-part",
+      "input": "[{\"id\":\"Paper\",\"type\":\"article-journal\",\"title\":\"Explicit metadata\",\"author\":[{\"family\":\"Doe\",\"given\":null}],\"issued\":{\"date-parts\":[[2024,2,29]]},\"container-title\":\"Proceedings\",\"publisher\":\"Press\",\"volume\":0,\"issue\":2,\"page\":\"1–9\",\"DOI\":\"10.1234/example\",\"URL\":\"https://example.org/paper\",\"ISBN\":\"123\",\"ISSN\":\"456\",\"PMID\":\"789\",\"PMCID\":\"PMC1\",\"source\":\"Author supplied source\"}]",
+      "reject": true
+    },
+    {
+      "name": "missing-title",
+      "input": "[{\"id\":\"A\",\"type\":\"document\"}]",
+      "reject": true
+    },
+    {
+      "name": "duplicate-ids",
+      "input": "[{\"id\":1,\"type\":\"book\",\"title\":\"A\"},{\"id\":\"1\",\"type\":\"book\",\"title\":\"B\"}]",
+      "reject": true
+    },
+    {
+      "name": "proposed-key-conflict",
+      "input": "[{\"id\":1,\"type\":\"book\",\"title\":\"A\"},{\"id\":\"reference-1\",\"type\":\"book\",\"title\":\"B\"}]",
+      "reject": true
+    },
+    {
+      "name": "credential-url",
+      "input": "[{\"id\":\"Paper\",\"type\":\"article-journal\",\"title\":\"Explicit metadata\",\"author\":[{\"family\":\"Lovelace\",\"given\":\"Ada\",\"non-dropping-particle\":\"de\",\"suffix\":\"Jr.\"},{\"literal\":\"研究机构\"}],\"issued\":{\"date-parts\":[[2024,2,29]]},\"container-title\":\"Proceedings\",\"publisher\":\"Press\",\"volume\":0,\"issue\":2,\"page\":\"1–9\",\"DOI\":\"10.1234/example\",\"URL\":\"https://user:secret@example.org/\",\"ISBN\":\"123\",\"ISSN\":\"456\",\"PMID\":\"789\",\"PMCID\":\"PMC1\",\"source\":\"Author supplied source\"}]",
+      "reject": true
+    },
+    {
+      "name": "doi-url-rejected",
+      "input": "[{\"id\":\"Paper\",\"type\":\"article-journal\",\"title\":\"Explicit metadata\",\"author\":[{\"family\":\"Lovelace\",\"given\":\"Ada\",\"non-dropping-particle\":\"de\",\"suffix\":\"Jr.\"},{\"literal\":\"研究机构\"}],\"issued\":{\"date-parts\":[[2024,2,29]]},\"container-title\":\"Proceedings\",\"publisher\":\"Press\",\"volume\":0,\"issue\":2,\"page\":\"1–9\",\"DOI\":\"https://doi.org/10.1234/x\",\"URL\":\"https://example.org/paper\",\"ISBN\":\"123\",\"ISSN\":\"456\",\"PMID\":\"789\",\"PMCID\":\"PMC1\",\"source\":\"Author supplied source\"}]",
+      "reject": true
+    },
+    {
+      "name": "identifier-not-text",
+      "input": "[{\"id\":\"Paper\",\"type\":\"article-journal\",\"title\":\"Explicit metadata\",\"author\":[{\"family\":\"Lovelace\",\"given\":\"Ada\",\"non-dropping-particle\":\"de\",\"suffix\":\"Jr.\"},{\"literal\":\"研究机构\"}],\"issued\":{\"date-parts\":[[2024,2,29]]},\"container-title\":\"Proceedings\",\"publisher\":\"Press\",\"volume\":0,\"issue\":2,\"page\":\"1–9\",\"DOI\":\"10.1234/example\",\"URL\":\"https://example.org/paper\",\"ISBN\":123,\"ISSN\":\"456\",\"PMID\":\"789\",\"PMCID\":\"PMC1\",\"source\":\"Author supplied source\"}]",
+      "reject": true
+    },
+    {
+      "name": "root-object",
+      "input": "{\"id\":\"Paper\",\"type\":\"article-journal\",\"title\":\"Explicit metadata\",\"author\":[{\"family\":\"Lovelace\",\"given\":\"Ada\",\"non-dropping-particle\":\"de\",\"suffix\":\"Jr.\"},{\"literal\":\"研究机构\"}],\"issued\":{\"date-parts\":[[2024,2,29]]},\"container-title\":\"Proceedings\",\"publisher\":\"Press\",\"volume\":0,\"issue\":2,\"page\":\"1–9\",\"DOI\":\"10.1234/example\",\"URL\":\"https://example.org/paper\",\"ISBN\":\"123\",\"ISSN\":\"456\",\"PMID\":\"789\",\"PMCID\":\"PMC1\",\"source\":\"Author supplied source\"}",
+      "reject": true
+    },
+    {
+      "name": "empty-records",
+      "input": "[]",
+      "reject": true
+    },
+    {
+      "name": "duplicate-json-key",
+      "input": "[{\"id\":\"A\",\"type\":\"book\",\"title\":\"A\",\"title\":\"B\"}]",
+      "reject": true
+    },
+    {
+      "name": "duplicate-nested-key",
+      "input": "[{\"id\":\"A\",\"type\":\"book\",\"title\":\"A\",\"author\":[{\"literal\":\"A\",\"literal\":\"B\"}]}]",
+      "reject": true
+    },
+    {
+      "name": "unpaired-unicode",
+      "input": "[{\"id\":\"A\",\"type\":\"book\",\"title\":\"\\ud800\"}]",
+      "reject": true
+    },
+    {
+      "name": "invalid-key-map",
+      "input": "[{\"id\":\"A\",\"type\":\"book\",\"title\":\"A\"}]",
+      "keyMap": {
+        "01": "Renamed"
+      },
+      "reject": true
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import { bibliographyV2, bibliographyProjection } from './bibliography.js';
 // Closed, data-only technical-writing v1 contract. Presentation numbers/links
 // are deliberately absent from these persisted structures.
 export const technicalSchemas = {
@@ -33,6 +34,7 @@ export function technicalAttributes(kind, attrs, fail) {
     )
       bad(fail, 'A statement requires a supported kind and title; only proofs may be closed');
   } else if (kind === 'bibliography') {
+    if (attrs.version === 2 || Object.hasOwn(attrs, 'style')) return bibliographyV2(attrs, fail);
     const entries = attrs.entries;
     if (
       !Array.isArray(entries) ||
@@ -352,7 +354,11 @@ export function technicalIndex(blocks) {
           clientId: block.clientId,
         });
       if (kind === 'bibliography')
-        for (const entry of a.entries || []) entries.push({ ...entry, clientId: block.clientId });
+        for (const entry of a.entries || [])
+          entries.push({
+            ...(a.version === 2 ? bibliographyProjection(entry) : entry),
+            clientId: block.clientId,
+          });
       if (block.name === 'mbb/footnote') {
         notes.set(a.label, block);
         noteRefs.set(a.label, []);

@@ -171,4 +171,66 @@ foreach (
 ) {
     technical_assert(!mbb_technical_url($url), 'Unsafe or credential-bearing URL admitted.');
 }
-echo "Technical display: independent order, forward references, citation sorting, safe URLs, literal code, proof state and idempotence passed.\n";
+require dirname(__DIR__) . '/plugin/includes/php-converter/Worker.php';
+require dirname(__DIR__) . '/plugin/static-export.php';
+function mbb_export_throw($code, $message): never
+{
+    throw new RuntimeException($code . ':' . $message);
+}
+$csl = json_decode(file_get_contents(__DIR__ . '/fixtures/csl.json'), true)['cases'][0]['input'];
+$entries = \MarkBridge\Probe\Bibliography::parseCSL($csl)['entries'];
+$entries[] = array_replace($entries[0], ['key' => 'Second', 'title' => 'Second work']);
+foreach (['author-year', 'numeric'] as $style) {
+    $source =
+        technical_cite('Second,Paper') .
+        "\n\n:::mbb:v2 bibliography " .
+        json_encode(
+            ['id' => 'v2-refs', 'entries' => $entries, 'style' => $style],
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
+        ) .
+        "\n\n:::mbb:end\n";
+    $pair = \MarkBridge\Probe\Worker::convert([
+        'mode' => 'markdown',
+        'source' => $source,
+        'documentId' => 'RENDER_BIB_V2',
+    ]);
+    technical_assert($pair['ok'], 'v2 render conversion');
+    $html = mbb_render_technical($pair['document']['serialized']);
+    [$dom, $xp] = technical_document($html);
+    $label = $xp->query('//span[@class="mbb-reference-label"]')->item(0)->textContent;
+    technical_assert(
+        $xp->query('//span[@class="mbb-bib-number"]')->length === ($style === 'numeric' ? 2 : 0),
+        'numeric entries have explicit generated numbers only',
+    );
+    technical_assert(
+        !str_contains($pair['document']['serialized'], 'mbb-bib-number'),
+        'numbers are never canonical data',
+    );
+    technical_assert(
+        $style === 'numeric'
+            ? $label === '[1, 2]'
+            : str_contains($label, '2024a') &&
+                str_contains($label, '2024b') &&
+                str_contains($label, 'Ada de Lovelace Jr.'),
+        'fixed citation style',
+    );
+    technical_assert(
+        str_contains($html, 'DOI 10.1234/example') &&
+            str_contains($html, 'Proceedings') &&
+            str_contains($html, '2024-02-29'),
+        'full metadata remains readable',
+    );
+    technical_assert(mbb_render_technical($html) === $html, 'v2 rendering is idempotent');
+    $static = mbb_static_export_body($pair['document']['serialized']);
+    [$staticDom, $staticXp] = technical_document($static);
+    technical_assert(
+        $staticXp->query('//span[@class="mbb-bib-number"]')->length ===
+            ($style === 'numeric' ? 2 : 0),
+        'static export preserves numeric entry labels',
+    );
+    technical_assert(
+        $staticXp->query('//span[@class="mbb-reference-label"]')->item(0)->textContent === $label,
+        'static export uses the same fixed style',
+    );
+}
+echo "Technical display: independent order, citation styles, safe URLs, literal code, bibliography v2 metadata/static parity and idempotence passed.\n";

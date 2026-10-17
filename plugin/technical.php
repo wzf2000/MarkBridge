@@ -209,6 +209,10 @@ function mbb_render_technical($html)
     foreach ($entries as $key => $_) {
         $order[$key] ??= count($order) + 1;
     }
+    $numeric =
+        $bibliography &&
+        $bibliography->getAttribute('data-mbb-bibliography-version') === '2' &&
+        $bibliography->getAttribute('data-mbb-citation-style') === 'numeric';
     $referenceLabels = [];
     $labelGroups = [];
     $referenceYears = [];
@@ -236,7 +240,7 @@ function mbb_render_technical($html)
         $referenceLabels[$key] = $author;
         $referenceYears[$key] = $year;
     }
-    foreach ($labelGroups as $group) {
+    foreach ($numeric ? [] : $labelGroups as $group) {
         if (count($group) < 2) {
             continue;
         }
@@ -340,6 +344,13 @@ function mbb_render_technical($html)
         $item->setAttribute('id', $id);
         $item->setAttribute('value', (string) $number);
         $item->setAttribute('tabindex', '-1');
+        if ($numeric) {
+            $prefix = $document->createElement('span');
+            $prefix->setAttribute('class', 'mbb-bib-number');
+            $prefix->setAttribute('data-mbb-generated', '');
+            $prefix->appendChild($document->createTextNode('[' . $number . '] '));
+            $item->insertBefore($prefix, $item->firstChild);
+        }
         foreach (
             $xpath->query(
                 './span[contains(concat(" ",normalize-space(@class)," ")," mbb-bib-url ")]',
@@ -385,12 +396,14 @@ function mbb_render_technical($html)
         $keys = explode(',', $citation->getAttribute('data-mbb-keys'));
         usort($keys, static fn($a, $b) => $order[$a] <=> $order[$b]);
         $display = $clear($citation);
-        $display->appendChild($document->createTextNode('('));
+        $display->appendChild($document->createTextNode($numeric ? '[' : '('));
         foreach ($keys as $i => $key) {
             if ($i) {
-                $display->appendChild($document->createTextNode('; '));
+                $display->appendChild($document->createTextNode($numeric ? ', ' : '; '));
             }
-            $label = $referenceLabels[$key] . ', ' . $referenceYears[$key];
+            $label = $numeric
+                ? (string) $order[$key]
+                : $referenceLabels[$key] . ', ' . $referenceYears[$key];
             $link = $document->createElement('a');
             $link->appendChild($document->createTextNode($label));
             $link->setAttribute('href', '#' . $targets[$key]);
@@ -398,7 +411,7 @@ function mbb_render_technical($html)
             $link->setAttribute('aria-label', mbb_t('Reference') . ': ' . $label);
             $display->appendChild($link);
         }
-        $display->appendChild($document->createTextNode(')'));
+        $display->appendChild($document->createTextNode($numeric ? ']' : ')'));
     }
     $output = '';
     foreach ($root->childNodes as $child) {

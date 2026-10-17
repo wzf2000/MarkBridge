@@ -393,6 +393,26 @@ msgid "<p>Unicode is used by default; external resources are not automatically d
 msgstr ""
 
 #: plugin/i18n.js
+msgid "A CSL-JSON author is invalid"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "A CSL-JSON issue date is invalid"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "A CSL-JSON record has an unsupported or missing type"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "A CSL-JSON record requires a bounded string or safe integer id"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "A DOI must be a bounded supported DOI identifier, without a URL prefix"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "A FrontMatter header is limited to 16 KiB"
 msgstr ""
 
@@ -497,6 +517,14 @@ msgid "A list contains a non-list item"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "A literal author name requires 1–120 plain characters"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "A literal issue date must be bounded single-line text"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "A local image reference is not present in the ZIP: "
 msgstr ""
 
@@ -534,6 +562,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "A preview image digest does not match."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "A proposed CSL-JSON key is invalid"
 msgstr ""
 
 #: plugin/i18n.js
@@ -601,6 +633,14 @@ msgid "A static article link is unsafe"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "A structured author requires an explicit family name within the existing 120-character name budget"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "A structured issue date requires one or two year/month/day parts"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "A summary must be single-line plain text"
 msgstr ""
 
@@ -645,6 +685,10 @@ msgid "Add a trailing newline to the "
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Add author or institution"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Add bibliography entry"
 msgstr ""
 
@@ -653,11 +697,27 @@ msgid "Add code version"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Add end date"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Add entries"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Add field"
 msgstr ""
 
 #: plugin/i18n.js
 msgid "Add item"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Additional identifiers"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Additional source text"
 msgstr ""
 
 #: plugin/i18n.js
@@ -841,6 +901,14 @@ msgid "Authors (one per line, at most eight)"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Authors and institutions"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Author–year"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Automatic copy failed. Select the summary to copy it manually."
 msgstr ""
 
@@ -933,6 +1001,10 @@ msgid "Bibliography edits changed. Preview the BibTeX mapping again"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Bibliography edits changed. Preview the CSL-JSON mapping again."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Bibliography edits have not been applied. Apply or discard them before saving or renaming keys."
 msgstr ""
 
@@ -941,11 +1013,27 @@ msgid "Bibliography fields are incomplete, duplicated, or outside their bounds"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Bibliography identifiers require bounded ISBN, ISSN, PMID and PMCID text fields"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Bibliography keys (at most eight)"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Bibliography keys must be unique"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Bibliography settings"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Bibliography v2 entries require closed fields, a stable key, a supported type and a title"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Bibliography v2 requires a fixed supported style and 1–64 entries within 64 KiB"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1019,6 +1107,14 @@ msgid "Body conflict %1$s (opening line %2$s%3$s)"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Book"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Book chapter"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Both representations match. Check the differences and confirm restoration."
 msgstr ""
 
@@ -1067,11 +1163,75 @@ msgid "By stage"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "CSL-JSON contains a duplicate property"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "CSL-JSON contains invalid Unicode or a nonfinite number"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "CSL-JSON data exceeds its bounded node budget"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "CSL-JSON file (optional)"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "CSL-JSON has more than 256 unsupported fields; simplify the input before importing"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "CSL-JSON input must be UTF-8 JSON within 64 KiB"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "CSL-JSON is invalid"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "CSL-JSON key mappings are invalid"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "CSL-JSON nesting exceeds sixteen levels"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "CSL-JSON numeric fields require text or safe integers"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "CSL-JSON property names are invalid or too long"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "CSL-JSON record ids are duplicated"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "CSL-JSON requires an array of 1–64 records"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "CSL-JSON source (up to 64 KiB)"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "CSL-JSON supports at most eight authors"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Cancel"
 msgstr ""
 
 #: plugin/i18n.js
 msgid "Cancel BibTeX import"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Cancel CSL-JSON import"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1199,6 +1359,10 @@ msgid "Choose a featured image in article settings before publishing, then previ
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Choose a literal date or structured date parts, not both"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Choose a local ZIP. Also check this site's PHP upload limits"
 msgstr ""
 
@@ -1287,6 +1451,10 @@ msgid "Choose files to scan or resume one of your active batches."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Choose merge or replace for CSL-JSON import"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Choose one of the registered values."
 msgstr ""
 
@@ -1300,6 +1468,14 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Choose up to ten Markdown or single-document ZIP files. Scan first, preview each item, then create drafts one at a time. Header metadata is not applied."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Citation key mappings:"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Citation style"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1508,6 +1684,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Component version"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Conference paper"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1753,6 +1933,10 @@ msgid "Custom more-separator attributes are not supported"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "DOI identifier (without URL prefix)"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "DOM and mbstring are available."
 msgstr ""
 
@@ -1774,6 +1958,14 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Database rollback failed; the save state is uncertain. Verify the article."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Dataset"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Day (optional)"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1870,6 +2062,10 @@ msgid "Display math requires paired $$ delimiters"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Document"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Document containers and declarations are unsupported"
 msgstr ""
 
@@ -1906,6 +2102,10 @@ msgid "Down enters a term; Left and Right move between terms; Up returns; Home r
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Download CSL-JSON subset"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Download current candidate .md"
 msgstr ""
 
@@ -1939,6 +2139,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Draft title"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Dropping particle"
 msgstr ""
 
 #, php-format
@@ -2081,6 +2285,10 @@ msgid "Enabled: candidates are stored only in this browser and expire after 7 da
 msgstr ""
 
 #: plugin/i18n.js
+msgid "End date"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Enter a title without HTML, or explicitly select the header title proposal."
 msgstr ""
 
@@ -2191,6 +2399,10 @@ msgid "Explicit migration retaining identities"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Explicit person name"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Explicitly apply edits. The server validates parameters against the registered schema when saving."
 msgstr ""
 
@@ -2236,6 +2448,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Failed"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Family name (explicit)"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2472,6 +2688,10 @@ msgid "General settings"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Given name"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Go"
 msgstr ""
 
@@ -2537,6 +2757,14 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Highlighted lines must be unique positive integers separated by commas"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "I reviewed and accept the listed CSL-JSON field losses"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "I reviewed and accept the proposed citation keys"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2640,6 +2868,10 @@ msgid "Import BibTeX bibliography"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Import CSL-JSON"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Import Markdown"
 msgstr ""
 
@@ -2649,6 +2881,14 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Import Markdown first for a new document."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Import behavior"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Import bounded CSL-JSON"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2936,6 +3176,22 @@ msgid "Isolated conversion passed."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Issue"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Issue date"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Issue date form"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Journal article"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Keep as plain text"
 msgstr ""
 
@@ -3024,6 +3280,22 @@ msgid "Listing"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Literal date"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Literal issue date"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Literal name or institution"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Literal names stay literal. Switching to person fields starts empty; enter the authored name parts explicitly."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Literature citation"
 msgstr ""
 
@@ -3093,6 +3365,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Mapped entries are a preview. Existing unapplied edits are preserved until you choose this candidate."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Mapped publication fields"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3337,6 +3613,10 @@ msgid "Missing table header"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Month (optional)"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "More"
 msgstr ""
 
@@ -3387,6 +3667,14 @@ msgstr ""
 #, php-format
 #: plugin/i18n.js
 msgid "My candidate: %1$s; latest server version: %2$s"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Name form"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Name suffix"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3555,6 +3843,10 @@ msgid "Node diagram"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Non-dropping particle"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Nothing is stored by default. When enabled, drafts are stored as unencrypted text in this browser and may be accessible to other users of a shared device. At most 8 records and 1 MiB total, expiring after 7 days. This is not a substitute for saving to the site."
 msgstr ""
 
@@ -3564,6 +3856,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Numbers must be finite"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Numeric"
 msgstr ""
 
 #, php-format
@@ -3744,6 +4040,10 @@ msgid "PHP version"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Pages"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Paired backup failed. Current input remains in the editor. "
 msgstr ""
 
@@ -3872,6 +4172,10 @@ msgid "Prepare a copy with a new identity"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Prepare bibliography v2 candidate"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Prepare conflict repair with a new identity"
 msgstr ""
 
@@ -3917,6 +4221,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Preview BibTeX mapping"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Preview CSL-JSON mapping"
 msgstr ""
 
 #: plugin/i18n.js
@@ -4024,6 +4332,10 @@ msgid "Proposal: "
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Proposed citation key"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Proposed reference key"
 msgstr ""
 
@@ -4032,7 +4344,15 @@ msgid "Proposed stable ID"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Publication and source fields are limited to 512 plain characters"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Publication or source"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Publication title"
 msgstr ""
 
 #: plugin/i18n.js
@@ -4041,6 +4361,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Published publicly"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Publisher"
 msgstr ""
 
 #: plugin/i18n.js
@@ -4172,6 +4496,10 @@ msgid "Reference transaction required."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Reference type"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Reference verification failed. Current input is preserved."
 msgstr ""
 
@@ -4200,7 +4528,15 @@ msgid "Registered teaching component"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Remove author"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Remove bibliography entry"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Remove end date"
 msgstr ""
 
 #: plugin/i18n.js
@@ -4237,6 +4573,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Replaced matches: "
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Report"
 msgstr ""
 
 #: plugin/i18n.js
@@ -4386,6 +4726,14 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Reverse conversion requires an explicit Markdown source document"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Review and explicitly acknowledge the proposed citation keys before adopting the candidate"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Review and explicitly acknowledge unsupported CSL-JSON fields before adopting the candidate"
 msgstr ""
 
 #: plugin/i18n.js
@@ -4618,6 +4966,10 @@ msgid "Simple task lists were unsupported by the historical parser"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Software"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Some interrupted media could not be cleaned. Try later"
 msgstr ""
 
@@ -4709,6 +5061,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Staging directory permissions could not be restricted"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Start date"
 msgstr ""
 
 #: plugin/i18n.js
@@ -4830,6 +5186,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Structured reading and exploration"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Structured year, month and day"
 msgstr ""
 
 #: plugin/i18n.js
@@ -6253,6 +6613,10 @@ msgid "The replacement exceeds the source size limit."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "The replacement would remove currently cited keys"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "The request failed. Sign in again if necessary, then refresh batch status."
 msgstr ""
 
@@ -6657,6 +7021,10 @@ msgid "The static stylesheet is unsafe"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "The structured issue date is invalid"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "The teaching block version must be 1"
 msgstr ""
 
@@ -6753,6 +7121,10 @@ msgid "These parameters use the JSON editor. All fields are preserved; the serve
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Thesis"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "This Markdown cannot be represented without a block roundtrip change"
 msgstr ""
 
@@ -6817,6 +7189,10 @@ msgid "This batch was canceled. Saved drafts are preserved."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "This bibliography uses the original six-field format. It stays unchanged until you explicitly upgrade or adopt a CSL-JSON candidate."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "This block cannot yet be converted to Markdown"
 msgstr ""
 
@@ -6862,6 +7238,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "This field is not in the registered schema."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "This finite subset imports up to 64 records within 64 KiB. Review unsupported fields and key mappings explicitly. The original JSON is not stored, and import does not save the article."
 msgstr ""
 
 #: plugin/i18n.js
@@ -7120,6 +7500,10 @@ msgid "Unsupported display class"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Unsupported fields that will not be stored:"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Unsupported footnote definition structure"
 msgstr ""
 
@@ -7185,6 +7569,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Untitled draft"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Untitled reference"
 msgstr ""
 
 #: plugin/i18n.js
@@ -7332,7 +7720,19 @@ msgid "Visual editor"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Volume"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Volume, issue and pages are limited to 128 plain characters"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Wait for successful typesetting before applying the formula."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Web page"
 msgstr ""
 
 #: plugin/i18n.js

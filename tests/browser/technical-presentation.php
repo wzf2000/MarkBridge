@@ -5,6 +5,44 @@ function mbb_t($text)
     return $text;
 }
 require dirname(__DIR__, 2) . '/plugin/technical.php';
+if (in_array($argv[1] ?? '', ['author-year', 'numeric'], true)) {
+    require dirname(__DIR__, 2) . '/plugin/includes/php-converter/Worker.php';
+    $csl = json_decode(file_get_contents(__DIR__ . '/../fixtures/csl.json'), true)['cases'][0][
+        'input'
+    ];
+    $entries = \MarkBridge\Probe\Bibliography::parseCSL($csl)['entries'];
+    $entries[] = array_replace($entries[0], [
+        'key' => 'Second',
+        'title' => 'A second explicit work',
+    ]);
+    $source =
+        '<span class="mbb-cite" data-mbb-keys="Paper,Second" data-mbb-version="1">[Paper,Second]</span>' .
+        "\n\n:::mbb:v2 bibliography " .
+        json_encode(
+            ['id' => 'references', 'entries' => $entries, 'style' => $argv[1]],
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES,
+        ) .
+        "\n\n:::mbb:end\n";
+    $pair = \MarkBridge\Probe\Worker::convert([
+        'mode' => 'markdown',
+        'source' => $source,
+        'documentId' => 'BIB_READING',
+    ]);
+    if (!$pair['ok']) {
+        throw new RuntimeException('Synthetic bibliography conversion failed');
+    }
+    if (($argv[2] ?? '') === 'static') {
+        require dirname(__DIR__, 2) . '/plugin/static-export.php';
+        function mbb_export_throw($code, $message): never
+        {
+            throw new RuntimeException($code . ':' . $message);
+        }
+        echo mbb_static_export_body($pair['document']['serialized']);
+    } else {
+        echo mbb_render_technical($pair['document']['serialized']);
+    }
+    exit();
+}
 function tech_ref($target)
 {
     return '<span class="mbb-xref" data-mbb-target="' .

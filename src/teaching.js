@@ -84,6 +84,10 @@ export function teachingAttributes(kind, attrs, fail, source = false, blockName 
   }
   const schema = {
     ...teachingSchemas[kind],
+    ...(kind === 'bibliography' &&
+    (attrs?.version === 2 || (source && Object.hasOwn(attrs || {}, 'style')))
+      ? { style: 'string' }
+      : {}),
     ...(!source ? { version: 'number' } : {}),
     ...(kind === 'code-compare' && !source ? sourceFields : {}),
   };
@@ -98,7 +102,7 @@ export function teachingAttributes(kind, attrs, fail, source = false, blockName 
       'TEACHING_ATTRIBUTES',
       'Teaching container attributes are incomplete, unknown, or have invalid types',
     );
-  if (!source && attrs.version !== 1)
+  if (!source && attrs.version !== 1 && !(kind === 'bibliography' && attrs.version === 2))
     fail('TEACHING_VERSION', 'The teaching block version must be 1');
   if (Object.values(attrs).some((v) => typeof v === 'string' && /[\uD800-\uDFFF]/u.test(v)))
     fail('TEACHING_ATTRIBUTES', 'Teaching attributes must be valid Unicode');
@@ -349,14 +353,14 @@ export function teachingSource(source, fail, ignored = new Set(), nonce, fences 
           'Technical objects and statements must not be inside footnotes',
         );
       if (/^ {0,3}\[\^[^\]\r\n]+\]:/.test(line)) definitionBeforeBibliography = true;
-      if (definitionBeforeBibliography && /^:::mbb:v1 bibliography /.test(line))
+      if (definitionBeforeBibliography && /^:::mbb:v[12] bibliography /.test(line))
         fail('TECHNICAL_STRUCTURE', 'The bibliography must precede footnote definitions');
       if (!line.startsWith(':::mbb:')) return line;
       let data;
       if (line === ':::mbb:end') data = { end: true };
       else {
         const match =
-          /^:::mbb:v1 (identity|collapse|steps|step|code-compare|component|code-tabs|details|buttons|button|adapter|object|statement|bibliography|image|gallery) (\{[^\r\n]*\})$/.exec(
+          /^:::mbb:v([12]) (identity|collapse|steps|step|code-compare|component|code-tabs|details|buttons|button|adapter|object|statement|bibliography|image|gallery) (\{[^\r\n]*\})$/.exec(
             line,
           );
         if (!match)
@@ -366,11 +370,22 @@ export function teachingSource(source, fail, ignored = new Set(), nonce, fences 
           );
         let attrs;
         try {
-          attrs = teachingJSON(match[2], fail);
+          attrs = teachingJSON(match[3], fail);
         } catch {
           fail('TEACHING_ATTRIBUTES', 'Teaching attributes must be a valid JSON object');
         }
-        data = { kind: match[1], attrs: teachingAttributes(match[1], attrs, fail, true) };
+        if (match[1] === '2' && match[2] !== 'bibliography')
+          fail('TEACHING_VERSION', 'The teaching block version must be 1');
+        if (match[2] === 'bibliography' && (match[1] === '2') !== Object.hasOwn(attrs, 'style'))
+          fail(
+            'TEACHING_ATTRIBUTES',
+            'Teaching container attributes are incomplete, unknown, or have invalid types',
+          );
+        data = {
+          kind: match[2],
+          version: Number(match[1]),
+          attrs: teachingAttributes(match[2], attrs, fail, true),
+        };
       }
       const hex = [...new TextEncoder().encode(JSON.stringify(data))]
         .map((b) => b.toString(16).padStart(2, '0'))
@@ -451,7 +466,7 @@ export function assembleTeaching(blocks, make, fail) {
       stack.at(-1).children.push(make(a.descriptor.blockName, a.attributes, []));
       continue;
     }
-    item.attrs.version = 1;
+    item.attrs.version = item.version || 1;
     if (item.kind === 'code-tabs') {
       if (
         item.children.length !== item.attrs.tabs.length ||
@@ -616,14 +631,21 @@ export function teachingMarkdown(b, body, fail) {
     );
   }
   if (kind === 'code-tabs') return codeTabsMarkdown(a);
-  const attrs = Object.fromEntries(Object.keys(teachingSchemas[kind]).map((key) => [key, a[key]]));
+  const attrs = Object.fromEntries(
+    [
+      ...Object.keys(teachingSchemas[kind]),
+      ...(kind === 'bibliography' && a.version === 2 ? ['style'] : []),
+    ].map((key) => [key, a[key]]),
+  );
   const code = (side) => {
     const value = a['code' + side];
     const fence = '`'.repeat(Math.max(3, ...(value.match(/`+/g) || []).map((s) => s.length + 1)));
     return fence + a['language' + side] + '\n' + value + fence + '\n\n';
   };
   return (
-    ':::mbb:v1 ' +
+    ':::mbb:v' +
+    (kind === 'bibliography' ? a.version : 1) +
+    ' ' +
     kind +
     ' ' +
     JSON.stringify(attrs) +

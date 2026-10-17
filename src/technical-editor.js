@@ -1,3 +1,5 @@
+import { bibliographyProjection, migrateBibliography } from './bibliography.js';
+import { BibliographyV2Fields, CSLImport } from './bibliography-editor.js';
 import { parseBibTeX, bibtexCandidate } from './bibtex.js';
 import {
   technicalSchemas,
@@ -88,24 +90,32 @@ export function technicalSave(kind, a) {
   }
   return el(
     'section',
-    { id: a.id, className: 'mbb-bibliography' },
+    {
+      id: a.id,
+      className: 'mbb-bibliography',
+      ...(a.version === 2
+        ? { 'data-mbb-bibliography-version': '2', 'data-mbb-citation-style': a.style }
+        : {}),
+    },
     el('p', { className: 'mbb-bibliography-title' }, 'Bibliography'),
     el(
       'ol',
       {},
-      ...(a.entries || []).map((item) =>
-        el(
-          'li',
-          { key: item.key, 'data-mbb-bib-key': item.key },
-          ...['authors', 'title', 'year', 'source', 'url'].map((field) =>
-            el(
-              'span',
-              { key: field, className: 'mbb-bib-' + field },
-              field === 'authors' ? item.authors.join(', ') : item[field],
+      ...(a.entries || [])
+        .map((value) => (a.version === 2 ? bibliographyProjection(value) : value))
+        .map((item) =>
+          el(
+            'li',
+            { key: item.key, 'data-mbb-bib-key': item.key },
+            ...['authors', 'title', 'year', 'source', 'url'].map((field) =>
+              el(
+                'span',
+                { key: field, className: 'mbb-bib-' + field },
+                field === 'authors' ? item.authors.join(', ') : item[field],
+              ),
             ),
           ),
         ),
-      ),
     ),
   );
 }
@@ -569,27 +579,35 @@ function BibliographyDraft({
   drafts,
   syncDraftLock,
 }) {
-  const el = wp.element.createElement,
-    original = JSON.stringify(a.entries || []);
-  const [entries, setEntries] = wp.element.useState(
-      drafts.get(clientId)?.entries ?? a.entries ?? [],
-    ),
+  const el = wp.element.createElement;
+  const saved = {
+    version: a.version ?? 1,
+    ...(a.version === 2 ? { style: a.style } : {}),
+    entries: a.entries || [],
+  };
+  const original = JSON.stringify(saved);
+  const [draft, setDraft] = wp.element.useState(drafts.get(clientId)?.value ?? saved),
     [error, setError] = wp.element.useState('');
   const pending = drafts.get(clientId);
   wp.element.useEffect(() => {
-    setEntries(drafts.get(clientId)?.entries ?? a.entries ?? []);
+    setDraft(drafts.get(clientId)?.value ?? saved);
   }, [original]);
-  const change = ({ entries: next }) => {
-    setEntries(next);
+  const change = (patch) => {
+    const next = { ...draft, ...patch };
+    setDraft(next);
     setError('');
     if (JSON.stringify(next) === original) drafts.delete(clientId);
     else
-      drafts.set(clientId, { entries: next, baseline: drafts.get(clientId)?.baseline ?? original });
+      drafts.set(clientId, { value: next, baseline: drafts.get(clientId)?.baseline ?? original });
     syncDraftLock();
   };
   const apply = () => {
     try {
-      technicalAttributes('bibliography', { ...a, entries }, (code, message) => {
+      if (!pending || pending.baseline !== original)
+        throw Error(
+          T('Applied bibliography changed. The current candidate is preserved and unapplied.'),
+        );
+      technicalAttributes('bibliography', { ...a, ...draft }, (code, message) => {
         throw Error(T(message));
       });
       const patched = registry
@@ -597,13 +615,13 @@ function BibliographyDraft({
         .getBlocks()
         .map((block) =>
           block.clientId === clientId
-            ? { ...block, attributes: { ...block.attributes, entries } }
+            ? { ...block, attributes: { ...block.attributes, ...draft } }
             : block,
         );
       validateTechnical(patched, (code, message) => {
         throw Error(T(message));
       });
-      setAttributes({ entries });
+      setAttributes(draft);
       drafts.delete(clientId);
       syncDraftLock();
       setError('');
@@ -614,14 +632,48 @@ function BibliographyDraft({
   return el(
     'div',
     {},
-    el(BibTeXImport, { entries, change, registry, clientId, session }),
-    el(BibliographyFields, {
-      a: { ...a, entries },
-      setAttributes: change,
-      registry,
-      session,
-      pending: !!pending,
-    }),
+    el(CSLImport, { a: draft, change, registry, clientId, session }),
+    draft.version === 2
+      ? el(BibliographyV2Fields, {
+          a: draft,
+          setAttributes: change,
+          registry,
+          session,
+          pending: !!pending,
+          Rename,
+        })
+      : el(
+          'div',
+          {},
+          el(
+            'p',
+            {},
+            T(
+              'This bibliography uses the original six-field format. It stays unchanged until you explicitly upgrade or adopt a CSL-JSON candidate.',
+            ),
+          ),
+          el(
+            wp.components.Button,
+            {
+              variant: 'secondary',
+              onClick: () =>
+                change({
+                  version: 2,
+                  style: 'author-year',
+                  entries: migrateBibliography(draft.entries),
+                }),
+            },
+            T('Prepare bibliography v2 candidate'),
+          ),
+          el(BibTeXImport, { entries: draft.entries, change, registry, clientId, session }),
+          el(BibliographyFields, {
+            a: { ...a, entries: draft.entries },
+            setAttributes: change,
+            registry,
+            session,
+            pending: !!pending,
+          }),
+        ),
     pending
       ? el(
           'p',
@@ -647,7 +699,7 @@ function BibliographyDraft({
         onClick: () => {
           drafts.delete(clientId);
           syncDraftLock();
-          setEntries(a.entries || []);
+          setDraft(saved);
           setError('');
         },
       },
@@ -655,6 +707,7 @@ function BibliographyDraft({
     ),
   );
 }
+
 function registerReferences() {
   // Parser-only runtimes intentionally omit editor stores and UI hooks.
   if (
@@ -828,10 +881,11 @@ export function registerTechnical({ drafts, syncDraftLock, retainDraftOwner }) {
       }[kind],
       category: 'text',
       attributes: Object.fromEntries(
-        Object.entries({ ...schema, version: 'number' }).map(([key, type]) => [
-          key,
-          { type: key === 'entries' ? 'array' : type },
-        ]),
+        Object.entries({
+          ...schema,
+          ...(kind === 'bibliography' ? { style: 'string' } : {}),
+          version: 'number',
+        }).map(([key, type]) => [key, { type: key === 'entries' ? 'array' : type }]),
       ),
       supports: {
         html: false,
@@ -985,18 +1039,20 @@ export function registerTechnical({ drafts, syncDraftLock, retainDraftOwner }) {
                 el(
                   'ul',
                   {},
-                  ...(a.entries || []).map((item) =>
-                    el(
-                      'li',
-                      { key: item.key },
-                      '[' +
-                        (bibNumbers.get(item.key) || '?') +
-                        '] ' +
-                        item.title +
-                        (item.authors.length ? ' — ' + item.authors.join(', ') : '') +
-                        (item.year ? ' (' + item.year + ')' : ''),
+                  ...(a.entries || [])
+                    .map((value) => (a.version === 2 ? bibliographyProjection(value) : value))
+                    .map((item) =>
+                      el(
+                        'li',
+                        { key: item.key },
+                        '[' +
+                          (bibNumbers.get(item.key) || '?') +
+                          '] ' +
+                          item.title +
+                          (item.authors.length ? ' — ' + item.authors.join(', ') : '') +
+                          (item.year ? ' (' + item.year + ')' : ''),
+                      ),
                     ),
-                  ),
                 ),
               )
             : el(

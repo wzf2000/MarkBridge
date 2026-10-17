@@ -1,4 +1,4 @@
-# Technical writing v1
+# Technical writing formats
 
 This document defines the paired Markdown/block format for article-local objects,
 statements and bibliography entries. Numbering and actual reference links belong
@@ -64,6 +64,107 @@ nonempty, at most 512 characters; source is at most 512 and year at most 32.
 URL is empty or an absolute HTTP(S) URL of at most 2048 characters; no URL is
 fetched. Text fields are plain text, escaped when saved as HTML.
 
+## Bibliography v2 and bounded CSL-JSON
+
+The existing `mbb/bibliography` block also accepts `version: 2`. Only this
+container gains a v2 Markdown opening; `:::mbb:end` and the v1 cite markers stay
+unchanged. The exact header is `{id,entries,style}`, with `style` equal to
+`author-year` or `numeric`. Native attributes add only `version: 2`. Other v2
+teaching containers, extra fields, mixed v1/v2 records and arbitrary style names
+are rejected. The same one-bibliography, top-level, before-footnotes rule and
+1–64 entries / 64 KiB JSON budget apply.
+
+Every v2 entry has exactly these fields:
+
+| Field                             | Closed value / limit                                                                                                       |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `key`                             | Existing stable citation key grammar                                                                                       |
+| `type`                            | `article-journal`, `book`, `chapter`, `paper-conference`, `report`, `thesis`, `webpage`, `dataset`, `software`, `document` |
+| `authors`                         | 0–8 names, each at most 120 displayed Unicode characters                                                                   |
+| `issued`                          | `{literal}` with 0–64 single-line characters, or `{"date-parts":[[year,month?,day?], optionalEnd]}`                        |
+| `title`                           | Required single-line text, 1–512 characters                                                                                |
+| `containerTitle,publisher,source` | Single-line text, 0–512 characters each                                                                                    |
+| `volume,issue,page`               | Single-line text, 0–128 characters each                                                                                    |
+| `doi`                             | Empty or `10.` + 4–9 digits + `/` + bounded ASCII letters/digits/`-._;()/:`, at most 512 characters; no URL prefix         |
+| `url`                             | Existing empty or credential-free absolute HTTP(S), at most 2048 characters                                                |
+| `identifiers`                     | Exactly `{ISBN,ISSN,PMID,PMCID}`, each 0–128 single-line characters                                                        |
+
+A name is exactly `{literal}` (person text or institution) or
+`{family,given,droppingParticle,nonDroppingParticle,suffix}`. All person fields
+are strings; `family` is required and nonempty. Their displayed joined text must
+fit the existing 120-character name budget. Dates use Gregorian-valid integers:
+year 1–9999, optional month 1–12 and a valid day; a date range contains two such
+parts. Missing information is not guessed.
+
+**Prepare bibliography v2 candidate** copies every old author string to
+`{literal: original}`, keeps the old year as `issued.literal`, retains title,
+source, URL and keys, and sets the unknown type to `document`. It creates an
+unapplied candidate. The normal Apply action makes one block attribute change;
+Discard keeps the v1 block, and native Undo can restore the prior block state.
+Existing v1 source, attributes and historical pairs do not upgrade automatically.
+Restoring a v1 revision restores its exact original format. Document identity
+and source-file protections continue to apply independently.
+
+**Import CSL-JSON** accepts a UTF-8 JSON array of 1–64 records within 64 KiB,
+16 nesting levels and 16384 data nodes. Duplicate JSON properties and record IDs,
+unknown record types, invalid known values and data beyond the budgets are
+rejected. This is an explicit finite subset of the
+[CSL input schema](https://raw.githubusercontent.com/citation-style-language/schema/master/schemas/input/csl-data.json),
+not a full CSL processor.
+
+Supported fields are `id,type,author,issued,title,container-title,publisher,volume,issue,page,DOI,URL,ISBN,ISSN,PMID,PMCID,source`.
+CSL name fields use `family,given,dropping-particle,non-dropping-particle,suffix`
+or `literal`; supported dates use `literal` or `date-parts`. Safe integer IDs,
+volume/issue/page values and numeric date strings are normalized explicitly.
+The preview lists every unsupported field, including nested name/date fields;
+more than 256 losses is rejected. Losses require explicit acknowledgement.
+`raw`, `season`, `circa`, name flags, additional roles, abstracts, language and
+all other unsupported metadata are not stored. A raw-only issue date becomes
+an empty literal only after its displayed losses are accepted.
+
+A valid `id` becomes the stable key; other IDs propose `reference-N` in input
+order. The preview displays old → new key mappings and permits explicit key edits,
+followed by another preview and acknowledgement. Duplicate keys block adoption;
+merge never overwrites existing entries. Replace cannot remove currently cited
+keys. Changed input, mode, keys or bibliography invalidates the previous candidate.
+Reading a file is cancelable; a late file cannot replace newer pasted input.
+Adoption enters the same unapplied bibliography draft and never saves an article.
+The v1 BibTeX workflow remains available on v1 blocks.
+
+**Download CSL-JSON subset** exports the applied/current bibliography candidate
+as the same finite subset. A v1 export uses literal author/year conversion in
+memory and leaves the original block unchanged. Original imported JSON and
+unsupported fields are not archived or claimed to be lossless. The Markdown
+and resource exports carry the complete v2 entry data; static HTML carries its
+readable projection and uses the same fixed renderer as preview/front display.
+Existing whole-document, media and trace budgets are unchanged. No remote lookup,
+background refresh, library or server Node installation is required.
+
+The two fixed styles use existing first-citation order and stable entry anchors.
+`author-year` retains the current authored-name/year labels and collision suffixes;
+`numeric` uses `[1, 2]` with the same links and does not add year suffixes. Its bibliography entries receive matching generated `[n]` labels; v1 entries do not.
+Publication, volume/issue/pages, full dates, identifiers, DOI and authored source
+text are visible in the fallback entry. The saved section adds only
+`data-mbb-bibliography-version="2" data-mbb-citation-style="..."`; full structured
+data remains in block attributes. Rendering cannot mutate entry data. The static
+export interface shares this renderer; EPUB output is not implemented here.
+
+Pure APIs, with no database or network effects:
+
+- Browser/kernel: `MBB.parseCSL(source,keyMap={}) → {entries,losses,keyMappings}`;
+  `MBB.cslCandidate(existing,report,mode,referencedKeys,ackLoss=false,ackKeys=false) → entries`;
+  `MBB.exportCSL(entries) → CSL array`; `MBB.migrateBibliography(v1Entries) → v2Entries`.
+- PHP: `mbb_csl_parse`, `mbb_csl_candidate`, `mbb_csl_export` use the same argument
+  order and values. The bundled isolated PHP converter validates both formats.
+  `keyMap` maps zero-based record indices to valid explicit keys. Reports should
+  come from the parser; the candidate helper validates resulting entries and
+  acknowledgement/key safety again. No new REST mutation route is added.
+
+`tests/fixtures/csl.json`, `tests/csl.cjs`, `tests/csl.php`,
+`tests/bibliography-v2.cjs` and `tests/technical-render.php` cover shared data,
+conversion and fixed/static rendering. `tests/bibliography-v2-save.php` is the
+explicit disposable WordPress save/native/history/source integration entry.
+
 ## Canonical saved HTML
 
 The HTML below is the block's content, surrounded by ordinary WordPress block
@@ -116,7 +217,7 @@ Each object kind and each statement kind has a separate derived counter,
 including proofs. Bibliography ordering follows first citation in reading order,
 after footnote order is established; uncited entries follow in their original
 entry order. Stored keys and entry order never change for display purposes.
-The reader-facing citation uses author/year labels rather than numeric brackets,
+The v1 and v2 `author-year` reader-facing citation uses author/year labels rather than numeric brackets,
 with multiple entries separated by semicolons, for example
 `(A. Author, 2026a; A. Author, 2026b)`. Links still resolve through the stable
 bibliography keys to the matching derived entry anchors.
