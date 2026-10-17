@@ -20,7 +20,7 @@ add_action('markbridge_register_teaching_components', static function () {
     markbridge_register_teaching_component('sdk-bounded-sum', [
         'version' => '0.1.0',
         'protocolVersion' => 1,
-        'minMarkBridge' => '2.9.0-dev.1',
+        'minMarkBridge' => '2.9.0-rc.4',
         'title' => 'SDK bounded sum',
         'budgets' => [
             'resourceBytes' => 524288,
@@ -55,7 +55,7 @@ add_action('markbridge_register_extensions', static function () {
         mbb_register_extension_manifest('sdk-bounded-sum', [
             'version' => '0.1.0',
             'title' => 'SDK bounded sum',
-            'minMarkBridge' => '2.9.0-dev.1',
+            'minMarkBridge' => '2.9.0-rc.4',
             'capabilities' => ['components'],
         ]);
     }

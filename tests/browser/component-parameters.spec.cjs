@@ -29,11 +29,13 @@ test.skip(
   'Needs the sanitized real WordPress core editor runtime.',
 );
 async function open(page, options = {}) {
-  await page.goto('/component-editor?locale=en_US');
+  await page.goto('/component-editor?locale=' + (options.locale || 'en_US'));
   await expect(page.locator('iframe[name="editor-canvas"]')).toBeVisible();
   await page.evaluate(
     ({ schema, params, options }) => {
       window.MBBComponents.find((p) => p.id === 'fixture').schema = schema;
+      if (options.providerTitle)
+        window.MBBComponents.find((p) => p.id === 'fixture').title = options.providerTitle;
       if (options.otherVersion)
         window.MBBComponents.find((p) => p.id === 'fixture').version = '9.0.0';
       taskRegistry.dispatch('core/block-editor').updateBlockAttributes(taskBlocks[0].clientId, {
@@ -51,7 +53,10 @@ async function open(page, options = {}) {
     !Object.keys(options.params || {}).some((key) => !schema.properties[key])
   )
     await expect(
-      page.getByRole('textbox', { name: 'params.details.title', exact: true }),
+      page.getByRole('textbox', {
+        name: options.locale === 'zh_CN' ? '详细信息 › 标题' : 'Details › Title',
+        exact: true,
+      }),
     ).toHaveValue((options.params?.details || params.details).title);
 }
 const apply = (page) => page.getByRole('button', { name: 'Apply parameters', exact: true });
@@ -67,24 +72,20 @@ test('trusted exact-version schema form shares a draft with JSON and applies onl
   page,
 }, info) => {
   await open(page);
-  const number = page.getByRole('textbox', { name: 'params.value', exact: true });
+  const number = page.getByRole('textbox', { name: 'Value', exact: true });
   await expect(number).toHaveValue('42');
   await number.focus();
   await page.keyboard.press('Tab');
-  await expect(page.getByRole('combobox', { name: 'params.behavior', exact: true })).toBeFocused();
+  await expect(page.getByRole('combobox', { name: 'Behavior', exact: true })).toBeFocused();
   await number.fill('43');
-  await page.getByRole('checkbox', { name: 'params.enabled', exact: true }).uncheck();
-  await page.getByRole('combobox', { name: 'params.behavior', exact: true }).selectOption('1');
-  await page.getByRole('textbox', { name: 'params.details.title', exact: true }).fill('新😀');
-  await page.getByRole('button', { name: 'Add field: params.optional', exact: true }).click();
-  await page
-    .getByRole('textbox', { name: 'params.optional', exact: true })
-    .fill('keep newline\n文字');
-  await page.getByRole('button', { name: 'Add item: params.items', exact: true }).click();
-  await page.getByRole('textbox', { name: 'params.items.1', exact: true }).fill('second');
-  await expect(
-    page.getByRole('button', { name: 'Add item: params.items', exact: true }),
-  ).toBeDisabled();
+  await page.getByRole('checkbox', { name: 'Enabled', exact: true }).uncheck();
+  await page.getByRole('combobox', { name: 'Behavior', exact: true }).selectOption('1');
+  await page.getByRole('textbox', { name: 'Details › Title', exact: true }).fill('新😀');
+  await page.getByRole('button', { name: 'Add field: Optional', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Optional', exact: true }).fill('keep newline\n文字');
+  await page.getByRole('button', { name: 'Add item: Items', exact: true }).click();
+  await page.getByRole('textbox', { name: 'Items › Item 2', exact: true }).fill('second');
+  await expect(page.getByRole('button', { name: 'Add item: Items', exact: true })).toBeDisabled();
   expect(await page.evaluate(() => taskBlocks[0].attributes.params.value)).toBe(42);
   await expect(await exported(page)).toContainText('ERROR: Parameters have not been applied');
   await page.getByRole('button', { name: 'Advanced JSON', exact: true }).click();
@@ -120,7 +121,7 @@ test('invalid fields preserve input, block apply/export, and JSON cannot bypass 
   page,
 }) => {
   await open(page);
-  const number = page.getByRole('textbox', { name: 'params.value', exact: true });
+  const number = page.getByRole('textbox', { name: 'Value', exact: true });
   await number.fill('-');
   await expect(number).toHaveValue('-');
   await expect(number).toHaveAttribute('aria-invalid', 'true');
@@ -179,7 +180,7 @@ wp.hooks.addFilter('editor.BlockEdit', 'mbb-test/parameter-lifetime', Edit => pr
     });
   });
   await open(page);
-  const number = page.getByRole('textbox', { name: 'params.value', exact: true });
+  const number = page.getByRole('textbox', { name: 'Value', exact: true });
   await number.fill('99');
   await expect(number).toHaveValue('99');
   await page.evaluate(() => {
@@ -209,7 +210,7 @@ wp.hooks.addFilter('editor.BlockEdit', 'mbb-test/parameter-lifetime', Edit => pr
     editor.selectBlock(parameterBlockSnapshot.clientId);
   });
   await expect(number).toHaveValue('42');
-  expect(await page.evaluate(() => MarkBridgeParameterDrafts.pending())).toBe(false);
+  await expect(await exported(page)).not.toContainText('Parameters have not been applied');
   expect(
     await page.evaluate(
       () =>
@@ -222,4 +223,34 @@ wp.hooks.addFilter('editor.BlockEdit', 'mbb-test/parameter-lifetime', Edit => pr
     path: info.outputPath('restored-applied-parameters.png'),
     fullPage: true,
   });
+});
+
+test('readable labels, registered overview and quiet exact details fit a narrow author inspector', async ({
+  page,
+}, info) => {
+  const zh = info.project.name.startsWith('mobile');
+  await page.setViewportSize({ width: zh ? 390 : 1440, height: zh ? 844 : 900 });
+  await open(page, {
+    locale: zh ? 'zh_CN' : 'en_US',
+    providerTitle: zh ? '合成组件' : 'Fixed fixture',
+  });
+  const canvas = page.frameLocator('iframe[name="editor-canvas"]');
+  await expect(canvas.getByText(zh ? '合成组件' : 'Fixed fixture', { exact: true })).toBeVisible();
+  await expect(canvas.getByText('fixture 0.1.0', { exact: true })).toHaveCount(0);
+  await expect(
+    page.getByRole('textbox', { name: zh ? '项目 › 项目 1' : 'Items › Item 1', exact: true }),
+  ).toHaveValue('first');
+  const details = page.locator('.mbb-parameter-technical');
+  await expect(details).not.toHaveAttribute('open', '');
+  const panel = page.locator('.mbb-parameter-editor');
+  await panel.evaluate((n) => {
+    n.style.width = '250px';
+    n.style.maxWidth = '100%';
+  });
+  expect(await panel.evaluate((n) => n.scrollWidth <= n.clientWidth + 1)).toBe(true);
+  await page.screenshot({ path: info.outputPath('s18-readable-parameters.png'), fullPage: true });
+  await details.getByText(zh ? '组件详细信息' : 'Component details', { exact: true }).click();
+  await expect(details).toContainText('fixture@0.1.0');
+  await expect(details.locator('pre')).toContainText('"value": 42');
+  expect(await page.evaluate(() => taskBlocks[0].attributes.params)).toEqual(params);
 });

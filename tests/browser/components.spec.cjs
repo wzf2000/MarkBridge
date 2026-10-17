@@ -93,6 +93,7 @@ test('generic fixed provider uses opaque iframe, enforced CSP and public data, r
   await frame.locator('#run').click();
   await expect(frame.locator('#status')).toHaveText('Complete');
   expect(await page.evaluate(() => MarkBridgeComponents.activeCount())).toBe(0);
+  await expect(page.locator('.mbb-component-status')).toHaveClass(/mbb-component-complete/);
   await page.getByRole('button', { name: '关闭交互预览' }).click();
   await expect(page.locator('iframe')).toHaveCount(0);
   await expect(page.getByRole('button', { name: '启动交互演示' })).toBeFocused();

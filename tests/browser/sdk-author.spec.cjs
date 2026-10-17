@@ -15,6 +15,8 @@ test('extensions settings keeps selected scope readable at desktop and phone', a
   await expect(page.getByRole('heading', { name: '已安装的扩展' })).toBeVisible();
   await page.getByRole('textbox').fill('836, 837');
   expect(await page.locator('body').evaluate((n) => n.scrollWidth <= innerWidth + 1)).toBe(true);
+  await page.locator('details').evaluateAll((nodes) => nodes.forEach((n) => (n.open = true)));
+  expect(await page.locator('body').evaluate((n) => n.scrollWidth <= innerWidth + 1)).toBe(true);
   await page.screenshot({ path: info.outputPath('extensions-settings.png'), fullPage: true });
 });
 test('generic author tool patches current core candidate and one Apply is one Undo', async ({

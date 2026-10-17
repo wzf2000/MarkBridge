@@ -18,6 +18,7 @@ const {
   validateParameterSchema: validate,
   parameterFormSupport: support,
   updateParameterValue: update,
+  parameterLabel: displayLabel,
 } = sandbox.module.exports;
 const record = (properties, required = Object.keys(properties)) => ({
   type: 'object',
@@ -210,3 +211,8 @@ for (const expression of [
 assert.equal(local('({text:"x".repeat(16373)})').text.length, 16373);
 assert.equal(local('({rows:Array(1022).fill(0)})').rows.length, 1022);
 console.log('Local author draft pure JSON/budget contracts passed');
+
+assert.equal(displayLabel([]), 'Parameters');
+assert.equal(displayLabel(['values', 0]), 'Values › Item 1');
+assert.equal(displayLabel(['custom_field', 'someValue', 2]), 'Custom field › Some Value › Item 3');
+assert.equal(displayLabel(['rows', 2, 'values', 0]), 'Rows › Item 3 › Values › Item 1');

@@ -869,6 +869,14 @@ msgid "Another window disabled recovery. Older verification cannot enable it or 
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Answer"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Append values"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Applied bibliography changed. The current candidate is preserved and unapplied."
 msgstr ""
 
@@ -1707,6 +1715,10 @@ msgid "Collections"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Columns"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Comment was not saved: "
 msgstr ""
 
@@ -1736,6 +1748,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Component"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Component details"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1977,6 +1993,14 @@ msgid "Correct feedback"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Correct option"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Count"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Course workbench"
 msgstr ""
 
@@ -2137,6 +2161,10 @@ msgid "Dependency loading"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Details"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Details must contain exactly one direct summary"
 msgstr ""
 
@@ -2155,6 +2183,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Differences between the latest server version and candidate"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Directed"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2377,6 +2409,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Each version requires a complete fence without container prefixes"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Edges"
 msgstr ""
 
 #, php-format
@@ -3100,6 +3136,10 @@ msgid "Index status"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Initial values"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Initialize"
 msgstr ""
 
@@ -3217,6 +3257,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Installed extensions"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Integers only"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3412,6 +3456,14 @@ msgid "Issue date form"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Item"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Items"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Journal article"
 msgstr ""
 
@@ -3425,6 +3477,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Keep my changes and continue from the latest version"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Label"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3861,6 +3917,10 @@ msgid "Missing table header"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Mode"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Month (optional)"
 msgstr ""
 
@@ -3923,6 +3983,10 @@ msgstr ""
 #, php-format
 #: plugin/i18n.js
 msgid "My candidate: %1$s; latest server version: %2$s"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Name"
 msgstr ""
 
 #: plugin/i18n.js
@@ -4115,6 +4179,10 @@ msgid "Node diagram"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Nodes"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Non-dropping particle"
 msgstr ""
 
@@ -4237,6 +4305,14 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Optional cover attachment ID"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Options"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Order"
 msgstr ""
 
 #: plugin/i18n.js
@@ -4373,6 +4449,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Parameter structure exceeds budget"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Parameters"
 msgstr ""
 
 #: plugin/i18n.js
@@ -4836,6 +4916,10 @@ msgid "Rejected registrations"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Removal count"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Remove article"
 msgstr ""
 
@@ -5113,6 +5197,10 @@ msgid "Rights statement"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Rows"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Runtime dependencies"
 msgstr ""
 
@@ -5257,6 +5345,10 @@ msgid "Separator must be empty"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Series"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Server paired backups"
 msgstr ""
 
@@ -5318,6 +5410,10 @@ msgid "Simple task lists were unsupported by the historical parser"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Size"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Snapshot ZIP"
 msgstr ""
 
@@ -5335,6 +5431,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Some structures have only partial position hints."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Source"
 msgstr ""
 
 #: plugin/i18n.js
@@ -5429,6 +5529,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Staging directory permissions could not be restricted"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Start"
 msgstr ""
 
 #: plugin/i18n.js
@@ -5606,6 +5710,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Tag slugs"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Target"
 msgstr ""
 
 #: plugin/i18n.js
@@ -7766,6 +7874,10 @@ msgid "Title: %1$s → %2$s"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Tolerance"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Too many media files were generated"
 msgstr ""
 
@@ -7827,6 +7939,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Unexpected teaching closing marker"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Unit"
 msgstr ""
 
 #: plugin/i18n.js
@@ -8101,6 +8217,14 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Validation passed; target status: "
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Value"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Values"
 msgstr ""
 
 #: plugin/i18n.js

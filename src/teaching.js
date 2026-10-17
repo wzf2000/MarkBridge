@@ -1070,9 +1070,11 @@ export function registerTeaching() {
               ? el(
                   'p',
                   {},
-                  (a.component || T('Choose a teaching component in the sidebar')) +
-                    ' ' +
-                    (a.componentVersion || ''),
+                  (window.MBBComponents || []).find(
+                    (p) => p.id === a.component && p.version === a.componentVersion,
+                  )?.title ||
+                    a.component ||
+                    T('Choose a teaching component in the sidebar'),
                 )
               : field('title'),
 

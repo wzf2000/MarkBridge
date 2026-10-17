@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.0.0-rc.1
+
+- Freeze the integrated paired-writing, references, bibliography, collection and trusted SDK candidate without adopting resource-v2/WASM research.
+- Show registered component titles, readable field labels and one-based array items; retain exact configuration in closed advanced details and improve narrow numeric controls.
+- Correct SDK sample bar groups to equal row spacing for sparse numeric x, preserving numerical line/scatter coordinates and the original params.
+- Keep completion announcements available to assistive technology without repeating a visible result paragraph; wrap catalog resource digests.
+- Align current user documentation, supported dependency floors and upgrade/downgrade guidance.
+
 ## 2.9.0-rc.6
 
 - Keep component author callbacks live after same-value changes/consumption and repeated clicks on the active editor mode. Preserve explicit clean Apply/Discard session rotation.

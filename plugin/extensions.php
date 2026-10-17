@@ -241,7 +241,7 @@ function mbb_extensions_settings_page(bool $embedded = false): void
     if (!mbb_extensions_permission()) {
         return;
     }
-    echo '<section><h2>' .
+    echo '<section class="mbb-extension-catalog"><h2>' .
         esc_html(mbb_t('Installed extensions')) .
         '</h2><p>' .
         esc_html(
@@ -302,7 +302,7 @@ function mbb_extensions_settings_page(bool $embedded = false): void
             esc_html((string) $item['protocolVersion']) .
             '</dd><dt>' .
             esc_html(mbb_t('Resource SHA-256')) .
-            '</dt><dd><code>' .
+            '</dt><dd><code style="overflow-wrap:anywhere;word-break:break-word">' .
             esc_html($item['resourceSha256']) .
             '</code></dd></dl></details></td></tr>';
     }

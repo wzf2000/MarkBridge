@@ -7,7 +7,57 @@ const object = (value) => value !== null && typeof value === 'object' && !Array.
 const forbidden = new Set(['__proto__', 'prototype', 'constructor']);
 const clone = (value) => JSON.parse(JSON.stringify(value));
 const keyOf = (path) => JSON.stringify(path);
-const labelOf = (path) => ['params', ...path].join('.');
+
+/** Display-only labels; the registered schema, parameter keys and serialized data are untouched. */
+export function parameterLabel(path) {
+  const words = {
+    value: T('Value'),
+    values: T('Values'),
+    title: T('Title'),
+    label: T('Label'),
+    name: T('Name'),
+    items: T('Items'),
+    rows: T('Rows'),
+    columns: T('Columns'),
+    nodes: T('Nodes'),
+    edges: T('Edges'),
+    source: T('Source'),
+    target: T('Target'),
+    start: T('Start'),
+    count: T('Count'),
+    size: T('Size'),
+    enabled: T('Enabled'),
+    mode: T('Mode'),
+    details: T('Details'),
+    unit: T('Unit'),
+    series: T('Series'),
+    initial: T('Initial values'),
+    push: T('Append values'),
+    pops: T('Removal count'),
+    answer: T('Answer'),
+    tolerance: T('Tolerance'),
+    integer: T('Integers only'),
+    options: T('Options'),
+    correct: T('Correct option'),
+    order: T('Order'),
+    directed: T('Directed'),
+    n: T('Count'),
+  };
+  return path.length
+    ? path
+        .map((key) =>
+          typeof key === 'number'
+            ? T('Item') + ' ' + (key + 1)
+            : words[key] ||
+              String(key)
+                .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+                .replace(/[_-]+/g, ' ')
+                .replace(/^./, (c) => c.toUpperCase()),
+        )
+        .join(' › ')
+    : T('Parameters');
+}
+
 const equal = (a, b) => {
   if (typeof a !== typeof b || a === null || b === null) return a === b;
   if (Array.isArray(a) || Array.isArray(b))
@@ -467,7 +517,8 @@ export function createParameterEditor({
           throw Error(message);
         });
         const issues = validateParameterSchema(parsed, registered?.schema);
-        if (issues.length) throw Error(labelOf(issues[0].path) + ': ' + T(issues[0].message));
+        if (issues.length)
+          throw Error(parameterLabel(issues[0].path) + ': ' + T(issues[0].message));
         if (author?.apiVersion === 2) author.validate(parsed, candidateActivity);
         const pending = drafts.get(clientId);
         if (pending && (pending.identity !== identity || pending.baseline !== original))
@@ -511,7 +562,7 @@ export function createParameterEditor({
     const set = (path, next, remove) =>
       change(JSON.stringify(updateParameterValue(candidate, path, next, remove), null, 2));
     const render = (s, v, path, required = true, seed) => {
-      const label = labelOf(path),
+      const label = parameterLabel(path),
         issue = errors.get(keyOf(path));
       if (v === undefined)
         return el(
@@ -686,6 +737,13 @@ export function createParameterEditor({
             ),
           )
         : null,
+      el(
+        'details',
+        { className: 'mbb-parameter-technical' },
+        el('summary', {}, T('Component details')),
+        el('p', {}, component + '@' + candidateVersion),
+        el('pre', {}, JSON.stringify(candidate, null, 2)),
+      ),
       authorSupported && author?.Editor && mode === 'author'
         ? el(author.Editor, {
             wp,
@@ -740,7 +798,7 @@ export function createParameterEditor({
                     );
                   const issues = validateParameterSchema(next, current.schema);
                   if (issues.length)
-                    throw Error(labelOf(issues[0].path) + ': ' + T(issues[0].message));
+                    throw Error(parameterLabel(issues[0].path) + ': ' + T(issues[0].message));
                   if (author.apiVersion === 2) author.validate(next, candidateActivity);
                 }
                 change(

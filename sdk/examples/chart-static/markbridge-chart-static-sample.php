@@ -2,7 +2,7 @@
 /**
  * Plugin Name: MarkBridge SDK Chart Static Sample
  * Description: Trusted typed-tree bridge for the frozen small-data chart research provider.
- * Version: 0.1.0
+ * Version: 0.1.1
  * Requires PHP: 8.2
  * License: GPL-3.0-or-later
  */
@@ -22,7 +22,7 @@ add_action(
         }
         mbb_register_component_projection('small-data-chart', '0.0.1', [
             'contract' => 'mbb-component-projection/v1',
-            'version' => '0.1.0',
+            'version' => '0.1.1',
             'render' => 'mbb_sdk_chart_projection',
             'files' => $files,
         ]);
@@ -32,9 +32,9 @@ add_action(
 add_action('markbridge_register_extensions', static function () {
     if (function_exists('mbb_register_extension_manifest')) {
         mbb_register_extension_manifest('sdk-chart-static', [
-            'version' => '0.1.0',
+            'version' => '0.1.1',
             'title' => 'SDK Chart Static Sample',
-            'minMarkBridge' => '2.9.0-dev.1',
+            'minMarkBridge' => '2.9.0-rc.4',
             'capabilities' => ['static-projection'],
         ]);
     }

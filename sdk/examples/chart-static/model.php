@@ -34,7 +34,7 @@ function mbb_sdk_chart_projection(object $p, array $context): array
     }
     $x =
         $p->kind === 'bar'
-            ? static fn($v) => 96 + (($v - $xmin) / ($xmax - $xmin)) * 394
+            ? static fn($index) => 48 + (($index + 0.5) / count($p->rows)) * 490
             : static fn($v) => 48 + (($v - $xmin) / ($xmax - $xmin)) * 490;
     $y = static fn($v) => 240 - (($v - $ymin) / ($ymax - $ymin)) * 200;
     $svg = [
@@ -62,7 +62,7 @@ function mbb_sdk_chart_projection(object $p, array $context): array
             ]);
         }
         foreach ($p->rows as $j => $row) {
-            $xx = $x($row->x);
+            $xx = $x($p->kind === 'bar' ? $j : $row->x);
             $yy = $y($row->values[$i]);
             if ($p->kind === 'bar') {
                 $w = min(28, 430 / count($p->rows) / count($p->series));

@@ -869,6 +869,14 @@ msgid "Another window disabled recovery. Older verification cannot enable it or 
 msgstr "另一窗口已停用恢复，旧校验不能重新启用或写入。"
 
 #: plugin/i18n.js
+msgid "Answer"
+msgstr "答案"
+
+#: plugin/i18n.js
+msgid "Append values"
+msgstr "追加数值"
+
+#: plugin/i18n.js
 msgid "Applied bibliography changed. The current candidate is preserved and unapplied."
 msgstr "已应用的参考文献发生变化，当前候选已保留且尚未应用。"
 
@@ -1707,6 +1715,10 @@ msgid "Collections"
 msgstr "文集"
 
 #: plugin/i18n.js
+msgid "Columns"
+msgstr "列"
+
+#: plugin/i18n.js
 msgid "Comment was not saved: "
 msgstr "评论未保存："
 
@@ -1737,6 +1749,10 @@ msgstr "已完成"
 #: plugin/i18n.js
 msgid "Component"
 msgstr "组件"
+
+#: plugin/i18n.js
+msgid "Component details"
+msgstr "组件详细信息"
 
 #: plugin/i18n.js
 msgid "Component execution completed."
@@ -1977,6 +1993,14 @@ msgid "Correct feedback"
 msgstr "正确反馈"
 
 #: plugin/i18n.js
+msgid "Correct option"
+msgstr "正确选项"
+
+#: plugin/i18n.js
+msgid "Count"
+msgstr "数量"
+
+#: plugin/i18n.js
 msgid "Course workbench"
 msgstr "课程工作台"
 
@@ -2137,6 +2161,10 @@ msgid "Dependency loading"
 msgstr "依赖加载"
 
 #: plugin/i18n.js
+msgid "Details"
+msgstr "详细信息"
+
+#: plugin/i18n.js
 msgid "Details must contain exactly one direct summary"
 msgstr "详情必须有唯一直接摘要"
 
@@ -2156,6 +2184,10 @@ msgstr "差异 %1$s"
 #: plugin/i18n.js
 msgid "Differences between the latest server version and candidate"
 msgstr "服务器最新版与当前候选的差异"
+
+#: plugin/i18n.js
+msgid "Directed"
+msgstr "有向"
 
 #: plugin/i18n.js
 msgid "Directories must not contain data"
@@ -2379,6 +2411,10 @@ msgstr "每版最多 64 KiB，全组最多 128 KiB"
 msgid "Each version requires a complete fence without container prefixes"
 msgstr "每个版本需要完整且不含容器前缀的围栏"
 
+#: plugin/i18n.js
+msgid "Edges"
+msgstr "边"
+
 #, php-format
 #: plugin/i18n.js
 msgid "Edit inline formula: %1$s"
@@ -2418,7 +2454,7 @@ msgstr "在本页打开期间启用配对备份"
 
 #: plugin/i18n.js
 msgid "Enabled"
-msgstr "开启"
+msgstr "启用"
 
 #: plugin/i18n.js
 msgid "Enabled: candidates are stored only in this browser and expire after 7 days."
@@ -3100,6 +3136,10 @@ msgid "Index status"
 msgstr "索引状态"
 
 #: plugin/i18n.js
+msgid "Initial values"
+msgstr "初始数值"
+
+#: plugin/i18n.js
 msgid "Initialize"
 msgstr "初始化"
 
@@ -3218,6 +3258,10 @@ msgstr "插入具有新稳定标识的未保存样例。播放进度和读者选
 #: plugin/i18n.js
 msgid "Installed extensions"
 msgstr "已安装的扩展"
+
+#: plugin/i18n.js
+msgid "Integers only"
+msgstr "仅整数"
 
 #: plugin/i18n.js
 msgid "Interactive editor preview. Edit the static fallback body below."
@@ -3412,6 +3456,14 @@ msgid "Issue date form"
 msgstr "出版日期形式"
 
 #: plugin/i18n.js
+msgid "Item"
+msgstr "项目"
+
+#: plugin/i18n.js
+msgid "Items"
+msgstr "项目"
+
+#: plugin/i18n.js
 msgid "Journal article"
 msgstr "期刊论文"
 
@@ -3426,6 +3478,10 @@ msgstr "最多保留两个活动批次。请取消旧批次或等待过期；站
 #: plugin/i18n.js
 msgid "Keep my changes and continue from the latest version"
 msgstr "保留我的修改，基于最新版继续"
+
+#: plugin/i18n.js
+msgid "Label"
+msgstr "标签"
 
 #: plugin/i18n.js
 msgid "Labels and keys must begin with an ASCII letter and contain at most 64 letters, digits, underscores or hyphens"
@@ -3861,6 +3917,10 @@ msgid "Missing table header"
 msgstr "缺少表头"
 
 #: plugin/i18n.js
+msgid "Mode"
+msgstr "模式"
+
+#: plugin/i18n.js
 msgid "Month (optional)"
 msgstr "月份（可选）"
 
@@ -3924,6 +3984,10 @@ msgstr "我的候选"
 #: plugin/i18n.js
 msgid "My candidate: %1$s; latest server version: %2$s"
 msgstr "我的候选：%1$s；服务器最新版：%2$s"
+
+#: plugin/i18n.js
+msgid "Name"
+msgstr "名称"
 
 #: plugin/i18n.js
 msgid "Name form"
@@ -4115,6 +4179,10 @@ msgid "Node diagram"
 msgstr "节点图"
 
 #: plugin/i18n.js
+msgid "Nodes"
+msgstr "节点"
+
+#: plugin/i18n.js
 msgid "Non-dropping particle"
 msgstr "不可省略前缀"
 
@@ -4238,6 +4306,14 @@ msgstr "ZIP 所需可选环境不可用，Markdown 单文件仍可下载。"
 #: plugin/i18n.js
 msgid "Optional cover attachment ID"
 msgstr "可选封面附件 ID"
+
+#: plugin/i18n.js
+msgid "Options"
+msgstr "选项"
+
+#: plugin/i18n.js
+msgid "Order"
+msgstr "顺序"
 
 #: plugin/i18n.js
 msgid "Original Markdown"
@@ -4374,6 +4450,10 @@ msgstr "参数表单"
 #: plugin/i18n.js
 msgid "Parameter structure exceeds budget"
 msgstr "参数结构超出预算"
+
+#: plugin/i18n.js
+msgid "Parameters"
+msgstr "参数"
 
 #: plugin/i18n.js
 msgid "Parameters are data only. Explicitly apply or discard them. No code is executed."
@@ -4836,6 +4916,10 @@ msgid "Rejected registrations"
 msgstr "被拒绝的登记"
 
 #: plugin/i18n.js
+msgid "Removal count"
+msgstr "移除数量"
+
+#: plugin/i18n.js
 msgid "Remove article"
 msgstr "移除文章"
 
@@ -5113,6 +5197,10 @@ msgid "Rights statement"
 msgstr "版权声明"
 
 #: plugin/i18n.js
+msgid "Rows"
+msgstr "行"
+
+#: plugin/i18n.js
 msgid "Runtime dependencies"
 msgstr "运行依赖"
 
@@ -5257,6 +5345,10 @@ msgid "Separator must be empty"
 msgstr "分隔符必须为空"
 
 #: plugin/i18n.js
+msgid "Series"
+msgstr "序列"
+
+#: plugin/i18n.js
 msgid "Server paired backups"
 msgstr "服务端配对备份"
 
@@ -5318,6 +5410,10 @@ msgid "Simple task lists were unsupported by the historical parser"
 msgstr "历史解析器不支持简单任务列表"
 
 #: plugin/i18n.js
+msgid "Size"
+msgstr "规模"
+
+#: plugin/i18n.js
 msgid "Snapshot ZIP"
 msgstr "快照 ZIP"
 
@@ -5336,6 +5432,10 @@ msgstr "中断媒体未能全部清理，请稍后重试"
 #: plugin/i18n.js
 msgid "Some structures have only partial position hints."
 msgstr "部分结构仅提供保守的位置提示。"
+
+#: plugin/i18n.js
+msgid "Source"
+msgstr "来源"
 
 #: plugin/i18n.js
 msgid "Source and differences"
@@ -5430,6 +5530,10 @@ msgstr "暂存目录清理未完成"
 #: plugin/i18n.js
 msgid "Staging directory permissions could not be restricted"
 msgstr "无法限制暂存目录权限"
+
+#: plugin/i18n.js
+msgid "Start"
+msgstr "起点"
 
 #: plugin/i18n.js
 msgid "Start date"
@@ -5607,6 +5711,10 @@ msgstr "表格"
 #: plugin/i18n.js
 msgid "Tag slugs"
 msgstr "标签 slugs"
+
+#: plugin/i18n.js
+msgid "Target"
+msgstr "目标"
 
 #: plugin/i18n.js
 msgid "Task content"
@@ -7766,6 +7874,10 @@ msgid "Title: %1$s → %2$s"
 msgstr "标题：%1$s → %2$s"
 
 #: plugin/i18n.js
+msgid "Tolerance"
+msgstr "容差"
+
+#: plugin/i18n.js
 msgid "Too many media files were generated"
 msgstr "生成的媒体文件数超限"
 
@@ -7828,6 +7940,10 @@ msgstr "未知表格单元格"
 #: plugin/i18n.js
 msgid "Unexpected teaching closing marker"
 msgstr "未知教学结束标记"
+
+#: plugin/i18n.js
+msgid "Unit"
+msgstr "单位"
 
 #: plugin/i18n.js
 msgid "Unknown conflict choice"
@@ -8102,6 +8218,14 @@ msgstr "正在验证公式…"
 #: plugin/i18n.js
 msgid "Validation passed; target status: "
 msgstr "校验通过；目标状态："
+
+#: plugin/i18n.js
+msgid "Value"
+msgstr "值"
+
+#: plugin/i18n.js
+msgid "Values"
+msgstr "数值"
 
 #: plugin/i18n.js
 msgid "Verified image resources: "

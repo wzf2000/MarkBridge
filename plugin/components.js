@@ -229,6 +229,7 @@
       launch.setAttribute('aria-expanded', 'false');
       close.setAttribute('aria-expanded', 'false');
       node.dataset.mbbComponentState = 'closed';
+      status.classList.remove('mbb-component-complete');
       status.textContent = reason || '';
       window.MBB_DIAGNOSTICS?.clear(controls);
       delete node.dataset.mbbFailureCode;
@@ -596,6 +597,7 @@
         diagnostic?.stage('execution');
         active.add(node);
         runId = data.runId;
+        status.classList.remove('mbb-component-complete');
         runDeadline = performance.now() + budgets.wallMs;
         const expectedRun = runId;
         timer = setTimeout(() => {
@@ -617,6 +619,7 @@
         clearTimeout(timer);
         active.delete(node);
         runId = null;
+        status.classList.toggle('mbb-component-complete', data.type === 'complete');
         status.textContent =
           data.type === 'complete'
             ? diagram
