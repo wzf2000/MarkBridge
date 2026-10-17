@@ -106,6 +106,37 @@ try {
     }).ok,
     true,
   );
+  const legacyURL = legacy.replace('"url":""', '"url":"https://127.1/"'),
+    oldURL = w.MBB.importDocument(legacyURL, 'LEGACY_URL');
+  assert.equal(w.MBB.exportDocument(oldURL, oldURL.serialized), legacyURL);
+  const restoredURL = php({
+    mode: 'paired_restore',
+    documentId: 'LEGACY_URL',
+    source: legacyURL,
+    serialized: oldURL.serialized,
+  });
+  assert.equal(restoredURL.ok, true, JSON.stringify(restoredURL));
+  assert.equal(restoredURL.document.source, legacyURL);
+  for (const c of require('./fixtures/csl.json').cases.filter((v) => v.name.startsWith('url-'))) {
+    const url = JSON.parse(c.input)[0].URL,
+      list = [{ ...entries[0], url }],
+      source =
+        ':::mbb:v2 bibliography ' +
+        JSON.stringify({
+          id: 'url-bibliography',
+          entries: list,
+          style: 'author-year',
+        }) +
+        '\n\n:::mbb:end\n';
+    const result = php({ mode: 'markdown', documentId: 'BIB_URL', source });
+    assert.equal(result.ok, !c.reject, c.name + ': ' + JSON.stringify(result));
+    if (c.reject) assert.throws(() => w.MBB.importDocument(source, 'BIB_URL'), c.name);
+    else {
+      const node = w.MBB.importDocument(source, 'BIB_URL');
+      assert.equal(node.serialized, result.document.serialized, c.name);
+      assert.equal(w.MBB.exportDocument(node, node.serialized), source, c.name);
+    }
+  }
   for (const source of [
     legacy.replace(':::mbb:v1', ':::mbb:v2'),
     legacy.replace('"id":"old-bibliography"', '"id":"old-bibliography","style":"numeric"'),

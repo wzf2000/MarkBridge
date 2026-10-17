@@ -85,6 +85,22 @@ if (
 ) {
     throw new RuntimeException('Migration guessed or lost legacy data');
 }
+$unsafeOld = [array_replace($old[0], ['url' => 'https://127.1/'])];
+$unsafeBefore = json_encode($unsafeOld);
+$unsafeCandidate = Bibliography::migrate($unsafeOld);
+if ($unsafeCandidate[0]['url'] !== $unsafeOld[0]['url']) {
+    throw new RuntimeException('Unsafe legacy URL was silently rewritten');
+}
+try {
+    Bibliography::entry($unsafeCandidate[0]);
+    throw new LogicException('Unsafe legacy URL upgrade accepted');
+} catch (LogicException $e) {
+    throw $e;
+} catch (Throwable) {
+}
+if (json_encode($unsafeOld) !== $unsafeBefore) {
+    throw new RuntimeException('Rejected upgrade changed the legacy body');
+}
 echo in_array('--json', $argv ?? [], true)
     ? json_encode($results, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
     : "Bounded CSL-JSON subset, explicit losses, key conflicts, date/name validation and literal migration passed.\n";

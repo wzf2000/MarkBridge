@@ -94,23 +94,55 @@ export function bibliographyDate(value, fail = failDefault) {
   }
   return value;
 }
+function ipv4(host) {
+  const parts = host.split('.');
+  return (
+    parts.length === 4 &&
+    parts.every((part) => /^(?:0|[1-9][0-9]{0,2})$/.test(part) && Number(part) <= 255)
+  );
+}
+function ipv6(host) {
+  if (!host.includes(':') || !/^[0-9a-f:.]+$/i.test(host)) return false;
+  const sides = host.split('::');
+  if (sides.length > 2) return false;
+  const groups = sides.flatMap((side) => (side === '' ? [] : side.split(':')));
+  let units = 0;
+  for (const [i, group] of groups.entries()) {
+    if (group.includes('.')) {
+      if (i !== groups.length - 1 || !host.endsWith(group) || !ipv4(group)) return false;
+      units += 2;
+    } else {
+      if (!/^[0-9a-f]{1,4}$/i.test(group)) return false;
+      units++;
+    }
+  }
+  return sides.length === 2 ? units < 8 : units === 8;
+}
 export function bibliographyURL(value) {
   if (!text(value, 2048)) return false;
   if (!value) return true;
-  let url;
+  if (/[\p{White_Space}\uFEFF\x00-\x20\x7f\\]/u.test(value)) return false;
+  const authority = /^https?:\/\/([^/?#]+)/i.exec(value)?.[1];
+  if (!authority) return false;
+  const bracketed = authority.startsWith('['),
+    parts = (bracketed ? /^\[([^\]]+)\](?::([0-9]+))?$/ : /^([^:]+)(?::([0-9]+))?$/).exec(
+      authority,
+    );
+  if (!parts) return false;
+  if (parts[2] !== undefined) {
+    const port = parts[2].replace(/^0+/, '') || '0';
+    if (port.length > 5 || Number(port) > 65535) return false;
+  }
+  if (bracketed) return ipv6(parts[1]);
+  let host;
   try {
-    url = new URL(value);
+    host = decodeURIComponent(parts[1]);
   } catch {
     return false;
   }
-  return (
-    /^https?:\/\/[^/?#]+/i.test(value) &&
-    ['http:', 'https:'].includes(url.protocol) &&
-    !!url.hostname &&
-    !url.username &&
-    !url.password &&
-    !/[\p{White_Space}\uFEFF\x00-\x20\x7f\\]/u.test(value)
-  );
+  if (!host || /[\p{White_Space}\uFEFF\x00-\x20\x7f#/:<>?@\[\]\\^|%]/u.test(host)) return false;
+  if (/^[0-9.]+$/.test(host)) return ipv4(host.replace(/\.$/, ''));
+  return true;
 }
 export function bibliographyEntry(value, fail = failDefault) {
   if (

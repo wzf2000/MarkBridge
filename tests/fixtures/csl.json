@@ -126,6 +126,132 @@
         "01": "Renamed"
       },
       "reject": true
+    },
+    {
+      "name": "url-ipv4",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"http://192.0.2.1:00080/a?b=1#c\"}]"
+    },
+    {
+      "name": "url-ipv4-final-dot",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://192.0.2.1./\"}]"
+    },
+    {
+      "name": "url-ipv6-compressed",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://[2001:db8::1]:65535/a\"}]"
+    },
+    {
+      "name": "url-ipv6-full",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://[2001:db8:0:0:0:0:0:1]/\"}]"
+    },
+    {
+      "name": "url-ipv6-mapped",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://[::ffff:192.0.2.1]/\"}]"
+    },
+    {
+      "name": "url-ipv6-zero",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://[::]:0/\"}]"
+    },
+    {
+      "name": "url-unicode-host",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://例子.测试/文献\"}]"
+    },
+    {
+      "name": "url-encoded-host",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://%E4%BE%8B%E5%AD%90.test/\"}]"
+    },
+    {
+      "name": "url-host-port-limit",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://example.org:65535/\"}]"
+    },
+    {
+      "name": "url-invalid-ipv6",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://[invalid]/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-invalid-ipv4",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://123.123.123.999/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-short-ipv4",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://127.1/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-leading-zero-ipv4",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://192.00.2.1/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-empty-port",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://example.org:/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-overflow-port",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://example.org:65536/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-negative-port",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://example.org:-1/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-encoded-credentials",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://user%40example.org/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-invalid-percent-host",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://example%zz.org/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-invalid-utf8-host",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://%FF.org/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-encoded-slash-host",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://example%2forg/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-ipv6-zone",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://[fe80::1%25eth0]/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-ipv6-multiple-compression",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://[2001::db8::1]/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-ipv6-extra-group",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://[1:2:3:4:5:6:7:8:9]/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-ipv6-trailing-after-v4",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://[192.0.2.1::]/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-ipv6-v4-too-many",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://[1:2:3:4:5:6:7:192.0.2.1]/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-backslash-host",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://example.org\\\\other/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-space-path",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://example.org/a b\"}]",
+      "reject": true
     }
   ]
 }

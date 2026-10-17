@@ -77,4 +77,10 @@ assert.deepEqual(migrated[0].authors, [
 assert.equal(migrated[0].source, old[0].source);
 assert.deepEqual(migrated[0].issued, { literal: 'Spring 2026' });
 assert.equal(JSON.stringify(old), copy);
+const unsafeOld = [{ ...old[0], url: 'https://127.1/' }],
+  unsafeBefore = JSON.stringify(unsafeOld),
+  unsafeCandidate = api.migrateBibliography(unsafeOld);
+assert.equal(unsafeCandidate[0].url, unsafeOld[0].url);
+assert.throws(() => api.bibliographyEntry(unsafeCandidate[0]));
+assert.equal(JSON.stringify(unsafeOld), unsafeBefore);
 console.log('Closed bibliography v2 and bounded CSL-JSON dual-backend models passed.');

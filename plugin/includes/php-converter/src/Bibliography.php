@@ -151,22 +151,98 @@ final class Bibliography
             }
         }
     }
-    public static function url(mixed $v): bool
+    private static function ipv4(string $host): bool
     {
-        if (!self::text($v, 2048)) {
+        $parts = explode('.', $host);
+        return count($parts) === 4 &&
+            !array_filter(
+                $parts,
+                static fn($p) => !preg_match('/^(?:0|[1-9][0-9]{0,2})$/D', $p) || (int) $p > 255,
+            );
+    }
+    private static function ipv6(string $host): bool
+    {
+        if (!str_contains($host, ':') || !preg_match('/^[0-9a-f:.]+$/iD', $host)) {
             return false;
         }
-        if ($v === '') {
+        $sides = explode('::', $host);
+        if (count($sides) > 2) {
+            return false;
+        }
+        $groups = [];
+        foreach ($sides as $side) {
+            if ($side !== '') {
+                $groups = array_merge($groups, explode(':', $side));
+            }
+        }
+        $units = 0;
+        foreach ($groups as $i => $group) {
+            if (str_contains($group, '.')) {
+                if (
+                    $i !== count($groups) - 1 ||
+                    !str_ends_with($host, $group) ||
+                    !self::ipv4($group)
+                ) {
+                    return false;
+                }
+                $units += 2;
+            } else {
+                if (!preg_match('/^[0-9a-f]{1,4}$/iD', $group)) {
+                    return false;
+                }
+                $units++;
+            }
+        }
+        return count($sides) === 2 ? $units < 8 : $units === 8;
+    }
+    public static function url(mixed $value): bool
+    {
+        if (!self::text($value, 2048)) {
+            return false;
+        }
+        if ($value === '') {
             return true;
         }
-        $u = parse_url($v);
-        return $u &&
-            preg_match('~^https?://[^/?#]+~i', $v) &&
-            in_array(strtolower($u['scheme'] ?? ''), ['http', 'https'], true) &&
-            !empty($u['host']) &&
-            !isset($u['user']) &&
-            !isset($u['pass']) &&
-            !preg_match('/[\p{Z}\s\x{0085}\x{feff}\x00-\x20\x7f\\\\]/u', $v);
+        if (
+            preg_match('~[\p{Z}\s\x{0085}\x{feff}\x00-\x20\x7f\\\\]~u', $value) ||
+            !preg_match('~^https?://([^/?#]+)~i', $value, $match)
+        ) {
+            return false;
+        }
+        $authority = $match[1];
+        $bracketed = str_starts_with($authority, '[');
+        if (
+            !preg_match(
+                $bracketed ? '~^\[([^\]]+)\](?::([0-9]+))?$~D' : '~^([^:]+)(?::([0-9]+))?$~D',
+                $authority,
+                $parts,
+            )
+        ) {
+            return false;
+        }
+        if (isset($parts[2])) {
+            $port = ltrim($parts[2], '0') ?: '0';
+            if (strlen($port) > 5 || (int) $port > 65535) {
+                return false;
+            }
+        }
+        if ($bracketed) {
+            return self::ipv6($parts[1]);
+        }
+        if (preg_match('/%(?![0-9a-f]{2})/i', $parts[1])) {
+            return false;
+        }
+        $host = rawurldecode($parts[1]);
+        if (
+            $host === '' ||
+            !mb_check_encoding($host, 'UTF-8') ||
+            preg_match('~[\p{Z}\s\x{0085}\x{feff}\x00-\x20\x7f#/:<>?@\[\]\\\\^|%]~u', $host)
+        ) {
+            return false;
+        }
+        return preg_match('/^[0-9.]+$/D', $host)
+            ? self::ipv4(preg_replace('/\.$/D', '', $host))
+            : true;
     }
     public static function entry(mixed $value): array
     {

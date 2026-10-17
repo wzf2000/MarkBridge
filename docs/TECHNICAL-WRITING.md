@@ -86,7 +86,7 @@ Every v2 entry has exactly these fields:
 | `containerTitle,publisher,source` | Single-line text, 0–512 characters each                                                                                    |
 | `volume,issue,page`               | Single-line text, 0–128 characters each                                                                                    |
 | `doi`                             | Empty or `10.` + 4–9 digits + `/` + bounded ASCII letters/digits/`-._;()/:`, at most 512 characters; no URL prefix         |
-| `url`                             | Existing empty or credential-free absolute HTTP(S), at most 2048 characters                                                |
+| `url`                             | Empty or credential-free absolute HTTP(S), at most 2048 characters; v2 authority rules below                               |
 | `identifiers`                     | Exactly `{ISBN,ISSN,PMID,PMCID}`, each 0–128 single-line characters                                                        |
 
 A name is exactly `{literal}` (person text or institution) or
@@ -95,6 +95,21 @@ are strings; `family` is required and nonempty. Their displayed joined text must
 fit the existing 120-character name budget. Dates use Gregorian-valid integers:
 year 1–9999, optional month 1–12 and a valid day; a date range contains two such
 parts. Missing information is not guessed.
+
+V2 URL admission is the same finite lexical check in PHP and Node. It preserves
+the supplied URL exactly and makes no DNS request, IDNA conversion or URL rewrite.
+The scheme is HTTP(S); whitespace, controls, backslashes and credentials are
+rejected. A non-bracketed host is checked after one valid UTF-8 percent decode:
+it must be nonempty and cannot contain whitespace, controls or `#/:<>?@[]\^|%`.
+A host consisting only of digits and dots must have four decimal IPv4 octets
+(0–255, no leading zeros; one final dot is allowed). A bracketed host must be
+IPv6: eight hexadecimal groups, or one `::` replacing at least one group; a final
+strict IPv4 address may occupy two groups. Zone identifiers are unsupported.
+An optional port is decimal 0–65535; an empty port is rejected. Path, query and
+fragment remain literal bounded text. Admission does not establish that a host
+exists or is reachable. Existing v1 URL admission and historical bytes are
+unchanged; an old URL outside the v2 rules blocks the upgrade candidate, leaving
+the v1 body intact for explicit author correction.
 
 **Prepare bibliography v2 candidate** copies every old author string to
 `{literal: original}`, keeps the old year as `issued.literal`, retains title,
