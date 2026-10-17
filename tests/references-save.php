@@ -202,6 +202,57 @@ try {
             $projection['identity'],
         'history candidate retains current identity',
     );
+    // New documents only obtain their post ID inside the transaction. A duplicate
+    // migration therefore fails at the final unique claim, after provisional pair
+    // and revision writes, and must report a conflict with no surviving writes.
+    $duplicate = mbb_references_prepare(
+        reference_request('references/prepare', [
+            'action' => 'migrate',
+            'post_id' => 0,
+            'documentId' => 'MIGRATION_' . wp_generate_password(10, false),
+            'source' => get_post($id)->post_content_filtered,
+        ]),
+    );
+    reference_assert(!is_wp_error($duplicate), 'duplicate migration candidate');
+    $migrationPayload = [
+        'post_id' => 0,
+        'documentId' => $duplicate['document']['documentId'],
+        'identity_receipt' => $duplicate['identity_receipt'],
+        'mode' => 'markdown',
+        'source' => $duplicate['document']['source'],
+        'title' => 'Rejected duplicate migration',
+        'post_status' => 'draft',
+        'featured_media' => 0,
+    ];
+    $preview = mbb_preview(reference_request('preview', $migrationPayload));
+    reference_assert(!is_wp_error($preview), 'migration preview remains available');
+    foreach (['adapter_digest', 'frontmatter_receipt', 'resource_receipt'] as $field) {
+        $migrationPayload[$field] = $preview[$field] ?? null;
+    }
+    $snapshot = static function () use ($wpdb) {
+        $tables = array_merge(
+            [$wpdb->posts, $wpdb->postmeta, $wpdb->term_relationships],
+            array_values(mbb_references_tables()),
+        );
+        return array_map(
+            static fn($table) => $wpdb->get_results("SELECT * FROM {$table} ORDER BY 1,2", ARRAY_A),
+            $tables,
+        );
+    };
+    $beforeMigration = $snapshot();
+    for ($attempt = 0; $attempt < 2; $attempt++) {
+        $rejected = mbb_save(reference_request('save', $migrationPayload));
+        reference_assert(
+            is_wp_error($rejected) &&
+                $rejected->get_error_code() === 'identity_conflict' &&
+                ($rejected->get_error_data()['status'] ?? null) === 409,
+            'duplicate migration is a typed 409 after rollback',
+        );
+        reference_assert(
+            $snapshot() === $beforeMigration,
+            'rejected migration leaves no article, revision, metadata, terms or index writes',
+        );
+    }
     $copy = mbb_references_prepare(
         reference_request('references/prepare', [
             'action' => 'copy',

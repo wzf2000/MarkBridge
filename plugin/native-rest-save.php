@@ -425,6 +425,9 @@ function mbb_native_rest_update_core($result, $server, $request)
             );
         }
         mbb_native_clear_rollback_cache($id, $revisions, $term_ids);
+        if ($error instanceof MBB_Reference_Failure) {
+            return mbb_references_error($error);
+        }
         return $response && (is_wp_error($response) || $response->get_status() >= 400)
             ? $response
             : mbb_error(

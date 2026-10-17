@@ -1124,6 +1124,11 @@ function mbb_save_core($r, $cli_source_path = null, ?callable $new_document_prov
                     500,
                 );
             }
+            // A rejected claim is a normal conflict once every write has rolled back.
+            // Uncertain commit or failed compensation above must retain their stronger errors.
+            if ($e instanceof MBB_Reference_Failure) {
+                return mbb_references_error($e);
+            }
             return $transaction_started
                 ? mbb_error(
                     'save_failed',
