@@ -35,11 +35,13 @@ function mbb_backup_error(string $code = 'backup_conflict')
     );
 }
 // A backup lock must never survive transparently onto a different database connection.
-class MBB_Backup_DB extends wpdb
-{
-    public function check_connection($allow_bail = true)
+if (class_exists('wpdb')) {
+    class MBB_Backup_DB extends wpdb
     {
-        return false;
+        public function check_connection($allow_bail = true)
+        {
+            return false;
+        }
     }
 }
 function mbb_backup_locked(callable $callback)
