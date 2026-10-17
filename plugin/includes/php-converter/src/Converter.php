@@ -1059,6 +1059,9 @@ final class Converter
                 ' -->';
         }
         if (($kind = Teaching::kind($name)) !== null) {
+            if ($kind === 'identity') {
+                return '<!-- wp:mbb/identity ' . self::commentJson($attrs) . ' /-->';
+            }
             if (isset(Technical::SCHEMAS[$kind])) {
                 return '<!-- wp:' .
                     $name .
@@ -1360,6 +1363,27 @@ final class Converter
     private function parseOneContent(string $input, int &$position, int $depth, string $path): array
     {
         $this->tick($depth);
+        if (
+            preg_match(
+                '/\G<!-- wp:mbb\/identity (\{[^\r\n]*\}) \/-->/A',
+                $input,
+                $identity,
+                0,
+                $position,
+            )
+        ) {
+            $attrs = Teaching::json($identity[1]);
+            $this->validateAttrs('mbb/identity', $attrs);
+            $position += strlen($identity[0]);
+            return [
+                'name' => 'mbb/identity',
+                'attrs' => $attrs,
+                'children' => [],
+                'raw' => '',
+                'path' => $path,
+            ];
+        }
+
         if (
             !preg_match(
                 '/\G<!-- wp:([a-z0-9-]+(?:\/[a-z0-9-]+)?)(?: (\{.*?\}))? -->/As',
@@ -1755,7 +1779,15 @@ final class Converter
                 }
             }
             $allowed = $technical
-                ? ['class', 'data-mbb-target', 'data-mbb-keys', 'data-mbb-version']
+                ? [
+                    'class',
+                    'data-mbb-target',
+                    'data-mbb-keys',
+                    'data-mbb-version',
+                    'data-mbb-namespace',
+                    'data-mbb-document',
+                    'data-mbb-kind',
+                ]
                 : ($math
                     ? ['class', 'data-mbb-tex']
                     : ($footnote

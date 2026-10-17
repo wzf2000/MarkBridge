@@ -134,6 +134,9 @@ function mbb_render_technical($html)
                     continue 2;
                 }
             }
+            if ($node->tagName === 'span' && $node->getAttribute('data-mbb-version') === '2') {
+                continue;
+            }
             if ($node->tagName !== 'span' || $node->getAttribute('data-mbb-version') !== '1') {
                 return $html;
             }

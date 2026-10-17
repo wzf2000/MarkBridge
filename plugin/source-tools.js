@@ -356,6 +356,8 @@
         return writingBlocks;
       };
       const writing = window.MBBWritingTools.create({
+        context: options.referenceContext,
+        source: readSource,
         blocks,
         stamp: readSource,
         select(item) {

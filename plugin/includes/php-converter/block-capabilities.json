@@ -128,5 +128,10 @@
   "core/gallery": {
     "columns": "integer",
     "imageCrop": "boolean"
+  },
+  "mbb/identity": {
+    "namespace": "string",
+    "document": "string",
+    "version": "integer"
   }
 }

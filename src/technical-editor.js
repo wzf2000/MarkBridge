@@ -677,6 +677,13 @@ function registerReferences() {
       attributes: {
         identity: refKind === 'xref' ? 'data-mbb-target' : 'data-mbb-keys',
         version: 'data-mbb-version',
+        ...(refKind === 'xref'
+          ? {
+              namespace: 'data-mbb-namespace',
+              document: 'data-mbb-document',
+              targetKind: 'data-mbb-kind',
+            }
+          : {}),
       },
       edit: ({ value, onChange, isActive }) => {
         const registry = wp.data.useRegistry(),
@@ -695,11 +702,7 @@ function registerReferences() {
                 .map((item) => ({
                   value: item.id,
                   label:
-                    (kinds[item.kind]?.() || item.kind) +
-                    ' ' +
-                    item.number +
-                    ': ' +
-                    item.title +
+                    (item.title || (kinds[item.kind]?.() || item.kind) + ' ' + item.number) +
                     ' (' +
                     item.id +
                     ')',

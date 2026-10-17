@@ -457,6 +457,10 @@ msgid "A document may contain only one footnote definition section"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "A document permits one empty top-level logical identity"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "A file did not finish uploading. No drafts were created."
 msgstr ""
 
@@ -494,6 +498,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "A local image reference is not present in the ZIP: "
+msgstr ""
+
+#: plugin/i18n.js
+msgid "A logical identity requires a closed namespace and document tuple"
 msgstr ""
 
 #: plugin/i18n.js
@@ -650,6 +658,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Add item"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Administrator permission is required."
 msgstr ""
 
 #: plugin/i18n.js
@@ -1123,6 +1135,10 @@ msgid "Changes"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Check changed targets and readable incoming references"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Check current block conversion"
 msgstr ""
 
@@ -1148,6 +1164,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Check this block's styles, attributes, and nesting. A supported block type does not imply support for all formatting. Download Markdown to preserve the candidate if needed."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Checking document references…"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1207,6 +1227,10 @@ msgid "Choose a stage"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Choose a target to insert a reference."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Choose a teaching component in the sidebar"
 msgstr ""
 
@@ -1235,6 +1259,10 @@ msgid "Choose bibliography entries"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Choose copy or explicit identity migration."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Choose draft, pending review, public, or private."
 msgstr ""
 
@@ -1248,6 +1276,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Choose explicit BibTeX merge or replacement"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Choose explicit migration or prepare a copy for an existing identity."
 msgstr ""
 
 #: plugin/i18n.js
@@ -1515,6 +1547,10 @@ msgid "Confirm that uploaded image URLs may be public, including for a draft."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Conflict repair requires an administrator and the unchanged article identity."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Container must contain only its declared child blocks"
 msgstr ""
 
@@ -1527,6 +1563,10 @@ msgid "Content changed. Paste again to review the current selection."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Content changed. Prepare the operation again."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Content navigation and checks"
 msgstr ""
 
@@ -1536,6 +1576,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Content type"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Continue rebuild"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1621,7 +1665,19 @@ msgid "Copy diagnostic summary"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Copy identity metadata"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Copy revision content into the current identity"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Copy the original code manually"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Copy with new identities (default)"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1634,6 +1690,14 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Creating this draft. If the connection is interrupted, refresh batch status before trying again."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Cross-document identities require the core WordPress transactional database connection. Legacy editing remains available."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Cross-document identities require transactional tables. No existing table was changed."
 msgstr ""
 
 #: plugin/i18n.js
@@ -1810,11 +1874,23 @@ msgid "Document containers and declarations are unsupported"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Document identity enabled"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Document identity is not enabled"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Document metadata proposal"
 msgstr ""
 
 #: plugin/i18n.js
 msgid "Document pagination"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Document references"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1936,6 +2012,10 @@ msgid "Each merge source is limited to 256 KiB and 32,768 lines. Download the or
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Each operation processes at most ten articles. Continue until ready; no background job is scheduled."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Each registration descriptor is limited to 16 KiB"
 msgstr ""
 
@@ -1970,6 +2050,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Enable a compatible diagram extension before inserting a diagram."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Enable document references"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2091,6 +2175,10 @@ msgid "Explicit item confirmation is required."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Explicit migration retaining identities"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Explicitly apply edits. The server validates parameters against the registered schema when saving."
 msgstr ""
 
@@ -2172,6 +2260,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Final media HTML does not satisfy the save allowlist"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Find a reference target"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2561,6 +2653,18 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Independent body changes were combined. Unchanged metadata uses the latest server version; overlapping metadata requires an explicit choice."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Index status"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Initialize"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Initialize or rebuild reference index"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2956,6 +3060,18 @@ msgid "Located the source object."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Logical document identity"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Logical identity copy mapping"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Logical identity handling"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Long code differences estimated by matching line positions: "
 msgstr ""
 
@@ -3167,6 +3283,10 @@ msgid "Metadata, terms, the candidate, or the identity changed. Preview again."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Migration requires an explicit unclaimed identity candidate."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Mismatched block closing comment"
 msgstr ""
 
@@ -3210,6 +3330,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "More block must use its default exact marker"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "More targets"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3323,6 +3447,10 @@ msgid "New attachment ownership verification failed"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "New draft"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "New images were not fully associated with the article"
 msgstr ""
 
@@ -3380,6 +3508,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "No proven preview range for this selection. Preview the current source again."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "No readable reference targets found."
 msgstr ""
 
 #: plugin/i18n.js
@@ -3469,6 +3601,14 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Only creates an unsaved candidate. Fences, FrontMatter, and complete teaching containers are compared atomically. Ambiguous repeated structures require explicit choices. Newlines and trailing whitespace retain their original bytes."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Only currently readable incoming references are shown. Other articles are not changed."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Only derived identifiers are indexed. Existing article bodies are never changed by initialization or rebuild."
 msgstr ""
 
 #: plugin/i18n.js
@@ -3716,11 +3856,27 @@ msgid "Post-save content verification failed"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Prepare a copy with a new identity"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Prepare conflict repair with a new identity"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Prepare explicit identity migration"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Prepare export and resource manifest"
 msgstr ""
 
 #: plugin/i18n.js
 msgid "Prepare initial parameters"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Prepare the identity operation again. Current input is preserved."
 msgstr ""
 
 #: plugin/i18n.js
@@ -3980,7 +4136,15 @@ msgid "Reference URL (HTTP or HTTPS)"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Reference index operation completed."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Reference markers affected; no changes have been applied."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Reference permissions changed. Prepare the export again."
 msgstr ""
 
 #: plugin/i18n.js
@@ -3989,6 +4153,14 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Reference title"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Reference transaction required."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Reference verification failed. Current input is preserved."
 msgstr ""
 
 #: plugin/i18n.js
@@ -4132,6 +4304,10 @@ msgid "Resources changed during preparation. Prepare again"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Restart rebuild"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Restoration differences"
 msgstr ""
 
@@ -4194,6 +4370,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Reverse conversion requires an explicit Markdown source document"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Review the conflicting article and prepare a new identity."
 msgstr ""
 
 #: plugin/i18n.js
@@ -4325,11 +4505,19 @@ msgid "Scroll horizontally to read long lines. Focus the code and use the arrow 
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Search reference targets"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Select a preview object, or use Tab and Enter, to locate its source."
 msgstr ""
 
 #: plugin/i18n.js
 msgid "Select the same bibliography block before using this candidate"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Selected files repeat a logical identity. Correct the ambiguous originals before preparing the batch."
 msgstr ""
 
 #: plugin/i18n.js
@@ -5424,6 +5612,10 @@ msgid "The current formula could not be located. Select it again."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "The current logical identity must be retained. Prepare an explicit copy candidate instead."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "The current user's staging directory could not be prepared"
 msgstr ""
 
@@ -5689,6 +5881,14 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "The header proposal changed. Previous metadata selections were reset; choose them again."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The historical identity differs. Compare the exact revision without changing the current identity."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The history candidate provenance could not be saved."
 msgstr ""
 
 #: plugin/i18n.js
@@ -6005,6 +6205,30 @@ msgid "The recovery session or current account changed."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "The reference database connection is unavailable. Current input is preserved."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The reference index could not be verified. Current input is preserved."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The reference index has not been initialized."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The reference index is not ready. An administrator can initialize or rebuild it."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The reference index is stale. Ask an administrator to rebuild it."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The reference operation input is invalid."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "The remaining expanded batch budget is exhausted"
 msgstr ""
 
@@ -6114,6 +6338,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "The saved article changed. Prepare the export again"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The saved document changed. The reference index was not committed."
 msgstr ""
 
 #: plugin/i18n.js
@@ -6457,6 +6685,10 @@ msgid "The title must be single-line text of 1–200 characters"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "The transformed reference candidate exceeds the existing document budget."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "The uncompressed export exceeds its budget. Content was not truncated"
 msgstr ""
 
@@ -6521,6 +6753,14 @@ msgid "This account's local candidates were cleared and recovery was disabled."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "This article already has a logical identity."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "This article has no current logical identity."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "This article has no source file binding."
 msgstr ""
 
@@ -6538,6 +6778,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "This article is synchronized from a source file. Use the controlled source write workflow."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "This article is unavailable."
 msgstr ""
 
 #: plugin/i18n.js
@@ -6617,6 +6861,10 @@ msgid "This local recovery record has no trusted signed opening baseline. Compar
 msgstr ""
 
 #: plugin/i18n.js
+msgid "This logical identity is unavailable or already claimed. Prepare a copy with a new identity."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "This new article already has unsaved content. Save or clear it before importing Markdown."
 msgstr ""
 
@@ -6642,6 +6890,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "This revision cannot be used for this article."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "This revision predates document identity. The exact historical pair is read-only; prepare an explicit candidate to retain the current identity."
 msgstr ""
 
 #: plugin/i18n.js
@@ -6953,6 +7205,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Use the editor's Save / Update action to save both representations together"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Use the exact revision workflow when its logical identity is unchanged."
 msgstr ""
 
 #: plugin/i18n.js

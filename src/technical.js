@@ -100,6 +100,39 @@ export function technicalReference(raw, fail, complete = true) {
   const kind =
     attrs.get('class') === 'mbb-xref' ? 'xref' : attrs.get('class') === 'mbb-cite' ? 'cite' : null;
   const identity = attrs.get(kind === 'xref' ? 'data-mbb-target' : 'data-mbb-keys');
+  if (kind === 'xref' && attrs.get('data-mbb-version') === '2') {
+    if (
+      attrs.size !== 6 ||
+      [...attrs.keys()].some(
+        (k) =>
+          ![
+            'class',
+            'data-mbb-target',
+            'data-mbb-version',
+            'data-mbb-namespace',
+            'data-mbb-document',
+            'data-mbb-kind',
+          ].includes(k),
+      ) ||
+      !/^S_[a-f0-9]{32}$/.test(attrs.get('data-mbb-namespace') || '') ||
+      !/^D_[a-f0-9]{32}$/.test(attrs.get('data-mbb-document') || '') ||
+      !technicalId.test(identity || '') ||
+      !['equation', 'figure', 'table', 'listing', 'statement', 'step'].includes(
+        attrs.get('data-mbb-kind'),
+      ) ||
+      match[2] !== '[' + identity + ']'
+    )
+      return invalid();
+    return {
+      raw: match[0],
+      kind,
+      keys: [identity],
+      version: 2,
+      namespace: attrs.get('data-mbb-namespace'),
+      document: attrs.get('data-mbb-document'),
+      targetKind: attrs.get('data-mbb-kind'),
+    };
+  }
   if (
     !kind ||
     attrs.size !== 3 ||
@@ -214,7 +247,7 @@ export function validateTechnical(blocks, fail) {
   };
   walk(blocks);
   for (const ref of refs)
-    for (const key of ref.keys)
+    for (const key of ref.version === 2 ? [] : ref.keys)
       if (!(ref.kind === 'xref' ? objects : keys).has(key))
         fail(
           'TECHNICAL_MISSING',
@@ -403,7 +436,12 @@ export function technicalRenamePlan(blocks, type, from, to, fail) {
         )
           continue;
         const ref = technicalReference(field.html.slice(offset), fail, false);
-        if (ref.kind !== (type === 'label' ? 'xref' : 'cite') || !ref.keys.includes(from)) continue;
+        if (
+          ref.version === 2 ||
+          ref.kind !== (type === 'label' ? 'xref' : 'cite') ||
+          !ref.keys.includes(from)
+        )
+          continue;
         affectedReferences++;
         replacements.push({
           offset,
@@ -445,7 +483,7 @@ export function technicalReferenceCount(blocks, type, key) {
         const ref = technicalReference(node.outerHTML, (code, message) => {
           throw Error(message);
         });
-        if (ref.keys.includes(key)) count++;
+        if (ref.version !== 2 && ref.keys.includes(key)) count++;
       }
   return count;
 }
@@ -527,7 +565,7 @@ export function technicalDiagnostics(blocks) {
       );
   for (const [key, count] of keyCounts) if (count > 1) add('duplicate-key', key);
   for (const ref of references)
-    for (const key of ref.keys)
+    for (const key of ref.version === 2 ? [] : ref.keys)
       if (!(ref.kind === 'xref' ? targetCounts : keyCounts).has(key))
         add(ref.kind === 'xref' ? 'missing-target' : 'missing-key', key, ref.clientId);
   return {

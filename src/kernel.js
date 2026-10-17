@@ -343,7 +343,15 @@ function safeHTML(html, allowMath = false) {
       if (
         !(
           technical
-            ? ['class', 'data-mbb-target', 'data-mbb-keys', 'data-mbb-version']
+            ? [
+                'class',
+                'data-mbb-target',
+                'data-mbb-keys',
+                'data-mbb-version',
+                'data-mbb-namespace',
+                'data-mbb-document',
+                'data-mbb-kind',
+              ]
             : math
               ? ['class', 'data-mbb-tex']
               : footnote

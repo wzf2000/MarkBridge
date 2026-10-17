@@ -42,6 +42,7 @@
   }
   let dialog,
     files,
+    identityStrategy,
     prepare,
     refresh,
     status,
@@ -69,6 +70,7 @@
       (view.images.length > 0 && !ack.checked);
     ack.disabled = pending || !view;
     files.disabled = pending;
+    if (identityStrategy) identityStrategy.disabled = pending;
   }
   function clearPreview() {
     view = null;
@@ -280,6 +282,16 @@
     view = { ...result, index: result.item.index, token: job.token };
     job.items[result.item.index] = result.item;
     source.value = result.source;
+    const previousMap = previewPanel.querySelector('.mbb-batch-identity-map');
+    previousMap?.remove();
+    if (result.identityMappings?.length) {
+      const details = node('details', '', { class: 'mbb-batch-identity-map', open: '' });
+      details.append(
+        node('summary', T('Logical identity copy mapping')),
+        node('pre', JSON.stringify(result.identityMappings, null, 2)),
+      );
+      previewPanel.append(details);
+    }
     ack.checked = false;
     ack.closest('label').hidden = result.images.length === 0;
     const style =
@@ -345,6 +357,12 @@
       accept: '.md,.markdown,.zip',
       'aria-label': T('Batch files'),
     });
+    identityStrategy = node('select', '', { 'aria-label': T('Logical identity handling') });
+    for (const [value, label] of [
+      ['copy', 'Copy with new identities (default)'],
+      ['migrate', 'Explicit migration retaining identities'],
+    ])
+      identityStrategy.append(node('option', T(label), { value }));
     prepare = node('button', T('Scan selected files'), { type: 'button' });
     refresh = node('button', T('Refresh batch status'), { type: 'button' });
     history = node('div', '', { class: 'mbb-batch-history' });
@@ -379,6 +397,7 @@
           throw Error(T('Choose one to ten files within the 16 MiB upload budget.'));
         const data = new FormData();
         for (const f of files.files) data.append('documents[]', f);
+        data.append('identity_strategy', identityStrategy.value);
         clearPreview();
         status.textContent = T('Scanning files. No articles or media are created.');
         const result = await api('batch/prepare', data);
@@ -434,7 +453,18 @@
       history.replaceChildren();
       files.value = '';
     });
-    dialog.append(head, intro, files, prepare, refresh, status, history, rows, previewPanel);
+    dialog.append(
+      head,
+      intro,
+      identityStrategy,
+      files,
+      prepare,
+      refresh,
+      status,
+      history,
+      rows,
+      previewPanel,
+    );
     document.body.append(dialog);
   }
   async function open() {

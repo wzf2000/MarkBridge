@@ -204,7 +204,41 @@
         'body{font:16px/1.7 system-ui;padding:16px;overflow-wrap:anywhere}pre{overflow:auto}table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:4px}img{max-width:100%}</style>' +
         (await MBB_MATH.preview(result.html));
       preview.hidden = false;
-      candidate = payload;
+      candidate = result.identity_restore && result.identity_restore !== 'exact' ? null : payload;
+      if (result.identity_restore === 'adopt-history') {
+        const adopt = el(
+          'button',
+          { type: 'button' },
+          T('Copy revision content into the current identity'),
+        );
+        adopt.onclick = async () => {
+          try {
+            const prepared = await api('references/prepare', {
+              ...payload,
+              action: 'adopt-history',
+            });
+            dialog.close();
+            await window.MBBReferences.adopt(prepared, base);
+          } catch (error) {
+            message(E(error), true);
+          }
+        };
+        diff.append(adopt);
+        message(
+          T(
+            'This revision predates document identity. The exact historical pair is read-only; prepare an explicit candidate to retain the current identity.',
+          ),
+        );
+        return;
+      }
+      if (result.identity_restore === 'incompatible') {
+        message(
+          T(
+            'The historical identity differs. Compare the exact revision without changing the current identity.',
+          ),
+        );
+        return;
+      }
       message(T('Both representations match. Check the differences and confirm restoration.'));
     } catch (e) {
       message(E(e), true);

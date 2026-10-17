@@ -96,3 +96,12 @@
     block-size: 48dvh;
   }
 }
+.mbb-batch-identity-map {
+  margin-block: 1rem;
+}
+.mbb-batch-identity-map pre {
+  max-height: 20rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

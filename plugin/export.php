@@ -303,6 +303,10 @@ function mbb_export_plan(array $snapshot, string $format): array
 {
     $document = $snapshot['document'];
     $p = $snapshot['post'];
+    $referenceMap = function_exists('mbb_references_export_map')
+        ? mbb_references_export_map($document['serialized'])
+        : [];
+    $snapshot['referenceMap'] = $referenceMap;
     if ($format === 'markdown') {
         return [
             'source' => $document['source'],
@@ -315,6 +319,7 @@ function mbb_export_plan(array $snapshot, string $format): array
             'mappings' => [],
             'files' => [],
             'sidecar' => '',
+            'referenceMap' => $referenceMap,
         ];
     }
     $images = ResourceImages::urls($document['serialized']);
@@ -474,6 +479,7 @@ function mbb_export_plan(array $snapshot, string $format): array
                 'mappings' => $mappings,
                 'files' => $files,
                 'sidecar' => '',
+                'referenceMap' => $referenceMap,
             ];
         }
         $projected = mbb_convert([
@@ -544,6 +550,7 @@ function mbb_export_plan(array $snapshot, string $format): array
         'mappings' => $mappings,
         'files' => $files,
         'sidecar' => $json,
+        'referenceMap' => $referenceMap,
     ];
 }
 function mbb_export_plan_digest(array $plan): string
@@ -555,6 +562,7 @@ function mbb_export_plan_digest(array $plan): string
             $plan['resources'],
             $plan['mappings'],
             $plan['sidecar'],
+            $plan['referenceMap'] ?? [],
             array_map(static fn($file) => array_diff_key($file, ['file' => true]), $plan['files']),
         ]),
     );

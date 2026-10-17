@@ -420,6 +420,40 @@ final class Technical
                     ? 'cite'
                     : null);
         $identity = $attrs[$kind === 'xref' ? 'data-mbb-target' : 'data-mbb-keys'] ?? null;
+        if ($kind === 'xref' && ($attrs['data-mbb-version'] ?? '') === '2') {
+            if (
+                count($attrs) !== 6 ||
+                array_diff(array_keys($attrs), [
+                    'class',
+                    'data-mbb-version',
+                    'data-mbb-namespace',
+                    'data-mbb-document',
+                    'data-mbb-target',
+                    'data-mbb-kind',
+                ]) ||
+                !preg_match('/^S_[a-f0-9]{32}$/D', $attrs['data-mbb-namespace'] ?? '') ||
+                !preg_match('/^D_[a-f0-9]{32}$/D', $attrs['data-mbb-document'] ?? '') ||
+                !is_string($identity) ||
+                !preg_match('/^[A-Za-z][A-Za-z0-9_-]{0,63}$/D', $identity) ||
+                !in_array(
+                    $attrs['data-mbb-kind'] ?? '',
+                    ['equation', 'figure', 'table', 'listing', 'statement', 'step'],
+                    true,
+                ) ||
+                $m[2] !== '[' . $identity . ']'
+            ) {
+                $bad();
+            }
+            return [
+                'raw' => $m[0],
+                'kind' => 'xref',
+                'keys' => [$identity],
+                'version' => 2,
+                'namespace' => $attrs['data-mbb-namespace'],
+                'document' => $attrs['data-mbb-document'],
+                'targetKind' => $attrs['data-mbb-kind'],
+            ];
+        }
         if (
             !$kind ||
             count($attrs) !== 3 ||
@@ -443,6 +477,19 @@ final class Technical
     public static function storedReference(string $raw): string
     {
         $ref = self::reference($raw);
+        if (($ref['version'] ?? 1) === 2) {
+            return '<span data-mbb-target="' .
+                $ref['keys'][0] .
+                '" data-mbb-version="2" data-mbb-namespace="' .
+                $ref['namespace'] .
+                '" data-mbb-document="' .
+                $ref['document'] .
+                '" data-mbb-kind="' .
+                $ref['targetKind'] .
+                '" class="mbb-xref">[' .
+                $ref['keys'][0] .
+                ']</span>';
+        }
         $identity = implode(',', $ref['keys']);
         return '<span data-mbb-' .
             ($ref['kind'] === 'xref' ? 'target' : 'keys') .
@@ -560,6 +607,9 @@ final class Technical
         };
         $walk($blocks);
         foreach ($refs as $ref) {
+            if (($ref['version'] ?? 1) === 2) {
+                continue;
+            }
             foreach ($ref['keys'] as $key) {
                 if (!isset(($ref['kind'] === 'xref' ? $objects : $keys)[$key])) {
                     self::fail(
@@ -648,6 +698,7 @@ final class Teaching
 {
     public const SCHEMAS = [
         ...Technical::SCHEMAS,
+        'identity' => ['namespace' => 'string', 'document' => 'string'],
         'image' => [],
         'gallery' => [],
         'details' => [],
@@ -748,6 +799,18 @@ final class Teaching
         $out = [];
         foreach ($schema as $key => $type) {
             $out[$key] = $attrs[$key];
+        }
+        if ($kind === 'identity') {
+            if (
+                !preg_match('/^S_[a-f0-9]{32}$/D', $out['namespace']) ||
+                !preg_match('/^D_[a-f0-9]{32}$/D', $out['document'])
+            ) {
+                self::fail(
+                    'DOCUMENT_IDENTITY',
+                    'A logical identity requires a closed namespace and document tuple',
+                );
+            }
+            return $out;
         }
         if (isset(Technical::SCHEMAS[$kind])) {
             Technical::attrs($kind, $out);
@@ -1344,7 +1407,7 @@ final class Teaching
             } else {
                 if (
                     !preg_match(
-                        '/^:::mbb:v1 (collapse|steps|step|code-compare|component|code-tabs|details|buttons|button|adapter|object|statement|bibliography|image|gallery) (\{.*\})$/D',
+                        '/^:::mbb:v1 (identity|collapse|steps|step|code-compare|component|code-tabs|details|buttons|button|adapter|object|statement|bibliography|image|gallery) (\{.*\})$/D',
                         $line,
                         $m,
                     )
@@ -1528,6 +1591,7 @@ final class Teaching
     {
         $ids = [];
         $groups = 0;
+        $identities = 0;
         $count = 0;
         $walk = function (
             array $list,
@@ -1535,7 +1599,7 @@ final class Teaching
             int $depth = 0,
             int $collapse = 0,
             int $details = 0,
-        ) use (&$walk, &$ids, &$groups, &$count): void {
+        ) use (&$walk, &$ids, &$groups, &$identities, &$count): void {
             foreach ($list as $b) {
                 if ($depth > 32 || ++$count > 10000) {
                     self::fail(
@@ -1550,6 +1614,15 @@ final class Teaching
                 }
                 if ($kind !== null) {
                     $a = self::attrs($kind, $b['attrs'], false, $b['name']);
+                    if ($kind === 'identity') {
+                        if ($depth || ++$identities > 1 || $inner) {
+                            self::fail(
+                                'DOCUMENT_IDENTITY',
+                                'A document permits one empty top-level logical identity',
+                            );
+                        }
+                        continue;
+                    }
                     if (isset(BlockAdapters::NATIVE[$kind]) || $kind === 'adapter') {
                         if ($kind === 'details' && $details >= 8) {
                             self::fail(

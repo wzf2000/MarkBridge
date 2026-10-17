@@ -222,6 +222,8 @@ function mbb_batch_summary(array $m): array
         'expiresAt' => $m['expires'],
         'state' => $m['state'],
         'items' => $items,
+        'identityStrategy' => $m['identityStrategy'] ?? 'copy',
+        'identityMappings' => $m['identityMappings'] ?? [],
         'limits' => mbb_batch_config(),
     ];
 }
@@ -270,6 +272,16 @@ function mbb_batch_request(array $item, string $source): WP_REST_Request
         as $k => $v
     ) {
         $r->set_param($k, $v);
+    }
+    if (!empty($item['logicalIdentity'])) {
+        $r['identity_receipt'] = mbb_references_receipt([
+            'post_id' => 0,
+            'expected' => null,
+            'identity' => $item['logicalIdentity'],
+            'owner' => mbb_references_operation_owner(),
+            'expires' => time() + 900,
+            'action' => 'batch-import',
+        ]);
     }
     if (isset($item['resourceToken'])) {
         $r['resource_import'] = [
@@ -338,6 +350,10 @@ function mbb_batch_prepare($r)
     $dir = null;
     $record = null;
     try {
+        $identityStrategy = $r['identity_strategy'] ?? 'copy';
+        if (!in_array($identityStrategy, ['copy', 'migrate'], true)) {
+            mbb_batch_throw('identity', mbb_t('Choose copy or explicit identity migration.'));
+        }
         $files = $r->get_file_params()['documents'] ?? null;
         if (
             !is_array($files) ||
@@ -426,6 +442,8 @@ function mbb_batch_prepare($r)
             'created' => time(),
             'expires' => time() + 3600,
             'state' => 'open',
+            'identityStrategy' => $identityStrategy,
+            'identityMappings' => [],
             'items' => [],
         ];
         $expanded = 0;
@@ -531,6 +549,11 @@ function mbb_batch_prepare($r)
                         ),
                     );
                 }
+                if (function_exists('mbb_references_projection')) {
+                    $item['originalIdentity'] = mbb_references_projection($converted['serialized'])[
+                        'identity'
+                    ];
+                }
                 $admission = mbb_native_media_portable_admission($converted['serialized']);
                 if (is_wp_error($admission)) {
                     mbb_batch_throw(
@@ -599,6 +622,9 @@ function mbb_batch_prepare($r)
             }
             $record['items'][] = $item;
         }
+        if (function_exists('mbb_references_batch_prepare')) {
+            mbb_references_batch_prepare($dir, $record);
+        }
         mbb_resource_write_json($dir, $record);
         return mbb_batch_summary($record);
     } catch (Throwable $e) {
@@ -639,6 +665,8 @@ function mbb_batch_receipt(array $m, int $index): string
             $index,
             $item['documentId'],
             $item['sourceSha256'],
+            $m['identityMappings'] ?? [],
+            $m['identityStrategy'] ?? 'copy',
             $item['title'],
             $item['preview'] ?? null,
         ]),
@@ -800,6 +828,8 @@ function mbb_batch_preview($r)
             'item' => mbb_batch_public_item($m, $i),
             'html' => $preview['html'],
             'source' => $source,
+            'identityMappings' => $m['identityMappings'] ?? [],
+            'identityStrategy' => $m['identityStrategy'] ?? 'copy',
             'receipt' => mbb_batch_receipt($m, $i),
             'documentId' => $item['documentId'],
             'resourceToken' => $item['resourceToken'] ?? null,

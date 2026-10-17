@@ -24,6 +24,7 @@ import { componentParams } from './component-data.js';
 import { codeTabsAttributes, codeTabsMarkdown, registerCodeTabs } from './code-tabs.js';
 // Versioned teaching syntax has a closed schema. Bodies use the ordinary parser.
 export const teachingSchemas = {
+  identity: { namespace: 'string', document: 'string' },
   image: {},
   gallery: {},
   ...technicalSchemas,
@@ -102,6 +103,14 @@ export function teachingAttributes(kind, attrs, fail, source = false, blockName 
   if (Object.values(attrs).some((v) => typeof v === 'string' && /[\uD800-\uDFFF]/u.test(v)))
     fail('TEACHING_ATTRIBUTES', 'Teaching attributes must be valid Unicode');
   const out = Object.fromEntries(Object.keys(schema).map((key) => [key, attrs[key]]));
+  if (kind === 'identity') {
+    if (!/^S_[a-f0-9]{32}$/.test(out.namespace) || !/^D_[a-f0-9]{32}$/.test(out.document))
+      fail(
+        'DOCUMENT_IDENTITY',
+        'A logical identity requires a closed namespace and document tuple',
+      );
+    return out;
+  }
   if (technicalKind('mbb/' + kind)) technicalAttributes(kind, out, fail);
   if (kind === 'code-tabs') out.tabs = codeTabsAttributes(out, source, fail);
   if (!/^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(out.id))
@@ -347,7 +356,7 @@ export function teachingSource(source, fail, ignored = new Set(), nonce, fences 
       if (line === ':::mbb:end') data = { end: true };
       else {
         const match =
-          /^:::mbb:v1 (collapse|steps|step|code-compare|component|code-tabs|details|buttons|button|adapter|object|statement|bibliography|image|gallery) (\{[^\r\n]*\})$/.exec(
+          /^:::mbb:v1 (identity|collapse|steps|step|code-compare|component|code-tabs|details|buttons|button|adapter|object|statement|bibliography|image|gallery) (\{[^\r\n]*\})$/.exec(
             line,
           );
         if (!match)
@@ -481,6 +490,7 @@ export function validateTeaching(blocks, fail) {
   const ids = new Set();
   let count = 0;
   let groups = 0;
+  let identities = 0;
   function walk(list, parent = '', depth = 0, collapseDepth = 0, detailsDepth = 0) {
     for (const b of list) {
       if (depth > 32 || ++count > 10000)
@@ -491,6 +501,11 @@ export function validateTeaching(blocks, fail) {
         fail('TEACHING_STRUCTURE', 'A stage group may only contain stages');
       if (kind) {
         const a = teachingAttributes(kind, b.attributes, fail, false, b.name);
+        if (kind === 'identity') {
+          if (depth || ++identities > 1 || inner.length)
+            fail('DOCUMENT_IDENTITY', 'A document permits one empty top-level logical identity');
+          continue;
+        }
         if (nativeAdapterKinds.has(kind) || kind === 'adapter') {
           if (kind === 'details' && detailsDepth >= 8)
             fail('ADAPTER_LIMIT', 'Native details are limited to 8 nested levels');
@@ -696,6 +711,28 @@ export function registerTeaching() {
   for (const [kind, schema] of Object.entries(teachingSchemas)) {
     if (nativeAdapterKinds.has(kind) || kind === 'adapter') continue;
     if (kind === 'code-tabs' || mediaKinds.has(kind) || technicalKind('mbb/' + kind)) continue;
+    if (kind === 'identity') {
+      if (!wp.blocks.getBlockType('mbb/identity'))
+        wp.blocks.registerBlockType('mbb/identity', {
+          apiVersion: 3,
+          title: T('Logical document identity'),
+          category: 'text',
+          attributes: {
+            namespace: { type: 'string' },
+            document: { type: 'string' },
+            version: { type: 'number' },
+          },
+          supports: { inserter: false, html: false, reusable: false, customClassName: false },
+          edit: () =>
+            el(
+              'p',
+              wp.blockEditor.useBlockProps({ className: 'mbb-identity-indicator' }),
+              T('Document identity enabled'),
+            ),
+          save: () => null,
+        });
+      continue;
+    }
     const name = 'mbb/' + kind;
     if (wp.blocks.getBlockType(name)) continue;
     wp.blocks.registerBlockType(name, {

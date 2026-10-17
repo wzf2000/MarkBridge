@@ -75,7 +75,7 @@
       }
     });
     apply.hidden = true;
-    const preflight = button('Check label rename', () => {
+    const preflight = button('Check label rename', async () => {
       try {
         const plan = window.MBB.technicalRenamePlan(
           adapter.blocks(),
@@ -92,6 +92,25 @@
           String(plan.affectedReferences) +
           ' · ' +
           T('Reference markers affected; no changes have been applied.');
+        if (
+          window.MBBReferences?.impact &&
+          adapter.blocks().some((b) => b.name === 'mbb/identity')
+        ) {
+          apply.hidden = true;
+          const stamp = checked.stamp,
+            report = await window.MBBReferences.impact(adapter, plan);
+          if (!checked || checked.stamp !== stamp || adapter.stamp() !== stamp) return;
+          const titles = report.changes.flatMap((c) =>
+            (c.incoming.items || []).map((i) => i.title),
+          );
+          status.textContent +=
+            ' ' +
+            T(
+              'Only currently readable incoming references are shown. Other articles are not changed.',
+            ) +
+            (titles.length ? ' ' + titles.join(' · ') : '');
+          apply.hidden = false;
+        }
       } catch (error) {
         checked = null;
         apply.hidden = true;
@@ -117,11 +136,16 @@
         )) {
           const row = el('div');
           row.className = 'mbb-writing-row';
-          row.append(
-            button((item.id || item.title || item.category).slice(0, 100), () =>
-              adapter.select(item),
-            ),
+          const locate = button((item.title || item.id || item.category).slice(0, 100), () =>
+            adapter.select(item),
           );
+          locate.title = item.id || item.title || item.category;
+          row.append(locate);
+          if (item.id && item.title) {
+            const label = el('small', item.id);
+            label.title = item.id;
+            row.append(label);
+          }
           if (item.id && item.renameType)
             row.append(
               button('Use label for rename', () => {
@@ -225,12 +249,18 @@
       patterns,
       insert,
     );
+    if (window.MBBReferences) panel.append(window.MBBReferences.create(adapter));
     return panel;
   }
   function native() {
     const store = () => wp.data.select('core/block-editor');
     let insertionTarget = store().getSelectedBlockClientId?.();
     const panel = create({
+      context: () => ({
+        post_id: Number(window.MBB_EDITOR.postId),
+        expected: window.MBB_EDITOR.state?.expected,
+        source_sha256: window.MBB_EDITOR.state?.source_sha256 || null,
+      }),
       blocks: () => store().getBlocks(),
       stamp: () => store().getBlocks(),
       select(item) {

@@ -34,6 +34,7 @@ asset('presentation-loader.js');
 asset('editor-ui.js');
 asset('source-tools.js');
 asset('writing-ui.js');
+asset('references-ui.js');
 asset('resource-ui.js');
 asset('static-export.js');
 asset('static-export.css');

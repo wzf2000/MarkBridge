@@ -584,7 +584,7 @@ const e = wp.element.createElement;`,
       html = html.replace(
         '</body>',
         `<style>#mbb-new,#fixture-native-save{position:fixed;top:12px;z-index:60;padding:8px}#mbb-new{left:12px}#fixture-native-save{right:12px}</style><div style="position:relative;z-index:30"><button id="mbb-new">新 Markdown 草稿</button><button id="fixture-native-save">Fixture native save</button></div>
-<link rel="stylesheet" href="${mapped('editor-ui.css')}"><script src="${mapped('math.js')}"></script><script src="${mapped('resource-ui.js')}"></script><script src="${mapped('source-tools.js')}"></script><script src="${mapped('writing-ui.js')}"></script><script src="${mapped('editor-ui.js')}"></script><script src="${mapped('local-recovery.js')}"></script><script src="${mapped('export-ui.js')}"></script>
+<link rel="stylesheet" href="${mapped('editor-ui.css')}"><script src="${mapped('math.js')}"></script><script src="${mapped('resource-ui.js')}"></script><script src="${mapped('source-tools.js')}"></script><script src="${mapped('references-ui.js')}"></script><script src="${mapped('writing-ui.js')}"></script><script src="${mapped('editor-ui.js')}"></script><script src="${mapped('local-recovery.js')}"></script><script src="${mapped('export-ui.js')}"></script>
 <script>document.getElementById('fixture-native-save').onclick=async()=>{await wp.apiFetch({path:'/wp/v2/posts/12',method:'POST',data:{content:wp.blocks.serialize(taskBlocks),title:recoveryFields.title,status:recoveryFields.status==='auto-draft'?'draft':recoveryFields.status}});window.nativeDirty=false;recoveryNotify();};</script></body>`,
       );
       return response.writeHead(200, { 'Content-Type': 'text/html' }).end(html);

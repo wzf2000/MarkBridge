@@ -77,7 +77,8 @@
   }
   const frontmatterSelected = new Set();
   let resources = null;
-  let recoveryRecord = null,
+  let identityStrategy,
+    recoveryRecord = null,
     recoveryVerify = null,
     recoveryRebased = false,
     recoveryApply;
@@ -262,6 +263,9 @@
   const isConflict = (error) => ['conflict', 'source_conflict'].includes(error.code);
   function request() {
     return {
+      ...(recoveryRecord?.identity_receipt
+        ? { identity_receipt: recoveryRecord.identity_receipt }
+        : {}),
       post_id: base?.post_id || 0,
       documentId: docId.value,
       title: title.value,
@@ -1145,6 +1149,13 @@
     let payload;
     try {
       payload = request();
+      if (window.MBBReferences?.prepareImport)
+        payload = await window.MBBReferences.prepareImport(
+          payload,
+          identityStrategy?.value || 'copy',
+          base?.document,
+        );
+      if (!active(session) || version !== serial) return;
       if (recoveryRecord) {
         await recoveryVerify();
         if (!active(session) || version !== serial) return;
@@ -1510,7 +1521,16 @@
         }
       }
     };
-    upload.append(file);
+    identityStrategy = el('select', { 'aria-label': T('Logical identity handling') });
+    for (const [value, label] of [
+      ['copy', 'Copy with new identities (default)'],
+      ['migrate', 'Explicit migration retaining identities'],
+    ])
+      identityStrategy.append(el('option', { value }, T(label)));
+    identityStrategy.onchange = invalidate;
+    const identityLabel = el('label', {}, T('Logical identity handling'));
+    identityLabel.append(identityStrategy);
+    upload.append(file, identityLabel);
     dialog.append(upload);
     const resourcePanel = el('section', {
       id: 'mbb-resources',
@@ -1755,6 +1775,15 @@
     previewBody.append(preview);
     source.wrap = 'off';
     sourceTools = window.MBBSourceTools?.create({
+      referenceContext: () => ({
+        post_id: base?.post_id || 0,
+        expected: base?.expected || null,
+        source_sha256: base?.source_sha256 || null,
+        documentId: docId.value,
+        title: title.value,
+        post_status: publication.value,
+        featured_media: request().featured_media,
+      }),
       source,
       frame: preview,
       readSource,

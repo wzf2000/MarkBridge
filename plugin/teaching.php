@@ -15,6 +15,7 @@ add_action('init', static function () {
     );
     foreach (
         [
+            'identity',
             'collapse',
             'steps',
             'step',

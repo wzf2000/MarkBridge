@@ -61,7 +61,7 @@ function mbb_static_export_styles(): string
         "\n" .
         file_get_contents(__DIR__ . '/media-presentation.css');
 }
-function mbb_static_export_body(string $serialized): string
+function mbb_static_export_body(string $serialized, array $referenceMap = []): string
 {
     // Canonical HTML only: never call arbitrary render_block/the_content filters.
     $html = preg_replace('/<!--[\s\S]*?-->/', '', $serialized);
@@ -136,6 +136,9 @@ function mbb_static_export_body(string $serialized): string
     }
     if (function_exists('mbb_render_technical')) {
         $html = mbb_render_technical($html);
+    }
+    if (function_exists('mbb_references_static_links')) {
+        $html = mbb_references_static_links($html, $referenceMap);
     }
     [$doc, $xpath, $root] = mbb_static_export_fragment($html);
     $allowed = explode(
@@ -246,7 +249,10 @@ function mbb_static_export_descriptor(
     array $mappings,
     array $linkedImages = [],
 ): array {
-    $body = mbb_static_export_body($snapshot['document']['serialized']);
+    $body = mbb_static_export_body(
+        $snapshot['document']['serialized'],
+        $snapshot['referenceMap'] ?? [],
+    );
     $images = [];
     $encodedBytes = strlen($body) + strlen(mbb_static_export_styles());
     foreach ($files as $path => $file) {

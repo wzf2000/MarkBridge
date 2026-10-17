@@ -268,6 +268,7 @@ function mbb_html_allowed($blocks)
             'mbb/math',
             'mbb/code',
             'mbb/frontmatter',
+            'mbb/identity',
             'mbb/component',
             'mbb/collapse',
             'mbb/steps',
@@ -479,6 +480,16 @@ function mbb_preview($r)
         return $c;
     }
     $p = $c['post_id'] ? get_post($c['post_id']) : null;
+    if ($p && isset($c['revision_id']) && function_exists('mbb_references_projection')) {
+        $currentIdentity = mbb_references_projection($p->post_content)['identity'];
+        $historyIdentity = mbb_references_projection($c['document']['serialized'])['identity'];
+        $c['identity_restore'] =
+            $currentIdentity !== $historyIdentity
+                ? ($currentIdentity && !$historyIdentity
+                    ? 'adopt-history'
+                    : 'incompatible')
+                : 'exact';
+    }
     $c['before'] = $p ? $p->post_content_filtered : '';
     $c['before_title'] = $p ? $p->post_title : '';
     $c['frontmatter_receipt'] = isset($c['frontmatter_binding'])
@@ -633,7 +644,35 @@ function mbb_restore_source_filters($saved)
 }
 function mbb_save($r, $cli_source_path = null, ?callable $new_document_provenance = null)
 {
+    if (
+        !empty($GLOBALS['mbb_reference_transaction']) ||
+        !empty($GLOBALS['mbb_reference_lifecycle'])
+    ) {
+        return mbb_error(
+            'nested_save',
+            mbb_t('A paired save cannot start inside a native save transaction.'),
+            409,
+        );
+    }
+    $result = mbb_save_core($r, $cli_source_path, $new_document_provenance);
+    if (is_wp_error($result) && $result->get_error_code() === 'reference_connection_required') {
+        return mbb_references_connection(
+            fn() => mbb_save_core($r, $cli_source_path, $new_document_provenance),
+        );
+    }
+    return $result;
+}
+function mbb_save_core($r, $cli_source_path = null, ?callable $new_document_provenance = null)
+{
     global $wpdb;
+    if (
+        function_exists('mbb_references_request_touched') &&
+        mbb_references_request_touched($r, absint($r['post_id']))
+    ) {
+        return mbb_references_connection(
+            fn() => mbb_save_core($r, $cli_source_path, $new_document_provenance),
+        );
+    }
     if (!empty($GLOBALS['mbb_native_pair'])) {
         return mbb_error(
             'nested_save',
@@ -701,6 +740,16 @@ function mbb_save($r, $cli_source_path = null, ?callable $new_document_provenanc
         if (is_wp_error($c)) {
             return $c;
         }
+        if (
+            function_exists('mbb_references_requires_connection') &&
+            mbb_references_requires_connection($c['document'])
+        ) {
+            return mbb_error(
+                'reference_connection_required',
+                'Reference transaction required.',
+                409,
+            );
+        }
         $adapter_confirm = mbb_block_adapter_confirm($r, $c);
         if (is_wp_error($adapter_confirm)) {
             return $adapter_confirm;
@@ -742,6 +791,13 @@ function mbb_save($r, $cli_source_path = null, ?callable $new_document_provenanc
                 ),
                 500,
             );
+        }
+        if (
+            function_exists('mbb_references_begin') &&
+            !empty($GLOBALS['mbb_reference_connection'])
+        ) {
+            mbb_references_begin((int) $id, $doc, $r);
+            $p = $id ? mbb_references_fresh_post($id) : null;
         }
         if ($p && get_post_meta($id, '_mbb_source_managed', true) === 'file') {
             if ($cli_source_sync) {
@@ -813,7 +869,11 @@ function mbb_save($r, $cli_source_path = null, ?callable $new_document_provenanc
                 return array_merge(mbb_state($id), ['noop' => true]);
             }
             $transaction_attempted = true;
-            if ($wpdb->query('START TRANSACTION') === false) {
+            if (
+                (function_exists('mbb_references_start_sql')
+                    ? mbb_references_start_sql()
+                    : $wpdb->query('START TRANSACTION')) === false
+            ) {
                 throw new RuntimeException(mbb_t('The save transaction could not be started'));
             }
             $transaction_started = true;
@@ -963,6 +1023,12 @@ function mbb_save($r, $cli_source_path = null, ?callable $new_document_provenanc
                 throw new RuntimeException(
                     mbb_t('Static block registrations changed during saving'),
                 );
+            }
+            if (function_exists('mbb_references_provenance')) {
+                mbb_references_provenance($r, (int) $id, $doc, (int) $after_revision);
+            }
+            if (function_exists('mbb_references_finish')) {
+                mbb_references_finish((int) $id, $doc);
             }
             $commit_attempted = true;
             if ($wpdb->query('COMMIT') === false) {
@@ -1389,7 +1455,7 @@ function mbb_enqueue_ui()
     wp_enqueue_script(
         'mbb-writing-ui',
         plugins_url(mbb_asset('writing-ui.js'), __FILE__),
-        ['mbb-kernel'],
+        ['mbb-kernel', 'mbb-references-ui'],
         substr(hash_file('sha256', __DIR__ . '/writing-ui.js'), 0, 12),
         true,
     );
