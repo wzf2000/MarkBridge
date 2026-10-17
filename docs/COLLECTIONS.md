@@ -84,3 +84,13 @@ mbb_register_publication_adapter('publisher-html', [
 ## 已测容量与内存含义
 
 独立合成站用 10 篇每篇约 238 KiB 的正文和 15,740,880 B 有效图片，完成真实 prepare／confirm／serve 流式下载；`WP_MEMORY_LIMIT` 与 `WP_MAX_MEMORY_LIMIT` 均固定为 `128M`。PHP8.2 的 PHP peak 为 63,766,528 B，PHP8.5 为 113,577,984 B；对应进程 RSS 为 264,200,192 B／186,736,640 B。PHP 的内存计量不覆盖所有图像等本机分配，因此这不是“总进程占用低于 128 MiB”的承诺。实际峰值取决于内容、图片解码器和宿主，应为本机分配保留额外容量；不提高全局内存限制来掩盖失败。上面的 10 篇／16 MiB／24 MiB 保守预算保持不变。
+
+## 作者浏览器导出适配器
+
+Publisher 的“离线网页书”格式在作者浏览器顺序复用 `MarkBridgeStaticExport.build`，生成真正含 CHTML／内嵌字体、代码高亮和本地图片的无脚本阅读 ZIP。服务器仍默认 PHP，不要求 Node 或 TeX。准备快照、生成静态预览、明确确认和最终下载是分开的动作；文章仍由原配对编辑入口保存。
+
+受信 PHP 可用 `mbb_register_publication_client_adapter($id,$descriptor,$resources)`，其中 descriptor 沿上面的闭合合同；resources 为 1–8 个本地 `{file,sha256}`，每份 ≤512 KiB、合计 ≤2 MiB。核心固定实际加载的 content-hashed 客户端与 MathJax／字体／Prism 全部资源，合并 provider 的准确代码资源指纹写入 renderer。客户端只登记 `window.MarkBridgeCollections.registerClient(id,{schema:1,version,fingerprint,label,build})`；build 接收输入 Blob 和 `{prepared,cancelled,progress}`，返回 `{blob,previewHTML,dispose}`，没有保存正文的能力。
+
+`prepare` 响应附 adapter/client。`POST /collections/jobs/{token}/inputs` 仍只收 `{schema:1,receipt}`；在实际首字节之前复核，不消费候选。`confirm` 沿原合同。客户端不得通过普通 `/download` 下载输入冒充完整书。最终 `POST /collections/jobs/{token}/client-download` 闭合收 `{schema:1,receipt,snapshot_sha256,provider_fingerprint,projection_sha256,projection_bytes}`，projection_bytes 为 1–24 MiB 整数。真正 JSON 输出前核验 owner/session/TTL/catalog/所有数据、资源、外部目标及渲染器，消费 CAS 后再做一次终态检查，成功只回 `{schema:1,authorized:true,snapshot_sha256,provider_fingerprint,projection_sha256,projection_bytes,expires}`。失败可已消费，请重新准备；无二进制正文或 HTML 上传。
+
+已经交付浏览器的输入字节不能撤回。最终 gate 约束本插件触发的最终下载，不能阻止作者另存已获数据，也不证明任意客户端 HTML 的真实性。扩展不是不受信插件沙箱。取消／输入变化／迟到结果均废弃本地候选与预览；不改变保存的文章。集合预算、原有 256 KiB 正文及 32 MiB 单章导出限制不变。

@@ -3,6 +3,7 @@ if (!defined('ABSPATH') && PHP_SAPI !== 'cli') {
     exit();
 }
 require_once __DIR__ . '/collections-snapshot.php';
+require_once __DIR__ . '/collections-client.php';
 function mbb_collections_error(Throwable $e)
 {
     $parts = explode(':', $e->getMessage());
@@ -68,19 +69,20 @@ function mbb_collections_context(): array
             'privateOptIn' => $config['privateOptIn'],
         ];
     }
+    $adapters = [];
+    foreach ($GLOBALS['mbb_publication_adapters'] ?? [] as $key => $provider) {
+        $adapters[$key] = array_intersect_key(
+            $provider,
+            array_flip(['contract', 'version', 'fingerprint', 'title', 'extension', 'mime']),
+        ) + ['client' => mbb_collections_client_metadata($key)];
+    }
     mbb_collections_owner($owner);
     return [
         'schema' => 1,
         'revision' => $catalog['revision'],
         'items' => $items,
         'limits' => MBB_COLLECTION_LIMITS,
-        'adapters' => array_map(
-            fn($p) => array_intersect_key(
-                $p,
-                array_flip(['contract', 'version', 'fingerprint', 'title', 'extension', 'mime']),
-            ),
-            $GLOBALS['mbb_publication_adapters'] ?? [],
-        ),
+        'adapters' => $adapters,
     ];
 }
 function mbb_collections_list($r)
@@ -545,6 +547,8 @@ function mbb_collections_prepare($r)
             'expires' => $job['expires'],
             'receipt' => mbb_collections_receipt($token, $job, $snapshot['sha256']),
             'snapshot_sha256' => $snapshot['sha256'],
+            'adapter' => $data['adapter'],
+            'client' => mbb_collections_client_metadata($data['adapter']),
             'artifact' => $record['artifact'],
             'scope' => array_map(
                 fn($c) => array_intersect_key(
@@ -613,7 +617,14 @@ function mbb_collections_claim($r, string $operation)
                 'expires' => $job['expires'],
             ];
         }
-        if ($job['state'] !== 'confirmed') {
+        $client = mbb_collections_client_metadata($record['adapter']);
+        if ($operation === 'inputs' && !$client) {
+            mbb_collections_fail('collection_adapter', 503);
+        }
+        if ($operation !== 'inputs' && $client) {
+            mbb_collections_fail('collection_adapter', 503);
+        }
+        if ($operation !== 'inputs' && $job['state'] !== 'confirmed') {
             mbb_collections_fail('collection_changed');
         }
         $path = $dir . '/artifact';
@@ -636,8 +647,10 @@ function mbb_collections_claim($r, string $operation)
             mbb_collections_fail('collection_changed');
         }
         $downloading = $job;
-        $downloading['state'] = 'downloading';
-        if (!mbb_collections_job_update($token, $downloading, $job)) {
+        if ($operation !== 'inputs') {
+            $downloading['state'] = 'downloading';
+        }
+        if ($operation !== 'inputs' && !mbb_collections_job_update($token, $downloading, $job)) {
             mbb_collections_fail('collection_changed');
         }
         $response = new WP_REST_Response(null, 200, [
@@ -660,6 +673,7 @@ function mbb_collections_claim($r, string $operation)
             'job' => $downloading,
             'record' => $record,
             'fresh' => $fresh,
+            'consume' => $operation !== 'inputs',
         ];
         register_shutdown_function(static function () use ($response) {
             mbb_collections_finish_download(spl_object_id($response));
@@ -726,7 +740,12 @@ add_action('rest_api_init', static function () {
             'callback' => $callback,
         ]);
     }
-    foreach (['confirm', 'download'] as $operation) {
+    register_rest_route('mbb/v1', '/collections/jobs/(?P<token>[a-f0-9]{64})/client-download', [
+        'methods' => 'POST',
+        'permission_callback' => $permission,
+        'callback' => 'mbb_collections_client_download',
+    ]);
+    foreach (['confirm', 'download', 'inputs'] as $operation) {
         register_rest_route('mbb/v1', '/collections/jobs/(?P<token>[a-f0-9]{64})/' . $operation, [
             'methods' => 'POST',
             'permission_callback' => $permission,
@@ -756,8 +775,10 @@ function mbb_collections_finish_download(int $id): void
     unset($GLOBALS['mbb_collection_downloads'][$id]);
     try {
         fclose($stream['handle']);
-        mbb_collections_remove($stream['dir']);
-        mbb_collections_job_update($stream['token'], null, $stream['job']);
+        if ($stream['consume'] ?? true) {
+            mbb_collections_remove($stream['dir']);
+            mbb_collections_job_update($stream['token'], null, $stream['job']);
+        }
     } catch (Throwable $ignored) {
         /* A retained bounded slot is lazily reclaimed after expiry. */
     } finally {

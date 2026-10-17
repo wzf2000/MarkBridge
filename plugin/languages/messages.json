@@ -2017,5 +2017,15 @@
   "3. Prepare, confirm, download": "3. 准备、确认、下载",
   "This ZIP is a fixed publication snapshot for an export adapter, not yet a complete reading website. Articles and resource bytes are checked again before confirmation and download.": "此 ZIP 是供出版适配器使用的固定快照，尚不是完整阅读网站。确认与下载前会再次核验文章和资源字节。",
   "Public": "公开",
-  "Explicitly selected private article": "明确选入的私人文章"
+  "Explicitly selected private article": "明确选入的私人文章",
+  "Generate web book": "生成网页书",
+  "Generate and inspect the web book first.": "请先生成并检查网页书。",
+  "Snapshot ZIP": "快照 ZIP",
+  "Input already delivered to your browser cannot be recalled. Final authorization checks this plugin download, not the authenticity of arbitrary client HTML.": "已经交付浏览器的输入无法撤回。最终授权只约束本插件触发的下载，不证明任意客户端 HTML 的真实性。",
+  "The publication output is invalid or exceeds its budget.": "出版产物无效或超过预算，请减少内容后重试。",
+  "The publication client is unavailable. Enable its matching version and prepare again.": "出版客户端不可用，请启用匹配版本并重新准备。",
+  "Web book preview": "网页书预览",
+  "Final publication authorization did not match. Prepare again.": "最终出版授权不匹配，请重新准备。",
+  "About the input and final download": "关于输入与最终下载",
+  "Generate a complete offline web book in your browser, inspect its static preview, then confirm and download. Articles and resources are checked again before download.": "在浏览器中生成完整离线网页书，检查静态预览，再确认并下载。下载前会重新检查文章与资源。"
 }

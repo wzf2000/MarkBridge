@@ -116,6 +116,18 @@
             fail('The static HTML contains an unsafe inline style');
           continue;
         }
+        if (
+          k === 'headers' &&
+          ['td', 'th'].includes(node.localName) &&
+          /^[^\s<>]+(?:\s+[^\s<>]+)*$/.test(v)
+        )
+          continue;
+        if (
+          k === 'scope' &&
+          node.localName === 'th' &&
+          ['row', 'col', 'rowgroup', 'colgroup'].includes(v)
+        )
+          continue;
         if (k === 'data-mbb-tex' && !rendered && node.localName === 'span') continue;
         if (
           [

@@ -685,6 +685,10 @@ msgid "A version conflict was detected. Saving is disabled. Compare the server v
 msgstr ""
 
 #: plugin/i18n.js
+msgid "About the input and final download"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Acquire a new opening baseline after adopting the merged candidate."
 msgstr ""
 
@@ -2579,6 +2583,10 @@ msgid "Final media HTML does not satisfy the save allowlist"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Final publication authorization did not match. Prepare again."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Find a reference target"
 msgstr ""
 
@@ -2773,6 +2781,18 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "General settings"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Generate a complete offline web book in your browser, inspect its static preview, then confirm and download. Articles and resources are checked again before download."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Generate and inspect the web book first."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Generate web book"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3053,6 +3073,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Inline text cannot follow nested list blocks"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Input already delivered to your browser cannot be recalled. Final authorization checks this plugin download, not the authenticity of arbitrary client HTML."
 msgstr ""
 
 #: plugin/i18n.js
@@ -5146,6 +5170,10 @@ msgid "Simple task lists were unsupported by the historical parser"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Snapshot ZIP"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Snapshot matches declared version"
 msgstr ""
 
@@ -6781,6 +6809,14 @@ msgid "The proposed label or key already exists"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "The publication client is unavailable. Enable its matching version and prepare again."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The publication output is invalid or exceeds its budget."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "The recovery session changed."
 msgstr ""
 
@@ -7965,6 +8001,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Wait for successful typesetting before applying the formula."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Web book preview"
 msgstr ""
 
 #: plugin/i18n.js

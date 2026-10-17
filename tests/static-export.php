@@ -179,6 +179,25 @@ try {
             }
         }
     }
+    $table = mbb_static_export_body(
+        '<table><tr><th id="head" scope="col">Value</th></tr><tr><td headers="head">42</td></tr></table>',
+    );
+    if (!str_contains($table, 'headers="head"') || !str_contains($table, 'scope="col"')) {
+        throw new RuntimeException('Table associations lost');
+    }
+    foreach (
+        ['<p headers="head">x</p>', '<th scope="invalid">x</th>', '<td headers="a&lt;b">x</td>']
+        as $unsafe
+    ) {
+        try {
+            mbb_static_export_body($unsafe);
+            throw new LogicException('Unsafe table attribute accepted');
+        } catch (RuntimeException $e) {
+            if ($e instanceof LogicException) {
+                throw $e;
+            }
+        }
+    }
     file_put_contents($file, $png . 'changed');
     try {
         mbb_static_export_descriptor($snapshot, $files, $resources, $mappings);

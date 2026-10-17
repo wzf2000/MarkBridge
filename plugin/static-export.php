@@ -195,6 +195,20 @@ function mbb_static_export_body(string $serialized, array $referenceMap = []): s
                 continue;
             }
             if (
+                $key === 'headers' &&
+                in_array($n->tagName, ['td', 'th'], true) &&
+                preg_match('/^[^\s<>]+(?:\s+[^\s<>]+)*$/D', $value)
+            ) {
+                continue;
+            }
+            if (
+                $key === 'scope' &&
+                $n->tagName === 'th' &&
+                in_array($value, ['row', 'col', 'rowgroup', 'colgroup'], true)
+            ) {
+                continue;
+            }
+            if (
                 in_array(
                     $key,
                     [

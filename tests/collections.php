@@ -659,6 +659,101 @@ try {
     unset($GLOBALS['capHook']);
     $GLOBALS['snapshots'][14]['post']->post_status = 'publish';
     unlink($asset);
+    // The author client may fetch fixed inputs repeatedly, but only a fresh,
+    // confirmed projection receives a one-shot download authorization.
+    $clientFile = $GLOBALS['privateRoot'] . '/client.js';
+    file_put_contents($clientFile, 'fixed provider code');
+    check(
+        mbb_register_publication_client_adapter(
+            'model-client',
+            [
+                'contract' => 'mbb-publication-adapter/v1',
+                'version' => '0.1.0',
+                'fingerprint' => hash('sha256', 'model-client'),
+                'title' => 'Model client',
+                'extension' => 'zip',
+                'mime' => 'application/zip',
+                'build' => 'mbb_collections_snapshot_zip',
+            ],
+            [['file' => $clientFile, 'sha256' => hash_file('sha256', $clientFile)]],
+        ),
+        'trusted client registration',
+    );
+    foreach (
+        ['success', 'logout', 'consume-session', 'consume-capability', 'consume-body']
+        as $scenario
+    ) {
+        $GLOBALS['actor'] = 7;
+        $GLOBALS['sessionValid'] = true;
+        $GLOBALS['denied'] = [];
+        $made = mbb_collections_prepare(
+            new CollectionRequest([
+                'schema' => 1,
+                'collection_id' => $bid,
+                'revision' => hash('sha256', $raw),
+                'adapter' => 'model-client',
+            ]),
+        );
+        check(
+            isset($made['client']['fingerprint']),
+            'client prepare ' . $scenario . ':' . json_encode($made),
+        );
+        $request = new CollectionRequest([
+            'schema' => 1,
+            'receipt' => $made['receipt'],
+            'token' => $made['token'],
+        ]);
+        for ($fetch = 0; $fetch < 2; $fetch++) {
+            $response = mbb_collections_claim($request, 'inputs');
+            check($response instanceof WP_REST_Response, 'nonconsuming input claim');
+            ob_start();
+            mbb_collections_serve(false, $response, $request, null);
+            $input = ob_get_clean();
+            check(hash('sha256', $input) === $made['artifact']['sha256'], 'fixed input bytes');
+            check(isset(mbb_collections_jobs()[1][$made['token']]), 'input did not consume job');
+        }
+        check(mbb_collections_claim($request, 'confirm')['confirmed'] === true, 'client confirm');
+        $request = new CollectionRequest([
+            'schema' => 1,
+            'token' => $made['token'],
+            'receipt' => $made['receipt'],
+            'snapshot_sha256' => $made['snapshot_sha256'],
+            'provider_fingerprint' => $made['client']['fingerprint'],
+            'projection_sha256' => str_repeat('a', 64),
+            'projection_bytes' => 1234,
+        ]);
+        $response = mbb_collections_client_download($request);
+        check($response instanceof WP_REST_Response, 'client grant callback');
+        if ($scenario === 'logout') {
+            $GLOBALS['actor'] = 0;
+        }
+        if (str_starts_with($scenario, 'consume-')) {
+            $GLOBALS['wpdb']->race = function () use ($scenario) {
+                if ($scenario === 'consume-session') {
+                    $GLOBALS['sessionValid'] = false;
+                }
+                if ($scenario === 'consume-capability') {
+                    $GLOBALS['denied'] = ['edit_post:12'];
+                }
+                if ($scenario === 'consume-body') {
+                    $GLOBALS['snapshots'][12]['post']->post_title = 'CAS hook mutation';
+                }
+            };
+        }
+        ob_start();
+        mbb_collections_client_serve(false, $response, $request, null);
+        $grant = json_decode(ob_get_clean(), true);
+        check(
+            ($grant['authorized'] ?? false) === ($scenario === 'success'),
+            'terminal grant ' . $scenario . ':' . json_encode($grant),
+        );
+        check(!mbb_collections_jobs()[1], 'client slot released');
+        $GLOBALS['actor'] = 7;
+        $GLOBALS['sessionValid'] = true;
+        $GLOBALS['denied'] = [];
+        $GLOBALS['snapshots'][12]['post']->post_title = 'Chapter 12';
+    }
+    unlink($clientFile);
     $GLOBALS['companionPosts'] = [
         $GLOBALS['snapshots'][12]['post'],
         $GLOBALS['snapshots'][14]['post'],

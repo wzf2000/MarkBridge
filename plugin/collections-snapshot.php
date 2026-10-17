@@ -78,6 +78,9 @@ function mbb_collections_renderer(string $adapter): array
         'extension' => $p['extension'],
         'files' => $files,
         'blockAdapters' => mbb_block_adapter_digest(),
+        'client' => function_exists('mbb_collections_client_metadata')
+            ? mbb_collections_client_metadata($adapter)
+            : null,
         'pluginState' => hash(
             'sha256',
             mbb_collections_json([

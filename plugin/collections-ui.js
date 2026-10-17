@@ -11,7 +11,11 @@
     id = null,
     job = null,
     confirmed = false,
-    dirty = false;
+    dirty = false,
+    adapters = {},
+    adapter = 'snapshot-v1',
+    projection = null,
+    previewReady = false;
   let summaries = [],
     config = fresh(),
     results = [],
@@ -59,7 +63,9 @@
         data.message || T('The collection operation failed. Current fields are preserved.'),
       );
     }
-    return path.endsWith('/download') ? response.blob() : response.json();
+    return path.endsWith('/download') || path.endsWith('/inputs')
+      ? response.blob()
+      : response.json();
   }
   function el(tag, text, attrs = {}) {
     const n = document.createElement(tag);
@@ -76,7 +82,35 @@
   const status = el('p', '', { role: 'status', class: 'mbbc-status' }),
     workspace = el('div', undefined, { class: 'mbbc-grid' });
   root.append(status, workspace);
+  function discardProjection() {
+    projection?.dispose?.();
+    projection = null;
+    previewReady = false;
+  }
+  const clients = new Map();
+  window.MarkBridgeCollections = {
+    registerClient(id, value) {
+      if (
+        typeof id !== 'string' ||
+        !/^[a-z][a-z0-9-]{0,31}$/.test(id) ||
+        clients.has(id) ||
+        !value ||
+        Object.keys(value).sort().join(',') !==
+          ['schema', 'version', 'fingerprint', 'label', 'build'].sort().join(',') ||
+        value.schema !== 1 ||
+        typeof value.build !== 'function' ||
+        !/^[a-f0-9]{64}$/.test(value.fingerprint) ||
+        typeof value.label !== 'string' ||
+        value.label.length > 200
+      )
+        return false;
+      clients.set(id, value);
+      renderActions();
+      return true;
+    },
+  };
   function invalidate(changed = true) {
+    discardProjection();
     serial++;
     loading = null;
     confirmed = false;
@@ -96,9 +130,15 @@
     status.textContent = T('Working…');
     render();
     try {
-      const value = await action();
+      const value = await action({
+        cancelled: () => ticket !== serial,
+        progress: (message) => {
+          if (ticket === serial) status.textContent = message;
+        },
+      });
       if (ticket !== serial) {
         if (value?.token) api('/jobs/' + value.token, 'DELETE').catch(() => {});
+        value?.dispose?.();
         return;
       }
       done(value);
@@ -135,6 +175,24 @@
   }
   function actions() {
     const n = el('div', undefined, { id: 'mbbc-actions', class: 'mbbc-actions' });
+    const formatLabel = el('label', T('Export format')),
+      formats = el('select', undefined, { 'aria-label': T('Export format') });
+    for (const [key, value] of Object.entries(adapters))
+      formats.append(
+        el(
+          'option',
+          clients.get(key)?.label || (key === 'snapshot-v1' ? T('Snapshot ZIP') : value.title),
+          { value: key },
+        ),
+      );
+    formats.value = adapter;
+    formats.onchange = () => {
+      invalidate(false);
+      adapter = formats.value;
+      render();
+    };
+    formatLabel.append(formats);
+    n.append(formatLabel);
     n.append(
       button(
         'Save collection configuration',
@@ -164,7 +222,7 @@
                 schema: 1,
                 collection_id: id,
                 revision,
-                adapter: 'snapshot-v1',
+                adapter,
               }),
             (data) => {
               job = data;
@@ -206,6 +264,101 @@
           ),
         ),
       );
+      const client = job.client ? clients.get(job.adapter) : null;
+      const clientAvailable =
+        client &&
+        client.version === job.client.version &&
+        client.fingerprint === job.client.fingerprint;
+      if (job.client) {
+        report.append(
+          button(
+            'Generate web book',
+            () =>
+              run(
+                async ({ cancelled, progress }) => {
+                  if (!clientAvailable)
+                    throw Error(
+                      T(
+                        'The publication client is unavailable. Enable its matching version and prepare again.',
+                      ),
+                    );
+                  discardProjection();
+                  const input = await api('/jobs/' + job.token + '/inputs', 'POST', {
+                    schema: 1,
+                    receipt: job.receipt,
+                  });
+                  if (cancelled()) return null;
+                  const result = await client.build(input, { prepared: job, cancelled, progress });
+                  if (cancelled()) {
+                    result?.dispose?.();
+                    return null;
+                  }
+                  if (
+                    !(result?.blob instanceof Blob) ||
+                    result.blob.size < 1 ||
+                    result.blob.size > 25165824 ||
+                    typeof result.previewHTML !== 'string'
+                  ) {
+                    result?.dispose?.();
+                    throw Error(T('The publication output is invalid or exceeds its budget.'));
+                  }
+                  const sha = [
+                    ...new Uint8Array(
+                      await crypto.subtle.digest('SHA-256', await result.blob.arrayBuffer()),
+                    ),
+                  ]
+                    .map((n) => n.toString(16).padStart(2, '0'))
+                    .join('');
+                  return { ...result, sha };
+                },
+                (value) => {
+                  projection = value;
+                  previewReady = false;
+                  confirmed = false;
+                },
+              ),
+            !!loading || !clientAvailable,
+          ),
+        );
+        if (!clientAvailable)
+          report.append(
+            el(
+              'p',
+              T(
+                'The publication client is unavailable. Enable its matching version and prepare again.',
+              ),
+            ),
+          );
+        const explanation = el('details');
+        explanation.append(
+          el('summary', T('About the input and final download')),
+          el(
+            'p',
+            T(
+              'Input already delivered to your browser cannot be recalled. Final authorization checks this plugin download, not the authenticity of arbitrary client HTML.',
+            ),
+          ),
+        );
+        report.append(explanation);
+        if (projection) {
+          const frame = el('iframe', undefined, {
+            title: T('Web book preview'),
+            sandbox: '',
+            referrerpolicy: 'no-referrer',
+            class: 'mbbc-book-preview',
+          });
+          const inspected = projection,
+            token = job.token;
+          frame.srcdoc = projection.previewHTML;
+          frame.onload = () => {
+            if (projection !== inspected || job?.token !== token || !frame.isConnected) return;
+            previewReady = true;
+            const b = document.querySelector('[data-mbbc-confirm]');
+            if (b) b.disabled = !!loading || confirmed;
+          };
+          report.append(frame);
+        }
+      }
       report.append(
         button(
           'Confirm this snapshot',
@@ -217,35 +370,72 @@
                 confirmed = true;
               },
             ),
-          !!loading || confirmed,
+          !!loading || confirmed || (!!job.client && (!projection || !previewReady)),
         ),
         button(
-          'Download snapshot ZIP',
+          job.client ? 'Download web book ZIP' : 'Download snapshot ZIP',
           () =>
             run(
-              () =>
-                api('/jobs/' + job.token + '/download', 'POST', {
+              async ({ cancelled }) => {
+                if (!job.client)
+                  return api('/jobs/' + job.token + '/download', 'POST', {
+                    schema: 1,
+                    receipt: job.receipt,
+                  });
+                if (!projection || !previewReady)
+                  throw Error(T('Generate and inspect the web book first.'));
+                const bound = {
                   schema: 1,
                   receipt: job.receipt,
-                }),
+                  snapshot_sha256: job.snapshot_sha256,
+                  provider_fingerprint: job.client.fingerprint,
+                  projection_sha256: projection.sha,
+                  projection_bytes: projection.blob.size,
+                };
+                const authorized = await api(
+                  '/jobs/' + job.token + '/client-download',
+                  'POST',
+                  bound,
+                );
+                if (cancelled()) return null;
+                if (
+                  authorized.authorized !== true ||
+                  [
+                    'snapshot_sha256',
+                    'provider_fingerprint',
+                    'projection_sha256',
+                    'projection_bytes',
+                  ].some((k) => authorized[k] !== bound[k])
+                )
+                  throw Error(T('Final publication authorization did not match. Prepare again.'));
+                return projection.blob;
+              },
               (blob) => {
                 const href = URL.createObjectURL(blob),
-                  a = el('a', undefined, { href, download: 'markbridge-collection.zip' });
+                  a = el('a', undefined, {
+                    href,
+                    download: job.client ? 'markbridge-webbook.zip' : 'markbridge-collection.zip',
+                  });
                 document.body.append(a);
                 a.click();
                 a.remove();
                 setTimeout(() => URL.revokeObjectURL(href), 1000);
                 job = null;
+                discardProjection();
                 confirmed = false;
               },
             ),
-          !!loading || !confirmed,
+          !!loading || !confirmed || (!!job.client && (!projection || !previewReady)),
         ),
         button('Cancel snapshot', () => {
           invalidate(false);
           render();
         }),
       );
+      const confirmButton = [...report.querySelectorAll('button')].find(
+        (b) => b.textContent === T('Confirm this snapshot'),
+      );
+      if (confirmButton) confirmButton.dataset.mbbcConfirm = '';
       n.append(report);
     }
     return n;
@@ -287,6 +477,7 @@
             () => api(),
             (data) => {
               catalog = data.items;
+              adapters = data.adapters || adapters;
               if (!id) revision = data.revision;
             },
           ),
@@ -302,6 +493,7 @@
               () => api('/' + id, 'DELETE', { schema: 1, revision }),
               (data) => {
                 catalog = data.items;
+                adapters = data.adapters || adapters;
                 revision = data.revision;
                 id = null;
                 config = fresh();
@@ -488,7 +680,9 @@
       el(
         'p',
         T(
-          'This ZIP is a fixed publication snapshot for an export adapter, not yet a complete reading website. Articles and resource bytes are checked again before confirmation and download.',
+          adapter === 'snapshot-v1'
+            ? 'This ZIP is a fixed publication snapshot for an export adapter, not yet a complete reading website. Articles and resource bytes are checked again before confirmation and download.'
+            : 'Generate a complete offline web book in your browser, inspect its static preview, then confirm and download. Articles and resources are checked again before download.',
         ),
       ),
       actions(),
@@ -498,6 +692,7 @@
     () => api(),
     (data) => {
       catalog = data.items;
+      adapters = data.adapters || { 'snapshot-v1': { title: 'Snapshot ZIP' } };
       revision = data.revision;
     },
   );

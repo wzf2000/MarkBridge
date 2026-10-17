@@ -1,5 +1,9 @@
 # 当前验证范围
 
+## 2.8.0-rc.4：作者端出版桥接
+
+`tests/collections.php` 增加真实 handler 的非消费输入重读、声明摘要绑定授权与一次消费；在消费 CAS 的 query 内分别撤会话、edit_post 和改文章，真正 JSON 输出必须无 authorized。这些是确定性模型，不等同实际 WordPress HTTP 故障证据。`static-export.php`／浏览器静态导出回归覆盖安全表格 headers/scope 与原预算。Publisher 独立包提供真实 CHTML/Prism、file:// 无脚本字体图片及跨章重写、作者 UI 和实际 WordPress REST 入口；范围见其验证文档。
+
 ## 2.8.0-rc.3：真实失效测试夹具
 
 - rc.2 实际首次检查发现测试裸 `wp_update_post` 未成功改变受托管文章标题，旧快照继续有效并非产品失效；未把这次运行记为 stale 拒绝通过。

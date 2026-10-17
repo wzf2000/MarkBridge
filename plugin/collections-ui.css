@@ -107,3 +107,13 @@
     grid-column: auto;
   }
 }
+
+.mbbc-book-preview {
+  display: block;
+  width: 100%;
+  height: min(65vh, 760px);
+  min-height: 350px;
+  border: 1px solid var(--mbbc-border);
+  background: #fff;
+  margin: 16px 0;
+}

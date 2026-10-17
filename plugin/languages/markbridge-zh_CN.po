@@ -685,6 +685,10 @@ msgid "A version conflict was detected. Saving is disabled. Compare the server v
 msgstr "检测到版本冲突，保存已停用。请检查下方服务器版本与当前候选。"
 
 #: plugin/i18n.js
+msgid "About the input and final download"
+msgstr "关于输入与最终下载"
+
+#: plugin/i18n.js
 msgid "Acquire a new opening baseline after adopting the merged candidate."
 msgstr "采用合并候选后须重新获取打开时基线。"
 
@@ -2579,6 +2583,10 @@ msgid "Final media HTML does not satisfy the save allowlist"
 msgstr "最终媒体 HTML 不符合保存允许列表"
 
 #: plugin/i18n.js
+msgid "Final publication authorization did not match. Prepare again."
+msgstr "最终出版授权不匹配，请重新准备。"
+
+#: plugin/i18n.js
 msgid "Find a reference target"
 msgstr "查找引用目标"
 
@@ -2774,6 +2782,18 @@ msgstr "图库 imageCrop 必须是布尔值"
 #: plugin/i18n.js
 msgid "General settings"
 msgstr "常规设置"
+
+#: plugin/i18n.js
+msgid "Generate a complete offline web book in your browser, inspect its static preview, then confirm and download. Articles and resources are checked again before download."
+msgstr "在浏览器中生成完整离线网页书，检查静态预览，再确认并下载。下载前会重新检查文章与资源。"
+
+#: plugin/i18n.js
+msgid "Generate and inspect the web book first."
+msgstr "请先生成并检查网页书。"
+
+#: plugin/i18n.js
+msgid "Generate web book"
+msgstr "生成网页书"
 
 #: plugin/i18n.js
 msgid "Given name"
@@ -3054,6 +3074,10 @@ msgstr "行内公式文字与 TeX 不一致"
 #: plugin/i18n.js
 msgid "Inline text cannot follow nested list blocks"
 msgstr "嵌套列表后不能有行内文字"
+
+#: plugin/i18n.js
+msgid "Input already delivered to your browser cannot be recalled. Final authorization checks this plugin download, not the authenticity of arbitrary client HTML."
+msgstr "已经交付浏览器的输入无法撤回。最终授权只约束本插件触发的下载，不证明任意客户端 HTML 的真实性。"
 
 #: plugin/i18n.js
 msgid "Input exceeds 256 KiB"
@@ -5146,6 +5170,10 @@ msgid "Simple task lists were unsupported by the historical parser"
 msgstr "历史解析器不支持简单任务列表"
 
 #: plugin/i18n.js
+msgid "Snapshot ZIP"
+msgstr "快照 ZIP"
+
+#: plugin/i18n.js
 msgid "Snapshot matches declared version"
 msgstr "快照与声明版本一致"
 
@@ -6781,6 +6809,14 @@ msgid "The proposed label or key already exists"
 msgstr "拟使用的标识或文献键已存在"
 
 #: plugin/i18n.js
+msgid "The publication client is unavailable. Enable its matching version and prepare again."
+msgstr "出版客户端不可用，请启用匹配版本并重新准备。"
+
+#: plugin/i18n.js
+msgid "The publication output is invalid or exceeds its budget."
+msgstr "出版产物无效或超过预算，请减少内容后重试。"
+
+#: plugin/i18n.js
 msgid "The recovery session changed."
 msgstr "恢复会话已变化。"
 
@@ -7966,6 +8002,10 @@ msgstr "卷、期、页码最多 128 个普通字符"
 #: plugin/i18n.js
 msgid "Wait for successful typesetting before applying the formula."
 msgstr "请等待公式排版成功后再应用。"
+
+#: plugin/i18n.js
+msgid "Web book preview"
+msgstr "网页书预览"
 
 #: plugin/i18n.js
 msgid "Web page"

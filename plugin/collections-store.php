@@ -191,7 +191,11 @@ function mbb_collections_jobs(): array
             $job['owner'] < 1 ||
             !mbb_collections_token($job['session']) ||
             !is_int($job['expires']) ||
-            !in_array($job['state'], ['preparing', 'ready', 'confirmed', 'downloading'], true)
+            !in_array(
+                $job['state'],
+                ['preparing', 'ready', 'confirmed', 'downloading', 'authorizing'],
+                true,
+            )
         ) {
             mbb_collections_fail('collection_storage', 503);
         }
