@@ -429,6 +429,10 @@ export function technicalRenamePlan(blocks, type, from, to, fail) {
       patch.entries = attrs.entries.map((entry) =>
         entry.key === from ? { ...entry, key: to } : entry,
       );
+    if (patch.entries && Object.hasOwn(attrs, 'origins'))
+      patch.origins = attrs.origins.map((origin) =>
+        origin.key === from ? { ...origin, key: to } : origin,
+      );
     for (const field of technicalFields(block)) {
       const literalRanges = [...field.html.matchAll(/<(pre|code)\b[^>]*>[\s\S]*?<\/\1\s*>/gi)].map(
         (m) => [m.index, m.index + m[0].length],

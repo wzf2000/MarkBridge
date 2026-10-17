@@ -1,4 +1,11 @@
-export { parseCSL, cslCandidate, exportCSL, migrateBibliography } from './bibliography.js';
+export {
+  parseCSL,
+  cslCandidate,
+  exportCSL,
+  migrateBibliography,
+  bibliographyEntryCanonical,
+  bibliographyEntryHash,
+} from './bibliography.js';
 export {
   markdownSnippet,
   writingPatterns,

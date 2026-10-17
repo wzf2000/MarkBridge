@@ -123,6 +123,7 @@
   "mbb/bibliography": {
     "id": "string",
     "style": "string",
+    "origins": "array",
     "entries": "array",
     "version": "integer"
   },

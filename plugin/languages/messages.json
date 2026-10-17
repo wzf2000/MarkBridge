@@ -1957,5 +1957,13 @@
   "Software": "软件",
   "Document": "文档",
   "Issue date": "出版日期",
-  "Mapped publication fields": "已映射的出版字段"
+  "Mapped publication fields": "已映射的出版字段",
+  "Library source declarations": "资料库来源声明",
+  "Source declarations do not prove authenticity or grant library access. Article snapshots remain readable without the library.": "来源声明不证明真实性，也不授予资料库权限。停用资料库后，文章快照仍可阅读。",
+  "Snapshot matches declared version": "快照与声明版本一致",
+  "Locally modified snapshot": "快照已有本地修改",
+  "Source comparison unavailable": "暂时无法比较来源",
+  "Bibliography origins require at most 64 closed source declarations": "文献来源声明最多允许 64 条闭合记录",
+  "Bibliography origins require unique existing keys and bounded opaque source versions": "文献来源声明须使用不重复的现有引用键及有界的不透明来源版本",
+  "Bibliography origins must be a JSON array of closed objects": "文献来源声明须为闭合对象组成的 JSON 数组"
 }

@@ -570,6 +570,54 @@ function BibTeXImport({ entries, change, registry, clientId, session }) {
       : null,
   );
 }
+function BibliographyOrigins({ a }) {
+  const el = wp.element.createElement,
+    [states, setStates] = wp.element.useState({});
+  wp.element.useEffect(() => {
+    let active = true;
+    Promise.all(
+      (a.origins || []).map(async (origin) => {
+        const entry = a.entries.find((e) => e.key === origin.key);
+        try {
+          return [origin.key, (await window.MBB.bibliographyEntryHash(entry)) === origin.hash];
+        } catch {
+          return [origin.key, null];
+        }
+      }),
+    ).then((values) => {
+      if (active) setStates(Object.fromEntries(values));
+    });
+    return () => {
+      active = false;
+    };
+  }, [JSON.stringify(a.entries), JSON.stringify(a.origins)]);
+  if (!a.origins?.length) return null;
+  return el(
+    'details',
+    {},
+    el('summary', {}, T('Library source declarations')),
+    el(
+      'p',
+      {},
+      T(
+        'Source declarations do not prove authenticity or grant library access. Article snapshots remain readable without the library.',
+      ),
+    ),
+    ...a.origins.map((origin) =>
+      el(
+        'p',
+        { key: origin.key },
+        origin.key +
+          ': ' +
+          (states[origin.key] === true
+            ? T('Snapshot matches declared version')
+            : states[origin.key] === false
+              ? T('Locally modified snapshot')
+              : T('Source comparison unavailable')),
+      ),
+    ),
+  );
+}
 function BibliographyDraft({
   a,
   setAttributes,
@@ -583,6 +631,7 @@ function BibliographyDraft({
   const saved = {
     version: a.version ?? 1,
     ...(a.version === 2 ? { style: a.style } : {}),
+    ...(a.version === 2 && Object.hasOwn(a, 'origins') ? { origins: a.origins } : {}),
     entries: a.entries || [],
   };
   const original = JSON.stringify(saved);
@@ -594,6 +643,9 @@ function BibliographyDraft({
   }, [original]);
   const change = (patch) => {
     const next = { ...draft, ...patch };
+    // Removing an entry removes its declaration; editing fields retains it as a local modification.
+    if (Object.hasOwn(next, 'origins'))
+      next.origins = next.origins.filter((o) => next.entries.some((e) => e.key === o.key));
     setDraft(next);
     setError('');
     if (JSON.stringify(next) === original) drafts.delete(clientId);
@@ -633,6 +685,10 @@ function BibliographyDraft({
     'div',
     {},
     el(CSLImport, { a: draft, change, registry, clientId, session }),
+    el(BibliographyOrigins, { a: draft }),
+    draft.version === 2 && window.MBBScholarlyTool
+      ? el(window.MBBScholarlyTool, { draft, change, registry, clientId, session })
+      : null,
     draft.version === 2
       ? el(BibliographyV2Fields, {
           a: draft,
@@ -883,7 +939,7 @@ export function registerTechnical({ drafts, syncDraftLock, retainDraftOwner }) {
       attributes: Object.fromEntries(
         Object.entries({
           ...schema,
-          ...(kind === 'bibliography' ? { style: 'string' } : {}),
+          ...(kind === 'bibliography' ? { style: 'string', origins: 'array' } : {}),
           version: 'number',
         }).map(([key, type]) => [key, { type: key === 'entries' ? 'array' : type }]),
       ),

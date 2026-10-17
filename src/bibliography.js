@@ -195,7 +195,57 @@ export function bibliographyV2(attrs, fail = failDefault) {
     if (used.has(entry.key)) bad(fail, 'Bibliography keys must be unique');
     used.add(entry.key);
   }
+  if (Object.hasOwn(attrs, 'origins')) {
+    if (!Array.isArray(attrs.origins) || attrs.origins.length > 64)
+      bad(fail, 'Bibliography origins require at most 64 closed source declarations');
+    const linked = new Set();
+    for (const origin of attrs.origins) {
+      if (
+        !keys(origin, ['key', 'namespace', 'item', 'version', 'hash']) ||
+        typeof origin.key !== 'string' ||
+        !used.has(origin.key) ||
+        linked.has(origin.key) ||
+        typeof origin.namespace !== 'string' ||
+        !/^L_[a-f0-9]{32}$/.test(origin.namespace) ||
+        typeof origin.item !== 'string' ||
+        !/^I_[a-f0-9]{32}$/.test(origin.item) ||
+        !Number.isSafeInteger(origin.version) ||
+        origin.version < 1 ||
+        typeof origin.hash !== 'string' ||
+        !/^[a-f0-9]{64}$/.test(origin.hash)
+      )
+        bad(
+          fail,
+          'Bibliography origins require unique existing keys and bounded opaque source versions',
+        );
+      linked.add(origin.key);
+    }
+  }
   return attrs;
+}
+/** UTF-8 JSON, recursive ASCII field order, no Unicode/slash/U+2028 escaping. Key is local. */
+export function bibliographyEntryCanonical(entry) {
+  bibliographyEntry(entry);
+  const order = (value) =>
+    Array.isArray(value)
+      ? value.map(order)
+      : value && typeof value === 'object'
+        ? Object.fromEntries(
+            Object.keys(value)
+              .sort()
+              .map((k) => [k, order(value[k])]),
+          )
+        : value;
+  return JSON.stringify(
+    order(Object.fromEntries(Object.entries(entry).filter(([key]) => key !== 'key'))),
+  );
+}
+export async function bibliographyEntryHash(entry) {
+  const digest = await globalThis.crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(bibliographyEntryCanonical(entry)),
+  );
+  return [...new Uint8Array(digest)].map((v) => v.toString(16).padStart(2, '0')).join('');
 }
 export function emptyBibliographyEntry(key) {
   return {

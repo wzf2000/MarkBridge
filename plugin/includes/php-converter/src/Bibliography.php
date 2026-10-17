@@ -320,7 +320,68 @@ final class Bibliography
             }
             $keys[$e['key']] = true;
         }
+        if (array_key_exists('origins', $a)) {
+            if (
+                !is_array($a['origins']) ||
+                !array_is_list($a['origins']) ||
+                count($a['origins']) > 64
+            ) {
+                self::bad('Bibliography origins require at most 64 closed source declarations');
+            }
+            $linked = [];
+            foreach ($a['origins'] as $value) {
+                $o = self::closed($value, ['key', 'namespace', 'item', 'version', 'hash']);
+                if (
+                    !$o ||
+                    !is_string($o['key']) ||
+                    !isset($keys[$o['key']]) ||
+                    isset($linked[$o['key']]) ||
+                    !is_string($o['namespace']) ||
+                    !preg_match('/^L_[a-f0-9]{32}$/D', $o['namespace']) ||
+                    !is_string($o['item']) ||
+                    !preg_match('/^I_[a-f0-9]{32}$/D', $o['item']) ||
+                    !self::integer($o['version']) ||
+                    $o['version'] < 1 ||
+                    !is_string($o['hash']) ||
+                    !preg_match('/^[a-f0-9]{64}$/D', $o['hash'])
+                ) {
+                    self::bad(
+                        'Bibliography origins require unique existing keys and bounded opaque source versions',
+                    );
+                }
+                $linked[$o['key']] = true;
+            }
+        }
         return $a;
+    }
+    /** Same canonical UTF-8 JSON as bibliographyEntryCanonical; article key is excluded. */
+    public static function canonical(mixed $entry): string
+    {
+        $entry = self::entry($entry);
+        unset($entry['key']);
+        $order = static function ($value) use (&$order) {
+            if ($value instanceof \stdClass) {
+                $value = get_object_vars($value);
+            }
+            if (!is_array($value)) {
+                return $value;
+            }
+            if (!array_is_list($value)) {
+                ksort($value, SORT_STRING);
+            }
+            return array_map($order, $value);
+        };
+        return json_encode(
+            $order($entry),
+            JSON_UNESCAPED_UNICODE |
+                JSON_UNESCAPED_SLASHES |
+                JSON_UNESCAPED_LINE_TERMINATORS |
+                JSON_THROW_ON_ERROR,
+        );
+    }
+    public static function hash(mixed $entry): string
+    {
+        return hash('sha256', self::canonical($entry));
     }
     public static function empty(string $key): array
     {

@@ -86,7 +86,7 @@ export function teachingAttributes(kind, attrs, fail, source = false, blockName 
     ...teachingSchemas[kind],
     ...(kind === 'bibliography' &&
     (attrs?.version === 2 || (source && Object.hasOwn(attrs || {}, 'style')))
-      ? { style: 'string' }
+      ? { style: 'string', ...(Object.hasOwn(attrs || {}, 'origins') ? { origins: 'object' } : {}) }
       : {}),
     ...(!source ? { version: 'number' } : {}),
     ...(kind === 'code-compare' && !source ? sourceFields : {}),
@@ -635,6 +635,9 @@ export function teachingMarkdown(b, body, fail) {
     [
       ...Object.keys(teachingSchemas[kind]),
       ...(kind === 'bibliography' && a.version === 2 ? ['style'] : []),
+      ...(kind === 'bibliography' && a.version === 2 && Object.hasOwn(a, 'origins')
+        ? ['origins']
+        : []),
     ].map((key) => [key, a[key]]),
   );
   const code = (side) => {

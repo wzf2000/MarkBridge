@@ -386,3 +386,13 @@ tools available.
 | `POST impact`  | `post_id/expected/source`，比较当前对象删除／类型变化的可读取入链，不改其他文章                                                                                                                                                                                                |
 
 候选正常调用 `preview`、`save` 或受保护的来源保存，携带 `identity_receipt`；原生保存可用 `mbb_identity_receipt`。收据绑定账号会话、文章、基线、目标身份与 15 分钟期限。服务端 `mbb_sync_write` 的可选第六参数接受该收据；它不放宽绑定路径、来源摘要或保存 CAS。正文、索引和唯一占用通过同一不自动重连的数据库事务提交，连接丢失或提交结果不明不会报告成功。数据库事务不能使文件系统原子化；来源恢复仍采用已有摘要和补偿验证规则。
+
+## 可选资料库来源
+
+独立 Scholarly Tools 可将本人库的固定版本复制到当前未应用文献候选。完整字段与引用键冲突先预览，采用后仍须“应用文献修改”及原有保存；不会自动更新文章。来源不存在、无权或停用扩展时，已保存的文章快照继续阅读。
+
+文献 v2 可显式带 `origins: [{key,namespace,item,version,hash}]`：最多64条、key必须是本块现有且不重复的引用键，namespace=`L_`+32位小写hex，item=`I_`+32位小写hex，version为正安全整数，hash为64位小写SHA256。字段闭合，没有账户、姓名、路径或抓取URL。声明不是权限或真实性证明，命名空间不联网解析。旧v1／无字段v2保持不补空字段。
+
+摘要取完整合法v2条目去掉文章key，递归按ASCII字段排序；数组顺序保留，UTF-8 JSON无缩进，不转义Unicode、斜线、U+2028／U+2029，不作Unicode归一化。PHP `mbb_bibliography_entry_hash($entry)`、JS `MBB.bibliographyEntryCanonical(entry)`／异步 `MBB.bibliographyEntryHash(entry)`共享规范。手改造成失配保留声明、显示本地修改，不阻保存；删除引用键删对应来源，显式rename同步来源key且hash不变。正常配对、修订、来源同步和移植携带该字段，无旁路postmeta提交。
+
+主编辑器供该扩展使用的最小可信hook为 `window.MBBScholarlyTool` React组件，参数 `{draft,change,registry,clientId,session}`。draft是当前未应用文献候选，change只准备候选；不得直接setAttributes或另行保存文章。异步结果须绑定当前候选、选择块与opening文章expected/source_sha256，最终Apply仍走原有全篇校验和基线保护。该入口仅供安装的受信插件，不接受文章提供任意脚本或HTTP地址。

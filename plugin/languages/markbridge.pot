@@ -1025,6 +1025,18 @@ msgid "Bibliography keys must be unique"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Bibliography origins must be a JSON array of closed objects"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Bibliography origins require at most 64 closed source declarations"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Bibliography origins require unique existing keys and bounded opaque source versions"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Bibliography settings"
 msgstr ""
 
@@ -3244,6 +3256,10 @@ msgid "Left title"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Library source declarations"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Line differences: "
 msgstr ""
 
@@ -3317,6 +3333,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Local recovery is not enabled."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Locally modified snapshot"
 msgstr ""
 
 #: plugin/i18n.js
@@ -4966,6 +4986,10 @@ msgid "Simple task lists were unsupported by the historical parser"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Snapshot matches declared version"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Software"
 msgstr ""
 
@@ -4991,6 +5015,14 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Source binding verification failed."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Source comparison unavailable"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Source declarations do not prove authenticity or grant library access. Article snapshots remain readable without the library."
 msgstr ""
 
 #: plugin/i18n.js

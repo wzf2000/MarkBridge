@@ -37,3 +37,8 @@ function mbb_csl_export(array $entries): array
     mbb_csl_library();
     return \MarkBridge\Probe\Bibliography::exportCSL($entries);
 }
+function mbb_bibliography_entry_hash(mixed $entry): string
+{
+    mbb_csl_library();
+    return \MarkBridge\Probe\Bibliography::hash($entry);
+}

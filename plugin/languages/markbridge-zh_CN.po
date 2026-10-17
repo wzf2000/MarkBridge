@@ -1025,6 +1025,18 @@ msgid "Bibliography keys must be unique"
 msgstr "文献引用键必须唯一"
 
 #: plugin/i18n.js
+msgid "Bibliography origins must be a JSON array of closed objects"
+msgstr "文献来源声明须为闭合对象组成的 JSON 数组"
+
+#: plugin/i18n.js
+msgid "Bibliography origins require at most 64 closed source declarations"
+msgstr "文献来源声明最多允许 64 条闭合记录"
+
+#: plugin/i18n.js
+msgid "Bibliography origins require unique existing keys and bounded opaque source versions"
+msgstr "文献来源声明须使用不重复的现有引用键及有界的不透明来源版本"
+
+#: plugin/i18n.js
 msgid "Bibliography settings"
 msgstr "参考文献设置"
 
@@ -3244,6 +3256,10 @@ msgid "Left title"
 msgstr "左侧标题"
 
 #: plugin/i18n.js
+msgid "Library source declarations"
+msgstr "资料库来源声明"
+
+#: plugin/i18n.js
 msgid "Line differences: "
 msgstr "行级差异："
 
@@ -3318,6 +3334,10 @@ msgstr "本地图引用必须是 ZIP 内相对路径"
 #: plugin/i18n.js
 msgid "Local recovery is not enabled."
 msgstr "本地恢复尚未启用。"
+
+#: plugin/i18n.js
+msgid "Locally modified snapshot"
+msgstr "快照已有本地修改"
 
 #: plugin/i18n.js
 msgid "Locate error line"
@@ -4966,6 +4986,10 @@ msgid "Simple task lists were unsupported by the historical parser"
 msgstr "历史解析器不支持简单任务列表"
 
 #: plugin/i18n.js
+msgid "Snapshot matches declared version"
+msgstr "快照与声明版本一致"
+
+#: plugin/i18n.js
 msgid "Software"
 msgstr "软件"
 
@@ -4992,6 +5016,14 @@ msgstr "源码与预览并排"
 #: plugin/i18n.js
 msgid "Source binding verification failed."
 msgstr "源文件绑定校验失败。"
+
+#: plugin/i18n.js
+msgid "Source comparison unavailable"
+msgstr "暂时无法比较来源"
+
+#: plugin/i18n.js
+msgid "Source declarations do not prove authenticity or grant library access. Article snapshots remain readable without the library."
+msgstr "来源声明不证明真实性，也不授予资料库权限。停用资料库后，文章快照仍可阅读。"
 
 #: plugin/i18n.js
 msgid "Source file content or its version fingerprint is missing."

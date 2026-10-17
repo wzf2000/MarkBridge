@@ -799,7 +799,8 @@ final class Teaching
             self::SCHEMAS[$kind] +
             ($kind === 'bibliography' &&
             (($attrs['version'] ?? 1) === 2 || ($source && array_key_exists('style', $attrs)))
-                ? ['style' => 'string']
+                ? ['style' => 'string'] +
+                    (array_key_exists('origins', $attrs) ? ['origins' => 'array'] : [])
                 : []) +
             (!$source ? ['version' => 'integer'] : []) +
             ($kind === 'code-compare' && !$source ? self::SOURCE_FIELDS : []);
@@ -1098,6 +1099,20 @@ final class Teaching
 
         $object = json_decode($raw, false, 32, JSON_THROW_ON_ERROR);
         $tabObject = is_object($object) && isset($object->attrs) ? $object->attrs : $object;
+        if (
+            is_object($tabObject) &&
+            property_exists($tabObject, 'origins') &&
+            (!is_array($tabObject->origins) ||
+                array_filter(
+                    $tabObject->origins,
+                    static fn($origin) => !($origin instanceof \stdClass),
+                ))
+        ) {
+            self::fail(
+                'BIBLIOGRAPHY_V2',
+                'Bibliography origins must be a JSON array of closed objects',
+            );
+        }
         if (is_object($tabObject) && property_exists($tabObject, 'tabs')) {
             if (
                 !is_array($tabObject->tabs) ||
@@ -1859,6 +1874,9 @@ final class Teaching
         }
         if ($kind === 'bibliography' && $a['version'] === 2) {
             $attrs['style'] = $a['style'];
+            if (array_key_exists('origins', $a)) {
+                $attrs['origins'] = $a['origins'];
+            }
         }
         $codes = '';
         if ($kind === 'code-compare') {
