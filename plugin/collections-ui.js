@@ -109,6 +109,13 @@
       return true;
     },
   };
+  if (!window.MarkBridgeExtensions)
+    window.MarkBridgeExtensions = Object.freeze({
+      apiVersion: 1,
+      registerPublicationClient(id, descriptor) {
+        return window.MarkBridgeCollections.registerClient(id, descriptor);
+      },
+    });
   function invalidate(changed = true) {
     discardProjection();
     serial++;

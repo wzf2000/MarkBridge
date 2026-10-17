@@ -488,6 +488,13 @@
         data.session !== session
       )
         return;
+      if (
+        (!ready && performance.now() > startupDeadline) ||
+        (runId && performance.now() > runDeadline)
+      ) {
+        failure(T('Execution exceeded its time budget and was terminated.'), 'RUN_BUDGET');
+        return;
+      }
       try {
         if (new TextEncoder().encode(JSON.stringify(data)).length > 8192) {
           failure(T('The component message exceeds its budget.'), 'PROTOCOL');
@@ -519,9 +526,8 @@
         return;
       }
       if (
-        config.activity &&
-        ((!ready && performance.now() > startupDeadline) ||
-          (runId && performance.now() > runDeadline))
+        (!ready && performance.now() > startupDeadline) ||
+        (runId && performance.now() > runDeadline)
       ) {
         failure(T('Execution exceeded its time budget and was terminated.'), 'RUN_BUDGET');
         return;
@@ -553,6 +559,14 @@
         target.focus({ preventScroll: true });
         return;
       }
+      // Summary validation/structured serialization can itself consume the remaining time.
+      if (
+        (!ready && performance.now() > startupDeadline) ||
+        (runId && performance.now() > runDeadline)
+      ) {
+        failure(T('Execution exceeded its time budget and was terminated.'), 'RUN_BUDGET');
+        return;
+      }
       if (data.type === 'ready' && !ready) {
         clearTimeout(startup);
         automaticStarting.delete(node);
@@ -582,7 +596,7 @@
         diagnostic?.stage('execution');
         active.add(node);
         runId = data.runId;
-        if (config.activity) runDeadline = performance.now() + budgets.wallMs;
+        runDeadline = performance.now() + budgets.wallMs;
         const expectedRun = runId;
         timer = setTimeout(() => {
           if (runId === expectedRun)
@@ -596,6 +610,10 @@
         runId &&
         data.runId === runId
       ) {
+        if (performance.now() > runDeadline) {
+          failure(T('Execution exceeded its time budget and was terminated.'), 'RUN_BUDGET');
+          return;
+        }
         clearTimeout(timer);
         active.delete(node);
         runId = null;

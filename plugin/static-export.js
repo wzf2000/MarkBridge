@@ -73,7 +73,7 @@
     return css;
   };
   const tags = new Set(
-    'p h1 h2 h3 h4 h5 h6 div section figure figcaption blockquote ul ol li pre code strong em del s sub sup span a img hr br table thead tbody tfoot tr th td details summary font'.split(
+    'p h1 h2 h3 h4 h5 h6 div section figure figcaption blockquote ul ol li pre code strong em del s sub sup span a img hr br table caption thead tbody tfoot tr th td details summary font'.split(
       ' ',
     ),
   );
@@ -83,6 +83,10 @@
       if (depth > 128 || ++count > 200000) fail('The static HTML exceeds its structure budget');
       if (node.nodeType === 3) return;
       if (node.nodeType !== 1) fail('The static HTML contains a forbidden node');
+      if (rendered && node.localName === 'svg') {
+        window.MarkBridgeProjection.auditSVG(node);
+        return;
+      }
       const math = rendered && /^mjx-[a-z0-9-]+$/.test(node.localName);
       if (!tags.has(node.localName) && !math) fail('The static HTML contains a forbidden element');
       for (const a of [...node.attributes]) {
@@ -242,8 +246,17 @@
     };
     check();
     if (
-      !keys(value, ['schema', 'kind', 'title', 'lang', 'body', 'css', 'images']) ||
-      value.schema !== 1 ||
+      !keys(value, [
+        'schema',
+        'kind',
+        'title',
+        'lang',
+        'body',
+        'css',
+        'images',
+        ...(value?.schema === 2 ? ['projections'] : []),
+      ]) ||
+      ![1, 2].includes(value.schema) ||
       value.kind !== 'markbridge-static' ||
       typeof value.title !== 'string' ||
       size(value.title) > 4096 ||
@@ -331,6 +344,8 @@
       fail('Formula typesetting failed. No incomplete HTML was downloaded');
     if (window.MarkBridgeStaticCode?.render)
       await window.MarkBridgeStaticCode.render(doc.body, { cancelled });
+    if (value.schema === 2) window.MarkBridgeProjection.insert(doc.body, value.projections);
+    for (const detail of doc.querySelectorAll('details')) detail.open = true;
     audit(doc.body, true);
     check();
     const escape = (s) =>

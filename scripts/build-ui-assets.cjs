@@ -36,7 +36,17 @@ asset('source-tools.js');
 asset('writing-ui.js');
 asset('references-ui.js');
 asset('resource-ui.js');
-asset('static-export.js');
+asset(
+  'projections.js',
+  read('projections.js').replace('__MBB_PROJECTION_PROFILE__', read('projections-profile.json')),
+);
+asset(
+  'static-export.js',
+  read('projections.js').replace('__MBB_PROJECTION_PROFILE__', read('projections-profile.json')) +
+    '\n' +
+    read('static-export.js'),
+);
+asset('projections.css');
 asset('static-export.css');
 asset('export-ui.js');
 asset('batch-ui.js');

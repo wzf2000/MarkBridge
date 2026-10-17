@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.9.0-rc.1
+
+- Add bounded generic author-tool registration and consolidated exact-version extension diagnostics with permission-scoped usage.
+- Add trusted typed-tree static projections for default PHP reading, no-script single HTML and collection publication; retain canonical params and quiet legacy fallback.
+- Guard all legacy/activity grants and terminal messages with monotonic deadlines, preserving ready reader interaction and immutable provider resources.
+- Ship runnable SDK provider/conformance and a separate static bridge for the frozen chart research sample.
+
 ## 2.8.0-rc.8
 
 - 原生托管保存仅在原始组件与预备组件的实际 core 投影完整一致时恢复原块注释字节，兼容小数指数写法与空对象投影；不恢复 HTML、真正配置或结构变化，不放宽转换器规范和最终 256 KiB 上限。

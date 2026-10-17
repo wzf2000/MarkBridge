@@ -901,6 +901,10 @@ msgid "Arrange references to saved articles, then prepare an immutable snapshot.
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Article IDs (comma separated, up to 50)"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Article metadata changed while reading. Reconcile again"
 msgstr ""
 
@@ -1375,6 +1379,10 @@ msgid "Check named footnote references and definitions. Each definition must be 
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Check selected articles"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Check the indicated position and use supported blocks and formatting. The candidate is preserved; correct it and preview again."
 msgstr ""
 
@@ -1400,6 +1408,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Chinese structural reading covers a limited set of mathematical structures."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Choose 1 to 50 distinct article IDs."
 msgstr ""
 
 #: plugin/i18n.js
@@ -1711,7 +1723,19 @@ msgid "Compatibility and advanced runtime settings"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Compatibility details"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Compatibility is based on installed exact versions. No extension is downloaded or enabled here."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Completed"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Component"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1764,6 +1788,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Conference paper"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Configuration (read only)"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2571,6 +2599,10 @@ msgid "Export the article's current saved paired representations. Prepare the ma
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Extensions"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Failed"
 msgstr ""
 
@@ -3184,6 +3216,10 @@ msgid "Inserts an unsaved example with new stable IDs. Playback and reader choic
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Installed extensions"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Interactive editor preview. Edit the static fallback body below."
 msgstr ""
 
@@ -3209,6 +3245,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Invalid activity template"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Invalid author candidate patch"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3285,6 +3325,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Invalid or conflicting registration identity or version"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Invalid or duplicate author tool registration"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3756,6 +3800,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Migration requires an explicit unclaimed identity candidate."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Minimum MarkBridge"
 msgstr ""
 
 #: plugin/i18n.js
@@ -4568,6 +4616,10 @@ msgid "Proposed stable ID"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Protocol"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Public"
 msgstr ""
 
@@ -4760,6 +4812,10 @@ msgid "Registered teaching component"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Rejected registrations"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Remove article"
 msgstr ""
 
@@ -4833,6 +4889,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Reset size"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Resource SHA-256"
 msgstr ""
 
 #: plugin/i18n.js
@@ -5149,6 +5209,10 @@ msgid "Select the same bibliography block before using this candidate"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Selected article usage"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Selected files repeat a logical identity. Correct the ambiguous originals before preparing the batch."
 msgstr ""
 
@@ -5454,6 +5518,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Static syntax token budget"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Static view unavailable. Original content and read-only configuration are preserved."
 msgstr ""
 
 #: plugin/i18n.js
@@ -5875,6 +5943,10 @@ msgid "The article is trashed or not editable. Local candidates are preserved. R
 msgstr ""
 
 #: plugin/i18n.js
+msgid "The article is unavailable or changed. Reload to continue."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "The article or source binding changed. The old baseline cannot be reused"
 msgstr ""
 
@@ -5900,6 +5972,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "The article, source identity, or version changed. Upload the ZIP again"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The author candidate changed. Preview again."
 msgstr ""
 
 #: plugin/i18n.js
@@ -6608,6 +6684,10 @@ msgid "The import commit state is uncertain. Media and private records are prese
 msgstr ""
 
 #: plugin/i18n.js
+msgid "The installed extension catalog exceeds its display budget."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "The integer exceeds its registered budget"
 msgstr ""
 
@@ -7054,6 +7134,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "The selected reference target no longer exists."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The selected scope exceeds the usage report limit. Choose fewer articles."
 msgstr ""
 
 #: plugin/i18n.js
@@ -7569,6 +7653,10 @@ msgid "This entry is cited. Remove its citations before deleting it."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "This extension information is unavailable."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "This field is not in the registered schema."
 msgstr ""
 
@@ -7606,6 +7694,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "This registered field is required."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "This report covers only the article IDs you select, not a site-wide inventory. Every article requires current editing permission."
 msgstr ""
 
 #: plugin/i18n.js
@@ -8017,6 +8109,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Verifying the saved article. Unsaved input is not included in the export."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Version"
 msgstr ""
 
 #: plugin/i18n.js

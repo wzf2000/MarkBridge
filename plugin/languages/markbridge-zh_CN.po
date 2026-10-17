@@ -901,6 +901,10 @@ msgid "Arrange references to saved articles, then prepare an immutable snapshot.
 msgstr "编排已保存文章的引用，再准备不可变快照。文集配置不是第二份正文。"
 
 #: plugin/i18n.js
+msgid "Article IDs (comma separated, up to 50)"
+msgstr "文章 ID（以逗号分隔，最多 50 个）"
+
+#: plugin/i18n.js
 msgid "Article metadata changed while reading. Reconcile again"
 msgstr "文章元数据在读取期间变化，请重新协调"
 
@@ -1375,6 +1379,10 @@ msgid "Check named footnote references and definitions. Each definition must be 
 msgstr "请核对命名脚注的引用和定义；定义需唯一、被引用，并放在文末。"
 
 #: plugin/i18n.js
+msgid "Check selected articles"
+msgstr "检查所选文章"
+
+#: plugin/i18n.js
 msgid "Check the indicated position and use supported blocks and formatting. The candidate is preserved; correct it and preview again."
 msgstr "请检查标示位置，使用受支持的区块和格式；当前候选保留，请修正后重新预览。"
 
@@ -1401,6 +1409,10 @@ msgstr "子区块插槽必须为空"
 #: plugin/i18n.js
 msgid "Chinese structural reading covers a limited set of mathematical structures."
 msgstr "中文结构读法目前支持有限的数学结构。"
+
+#: plugin/i18n.js
+msgid "Choose 1 to 50 distinct article IDs."
+msgstr "请选择 1 至 50 个不同的文章 ID。"
 
 #: plugin/i18n.js
 msgid "Choose a .bib file within 64 KiB"
@@ -1711,8 +1723,20 @@ msgid "Compatibility and advanced runtime settings"
 msgstr "兼容与高级运行环境设置"
 
 #: plugin/i18n.js
+msgid "Compatibility details"
+msgstr "兼容详情"
+
+#: plugin/i18n.js
+msgid "Compatibility is based on installed exact versions. No extension is downloaded or enabled here."
+msgstr "兼容状态基于已安装的精确版本，此处不会下载或启用扩展。"
+
+#: plugin/i18n.js
 msgid "Completed"
 msgstr "已完成"
+
+#: plugin/i18n.js
+msgid "Component"
+msgstr "组件"
 
 #: plugin/i18n.js
 msgid "Component execution completed."
@@ -1765,6 +1789,10 @@ msgstr "组件版本"
 #: plugin/i18n.js
 msgid "Conference paper"
 msgstr "会议论文"
+
+#: plugin/i18n.js
+msgid "Configuration (read only)"
+msgstr "配置（只读）"
 
 #: plugin/i18n.js
 msgid "Confirm download"
@@ -2571,6 +2599,10 @@ msgid "Export the article's current saved paired representations. Prepare the ma
 msgstr "导出当前服务器已保存的双格式文章。请准备清单并确认下载；编辑器未保存内容保持不变。"
 
 #: plugin/i18n.js
+msgid "Extensions"
+msgstr "扩展"
+
+#: plugin/i18n.js
 msgid "Failed"
 msgstr "失败"
 
@@ -3184,6 +3216,10 @@ msgid "Inserts an unsaved example with new stable IDs. Playback and reader choic
 msgstr "插入具有新稳定标识的未保存样例。播放进度和读者选择不写回文章。编辑解释后，按正常流程预览并确认保存。"
 
 #: plugin/i18n.js
+msgid "Installed extensions"
+msgstr "已安装的扩展"
+
+#: plugin/i18n.js
 msgid "Interactive editor preview. Edit the static fallback body below."
 msgstr "编辑器交互预览；正文静态替代在下方编辑。"
 
@@ -3210,6 +3246,10 @@ msgstr "Unicode 非法"
 #: plugin/i18n.js
 msgid "Invalid activity template"
 msgstr "活动样板无效"
+
+#: plugin/i18n.js
+msgid "Invalid author candidate patch"
+msgstr "作者候选修改无效。"
 
 #: plugin/i18n.js
 msgid "Invalid block JSON"
@@ -3286,6 +3326,10 @@ msgstr "原生区块壳结构非法"
 #: plugin/i18n.js
 msgid "Invalid or conflicting registration identity or version"
 msgstr "登记身份/版本无效或冲突"
+
+#: plugin/i18n.js
+msgid "Invalid or duplicate author tool registration"
+msgstr "作者工具登记无效或重复。"
 
 #: plugin/i18n.js
 msgid "Invalid or duplicate version ID"
@@ -3757,6 +3801,10 @@ msgstr "元数据、term、候选或身份已变化，请重新预览。"
 #: plugin/i18n.js
 msgid "Migration requires an explicit unclaimed identity candidate."
 msgstr "迁移需要显式提供尚未被占用的身份候选。"
+
+#: plugin/i18n.js
+msgid "Minimum MarkBridge"
+msgstr "最低 MarkBridge 版本"
 
 #: plugin/i18n.js
 msgid "Mismatched block closing comment"
@@ -4568,6 +4616,10 @@ msgid "Proposed stable ID"
 msgstr "拟使用的新稳定标识"
 
 #: plugin/i18n.js
+msgid "Protocol"
+msgstr "协议"
+
+#: plugin/i18n.js
 msgid "Public"
 msgstr "公开"
 
@@ -4760,6 +4812,10 @@ msgid "Registered teaching component"
 msgstr "登记的教学组件"
 
 #: plugin/i18n.js
+msgid "Rejected registrations"
+msgstr "被拒绝的登记"
+
+#: plugin/i18n.js
 msgid "Remove article"
 msgstr "移除文章"
 
@@ -4834,6 +4890,10 @@ msgstr "保留的内部教学标记不能作为 Markdown 输入"
 #: plugin/i18n.js
 msgid "Reset size"
 msgstr "重置大小"
+
+#: plugin/i18n.js
+msgid "Resource SHA-256"
+msgstr "资源 SHA-256"
 
 #: plugin/i18n.js
 msgid "Resource ZIP import requires PHP zip, intl, and POSIX-safe staging. Ordinary Markdown editing remains available."
@@ -5149,6 +5209,10 @@ msgid "Select the same bibliography block before using this candidate"
 msgstr "请先选中原文献区块再使用此候选"
 
 #: plugin/i18n.js
+msgid "Selected article usage"
+msgstr "所选文章的使用情况"
+
+#: plugin/i18n.js
 msgid "Selected files repeat a logical identity. Correct the ambiguous originals before preparing the batch."
 msgstr "所选文件含重复逻辑身份，请先修正歧义再准备批量导入。"
 
@@ -5455,6 +5519,10 @@ msgstr "静态代码高亮资源不可用"
 #: plugin/i18n.js
 msgid "Static syntax token budget"
 msgstr "静态代码高亮超出标记预算"
+
+#: plugin/i18n.js
+msgid "Static view unavailable. Original content and read-only configuration are preserved."
+msgstr "静态视图不可用，原内容和只读配置已保留。"
 
 #: plugin/i18n.js
 msgid "Status"
@@ -5875,6 +5943,10 @@ msgid "The article is trashed or not editable. Local candidates are preserved. R
 msgstr "文章已在回收站或不可编辑。本地候选保留；请先通过 WordPress 正常还原。"
 
 #: plugin/i18n.js
+msgid "The article is unavailable or changed. Reload to continue."
+msgstr "文章不可用或已变化，请刷新后继续。"
+
+#: plugin/i18n.js
 msgid "The article or source binding changed. The old baseline cannot be reused"
 msgstr "文章或来源绑定已变化，不能沿用旧基线"
 
@@ -5901,6 +5973,10 @@ msgstr "文章已删除。本地候选保留，但不能恢复或以旧 ID 重�
 #: plugin/i18n.js
 msgid "The article, source identity, or version changed. Upload the ZIP again"
 msgstr "文章、来源身份或版本已变化，请重新上传 ZIP"
+
+#: plugin/i18n.js
+msgid "The author candidate changed. Preview again."
+msgstr "作者候选已变化，请重新预览。"
 
 #: plugin/i18n.js
 msgid "The author or site identity changed. Local recovery is disabled."
@@ -6608,6 +6684,10 @@ msgid "The import commit state is uncertain. Media and private records are prese
 msgstr "导入提交状态不确定；已保留媒体与私有记录，请核对文章后重试"
 
 #: plugin/i18n.js
+msgid "The installed extension catalog exceeds its display budget."
+msgstr "已安装扩展目录超过显示预算。"
+
+#: plugin/i18n.js
 msgid "The integer exceeds its registered budget"
 msgstr "整数超出登记预算"
 
@@ -7055,6 +7135,10 @@ msgstr "所选出版适配器不可用。"
 #: plugin/i18n.js
 msgid "The selected reference target no longer exists."
 msgstr "所选引用目标已不存在。"
+
+#: plugin/i18n.js
+msgid "The selected scope exceeds the usage report limit. Choose fewer articles."
+msgstr "所选范围超过使用报告上限，请减少文章数量。"
 
 #: plugin/i18n.js
 msgid "The selection contains other formatting or objects. Select plain text first."
@@ -7569,6 +7653,10 @@ msgid "This entry is cited. Remove its citations before deleting it."
 msgstr "此条目仍被引用，请先移除对应引用再删除。"
 
 #: plugin/i18n.js
+msgid "This extension information is unavailable."
+msgstr "此扩展信息不可用。"
+
+#: plugin/i18n.js
 msgid "This field is not in the registered schema."
 msgstr "此字段不在已登记的结构中。"
 
@@ -7607,6 +7695,10 @@ msgstr "此预览生成规范化的跨站副本，并解除旧附件 ID；导入
 #: plugin/i18n.js
 msgid "This registered field is required."
 msgstr "此字段为必填项。"
+
+#: plugin/i18n.js
+msgid "This report covers only the article IDs you select, not a site-wide inventory. Every article requires current editing permission."
+msgstr "报告仅覆盖你选择的文章 ID，不代表全站清单。每篇文章都需当前编辑权限。"
 
 #: plugin/i18n.js
 msgid "This resource import was canceled. The document is preserved. Upload the ZIP again or remove pending images."
@@ -8018,6 +8110,10 @@ msgstr "正在核对公式…"
 #: plugin/i18n.js
 msgid "Verifying the saved article. Unsaved input is not included in the export."
 msgstr "正在核对已保存文章；未保存输入不会进入导出。"
+
+#: plugin/i18n.js
+msgid "Version"
+msgstr "版本"
 
 #: plugin/i18n.js
 msgid "Version conflict: compare the server and candidate"

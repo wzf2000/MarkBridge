@@ -4,7 +4,7 @@ README 说明产品范围和最短开发入口；本页按用途区分持续有�
 
 ## 使用手册
 
-本分支是 **2.8.0-rc.8 候选开发文档**，尚未正式发行；在线 Wiki 继续对应已公开稳定版。此处包含候选的手册与接口说明；其他版本请查看对应 Release 源码中的文档。第一次使用按“快速开始 → 编辑与发布”阅读，管理员先完成安装与服务器配置。在线阅读入口为 [GitHub Wiki](https://github.com/wzf2000/MarkBridge/wiki)。
+本分支是 **2.9.0-rc.1 候选开发文档**，尚未正式发行；在线 Wiki 继续对应已公开稳定版。此处包含候选的手册与接口说明；其他版本请查看对应 Release 源码中的文档。第一次使用按“快速开始 → 编辑与发布”阅读，管理员先完成安装与服务器配置。在线阅读入口为 [GitHub Wiki](https://github.com/wzf2000/MarkBridge/wiki)。
 
 | 阅读顺序   | 文档                           | 内容                                                 |
 | ---------- | ------------------------------ | ---------------------------------------------------- |
@@ -67,3 +67,5 @@ README 说明产品范围和最短开发入口；本页按用途区分持续有�
 - [独立 Mermaid 图示](MERMAID.md)
 
 - [文集与不可变快照](COLLECTIONS.md)：编排文章引用、范围确认、私有快照与受信出版适配接口。
+
+- [Trusted extension SDK](SDK.md): author candidates, typed static projection, catalog/scoped usage and runnable conformance samples.

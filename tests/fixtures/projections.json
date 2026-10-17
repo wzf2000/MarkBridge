@@ -1,0 +1,193 @@
+[
+  {
+    "name": "empty objects/lists",
+    "valid": true,
+    "value": {
+      "schema": 1,
+      "tree": [
+        {
+          "tag": "p",
+          "attrs": {},
+          "children": []
+        }
+      ]
+    }
+  },
+  {
+    "name": "Unicode and tiny float",
+    "valid": true,
+    "value": {
+      "schema": 1,
+      "tree": [
+        {
+          "tag": "svg",
+          "attrs": {
+            "viewBox": [0, 0, 10, 10]
+          },
+          "children": [
+            {
+              "tag": "text",
+              "attrs": {
+                "x": 1e-8,
+                "y": 2
+              },
+              "children": ["中文😀 "]
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "fractional encoding integer span",
+    "valid": true,
+    "value": {
+      "schema": 1,
+      "tree": [
+        {
+          "tag": "td",
+          "attrs": {
+            "colspan": 1.0
+          },
+          "children": []
+        }
+      ]
+    }
+  },
+  {
+    "name": "null key",
+    "valid": false,
+    "value": {
+      "schema": 1,
+      "tree": [
+        {
+          "tag": "p",
+          "attrs": {},
+          "children": [],
+          "key": null
+        }
+      ]
+    }
+  },
+  {
+    "name": "event attribute",
+    "valid": false,
+    "value": {
+      "schema": 1,
+      "tree": [
+        {
+          "tag": "p",
+          "attrs": {
+            "onclick": "bad()"
+          },
+          "children": []
+        }
+      ]
+    }
+  },
+  {
+    "name": "arbitrary SVG path",
+    "valid": false,
+    "value": {
+      "schema": 1,
+      "tree": [
+        {
+          "tag": "svg",
+          "attrs": {},
+          "children": [
+            {
+              "tag": "path",
+              "attrs": {},
+              "children": []
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "external IDREF",
+    "valid": false,
+    "value": {
+      "schema": 1,
+      "tree": [
+        {
+          "tag": "p",
+          "attrs": {
+            "labelledby": ["outside"]
+          },
+          "children": []
+        }
+      ]
+    }
+  },
+  {
+    "name": "raw style",
+    "valid": false,
+    "value": {
+      "schema": 1,
+      "tree": [
+        {
+          "tag": "p",
+          "attrs": {
+            "style": "color:red"
+          },
+          "children": []
+        }
+      ]
+    }
+  },
+  {
+    "name": "bad span",
+    "valid": false,
+    "value": {
+      "schema": 1,
+      "tree": [
+        {
+          "tag": "td",
+          "attrs": {
+            "colspan": 1.5
+          },
+          "children": []
+        }
+      ]
+    }
+  },
+  {
+    "name": "URL paint",
+    "valid": false,
+    "value": {
+      "schema": 1,
+      "tree": [
+        {
+          "tag": "svg",
+          "attrs": {
+            "fill": "url(https://bad.invalid)"
+          },
+          "children": []
+        }
+      ]
+    }
+  },
+  {
+    "name": "duplicate keys",
+    "valid": false,
+    "value": {
+      "schema": 1,
+      "tree": [
+        {
+          "tag": "p",
+          "attrs": {},
+          "children": [],
+          "key": "same"
+        },
+        {
+          "tag": "p",
+          "attrs": {},
+          "children": [],
+          "key": "same"
+        }
+      ]
+    }
+  }
+]

@@ -1,3 +1,4 @@
+import { AuthorTools } from './author-tools.js';
 import { bibliographyProjection, migrateBibliography } from './bibliography.js';
 import { BibliographyV2Fields, CSLImport } from './bibliography-editor.js';
 import { parseBibTeX, bibtexCandidate } from './bibtex.js';
@@ -686,8 +687,8 @@ function BibliographyDraft({
     {},
     el(CSLImport, { a: draft, change, registry, clientId, session }),
     el(BibliographyOrigins, { a: draft }),
-    draft.version === 2 && window.MBBScholarlyTool
-      ? el(window.MBBScholarlyTool, { draft, change, registry, clientId, session })
+    draft.version === 2
+      ? el(AuthorTools, { slot: 'bibliography/v2', draft, change, registry, clientId, session })
       : null,
     draft.version === 2
       ? el(BibliographyV2Fields, {

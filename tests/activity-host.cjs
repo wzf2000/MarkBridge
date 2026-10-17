@@ -107,3 +107,29 @@ assert.deepEqual(t.calls, []);
 console.log(
   'Actual host handler: synchronous startup/run terminal deadlines, indefinite ready thinking, closed/replaced session and bounded reveal handles passed.',
 );
+// The same terminal guard applies to immutable legacy payloads, not just v2 activities.
+t = context({ config: {}, runId: 'run', clock: 2001 });
+t.send('complete', { runId: 'run', frameCount: 1, outputBytes: 1 });
+assert.deepEqual(t.calls, ['RUN_BUDGET']);
+t = context({ config: {}, runId: 'run', clock: 1900 });
+t.c.JSON = {
+  stringify(value) {
+    t.c.clock += 201;
+    return JSON.stringify(value);
+  },
+};
+t.send('complete', { runId: 'run', frameCount: 1, outputBytes: 1 });
+assert.deepEqual(
+  t.calls,
+  ['RUN_BUDGET'],
+  'Legacy terminal validation cannot overrun synchronously',
+);
+t = context({ config: {}, ready: false, clock: 4900 });
+t.c.JSON = {
+  stringify(value) {
+    t.c.clock += 101;
+    return JSON.stringify(value);
+  },
+};
+t.send('ready');
+assert.deepEqual(t.calls, ['RUN_BUDGET']);

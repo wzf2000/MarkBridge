@@ -666,7 +666,10 @@ const e = wp.element.createElement;`,
         example('three-independent-statement-kinds') +
         '\n' +
         example('bibliography-and-atomic-cite');
-      const html = taskEditor(source, { iframe: true });
+      const html = taskEditor(source, {
+        iframe: true,
+        history: new URL(request.url, 'http://localhost').searchParams.has('history'),
+      });
       return response
         .writeHead(html ? 200 : 404, { 'Content-Type': 'text/html' })
         .end(html || 'Core runtime required');

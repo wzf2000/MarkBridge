@@ -58,7 +58,7 @@
 
 B_/C_ 后均为 32 位小写随机十六进制；job token 为 64 位，路由不重叠。章键在配置内稳定，不能重复文章或键。配置并发冲突保留本地字段，需要显式重新加载；不能通过一次新 GET 暗中接纳别人的配置基线。
 
-ZIP 的 `manifest.json` 为 `schema:1,kind:"markbridge-publication-snapshot"`，包含标题、语言、声明、privateOptIn、cover、renderer、styles、chapters、resources；没有 owner 或 WordPress post_id。`chapters` 条目包含 key/path/title/scope/documentId/identity/sourceSha256/serializedSha256/bodyBytes/bodySha256/objects/references/components；references 沿用 `{target,resolved}` 列表，组件只固定 id/component/version/paramsSha256/resourceSha256/status/representation。`chapters/*.html` 是**以快照根目录为基准的阅读投影片段**，不是独立网页；相对资源和跨章逻辑路径由后续适配器处理。清单、CSS、每章片段和每份图片均有字节／摘要，ZIP 不携带来源路径或正文参数。
+ZIP 的 `manifest.json` 为 `schema:1,kind:"markbridge-publication-snapshot"`，包含标题、语言、声明、privateOptIn、cover、renderer、styles、chapters、resources；没有 owner 或 WordPress post_id。`chapters` 条目包含 key/path/title/scope/documentId/identity/sourceSha256/serializedSha256/bodyBytes/bodySha256/objects/references/components；references 沿用 `{target,resolved}` 列表，组件固定 id/component/version/paramsSha256/resourceSha256/status/representation/projectionFingerprint。新增 `projectionPlan` 为闭合 `{schema:1,encoding:"json-utf8",bytes,sha256,data}`，data 为规范 UTF-8 JSON wire；它携带受检 typed tree 与只读组件参数，不持有第二份可写正文。逐章生成后释放 PHP AST，整本成功派生树额外限 256 KiB，超限组件明确回退到原解释与配置；全部 wire 仍算原 24 MiB。参见 [SDK](SDK.md)。`chapters/*.html` 是**以快照根目录为基准的阅读投影片段**，不是独立网页；相对资源和跨章逻辑路径由后续适配器处理。清单、CSS、每章片段和每份图片均有字节／摘要，ZIP 不携带来源路径、保存票据或评论笔记；被选组件的公开参数作为只读配置随快照携带。
 
 受信 PHP 扩展在 `markbridge_register_publication_adapters` action（init 12）调用：
 

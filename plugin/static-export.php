@@ -55,7 +55,9 @@ function mbb_static_export_external_url(string $url): bool
 }
 function mbb_static_export_styles(): string
 {
-    return file_get_contents(__DIR__ . '/static-export.css') .
+    return file_get_contents(__DIR__ . '/projections.css') .
+        "\n" .
+        file_get_contents(__DIR__ . '/static-export.css') .
         "\n" .
         file_get_contents(__DIR__ . '/technical.css') .
         "\n" .
@@ -363,7 +365,7 @@ function mbb_static_export_descriptor(
         $lang = 'en';
     }
     $value = [
-        'schema' => 1,
+        'schema' => function_exists('mbb_component_projection_plan') ? 2 : 1,
         'kind' => 'markbridge-static',
         'title' => strip_tags($snapshot['post']->post_title),
         'lang' => $lang,
@@ -371,6 +373,12 @@ function mbb_static_export_descriptor(
         'css' => mbb_static_export_styles(),
         'images' => $images,
     ];
+    if ($value['schema'] === 2) {
+        $value['projections'] = mbb_component_projection_plan(
+            $snapshot['document']['serialized'],
+            $lang,
+        );
+    }
     $json = mbb_component_json($value);
     if (strlen($json) > 33554432) {
         mbb_export_throw(

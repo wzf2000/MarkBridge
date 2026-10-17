@@ -110,3 +110,31 @@
     background-image: none;
   }
 }
+
+.mbb-extension-scope {
+  max-width: 48rem;
+  display: grid;
+  gap: 0.65rem;
+}
+.mbb-extension-scope input {
+  width: 100%;
+  min-height: 40px;
+}
+.mbb-extension-scope .submit {
+  margin: 0;
+}
+.mbb-settings th,
+.mbb-settings td {
+  overflow-wrap: anywhere;
+}
+
+.mbb-settings .widefat details code {
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+.mbb-settings .widefat dd {
+  margin-inline-start: 0;
+}
+.mbb-settings .widefat details {
+  margin-block-start: 0.5rem;
+}

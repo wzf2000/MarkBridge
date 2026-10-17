@@ -60,12 +60,10 @@ function mbb_component_diagnostics_page(): void
     }
     echo '</ul></div>';
 }
-add_action('admin_menu', static function () {
-    add_management_page(
-        mbb_t('MarkBridge teaching extensions'),
-        mbb_t('MarkBridge teaching extensions'),
-        'manage_options',
-        'markbridge-teaching',
-        'mbb_component_diagnostics_page',
-    );
+// Keep the old entry URL as a redirect to the consolidated settings tab.
+add_action('admin_init', static function () {
+    if (($_GET['page'] ?? null) === 'markbridge-teaching' && current_user_can('manage_options')) {
+        wp_safe_redirect(admin_url('options-general.php?page=markbridge&tab=extensions'));
+        exit();
+    }
 });

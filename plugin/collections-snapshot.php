@@ -54,6 +54,10 @@ function mbb_collections_renderer(string $adapter): array
             'export.php',
             'resource-import.php',
             'components.php',
+            'projections.php',
+            'projections.js',
+            'projections-profile.json',
+            'projections.css',
             'php-converter-manifest.json',
             'static-export.css',
             'technical.css',
@@ -276,6 +280,9 @@ function mbb_collections_components(string $serialized): array
             'resourceSha256' => $sha,
             'status' => $status,
             'representation' => 'author-static-fallback',
+            'projectionFingerprint' => function_exists('mbb_component_projection_fingerprint')
+                ? mbb_component_projection_fingerprint($a->component, $a->componentVersion)
+                : null,
         ];
     }
     return $items;
@@ -434,6 +441,7 @@ function mbb_collections_snapshot(array $config, string $adapter, ?string $direc
     $stamps = [];
     $chapters = [];
     $references = 0;
+    $projectionRemaining = 262144;
     foreach ($config['chapters'] as $chapter) {
         $s = mbb_collections_post($chapter['post_id'], $config['privateOptIn']);
         $stamps[$chapter['key']] = mbb_collections_stamp($s);
@@ -561,6 +569,13 @@ function mbb_collections_snapshot(array $config, string $adapter, ?string $direc
             'objects' => array_values($s['projection']['objects']),
             'references' => $map,
             'components' => mbb_collections_components($s['document']['serialized']),
+            'projectionPlan' => function_exists('mbb_component_projection_wire')
+                ? mbb_component_projection_wire(
+                    $s['document']['serialized'],
+                    $config['lang'],
+                    $projectionRemaining,
+                )
+                : null,
         ];
         if ($directory !== null) {
             mbb_collections_write($directory . '/' . $chapter['key'] . '.html', $body);
@@ -664,6 +679,17 @@ function mbb_collections_final(array $snapshot, array $config, string $adapter):
     }
     foreach ($snapshot['componentChecks'] as $component) {
         $p = mbb_component_provider($component['component'], $component['version']);
+        if (
+            ($component['projectionFingerprint'] ?? null) !==
+            (function_exists('mbb_component_projection_fingerprint')
+                ? mbb_component_projection_fingerprint(
+                    $component['component'],
+                    $component['version'],
+                )
+                : null)
+        ) {
+            mbb_collections_fail('collection_changed');
+        }
         if (($p['status'] ?? 'missing') !== $component['status']) {
             mbb_collections_fail('collection_changed');
         }

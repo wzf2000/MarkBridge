@@ -609,3 +609,5 @@ add_action('enqueue_block_editor_assets', static function () {
 });
 
 require_once __DIR__ . '/component-diagnostics.php';
+
+require_once __DIR__ . '/projections.php';

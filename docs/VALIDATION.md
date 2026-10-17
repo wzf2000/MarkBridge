@@ -1,5 +1,11 @@
 # 当前验证范围
 
+## 2.9 SDK candidate
+
+新增共享 typed tree／UTF-8／空对象与数值夹具、局部 ID 冲突、逐文聚合预算、真实文件指纹失效、严格 raw usage JSON、候选代次与基线、旧宿主同步期限。浏览器使用真实 core scripts 验证候选 Apply/Undo，以及实际 CHTML builder 到 file:// 无脚本 SVG/完整表格；不冒称真实 WordPress DB 或生产验收。接口与可复用运行入口见 [SDK](SDK.md)。高节点纯模型在独立 128M 进程生成 10 章×每章 4 图×64 行×4 序列，实际 wire helper 共保留 3 完整树／37 明确回退，manifest 373,226 B；PHP8.2 峰 8,388,608 B、PHP8.5 峰 10,485,760 B。这不含 WordPress／图像原生分配，不冒称整站组合内存。完整 npm test 通过后，wire／容量／目录详情与新组合的直接模型及浏览器单独收尾。
+
+密码文章的派生阅读回归另由 `node tests/projection-password.cjs [php85]` 运行：使用实际 WordPress 密码表单、密码 cookie 校验与 `wpautop`，验证未解锁表单保持原样、锁定正文不派生、已解锁正文派生及末次撤权阻断。该夹具不引导 WordPress 或访问数据库；完整解锁流程仍须实际站点验收。
+
 ## 2.8.0-rc.8：原生 core 注释投影
 
 `tests/native-component-comments.cjs` 调用只读 WordPress core 的真实 PHP parse／serialize／KSES，与当前 Node 内核及实际 Gutenberg parse／serialize 对照。覆盖 v1／v2 小数与小容差、空／嵌套对象、嵌套组件、真实配置／metadata／类型／结构变化、重复实例与重复／畸形 JSON、KSES 危险 HTML，以及正好 262,144 B 配对的临时指数膨胀。恢复只作用于符合精确 core 投影的注释，最终仍通过原严格配对转换。运行需 `MARKBRIDGE_TEST_WORDPRESS_ROOT`（仅读核心文件）和既有 `MARKBRIDGE_TEST_RUNTIME`；无数据库或站点写入。
