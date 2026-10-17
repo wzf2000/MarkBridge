@@ -609,7 +609,33 @@ if (function_exists('add_filter')) {
                     '</p>';
             }
             $id = $post->ID;
-            $token = mbb_token($post);
+            mbb_references_fresh_user();
+            clean_post_cache($id);
+            $baseline = get_post($id);
+            if (!$baseline || !mbb_references_readable($baseline)) {
+                return '<p>' .
+                    esc_html(mbb_t('The article is unavailable or changed. Reload to continue.')) .
+                    '</p>';
+            }
+            // WP_Query changes a protected draft's display date for preview. Compare
+            // a clone against fresh persisted state; never normalize body/autosave
+            // changes or mutate the query's post, database, or final CAS baseline.
+            $view = clone $post;
+            if (
+                function_exists('is_preview') &&
+                is_preview() &&
+                current_user_can('edit_post', $id) &&
+                in_array($baseline->post_status, ['draft', 'pending'], true) &&
+                $view->post_status === $baseline->post_status
+            ) {
+                $view->post_date = $baseline->post_date;
+            }
+            $token = mbb_token($baseline);
+            if (!hash_equals($token, mbb_token($view))) {
+                return '<p>' .
+                    esc_html(mbb_t('The article is unavailable or changed. Reload to continue.')) .
+                    '</p>';
+            }
             $out = mbb_component_static_document(
                 $html,
                 $post->post_content,

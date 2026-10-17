@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.9.0-rc.2
+
+- Compare front-end derived views with a fresh persisted baseline, accounting only for WordPress’s authorized draft/pending preview date projection. Keep all other field, metadata, session and final permission checks.
+- Add real core preview-date, mutation/revocation and password-form regressions; no provider resources or extension APIs change.
+
 ## 2.9.0-rc.1
 
 - Add bounded generic author-tool registration and consolidated exact-version extension diagnostics with permission-scoped usage.

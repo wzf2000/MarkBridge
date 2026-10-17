@@ -1,5 +1,9 @@
 # 当前验证范围
 
+## 2.9.0-rc.2：草稿预览日期
+
+`tests/projection-preview.php` 在只读核心源码中定位并执行实际 WP_Query 日期投影片段，使用实际 WP_Post 与产品 mbb_token（其余存储／权限为内存模型）。验证 draft/pending 日期唯一例外、无权限／非预览／公开状态拒绝、其他字段和 autosave 正文差异拒绝，以及渲染期间数据／metadata／权限变化。全局预览对象与持久对象不修改。复用 rc.1 其余已固定证据，并定向复验 PHP8.2／8.5、密码表单与 typed projection。实际站点预览由隔离环境独立验收。
+
 ## 2.9 SDK candidate
 
 新增共享 typed tree／UTF-8／空对象与数值夹具、局部 ID 冲突、逐文聚合预算、真实文件指纹失效、严格 raw usage JSON、候选代次与基线、旧宿主同步期限。浏览器使用真实 core scripts 验证候选 Apply/Undo，以及实际 CHTML builder 到 file:// 无脚本 SVG/完整表格；不冒称真实 WordPress DB 或生产验收。接口与可复用运行入口见 [SDK](SDK.md)。高节点纯模型在独立 128M 进程生成 10 章×每章 4 图×64 行×4 序列，实际 wire helper 共保留 3 完整树／37 明确回退，manifest 373,226 B；PHP8.2 峰 8,388,608 B、PHP8.5 峰 10,485,760 B。这不含 WordPress／图像原生分配，不冒称整站组合内存。完整 npm test 通过后，wire／容量／目录详情与新组合的直接模型及浏览器单独收尾。
