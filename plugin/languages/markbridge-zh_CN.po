@@ -2275,6 +2275,10 @@ msgid "Formula preview (not written to the body)"
 msgstr "公式预览（不写入正文）"
 
 #: plugin/i18n.js
+msgid "Formula preview is unavailable. The original TeX is preserved."
+msgstr "公式预览暂不可用，原始 TeX 仍保留。"
+
+#: plugin/i18n.js
 msgid "Formula reader"
 msgstr "公式阅读"
 
@@ -3672,6 +3676,10 @@ msgid "Passed"
 msgstr "通过"
 
 #: plugin/i18n.js
+msgid "Pasted source"
+msgstr "粘贴的源码"
+
+#: plugin/i18n.js
 msgid "Pending resource hint fields are invalid"
 msgstr "待上传资源提示字段无效"
 
@@ -3726,6 +3734,10 @@ msgstr "正在准备导出清单…"
 #: plugin/i18n.js
 msgid "Preparing this item. No article or media is created by preview."
 msgstr "正在准备此条目，预览不会创建文章或媒体。"
+
+#: plugin/i18n.js
+msgid "Preparing writing pattern…"
+msgstr "正在准备写作样板…"
 
 #: plugin/i18n.js
 msgid "Presentation resources could not be loaded"
@@ -3940,6 +3952,10 @@ msgid "Rechecking permissions, the article, and images…"
 msgstr "正在重新鉴权并核验当前文章与图片…"
 
 #: plugin/i18n.js
+msgid "Recognized result"
+msgstr "识别结果"
+
+#: plugin/i18n.js
 msgid "Recovery permission verification did not complete. Local recovery is paused; edited content remains on the page."
 msgstr "无法完成恢复权限校验，已暂停本地恢复；编辑内容仍在页面中。"
 
@@ -4010,6 +4026,10 @@ msgstr "删除项目"
 #: plugin/i18n.js
 msgid "Rename label and references"
 msgstr "更名并更新引用"
+
+#: plugin/i18n.js
+msgid "Rename label or reference key"
+msgstr "重命名标签或文献键"
 
 #: plugin/i18n.js
 msgid "Replace all"

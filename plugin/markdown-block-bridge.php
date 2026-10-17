@@ -4,7 +4,7 @@
  * Plugin URI: https://github.com/wzf2000/MarkBridge
  * Author: wzf2000
  * Author URI: https://github.com/wzf2000
- * Version: 2.6.0-rc.2
+ * Version: 2.6.0-rc.3
  * License: GPL-3.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  * Requires at least: 7.1
@@ -229,3 +229,5 @@ add_action('init', static function () {
         ]);
     }
 });
+
+require_once __DIR__ . '/writing-patterns.php';

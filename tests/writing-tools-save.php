@@ -35,7 +35,10 @@ try {
     foreach ($patterns as $n => $pattern) {
         $id = 'Writing' . wp_generate_password(12, false);
         $source =
-            $pattern['source'] .
+            mbb_instantiate_writing_pattern($pattern['id'], 'test-pattern-' . $n) .
+            ($pattern['id'] === 'lesson'
+                ? "\n" . mbb_instantiate_writing_pattern('lesson', 'second-pattern')
+                : '') .
             "\nA note[^note-" .
             $n .
             "].\n\n[^note-" .
@@ -84,6 +87,39 @@ try {
         writing_save_assert(
             !is_wp_error($pair),
             'pattern + note + math + nested structures reopen',
+        );
+        $native = new WP_REST_Request('POST', '/mbb/v1/save');
+        foreach (
+            [
+                'post_id' => $post,
+                'mode' => 'blocks',
+                'serialized' => $saved->post_content,
+                'expected' => $response->get_data()['expected'],
+                'title' => 'Synthetic native pattern',
+                'post_status' => 'draft',
+                'featured_media' => 0,
+            ]
+            as $key => $value
+        ) {
+            $native->set_param($key, $value);
+        }
+        $nativeResponse = rest_do_request($native);
+        writing_save_assert(
+            $nativeResponse->get_status() === 200,
+            'native pattern save: ' . wp_json_encode($nativeResponse->get_data()),
+        );
+        clean_post_cache($post);
+        $reopened = get_post($post);
+        writing_save_assert(
+            !is_wp_error(
+                mbb_convert([
+                    'mode' => 'paired_restore',
+                    'source' => $reopened->post_content_filtered,
+                    'serialized' => $reopened->post_content,
+                    'documentId' => mbb_id($post),
+                ]),
+            ),
+            'native reopened paired pattern',
         );
     }
     echo "writing patterns real WordPress save/reopen OK\n";

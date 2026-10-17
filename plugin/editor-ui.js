@@ -2118,6 +2118,7 @@
       source.hidden = mode === 'blocks';
       invalidate();
       await review();
+      return active(restorationEpoch) && recoveryRecord === record && !!candidate && !conflict;
     },
     cancel() {
       if (recoveryRecord) {

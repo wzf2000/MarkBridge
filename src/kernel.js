@@ -1,4 +1,11 @@
-export { markdownSnippet, writingPatterns, writingIndex, writingAdvice } from './writing-tools.js';
+export {
+  markdownSnippet,
+  writingPatterns,
+  instantiateWritingPattern,
+  writingIndex,
+  writingAdvice,
+} from './writing-tools.js';
+import { registerWritingPatterns } from './writing-tools.js';
 import {
   mediaImageAttributes,
   mediaGalleryAttributes,
@@ -1637,6 +1644,7 @@ export function register() {
   });
   installInlineMathDecorations();
   registerNativeMathConversion();
+  registerWritingPatterns(toBlocks);
 }
 const converterOnly = typeof window !== 'undefined' && window.MBB_CONVERTER_ONLY === true;
 if (!converterOnly) register();

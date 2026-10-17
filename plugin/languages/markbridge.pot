@@ -2275,6 +2275,10 @@ msgid "Formula preview (not written to the body)"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Formula preview is unavailable. The original TeX is preserved."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Formula reader"
 msgstr ""
 
@@ -3672,6 +3676,10 @@ msgid "Passed"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Pasted source"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Pending resource hint fields are invalid"
 msgstr ""
 
@@ -3725,6 +3733,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Preparing this item. No article or media is created by preview."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Preparing writing pattern…"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3940,6 +3952,10 @@ msgid "Rechecking permissions, the article, and images…"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Recognized result"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Recovery permission verification did not complete. Local recovery is paused; edited content remains on the page."
 msgstr ""
 
@@ -4009,6 +4025,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Rename label and references"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Rename label or reference key"
 msgstr ""
 
 #: plugin/i18n.js

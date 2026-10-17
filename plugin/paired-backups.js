@@ -15,7 +15,8 @@
     context,
     panel,
     status,
-    rows;
+    rows,
+    restoreOperation = 0;
   const requests = new Set();
   function cancel() {
     serial++;
@@ -69,7 +70,8 @@
         row.append(el('span', T('Older baseline; compare and resolve conflicts before saving.')));
       restore.onclick = async () => {
         const epoch = serial,
-          opening = context;
+          opening = context,
+          operation = ++restoreOperation;
         restore.disabled = true;
         try {
           const prepared = await api('POST', { key: entry.key, context: opening }, epoch);
@@ -80,28 +82,32 @@
               'This backup has an older baseline. Compare it with the current article before explicitly saving.',
             );
           if (epoch !== serial) return;
-          await window.MarkBridgeEditorRecovery.restore(record, async (baseline = null) => {
-            const fresh = await api('GET', {}, epoch);
-            const expected = baseline || prepared.currentContext;
-            if (
-              expected.expected !== fresh.context.expected ||
-              expected.sourceDigest !== fresh.context.sourceDigest
-            )
-              throw Error(
-                T(
-                  'Paired backup verification failed. Current input is preserved; compare the article and try again.',
-                ),
-              );
-            await api('POST', { key: entry.key, context: fresh.context }, epoch);
-          });
-          if (epoch === serial)
+          const adopted = await window.MarkBridgeEditorRecovery.restore(
+            record,
+            async (baseline = null) => {
+              const checkEpoch = serial;
+              const fresh = await api('GET', {}, checkEpoch);
+              const expected = baseline || prepared.currentContext;
+              if (
+                expected.expected !== fresh.context.expected ||
+                expected.sourceDigest !== fresh.context.sourceDigest
+              )
+                throw Error(
+                  T(
+                    'Paired backup verification failed. Current input is preserved; compare the article and try again.',
+                  ),
+                );
+              await api('POST', { key: entry.key, context: fresh.context }, checkEpoch);
+            },
+          );
+          if (adopted && operation === restoreOperation && restore.isConnected)
             status.textContent = T(
               'The candidate is in the difference preview and has not been written to WordPress or the source file.',
             );
         } catch (error) {
           if (epoch === serial) status.textContent = error.message;
         } finally {
-          if (epoch === serial) restore.disabled = false;
+          if (restore.isConnected) restore.disabled = false;
         }
       };
       const remove = el('button', T('Delete candidate'));

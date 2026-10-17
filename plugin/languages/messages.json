@@ -1784,5 +1784,10 @@
   "Another paired backup is being processed. Try again shortly. Current input is preserved.": "另一项配对备份正在处理中。请稍后重试；当前输入已保留。",
   "Paired backup storage failed. Current input is preserved; try again or download your candidate.": "配对备份存储失败。当前输入已保留，请重试或下载候选以妥善保存。",
   "Your sign-in expired. Sign in again before using paired backups. Current input is preserved.": "登录已过期。请重新登录后使用配对备份；当前输入已保留。",
-  "This paired backup is unavailable or expired. Current input is preserved.": "此配对备份不可用或已到期，当前输入已保留。"
+  "This paired backup is unavailable or expired. Current input is preserved.": "此配对备份不可用或已到期，当前输入已保留。",
+  "Preparing writing pattern…": "正在准备写作样板…",
+  "Rename label or reference key": "重命名标签或文献键",
+  "Pasted source": "粘贴的源码",
+  "Recognized result": "识别结果",
+  "Formula preview is unavailable. The original TeX is preserved.": "公式预览暂不可用，原始 TeX 仍保留。"
 }

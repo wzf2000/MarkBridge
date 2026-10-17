@@ -44,6 +44,9 @@
       to = el('input');
     to.maxLength = 64;
     toLabel.append(to);
+    const renameGroup = el('details');
+    renameGroup.className = 'mbb-writing-rename';
+    renameGroup.append(el('summary', T('Rename label or reference key')));
     let checked = null,
       renameType = 'label';
     const apply = button('Rename label and references', () => {
@@ -102,6 +105,8 @@
       try {
         const blocks = adapter.blocks(),
           index = window.MBB.writingIndex(blocks);
+        renameGroup.hidden = !index.some((item) => item.renameType);
+        preflight.disabled = renameGroup.hidden;
         for (const item of index.filter(
           (i) =>
             filter.value === 'all' ||
@@ -120,6 +125,7 @@
           if (item.id && item.renameType)
             row.append(
               button('Use label for rename', () => {
+                renameGroup.open = true;
                 renameType = item.renameType;
                 from.value = item.id;
                 to.value = item.id;
@@ -206,17 +212,15 @@
     }
     const insert = button('Insert writing pattern', () => {
       const pattern = window.MBB.writingPatterns.find((p) => p.id === patterns.value);
-      if (pattern) adapter.insert(pattern.source);
+      if (pattern) adapter.insert(window.MBB.instantiateWritingPattern(pattern.id));
     });
+    renameGroup.append(renameLabel, toLabel, preflight, apply);
     panel.append(
       label,
       button('Refresh content navigation', () => refresh()),
       button('Check current content', () => refresh(true)),
       items,
-      renameLabel,
-      toLabel,
-      preflight,
-      apply,
+      renameGroup,
       status,
       patterns,
       insert,
@@ -225,7 +229,8 @@
   }
   function native() {
     const store = () => wp.data.select('core/block-editor');
-    return create({
+    let insertionTarget = store().getSelectedBlockClientId?.();
+    const panel = create({
       blocks: () => store().getBlocks(),
       stamp: () => store().getBlocks(),
       select(item) {
@@ -249,6 +254,9 @@
           }
           const selector = '[data-block="' + CSS.escape(item.clientId) + '"]';
           const target = documents.map((doc) => doc.querySelector(selector)).find(Boolean);
+          for (let ancestor = target?.parentElement; ancestor; ancestor = ancestor.parentElement) {
+            if (ancestor.tagName === 'DETAILS') ancestor.open = true;
+          }
           target?.scrollIntoView({ block: 'center' });
         });
       },
@@ -261,12 +269,33 @@
       },
       insert(source) {
         const blocks = MBB.toBlocks(source),
-          selected = store().getSelectedBlockClientId();
-        wp.data
-          .dispatch('core/block-editor')
-          .insertBlocks(blocks, selected ? store().getBlockIndex(selected) + 1 : undefined);
+          selected = store().getSelectedBlockClientId() || insertionTarget;
+        const dispatch = wp.data.dispatch('core/block-editor'),
+          block = selected && store().getBlock(selected);
+        const content = block?.attributes.content,
+          empty =
+            content === '' ||
+            (wp.richText.RichTextData &&
+              content instanceof wp.richText.RichTextData &&
+              content.toString() === '');
+        if (block?.name === 'core/paragraph' && empty) dispatch.replaceBlocks(selected, blocks);
+        else
+          dispatch.insertBlocks(
+            blocks,
+            selected ? store().getBlockIndex(selected) + 1 : undefined,
+            selected ? store().getBlockRootClientId(selected) : undefined,
+          );
       },
     });
+    // Retain the insertion point while focusing this panel's controls. Resolve it again before use.
+    panel.addEventListener(
+      'pointerdown',
+      () => {
+        insertionTarget = store().getSelectedBlockClientId() || insertionTarget;
+      },
+      true,
+    );
+    return panel;
   }
   // Only an empty paragraph is eligible; all ordinary prose, rich HTML and partial fragments use core paste.
   function installPaste() {
@@ -311,6 +340,14 @@
       template.innerHTML = wp.blocks.serialize(blocks);
       for (const n of template.content.querySelectorAll('script,iframe,object,embed')) n.remove();
       preview.append(template.content);
+      const sourceGroup = el('section'),
+        resultGroup = el('section'),
+        actions = el('div');
+      sourceGroup.className = 'mbb-paste-source';
+      resultGroup.className = 'mbb-paste-result';
+      actions.className = 'mbb-paste-actions';
+      sourceGroup.append(el('h3', T('Pasted source')), raw);
+      resultGroup.append(el('h3', T('Recognized result')), preview);
       const finish = (next) => {
         if (store.getBlock(block.clientId) !== block) {
           dialog.close();
@@ -319,10 +356,7 @@
         wp.data.dispatch('core/block-editor').replaceBlocks(block.clientId, next);
         dialog.close();
       };
-      dialog.append(
-        heading,
-        raw,
-        preview,
+      actions.append(
         button('Insert recognized Markdown', () => finish(blocks)),
         button('Keep as plain text', () => {
           const escaped = text
@@ -332,9 +366,29 @@
         }),
         button('Cancel', () => dialog.close()),
       );
+      actions.querySelector('button').classList.add('mbb-primary');
+      dialog.append(heading, sourceGroup, resultGroup, actions);
       dialog.addEventListener('close', () => dialog.remove(), { once: true });
       document.body.append(dialog);
       dialog.showModal();
+      if (snippet.kind === 'math') {
+        const style = el('style');
+        style.textContent = window.MBB_MATH?.style || '';
+        dialog.prepend(style);
+        const failure = () => {
+          if (dialog.isConnected)
+            resultGroup.append(
+              el('p', T('Formula preview is unavailable. The original TeX is preserved.')),
+            );
+        };
+        if (window.MBB_MATH?.typeset)
+          window.MBB_MATH.typeset(preview)
+            .then(() => {
+              if (preview.querySelector('[data-mbb-math-error]')) failure();
+            })
+            .catch(failure);
+        else failure();
+      }
     };
     const attached = new WeakSet();
     const attach = (doc) => {

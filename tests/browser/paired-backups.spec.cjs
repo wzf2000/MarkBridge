@@ -102,3 +102,85 @@ for (const plain of [false, true]) {
     },
   );
 }
+test('real recovery adoption reviews after its own change and remains reusable after closing', async ({
+  page,
+}, info) => {
+  const context = {
+    schema: 1,
+    siteKey: 'a'.repeat(64),
+    userKey: 'b'.repeat(64),
+    postId: 12,
+    newKey: null,
+    identity: 'c'.repeat(64),
+    baseline: 'd'.repeat(64),
+    permission: 'e'.repeat(64),
+    expected: 'baseline-1',
+    sourceDigest: null,
+    sourceManaged: false,
+    sourceWriteAvailable: false,
+  };
+  const payload = {
+    content: '# Restored candidate\n',
+    title: 'Restored',
+    status: 'draft',
+    featuredMedia: 0,
+    documentId: 'RECOVERY',
+  };
+  const key = '_mbb_backup_' + 'f'.repeat(32);
+  let previews = 0;
+  await page.route('**/wp-json/mbb/v1/**', async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith('/recovery-context')) return route.fulfill({ json: context });
+    if (path.endsWith('/paired-backups')) {
+      if (route.request().method() === 'POST')
+        return route.fulfill({
+          json: { kind: 'markdown', context, currentContext: context, payload, stale: false },
+        });
+      return route.fulfill({
+        json: {
+          context,
+          items: [{ key, created: 1780000000, baseline: context.baseline }],
+          saved: '2026-10-17 00:00:00',
+        },
+      });
+    }
+    if (path.endsWith('/document'))
+      return route.fulfill({ json: await page.evaluate(() => MBB_EDITOR.state) });
+    if (path.endsWith('/preview')) {
+      const body = route.request().postDataJSON();
+      if (body.mode !== 'blocks') previews++;
+      return route.fulfill({
+        json: {
+          document: await page.evaluate(
+            (s) => MBB.importDocument(s, 'RECOVERY'),
+            body.mode === 'blocks' ? '# Original\n\nOriginal body.\n' : body.source,
+          ),
+          title: body.title,
+          post_status: 'draft',
+          before: '# Original\n',
+          html: '<p>Restored candidate</p>',
+        },
+      });
+    }
+    return route.fulfill({ json: {} });
+  });
+  await page.goto('/recovery-editor?locale=en_US&serverBackups');
+  await page.locator('#mbb-more > summary').click();
+  await page.locator('#mbb-recovery-open').click();
+  const restore = page.getByRole('button', {
+    name: 'Restore candidate and view differences',
+    exact: true,
+  });
+  for (let n = 0; n < 2; n++) {
+    await restore.click();
+    await expect(page.locator('#mbb-source')).toHaveValue(payload.content);
+    await expect(page.locator('#mbb-save')).toBeEnabled();
+    await expect(page.locator('.mbb-server-backups')).toContainText(
+      'The candidate is in the difference preview',
+    );
+    await expect(restore).toBeEnabled();
+    await page.screenshot({ path: info.outputPath('restored-' + n + '.png'), fullPage: true });
+    await page.getByRole('button', { name: 'Close editing bridge', exact: true }).click();
+  }
+  expect(previews).toBe(2);
+});

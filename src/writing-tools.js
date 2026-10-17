@@ -1,4 +1,5 @@
 import { translate as T } from './i18n.js';
+import patterns from '../plugin/writing-patterns.json';
 // Deliberately complete block fragments only. Never infer inline dollar math or rewrite code bytes.
 export function markdownSnippet(text) {
   if (
@@ -31,7 +32,59 @@ export function markdownSnippet(text) {
     return { kind: 'list', source: text };
   return null;
 }
-export { default as writingPatterns } from '../plugin/writing-patterns.json';
+export const writingPatterns = patterns;
+export function instantiateWritingPattern(id, instance = null) {
+  const pattern = patterns.find((p) => p.id === id);
+  if (!pattern) throw Error('Unknown writing pattern');
+  if (!pattern.instantiate) return pattern.source;
+  instance ||=
+    'pattern-' +
+    [...crypto.getRandomValues(new Uint8Array(12))]
+      .map((n) => n.toString(16).padStart(2, '0'))
+      .join('');
+  if (!/^[A-Za-z][A-Za-z0-9_-]{2,39}$/.test(instance))
+    throw Error('Invalid writing pattern instance');
+  // Only explicit template-owned tokens are instantiated. External reference identities stay intact.
+  return pattern.source.replaceAll('{{instance}}', instance);
+}
+export function registerWritingPatterns(toBlocks) {
+  const name = 'mbb/writing-pattern';
+  if (wp.blocks.getBlockType(name)) return;
+  wp.blocks.registerBlockType(name, {
+    apiVersion: 3,
+    title: T('Writing pattern'),
+    category: 'text',
+    attributes: { pattern: { type: 'string' } },
+    supports: { inserter: false, html: false, reusable: false },
+    edit({ attributes, clientId }) {
+      const registry = wp.data.useRegistry(),
+        initialized = wp.element.useRef(false);
+      wp.element.useEffect(() => {
+        if (initialized.current) return;
+        const current = registry.select('core/block-editor').getBlock(clientId);
+        if (!current || current.name !== name) return;
+        initialized.current = true;
+        try {
+          const blocks = toBlocks(instantiateWritingPattern(attributes.pattern));
+          const dispatch = registry.dispatch('core/block-editor');
+          dispatch.__unstableMarkNextChangeAsNotPersistent();
+          dispatch.replaceBlocks(clientId, blocks);
+        } catch {
+          initialized.current = false;
+        }
+      }, [clientId, attributes.pattern, registry]);
+      return wp.element.createElement(
+        'p',
+        wp.blockEditor.useBlockProps(),
+        T('Preparing writing pattern…'),
+      );
+    },
+    save() {
+      return null;
+    },
+  });
+}
+
 export function writingIndex(blocks) {
   const items = [];
   const visit = (list, path = []) =>

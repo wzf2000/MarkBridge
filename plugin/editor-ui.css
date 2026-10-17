@@ -923,3 +923,132 @@ body:has(#mbb-toolbar:not([hidden]):not(.mbb-keyboard-open) #mbb-recovery-open:n
   border-top: 1px solid #dcdcde;
   margin-top: 12px;
 }
+
+/* New writing panels use the existing author-control spacing and WordPress color. */
+:is(#mbb-toolbar, #mbb-dialog) .mbb-writing-tools label {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
+  margin: 10px 0;
+}
+:is(#mbb-toolbar, #mbb-dialog) .mbb-writing-tools :is(input, select) {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+  margin: 0;
+  padding: 7px 9px;
+  border: 1px solid #8c8f94;
+  border-radius: 4px;
+  background-color: #fff;
+  color: #2c3338;
+  font: inherit;
+}
+.mbb-writing-tools > button,
+.mbb-writing-rename > button {
+  margin: 4px 6px 4px 0;
+}
+.mbb-writing-rename {
+  margin-block: 12px;
+  padding: 10px;
+  border: 1px solid #dcdcde;
+  border-radius: 5px;
+  background: #f6f7f7;
+}
+.mbb-paste-preview {
+  box-sizing: border-box;
+  padding: 20px;
+  border: 1px solid #c3c4c7;
+  border-radius: 8px;
+  box-shadow: 0 12px 40px #0003;
+  background: #fff;
+  color: #2c3338;
+  font: 14px/1.6 system-ui;
+}
+.mbb-paste-preview::backdrop {
+  background: #0006;
+}
+.mbb-paste-preview :is(h2, h3) {
+  margin: 0 0 10px;
+  line-height: 1.4;
+}
+.mbb-paste-preview h2 {
+  font-size: 20px;
+}
+.mbb-paste-preview h3 {
+  font-size: 14px;
+}
+.mbb-paste-preview section {
+  margin-block: 16px;
+  padding: 12px;
+  border: 1px solid #dcdcde;
+  border-radius: 5px;
+}
+.mbb-paste-preview pre,
+.mbb-paste-candidate pre {
+  margin: 0;
+  padding: 12px;
+  background: #f6f7f7;
+  color: #2c3338;
+  font:
+    13px/1.6 ui-monospace,
+    SFMono-Regular,
+    Consolas,
+    monospace;
+  white-space: pre;
+  overflow: auto;
+}
+.mbb-paste-preview pre code {
+  display: block;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  white-space: inherit;
+}
+.mbb-paste-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 8px;
+}
+.mbb-paste-preview button {
+  min-height: 38px;
+  padding: 7px 12px;
+  border: 1px solid #c3c4c7;
+  border-radius: 5px;
+  background: #fff;
+  color: #2c3338;
+  font: inherit;
+  cursor: pointer;
+}
+.mbb-paste-preview button:hover {
+  background: #f6f7f7;
+}
+.mbb-paste-preview .mbb-primary {
+  background: var(--wp-admin-theme-color, #2271b1);
+  border-color: var(--wp-admin-theme-color, #2271b1);
+  color: #fff;
+}
+.mbb-paste-preview button:focus-visible {
+  outline: 2px solid var(--wp-admin-theme-color, #2271b1);
+  outline-offset: 2px;
+}
+@media (pointer: coarse) {
+  .mbb-writing-tools button,
+  .mbb-paste-preview button,
+  :is(#mbb-toolbar, #mbb-dialog) .mbb-writing-tools :is(input, select) {
+    min-height: 44px;
+  }
+}
+@media (max-width: 600px) {
+  .mbb-paste-preview {
+    padding: 16px;
+  }
+  .mbb-paste-actions button {
+    flex: 1 1 140px;
+  }
+}

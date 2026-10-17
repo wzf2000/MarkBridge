@@ -135,6 +135,10 @@ const taskEditor = (source = '- [ ] Browser task\n- ordinary\n', options = {}) =
       mapped('teaching.css') +
       '"><link rel="stylesheet" href="' +
       mapped('technical.css') +
+      '"><script type="importmap">{"imports":{"@wordpress/latex-to-mathml":"/wp-includes/js/dist/script-modules/latex-to-mathml/index.js"}}</script><script>window.MBB_MATH_CONFIG={front:false}</script><script src="' +
+      mapped('math.js') +
+      '"></script><link rel="stylesheet" href="' +
+      mapped('editor-ui.css') +
       '"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/wp-includes/css/dashicons.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/components/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-editor/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-library/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-library/editor.min.css"><style>#task-editor{padding:90px 24px 24px;max-width:850px;margin:auto}#task-export{white-space:pre-wrap;overflow-wrap:anywhere;max-width:100%;max-height:12rem;overflow:auto}</style></head>',
   );
   return html.replace(

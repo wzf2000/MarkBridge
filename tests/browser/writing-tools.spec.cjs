@@ -38,10 +38,10 @@ test('source content navigation, same-source pattern insertion, complete paste p
   await expect(textarea).toHaveValue(source);
   await page.getByText('Find, replace and navigate', { exact: true }).click();
   const tools = page.locator('.mbb-source-tools .mbb-writing-tools');
-  await tools.locator('summary').click();
+  await tools.locator('summary').first().click();
   await tools.getByRole('combobox', { name: 'Writing pattern' }).selectOption('lesson');
   await tools.getByRole('button', { name: 'Insert writing pattern', exact: true }).click();
-  await expect(textarea).toHaveValue(/## Experiment/);
+  await expect(textarea).toHaveValue(/mbb:v1 collapse/);
   await textarea.press('Control+z');
   await expect(textarea).toHaveValue(source);
   await textarea.evaluate((node) => node.setSelectionRange(node.value.length, node.value.length));
@@ -55,6 +55,7 @@ test('source content navigation, same-source pattern insertion, complete paste p
   }, snippet);
   await expect(page.locator('.mbb-paste-candidate')).toBeVisible();
   await expect(textarea).toHaveValue(source);
+  await page.screenshot({ path: info.outputPath('paste-preview.png'), fullPage: true });
   await page.getByRole('button', { name: 'Insert recognized Markdown', exact: true }).click();
   await expect(textarea).toHaveValue(source + snippet);
   await textarea.press('Control+z');
@@ -65,7 +66,7 @@ test('source content navigation, same-source pattern insertion, complete paste p
 });
 test('native empty-paragraph paste is reviewed, code dollars preserved, partial text untouched', async ({
   page,
-}) => {
+}, info) => {
   await page.goto('/technical-editor?locale=en_US');
   const frame = page.frameLocator('iframe[name="editor-canvas"]');
   await expect(frame.locator('[contenteditable="true"]').first()).toBeVisible();
@@ -100,9 +101,28 @@ test('native empty-paragraph paste is reviewed, code dollars preserved, partial 
     );
   });
   await expect(page.getByRole('dialog', { name: 'Markdown paste preview' })).toBeVisible();
+  await page.screenshot({ path: info.outputPath('native-paste-preview.png'), fullPage: true });
   await page.getByRole('button', { name: 'Insert recognized Markdown', exact: true }).click();
   await expect.poll(() => page.evaluate(() => taskBlocks[0].name)).toBe('mbb/code');
   expect(await page.evaluate(() => taskBlocks[0].attributes.code)).toBe('const price="$5";\n');
+  await page.evaluate(() => {
+    const block = wp.blocks.createBlock('core/paragraph', { content: '' });
+    taskRegistry.dispatch('core/block-editor').resetBlocks([block]);
+    taskRegistry.dispatch('core/block-editor').selectBlock(block.clientId);
+  });
+  await editable.click();
+  await editable.evaluate((node) => {
+    const data = new DataTransfer();
+    data.setData('text/plain', '$$\n\\frac{a}{b}\n$$');
+    node.dispatchEvent(
+      new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }),
+    );
+  });
+  await expect(page.locator('.mbb-paste-result mjx-container')).toBeVisible();
+  await page.screenshot({ path: info.outputPath('math-paste-preview.png'), fullPage: true });
+  await page.getByRole('button', { name: 'Insert recognized Markdown', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => taskBlocks[0].name)).toBe('mbb/math');
+  expect(await page.evaluate(() => taskBlocks[0].attributes.tex)).toContain('\\frac{a}{b}');
   await page.evaluate(() => {
     const block = wp.blocks.createBlock('core/paragraph', { content: '' });
     taskRegistry.dispatch('core/block-editor').resetBlocks([block]);
@@ -121,4 +141,83 @@ test('native empty-paragraph paste is reviewed, code dollars preserved, partial 
     return event.defaultPrevented;
   });
   await expect(page.getByRole('dialog', { name: 'Markdown paste preview' })).toHaveCount(0);
+});
+test('native pattern instances replace only the empty placeholder and allocate independent nested IDs', async ({
+  page,
+}, info) => {
+  await page.goto('/technical-editor?locale=en_US');
+  await expect(
+    page.frameLocator('iframe[name="editor-canvas"]').locator('[contenteditable="true"]').first(),
+  ).toBeVisible();
+  await page.evaluate(() => {
+    const original = wp.data.select.bind(wp.data),
+      dispatch = wp.data.dispatch.bind(wp.data);
+    wp.data = {
+      ...wp.data,
+      select: (name) => (name === 'core/block-editor' ? taskRegistry.select(name) : original(name)),
+      dispatch: (name) =>
+        name === 'core/block-editor' ? taskRegistry.dispatch(name) : dispatch(name),
+    };
+    const empty = wp.blocks.createBlock('core/paragraph', { content: '' });
+    taskRegistry.dispatch('core/block-editor').resetBlocks([empty]);
+    taskRegistry.dispatch('core/block-editor').selectBlock(empty.clientId);
+    const toolbar = document.createElement('div');
+    toolbar.id = 'mbb-toolbar';
+    toolbar.append(MBBWritingTools.native());
+    document.body.append(toolbar);
+  });
+  const tools = page.locator('.mbb-writing-tools').last();
+  await tools.locator('summary').first().click();
+  await tools.getByRole('combobox', { name: 'Writing pattern' }).selectOption('lesson');
+  await page.evaluate(() =>
+    taskRegistry.dispatch('core/block-editor').selectBlock(taskBlocks[0].clientId),
+  );
+  expect(
+    await page.evaluate(() => taskRegistry.select('core/block-editor').getSelectedBlockClientId()),
+  ).toBeTruthy();
+  await tools.getByRole('button', { name: 'Insert writing pattern', exact: true }).click();
+  const first = await page.evaluate(() =>
+    MBB.writingIndex(taskBlocks)
+      .map((i) => i.id)
+      .filter(Boolean),
+  );
+  expect(first.some((id) => id.endsWith('-equation'))).toBe(true);
+  await page.evaluate(() => {
+    const placeholder = wp.blocks.parse(MBB.writingPatterns.find((p) => p.id === 'lesson').content);
+    taskRegistry.dispatch('core/block-editor').insertBlocks(placeholder, taskBlocks.length);
+  });
+  await expect
+    .poll(() => page.evaluate(() => taskBlocks.some((b) => b.name === 'mbb/writing-pattern')))
+    .toBe(false);
+  const result = await page.evaluate(() => ({
+    index: MBB.writingIndex(taskBlocks),
+    issues: MBB.technicalDiagnostics(taskBlocks).issues,
+    source: MBB.toMarkdown(taskBlocks, { origin: 'markdown_import' }),
+    names: taskBlocks.map((b) => b.name),
+  }));
+  const ids = result.index.map((i) => i.id).filter(Boolean);
+  expect(ids.length).toBe(new Set(ids).size);
+  expect(result.issues).toEqual([]);
+  expect(result.names.every((n) => n === 'mbb/collapse')).toBe(true);
+  expect(result.source).not.toContain('{{instance}}');
+  await tools.getByRole('combobox', { name: 'Content type' }).selectOption('math');
+  await tools.getByRole('button', { name: 'x^2 + y^2 = z^2', exact: true }).first().click();
+  const selected = await page.evaluate(() =>
+    taskRegistry.select('core/block-editor').getSelectedBlockClientId(),
+  );
+  await expect(
+    page.frameLocator('iframe[name="editor-canvas"]').locator('[data-block="' + selected + '"]'),
+  ).toBeInViewport();
+  await page.screenshot({ path: info.outputPath('native-pattern-navigation.png'), fullPage: true });
+  await page.evaluate(() => {
+    const block = wp.blocks.createBlock('core/paragraph', { content: ' ' });
+    taskRegistry.dispatch('core/block-editor').resetBlocks([block]);
+  });
+  await expect.poll(() => page.evaluate(() => taskBlocks.length)).toBe(1);
+  await page.evaluate(() =>
+    taskRegistry.dispatch('core/block-editor').selectBlock(taskBlocks[0].clientId),
+  );
+  await tools.getByRole('button', { name: 'Insert writing pattern', exact: true }).click();
+  expect(await page.evaluate(() => String(taskBlocks[0].attributes.content))).toBe(' ');
+  expect(await page.evaluate(() => taskBlocks.length)).toBe(4);
 });

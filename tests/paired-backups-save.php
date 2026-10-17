@@ -31,6 +31,7 @@ function backup_request($method, $data)
 $previous = get_current_user_id();
 $user = 0;
 $post = 0;
+$file = $mapping = $sourceKey = null;
 try {
     $user = wp_insert_user([
         'user_login' => 'paired-backup-' . wp_generate_password(12, false),
@@ -89,6 +90,66 @@ try {
     $bad = $input;
     $bad['source'] = ':::mbb:v1 not-valid {}';
     backup_assert(backup_request('POST', $bad)->get_status() >= 400, 'invalid conversion rejected');
+    // A source binding is private and disposable; both create and prepare must leave it untouched.
+    $file = tempnam(sys_get_temp_dir(), 'mbb-backup-source-');
+    backup_assert(
+        $file &&
+            realpath($file) &&
+            !str_starts_with(realpath($file), realpath(ABSPATH) . DIRECTORY_SEPARATOR),
+        'source outside Web root',
+    );
+    chmod($file, 0600);
+    file_put_contents($file, $doc['source']);
+    update_post_meta($post, '_mbb_source_managed', 'file');
+    update_post_meta($post, '_mbb_source_path_hash', hash('sha256', realpath($file)));
+    $mapping = static fn($target, $item) => (int) $item->ID === $post ? $file : $target;
+    add_filter('mbb_source_write_target', $mapping, 10, 2);
+    $bound = backup_request('GET', ['post_id' => $post])->get_data()['context'];
+    backup_assert(
+        $bound['sourceManaged'] && $bound['sourceDigest'] === hash_file('sha256', $file),
+        'bound source digest',
+    );
+    $boundInput = $input;
+    $boundInput['context'] = $bound;
+    $boundInput['expected'] = $bound['expected'];
+    $boundMade = backup_request('POST', $boundInput);
+    backup_assert($boundMade->get_status() === 200, 'source-bound create');
+    $boundItems = array_values(
+        array_filter($boundMade->get_data()['items'], static fn($item) => $item['key'] !== $key),
+    );
+    backup_assert(count($boundItems) === 1, 'new bound backup identified');
+    $sourceKey = $boundItems[0]['key'];
+    backup_assert(
+        backup_request('POST', [
+            'post_id' => $post,
+            'key' => $sourceKey,
+            'context' => $bound,
+        ])->get_status() === 200,
+        'source-bound prepare',
+    );
+    backup_assert(
+        file_get_contents($file) === $doc['source'] && get_post($post, ARRAY_A) === $before,
+        'source backup/prepare leave source and post untouched',
+    );
+    $external = $doc['source'] . "\nExternal synthetic source change.\n";
+    file_put_contents($file, $external);
+    $fresh = backup_request('GET', ['post_id' => $post])->get_data()['context'];
+    foreach ([$bound, $fresh] as $check) {
+        backup_assert(
+            backup_request('POST', [
+                'post_id' => $post,
+                'key' => $sourceKey,
+                'context' => $check,
+            ])->get_status() === 409,
+            'old source record rejects both stale and fresh context',
+        );
+    }
+    backup_assert(
+        file_get_contents($file) === $external && get_post($post, ARRAY_A) === $before,
+        'external source retained',
+    );
+    backup_request('DELETE', ['post_id' => $post, 'key' => $sourceKey]);
+    $sourceKey = null;
     wp_set_current_user(0);
     backup_assert(
         backup_request('GET', ['post_id' => $post])->get_status() >= 400,
@@ -107,6 +168,15 @@ try {
     backup_request('DELETE', ['post_id' => $post, 'key' => $key]);
     echo "paired backups real WordPress OK\n";
 } finally {
+    if ($sourceKey && $post) {
+        backup_request('DELETE', ['post_id' => $post, 'key' => $sourceKey]);
+    }
+    if ($mapping) {
+        remove_filter('mbb_source_write_target', $mapping, 10);
+    }
+    if ($file && is_file($file)) {
+        unlink($file);
+    }
     if ($post) {
         wp_delete_post($post, true);
     }
