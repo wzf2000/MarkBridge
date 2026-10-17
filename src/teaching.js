@@ -849,6 +849,7 @@ export function registerTeaching() {
                   value: a.params,
                   component: a.component,
                   componentVersion: a.componentVersion,
+                  instanceId: a.id,
                   clientId,
                   activity: a.activity,
                   parts: [...activityParts(currentBlock || { innerBlocks: [] })].map(([id, b]) => ({

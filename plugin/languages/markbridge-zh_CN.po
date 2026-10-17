@@ -3316,6 +3316,10 @@ msgid "Invalid link target"
 msgstr "链接 target 非法"
 
 #: plugin/i18n.js
+msgid "Invalid local author draft"
+msgstr "本地作者草稿无效"
+
+#: plugin/i18n.js
 msgid "Invalid native block nesting"
 msgstr "原生区块嵌套位置非法"
 
@@ -3534,6 +3538,10 @@ msgstr "正在加载你的活动批次…"
 #: plugin/i18n.js
 msgid "Local attachment IDs cannot be imported from a batch. Use portable images without another site's IDs."
 msgstr "批次不能导入本地附件 ID，请使用不含其他站点 ID 的便携图片。"
+
+#: plugin/i18n.js
+msgid "Local author edits are unapplied and not saved. Prepare or discard them to continue."
+msgstr "本地作者编辑尚未应用或保存，请准备或丢弃后继续。"
 
 #: plugin/i18n.js
 msgid "Local block restoration only restores a candidate. The header proposal is preserved. Use a separate bridge preview and confirmation to apply metadata."
@@ -4462,6 +4470,10 @@ msgstr "准备导出与资源清单"
 #: plugin/i18n.js
 msgid "Prepare initial parameters"
 msgstr "准备初始参数"
+
+#: plugin/i18n.js
+msgid "Prepare or discard local author edits before applying parameters."
+msgstr "请先准备或丢弃本地作者编辑，再应用参数。"
 
 #: plugin/i18n.js
 msgid "Prepare snapshot"

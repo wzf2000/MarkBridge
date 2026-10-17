@@ -199,6 +199,51 @@ function initialValue(schema, seed) {
   return schema.minimum ?? Math.min(0, schema.maximum ?? 0);
 }
 
+// Local author input stays in the existing in-memory draft map, never attrs/source.
+export function componentLocalDraft(value) {
+  if (value === null) return null;
+  if (typeof value !== 'object' || Array.isArray(value))
+    throw Error(T('Invalid local author draft'));
+  let nodes = 0;
+  const walk = (v, depth) => {
+    if (++nodes > 1024 || depth > 8) throw Error(T('Invalid local author draft'));
+    if (v === null || ['string', 'boolean', 'number'].includes(typeof v)) return;
+    if (
+      !v ||
+      typeof v !== 'object' ||
+      (!Array.isArray(v) && ![Object.prototype, null].includes(Object.getPrototypeOf(v)))
+    )
+      throw Error(T('Invalid local author draft'));
+    if (Object.getOwnPropertySymbols(v).length) throw Error(T('Invalid local author draft'));
+    const descriptors = Object.getOwnPropertyDescriptors(v);
+    if (Object.values(descriptors).some((d) => d.get || d.set))
+      throw Error(T('Invalid local author draft'));
+    if (
+      Array.isArray(v) &&
+      (Object.keys(v).length !== v.length || Object.keys(v).some((k, i) => k !== String(i)))
+    )
+      throw Error(T('Invalid local author draft'));
+    for (const [key, d] of Object.entries(descriptors)) {
+      if (Array.isArray(v) && key === 'length') continue;
+      if (!d.enumerable) throw Error(T('Invalid local author draft'));
+      walk(d.value, depth + 1);
+    }
+  };
+  walk(value, 0);
+  componentParams(value, (_code, message) => {
+    throw Error(message);
+  });
+  return clone(value);
+}
+function componentAuthorScope() {
+  const cfg = globalThis.MBB_EDITOR;
+  return JSON.stringify([
+    cfg?.postId || 0,
+    cfg?.state?.expected || null,
+    cfg?.state?.source_sha256 || null,
+  ]);
+}
+
 export function createParameterEditor({
   wp,
   drafts,
@@ -215,12 +260,18 @@ export function createParameterEditor({
     clientId,
     component,
     componentVersion,
+    instanceId,
     activity,
     parts = [],
   }) {
     const original = JSON.stringify(value || {}, null, 2);
     const identity =
-      component + '@' + componentVersion + (activity ? ':' + JSON.stringify(activity) : '');
+      component +
+      '@' +
+      componentVersion +
+      ':' +
+      (instanceId || '') +
+      (activity ? ':' + JSON.stringify(activity) : '');
     const [candidateActivity, setCandidateActivity] = wp.element.useState(
       drafts.get(clientId)?.activity ?? activity,
     );
@@ -233,6 +284,63 @@ export function createParameterEditor({
     const [error, setError] = wp.element.useState(drafts.get(clientId)?.error || '');
     const [mode, setMode] = wp.element.useState('form');
     const authorSession = wp.element.useRef({});
+    const authorLife = wp.element.useRef({ active: true, signature: '', generation: 0 });
+    const [, refreshLocalDraft] = wp.element.useState(0);
+    const localDraft = drafts.get(clientId)?.localDraft ?? null;
+    const openingScope = componentAuthorScope();
+    const fingerprint = () => {
+      const d = drafts.get(clientId);
+      return JSON.stringify([
+        d?.raw ?? original,
+        d?.componentVersion ?? componentVersion,
+        d?.activity ?? activity,
+        d?.localDraft ?? null,
+        d?.baseline ?? original,
+        d?.identity ?? identity,
+        d?.error ?? '',
+      ]);
+    };
+    const openingFingerprint = fingerprint();
+    const authorSignature = JSON.stringify([
+      clientId,
+      identity,
+      original,
+      raw,
+      candidateVersion,
+      candidateActivity,
+      localDraft,
+      mode,
+      openingScope,
+    ]);
+    if (authorLife.current.signature !== authorSignature) {
+      authorLife.current.signature = authorSignature;
+      authorLife.current.generation++;
+    }
+    const generation = authorLife.current.generation,
+      session = authorSession.current;
+    wp.element.useEffect(() => {
+      authorLife.current.active = true;
+      return () => {
+        authorLife.current.active = false;
+      };
+    }, [clientId]);
+    const assertAuthorCurrent = () => {
+      const d = drafts.get(clientId);
+      if (
+        !authorLife.current.active ||
+        authorLife.current.generation !== generation ||
+        authorSession.current !== session ||
+        openingScope !== componentAuthorScope() ||
+        openingFingerprint !== fingerprint() ||
+        (d && (d.identity !== identity || d.baseline !== original))
+      )
+        throw Error(T('The author candidate changed. Preview again.'));
+    };
+    const chooseMode = (next) => {
+      authorLife.current.generation++;
+      setMode(next);
+    };
+
     let candidate, parseError;
     try {
       candidate = parse(raw);
@@ -284,7 +392,8 @@ export function createParameterEditor({
         }
       }
     }, [original, identity, JSON.stringify(schema)]);
-    const change = (text, targetVersion = candidateVersion) => {
+    const change = (text, targetVersion = candidateVersion, consumeLocalDraft = false) => {
+      authorLife.current.generation++;
       setCandidateVersion(targetVersion);
       setRaw(text);
       setError('');
@@ -293,6 +402,7 @@ export function createParameterEditor({
         text === original &&
         targetVersion === componentVersion &&
         equal(candidateActivity, activity) &&
+        (consumeLocalDraft || prior?.localDraft == null) &&
         !currentIssues(text).length
       )
         drafts.delete(clientId);
@@ -304,11 +414,37 @@ export function createParameterEditor({
           error: '',
           baseline: prior?.baseline ?? original,
           identity: prior?.identity ?? identity,
+          ...(!consumeLocalDraft && prior?.localDraft != null
+            ? { localDraft: prior.localDraft }
+            : {}),
         });
       syncDraftLock();
     };
+    const updateLocalDraft = (next) => {
+      assertAuthorCurrent();
+      const checked = componentLocalDraft(next);
+      if (checked === null) change(raw, candidateVersion, true);
+      else {
+        const prior = drafts.get(clientId);
+        authorLife.current.generation++;
+        drafts.set(clientId, {
+          raw,
+          ...(candidateActivity ? { activity: clone(candidateActivity) } : {}),
+          componentVersion: candidateVersion,
+          error: '',
+          baseline: prior?.baseline ?? original,
+          identity: prior?.identity ?? identity,
+          localDraft: checked,
+        });
+        setError('');
+        syncDraftLock();
+      }
+      refreshLocalDraft((n) => n + 1);
+    };
     const commit = () => {
       try {
+        if (drafts.get(clientId)?.localDraft != null)
+          throw Error(T('Prepare or discard local author edits before applying parameters.'));
         // Re-read the currently registered exact id/version, not author-supplied metadata.
         const registered = find(component, candidateVersion);
         if (activity && (!registered || registered.activityVersion !== 1))
@@ -331,7 +467,7 @@ export function createParameterEditor({
         if (issues.length) throw Error(labelOf(issues[0].path) + ': ' + T(issues[0].message));
         if (author?.apiVersion === 2) author.validate(parsed, candidateActivity);
         const pending = drafts.get(clientId);
-        if (pending && pending.identity !== identity)
+        if (pending && (pending.identity !== identity || pending.baseline !== original))
           throw Error(
             T(
               'The component changed while this candidate was open. Review or discard the candidate.',
@@ -347,6 +483,9 @@ export function createParameterEditor({
             ...(candidateActivity ? { activity: clone(candidateActivity) } : {}),
           });
         drafts.delete(clientId);
+        authorLife.current.generation++;
+        authorSession.current = {};
+        refreshLocalDraft((n) => n + 1);
         syncDraftLock();
         setError('');
       } catch (e) {
@@ -359,6 +498,9 @@ export function createParameterEditor({
           error: message,
           baseline: drafts.get(clientId)?.baseline ?? original,
           identity: drafts.get(clientId)?.identity ?? identity,
+          ...(drafts.get(clientId)?.localDraft != null
+            ? { localDraft: drafts.get(clientId).localDraft }
+            : {}),
         });
         syncDraftLock();
       }
@@ -493,9 +635,13 @@ export function createParameterEditor({
           ? T(
               'Applied configuration changed. The current candidate is preserved and unapplied. Saving is paused.',
             )
-          : T(
-              'Parameters are unapplied; article saving is paused. Apply or discard them to continue.',
-            )
+          : draft.localDraft != null
+            ? T(
+                'Local author edits are unapplied and not saved. Prepare or discard them to continue.',
+              )
+            : T(
+                'Parameters are unapplied; article saving is paused. Apply or discard them to continue.',
+              )
         : '');
     return el(
       'div',
@@ -510,7 +656,7 @@ export function createParameterEditor({
                   {
                     variant: mode === 'author' ? 'primary' : 'secondary',
                     'aria-pressed': mode === 'author',
-                    onClick: () => setMode('author'),
+                    onClick: () => chooseMode('author'),
                   },
                   T('Visual editor'),
                 )
@@ -521,7 +667,7 @@ export function createParameterEditor({
                   {
                     variant: mode === 'form' ? 'primary' : 'secondary',
                     'aria-pressed': mode === 'form',
-                    onClick: () => setMode('form'),
+                    onClick: () => chooseMode('form'),
                   },
                   T('Parameter form'),
                 )
@@ -531,7 +677,7 @@ export function createParameterEditor({
               {
                 variant: mode === 'json' ? 'primary' : 'secondary',
                 'aria-pressed': mode === 'json',
-                onClick: () => setMode('json'),
+                onClick: () => chooseMode('json'),
               },
               T('Advanced JSON'),
             ),
@@ -540,12 +686,18 @@ export function createParameterEditor({
       authorSupported && author?.Editor && mode === 'author'
         ? el(author.Editor, {
             wp,
-            session: authorSession.current,
+            session,
+            generation,
+            baseline: JSON.stringify([identity, original, openingScope]),
+            localDraft: clone(localDraft),
+            onLocalDraftChange: updateLocalDraft,
             ...(author.apiVersion === 2
               ? {
                   activity: clone(candidateActivity ?? null),
                   parts: clone(parts),
                   onActivityChange(next) {
+                    assertAuthorCurrent();
+                    authorLife.current.generation++;
                     setCandidateActivity(clone(next));
                     const prior = drafts.get(clientId);
                     drafts.set(clientId, {
@@ -555,20 +707,48 @@ export function createParameterEditor({
                       error: '',
                       baseline: prior?.baseline ?? original,
                       identity: prior?.identity ?? identity,
+                      ...(prior?.localDraft != null ? { localDraft: prior.localDraft } : {}),
                     });
                     syncDraftLock();
                   },
                 }
               : {}),
             value: clone(candidate),
-            onChange: (next) => {
+            onChange: (next, options = {}) => {
+              assertAuthorCurrent();
               try {
+                if (
+                  !object(options) ||
+                  Object.keys(options).some((k) => k !== 'consumeLocalDraft') ||
+                  (own(options, 'consumeLocalDraft') &&
+                    typeof options.consumeLocalDraft !== 'boolean')
+                )
+                  throw Error(T('Invalid local author draft'));
                 componentParams(next, (code, message) => {
                   throw Error(message);
                 });
-                change(JSON.stringify(next, null, 2));
+                if (options.consumeLocalDraft === true) {
+                  const current = find(component, candidateVersion);
+                  if (!current)
+                    throw Error(
+                      T(
+                        'The upgrade target is no longer registered. Discard the candidate or restore the extension.',
+                      ),
+                    );
+                  const issues = validateParameterSchema(next, current.schema);
+                  if (issues.length)
+                    throw Error(labelOf(issues[0].path) + ': ' + T(issues[0].message));
+                  if (author.apiVersion === 2) author.validate(next, candidateActivity);
+                }
+                change(
+                  JSON.stringify(next, null, 2),
+                  candidateVersion,
+                  options.consumeLocalDraft === true,
+                );
+                return true;
               } catch (e) {
                 setError(E(e));
+                return false;
               }
             },
           })
@@ -632,6 +812,8 @@ export function createParameterEditor({
           variant: 'tertiary',
           onClick: () => {
             drafts.delete(clientId);
+            authorLife.current.generation++;
+            refreshLocalDraft((n) => n + 1);
             setCandidateVersion(componentVersion);
             authorSession.current = {};
             if (currentIssues(original, find(component, componentVersion)?.schema).length)

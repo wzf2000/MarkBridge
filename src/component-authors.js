@@ -49,6 +49,7 @@ export const componentAuthor = (component, componentVersion) =>
 globalThis.MarkBridgeComponentAuthors = Object.freeze({
   apiVersion: 1,
   activityVersion: 1,
+  localDraftVersion: 1,
   templates: () =>
     [...authors.values()]
       .filter((a) => a.apiVersion === 2)

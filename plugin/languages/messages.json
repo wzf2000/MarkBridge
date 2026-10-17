@@ -2074,5 +2074,8 @@
   "Unsupported Presentation MathML": "此公式超出支持的 Presentation MathML 子集。",
   "Unsafe or malformed Presentation MathML": "Presentation MathML 结构无效或含不安全内容。",
   "Invalid MathML conversion input": "MathML 转换输入无效。",
-  "MathML validator unavailable": "MathML 校验器不可用。"
+  "MathML validator unavailable": "MathML 校验器不可用。",
+  "Invalid local author draft": "本地作者草稿无效",
+  "Prepare or discard local author edits before applying parameters.": "请先准备或丢弃本地作者编辑，再应用参数。",
+  "Local author edits are unapplied and not saved. Prepare or discard them to continue.": "本地作者编辑尚未应用或保存，请准备或丢弃后继续。"
 }

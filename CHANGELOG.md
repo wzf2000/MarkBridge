@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.9.0-rc.5
+
+- Let trusted component authors retain bounded local table/CSV input in the existing in-memory candidate and Save lock, with explicit atomic preparation or discard. Preserve mode/remount drafts and reject obsolete tool sessions/baselines.
+
 ## 2.9.0-rc.4
 
 - Accept `-rc.N` minimum-core declarations for trusted components and extension manifests, alongside existing stable and `-dev.N` floors. Keep PHP version comparison and plain exact component versions unchanged.

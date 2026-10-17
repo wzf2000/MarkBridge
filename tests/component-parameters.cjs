@@ -173,3 +173,40 @@ assert.throws(() => register({ ...descriptor, component: 'overflow' }));
 console.log(
   'Trusted author exact versions, closed registration, immutable upgrades and registration budget passed.',
 );
+
+// Local tool drafts are cloned pure JSON records with the unchanged params budget.
+const local = (expression) =>
+  vm.runInNewContext(`module.exports.componentLocalDraft(${expression})`, sandbox);
+assert.equal(local('null'), null);
+assert.equal(
+  JSON.stringify(local('{csv:"中😀", rows:[[1,true,null]]}')),
+  JSON.stringify({ csv: '中😀', rows: [[1, true, null]] }),
+);
+for (const expression of [
+  '[]',
+  '1',
+  '"text"',
+  'true',
+  'new Date()',
+  '({x:undefined})',
+  '({x:NaN})',
+  '({x:Infinity})',
+  '({x:"\\ud800"})',
+  `JSON.parse('{"__proto__":{}}')`,
+  '({x:Object.assign({}, {[Symbol("x")]:1})})',
+  '({x:1n})',
+  '({x(){}})',
+  '({get x(){throw Error("must not read")}})',
+  'Object.assign({}, {[Symbol("x")]:1})',
+  '({x:Object.assign([], {hidden:1})})',
+  '({x:Array(2)})',
+  '({x:new (class X {})()})',
+  '(()=>{const x={};x.self=x;return x})()',
+  '({text:"x".repeat(16384)})',
+  '({rows:Array(1024).fill(0)})',
+  '({a:{a:{a:{a:{a:{a:{a:{a:{a:0}}}}}}}}})',
+])
+  assert.throws(() => local(expression), undefined, expression);
+assert.equal(local('({text:"x".repeat(16373)})').text.length, 16373);
+assert.equal(local('({rows:Array(1022).fill(0)})').rows.length, 1022);
+console.log('Local author draft pure JSON/budget contracts passed');

@@ -3316,6 +3316,10 @@ msgid "Invalid link target"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Invalid local author draft"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Invalid native block nesting"
 msgstr ""
 
@@ -3533,6 +3537,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Local attachment IDs cannot be imported from a batch. Use portable images without another site's IDs."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Local author edits are unapplied and not saved. Prepare or discard them to continue."
 msgstr ""
 
 #: plugin/i18n.js
@@ -4461,6 +4469,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Prepare initial parameters"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Prepare or discard local author edits before applying parameters."
 msgstr ""
 
 #: plugin/i18n.js
