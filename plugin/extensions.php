@@ -15,7 +15,7 @@ function mbb_register_extension_manifest(string $id, array $d): bool
         !mbb_projection_text($d['title'], 200) ||
         !is_string($d['minMarkBridge']) ||
         strlen($d['minMarkBridge']) > 48 ||
-        !preg_match('/\A\d+\.\d+\.\d+(?:-dev\.\d+)?\z/D', $d['minMarkBridge']) ||
+        !preg_match('/\A\d+\.\d+\.\d+(?:-(?:dev|rc)\.\d+)?\z/D', $d['minMarkBridge']) ||
         !is_array($d['capabilities']) ||
         !array_is_list($d['capabilities']) ||
         count($d['capabilities']) > 8 ||

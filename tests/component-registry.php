@@ -459,6 +459,63 @@ try {
             mbb_component_registry()['lower-stable']['status'] === 'available',
         'Current core rejected the supported lower stable version',
     );
+    $savedRegistry = mbb_component_registry();
+    $rc = (int) substr(strrchr($currentVersion, '.'), 1);
+    foreach (
+        [
+            [$baseVersion . '-dev.1', 'available'],
+            ['1.9.0', 'available'],
+            [
+                $baseVersion . '-rc.' . max(1, $rc - 1),
+                str_contains($currentVersion, '-dev.') ? 'version-incompatible' : 'available',
+            ],
+            [$currentVersion, 'available'],
+            [
+                $baseVersion . '-rc.' . ($rc + 1),
+                str_contains($currentVersion, '-') ? 'version-incompatible' : 'available',
+            ],
+            [
+                $baseVersion,
+                str_contains($currentVersion, '-') ? 'version-incompatible' : 'available',
+            ],
+            ['99.0.0-rc.1', 'version-incompatible'],
+        ]
+        as [$floor, $status]
+    ) {
+        $floorProvider = $provider;
+        $floorProvider['minMarkBridge'] = $floor;
+        registry_assert(
+            markbridge_register_teaching_component('rc-floor', $floorProvider) &&
+                mbb_component_provider('rc-floor', '0.1.0')['status'] === $status,
+            'Incorrect RC floor compatibility: ' . $floor,
+        );
+        $GLOBALS['mbb_components'] = $savedRegistry;
+    }
+    foreach (
+        [
+            '2.9.0-rc',
+            '2.9.0-rc.x',
+            '2.9.0-rc.1.extra',
+            '2.9.0-beta.1',
+            '2.9.0-RC.1',
+            '2.9.0+meta',
+            "2.9.0-rc.1\n",
+        ]
+        as $floor
+    ) {
+        $floorProvider = $provider;
+        $floorProvider['minMarkBridge'] = $floor;
+        registry_assert(
+            !markbridge_register_teaching_component('invalid-floor', $floorProvider),
+            'Invalid RC minimum accepted',
+        );
+    }
+    $floorProvider = $provider;
+    $floorProvider['version'] = '0.1.0-rc.1';
+    registry_assert(
+        !markbridge_register_teaching_component('rc-implementation', $floorProvider),
+        'RC minimum widened exact component implementation versions',
+    );
     foreach (mbb_component_budget_limits() as $key => $max) {
         foreach ([0, -1, $max + 1, '1', 1.0] as $badValue) {
             $bad = $provider;

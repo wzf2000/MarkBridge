@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.9.0-rc.4
+
+- Accept `-rc.N` minimum-core declarations for trusted components and extension manifests, alongside existing stable and `-dev.N` floors. Keep PHP version comparison and plain exact component versions unchanged.
+
 ## 2.9.0-rc.3
 
 - Add a queued, bounded Presentation MathML projection API using the existing MathJax 4.1.3 engine, without accepting authored MathML or requiring a server renderer.

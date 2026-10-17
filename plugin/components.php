@@ -400,7 +400,7 @@ function mbb_component_register_checked(string $id, array $provider): bool
         !is_int($provider['protocolVersion']) ||
         $provider['protocolVersion'] < 1 ||
         !is_string($provider['minMarkBridge']) ||
-        !preg_match('/^\d+\.\d+\.\d+(?:-dev\.\d+)?$/D', $provider['minMarkBridge']) ||
+        !preg_match('/^\d+\.\d+\.\d+(?:-(?:dev|rc)\.\d+)?$/D', $provider['minMarkBridge']) ||
         !is_string($provider['title']) ||
         trim($provider['title']) === '' ||
         strlen($provider['title']) > 800 ||
