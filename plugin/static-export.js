@@ -152,6 +152,9 @@
           /^aria-[a-z-]+$/.test(k)
         )
           continue;
+        // Pinned MathJax 4.1.3 CHTML marks glyphs without italic correction
+        // with this exact literal. This is not an author-supplied math attribute.
+        if (rendered && node.localName === 'mjx-c' && k === 'noic' && v === 'true') continue;
         if (
           math &&
           (/^data-(?:speech-node|c|mjx-texclass)$/.test(k) ||

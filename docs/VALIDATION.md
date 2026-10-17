@@ -1,5 +1,12 @@
 # 当前验证范围
 
+## 2.8.0-rc.6：固定 CHTML 操作符字形
+
+- 核对包内 MathJax 4.1.3 `output/chtml.js`，生成器对 `mjx-c` 设置字面量 `noic="true"`。静态审查只补该精确形式；空值、false、大写 TRUE、危险文本、其他节点和作者原始标记均拒绝。
+- `tests/browser/static-export-math.spec.cjs` 使用真实 `mbb_math_configuration()`、CHTML、字体和 `MBB_MATH.preview`，验证 `\operatorname{KL}` 公式标题／全文及 file:// 无 JavaScript 断网字体；桌面与 390 各三项通过。额外保留快照经固定 Publisher 的真实逐章 build 后完整重开，截图已打开。
+- 可用 `MARKBRIDGE_TEST_PUBLICATION_INPUTS` 指向只读合成输入 ZIP，`MARKBRIDGE_TEST_PUBLISHER_ROOT` 指向固定 Publisher 源码，复验该可选投影用例。它仅验证已交付字节的作者端渲染，不模拟服务端授权，也不把旧快照 fingerprint 当作新下载授权。
+- 本窄修未改业务 PHP；复用 rc.5 已独立通过的真实 Origin 与五种首字节撤权故障结果，不重复完整保存／权限矩阵。最终主静态脚本 fingerprint 会变化，固定组合的实际 UI／授权由新包独立验收。
+
 ## 2.8.0-rc.5：真实 REST 头部顺序
 
 两个真正出流 handler 使用 priority 100，晚于核心 priority 10 的 `rest_send_cors_headers`，并保留输出前鉴权。`tests/collections.php` 在插件 handler 之后登记同优先级核心模型，再通过实际登记链运行二进制／JSON 输出，断言 CORS 前无正文；可复现此前相同 priority 的注册顺序问题。`tests/collections-save.php` 核对真实核心 filter 优先级，带 Origin 运行完整 `rest_pre_serve_request` 链并检查精确 ZIP／清理；不以直接调用自有 serve 代替核心链。实际 HTTP Origin／响应头仍由隔离站独立验收。

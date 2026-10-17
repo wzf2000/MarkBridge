@@ -66,6 +66,8 @@ prepare 成功后，前端用 `MarkBridgeStaticExport.build(descriptor, {cancell
 新全局 `MarkBridgeStaticExport.build(descriptor, {cancelled})` 验证闭集和资源摘要，调用
 现有 `MBB_MATH.preview` 处理脱离 live DOM 的副本，保留 CHTML、内嵌 WOFF2 和数学语义。
 公式失败、残留原始公式或超预算均拒绝，不生成声称完整的文件；取消/迟到完成不触发下载。
+固定 MathJax 4.1.3 CHTML 的无 italic-correction 字形标记仅允许排版后的
+`mjx-c noic="true"`；其他节点／值以及作者原始同名属性仍拒绝，不开放任意数学属性。
 客户端生成的 HTML 不提交服务端。构建结果是单文件 Blob，可在断网状态重新打开。
 
 文件只包含固定样式与公式/代码呈现后通过审查的静态正文。禁止 script、事件属性、iframe、
