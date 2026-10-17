@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.0.0-rc.6
+
+- Reuse the existing trusted teaching stylesheet in scriptless revision previews so internal parameter carriers stay hidden, preserving exact HTML, authored fallback, formula content and restoration payloads.
+
 ## 3.0.0-rc.5
 
 - Strip bounded generated CHTML collapse bookkeeping on the pinned `mjx-msubsup` node as well as `mjx-math`, preserving subscript/superscript formulas in static HTML and publication clients.

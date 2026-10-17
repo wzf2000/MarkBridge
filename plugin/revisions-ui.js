@@ -201,6 +201,7 @@
       preview.srcdoc =
         '<!doctype html><meta charset="utf-8"><style>' +
         MBB_MATH.style +
+        (cfg.teachingStyle || '') +
         'body{font:16px/1.7 system-ui;padding:16px;overflow-wrap:anywhere}pre{overflow:auto}table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:4px}img{max-width:100%}</style>' +
         (await MBB_MATH.preview(result.html));
       preview.hidden = false;
