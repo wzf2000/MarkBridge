@@ -48,7 +48,7 @@ export function parameterLabel(path) {
         .map((key) =>
           typeof key === 'number'
             ? T('Item') + ' ' + (key + 1)
-            : words[key] ||
+            : (own(words, key) ? words[key] : null) ||
               String(key)
                 .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
                 .replace(/[_-]+/g, ' ')

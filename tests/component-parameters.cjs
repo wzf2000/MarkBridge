@@ -216,3 +216,16 @@ assert.equal(displayLabel([]), 'Parameters');
 assert.equal(displayLabel(['values', 0]), 'Values › Item 1');
 assert.equal(displayLabel(['custom_field', 'someValue', 2]), 'Custom field › Some Value › Item 3');
 assert.equal(displayLabel(['rows', 2, 'values', 0]), 'Rows › Item 3 › Values › Item 1');
+
+for (const name of ['toString', 'valueOf', 'hasOwnProperty']) {
+  const schema = record({ [name]: { type: 'string' } }),
+    value = JSON.parse('{"' + name + '":"literal"}');
+  assert.equal(known(schema), true);
+  assert.equal(support(schema, value), true);
+  assert.equal(validate(value, schema).length, 0);
+  assert.equal(
+    displayLabel([name]),
+    { toString: 'To String', valueOf: 'Value Of', hasOwnProperty: 'Has Own Property' }[name],
+  );
+  assert.equal(value[name], 'literal');
+}

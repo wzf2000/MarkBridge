@@ -253,4 +253,14 @@ test('readable labels, registered overview and quiet exact details fit a narrow 
   await expect(details).toContainText('fixture@0.1.0');
   await expect(details.locator('pre')).toContainText('"value": 42');
   expect(await page.evaluate(() => taskBlocks[0].attributes.params)).toEqual(params);
+  await page.evaluate(() => {
+    const provider = MBBComponents.find((p) => p.id === 'fixture');
+    provider.schema.properties.toString = { type: 'string' };
+    taskRegistry.dispatch('core/block-editor').updateBlockAttributes(taskBlocks[0].clientId, {
+      params: { ...taskBlocks[0].attributes.params, toString: 'literal' },
+    });
+  });
+  await expect(page.getByRole('textbox', { name: 'To String', exact: true })).toHaveValue(
+    'literal',
+  );
 });

@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.0.0-rc.2
+
+- Treat inherited JavaScript object method names as unknown display labels, preserving readable fallback for valid schema keys such as `toString` and all original parameter data.
+
 ## 3.0.0-rc.1
 
 - Freeze the integrated paired-writing, references, bibliography, collection and trusted SDK candidate without adopting resource-v2/WASM research.
