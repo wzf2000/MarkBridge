@@ -80,3 +80,7 @@ mbb_register_publication_adapter('publisher-html', [
 ## 验证入口
 
 `php tests/collections.php` 是可重复的配置／CAS／权限／限定引用／私有槽／实际 ZIP 与流句柄模型；不是生产数据库或 HTTP 权限证据。`tests/collections-save.php` 通过 `wp eval-file` 在明确环境变量、回环 home、`local` 环境的独立合成 WordPress 中执行真实 REST、owner 隔离、保存正文不变和失效检查。两后端分别运行；不可用于生产。标题失效夹具通过正常 preview／配对 save 改动并恢复元数据，先断言真实变动；不能用被配对保护拒绝的裸 `wp_update_post` 充当外部变更。浏览器 fixture 使用真实产品 UI 与合成 REST，分别留 1440／390 截图，不能代替独立实际站点、两账号与近上限内存验收。预算在不同宿主上的峰值仍以实际请求测量为准，不提高宿主全局内存或上传限制。
+
+## 已测容量与内存含义
+
+独立合成站用 10 篇每篇约 238 KiB 的正文和 15,740,880 B 有效图片，完成真实 prepare／confirm／serve 流式下载；`WP_MEMORY_LIMIT` 与 `WP_MAX_MEMORY_LIMIT` 均固定为 `128M`。PHP8.2 的 PHP peak 为 63,766,528 B，PHP8.5 为 113,577,984 B；对应进程 RSS 为 264,200,192 B／186,736,640 B。PHP 的内存计量不覆盖所有图像等本机分配，因此这不是“总进程占用低于 128 MiB”的承诺。实际峰值取决于内容、图片解码器和宿主，应为本机分配保留额外容量；不提高全局内存限制来掩盖失败。上面的 10 篇／16 MiB／24 MiB 保守预算保持不变。
