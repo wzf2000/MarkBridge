@@ -46,4 +46,14 @@ writing_assert(
     $native['document']['serialized'] === $doc['serialized'],
     'native conversion retains paired structure',
 );
+$transient = \MarkBridge\Probe\Worker::convert([
+    'mode' => 'blocks',
+    'serialized' => '<!-- wp:mbb/writing-pattern {"pattern":"lesson"} /-->',
+    'documentId' => 'writing-pattern',
+    'base' => $doc,
+]);
+writing_assert(
+    !$transient['ok'],
+    'unexpanded transient pattern is never accepted as persisted content',
+);
 echo "Writing pattern independent identities and PHP native/Markdown conversion OK\n";

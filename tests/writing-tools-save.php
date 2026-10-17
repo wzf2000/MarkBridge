@@ -77,6 +77,26 @@ try {
         $ids[] = $post;
         clean_post_cache($post);
         $saved = get_post($post);
+        writing_save_assert(
+            WP_Block_Type_Registry::get_instance()->is_registered('mbb/writing-pattern'),
+            'native pattern factory has server metadata',
+        );
+        $editorContext = new WP_Block_Editor_Context(['post' => $saved]);
+        $allowed = apply_filters('allowed_block_types_all', true, $editorContext);
+        writing_save_assert(
+            is_array($allowed) && in_array('mbb/writing-pattern', $allowed, true),
+            'managed inserter allows registered pattern factory',
+        );
+        writing_save_assert(
+            apply_filters('allowed_block_types_all', ['core/paragraph'], $editorContext) === [
+                'core/paragraph',
+            ],
+            'explicit author block allowlist preserved',
+        );
+        writing_save_assert(
+            apply_filters('allowed_block_types_all', false, $editorContext) === false,
+            'disabled author block policy preserved',
+        );
         writing_save_assert($saved->post_content_filtered === $source, 'source bytes retained');
         $pair = mbb_convert([
             'mode' => 'paired_restore',

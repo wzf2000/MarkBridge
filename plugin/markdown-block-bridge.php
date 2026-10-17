@@ -4,7 +4,7 @@
  * Plugin URI: https://github.com/wzf2000/MarkBridge
  * Author: wzf2000
  * Author URI: https://github.com/wzf2000
- * Version: 2.6.0-rc.3
+ * Version: 2.6.0-rc.4
  * License: GPL-3.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  * Requires at least: 7.1
@@ -119,6 +119,13 @@ add_filter(
     2,
 );
 add_action('init', function () {
+    // Editor-only instance factory: PHP registration keeps the managed inserter allowlist exact.
+    // The converter deliberately rejects this block until the editor has expanded it.
+    register_block_type('mbb/writing-pattern', [
+        'api_version' => 3,
+        'attributes' => ['pattern' => ['type' => 'string']],
+        'supports' => ['inserter' => false, 'html' => false, 'reusable' => false],
+    ]);
     register_block_type('mbb/list', [
         'api_version' => 3,
         'attributes' => [
