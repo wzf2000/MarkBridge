@@ -252,6 +252,82 @@
       "name": "url-space-path",
       "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://example.org/a b\"}]",
       "reject": true
+    },
+    {
+      "name": "key-map-array",
+      "input": "[{\"id\":\"A\",\"type\":\"book\",\"title\":\"T\"}]",
+      "keyMap": {
+        "0": ["Paper"]
+      },
+      "reject": true
+    },
+    {
+      "name": "key-map-true",
+      "input": "[{\"id\":\"A\",\"type\":\"book\",\"title\":\"T\"}]",
+      "keyMap": {
+        "0": true
+      },
+      "reject": true
+    },
+    {
+      "name": "key-map-false",
+      "input": "[{\"id\":\"A\",\"type\":\"book\",\"title\":\"T\"}]",
+      "keyMap": {
+        "0": false
+      },
+      "reject": true
+    },
+    {
+      "name": "key-map-number",
+      "input": "[{\"id\":\"A\",\"type\":\"book\",\"title\":\"T\"}]",
+      "keyMap": {
+        "0": 12
+      },
+      "reject": true
+    },
+    {
+      "name": "key-map-object",
+      "input": "[{\"id\":\"A\",\"type\":\"book\",\"title\":\"T\"}]",
+      "keyMap": {
+        "0": {}
+      },
+      "reject": true
+    },
+    {
+      "name": "key-map-null",
+      "input": "[{\"id\":\"A\",\"type\":\"book\",\"title\":\"T\"}]",
+      "keyMap": {
+        "0": null
+      },
+      "reject": true
+    },
+    {
+      "name": "safe-integer-exponent-decimal",
+      "input": "[{\"id\":1e15,\"type\":\"book\",\"title\":\"T\",\"volume\":1e15,\"issue\":-0.0,\"page\":9.007199254740991e15}]"
+    },
+    {
+      "name": "safe-integer-negative-exponent",
+      "input": "[{\"id\":-9.007199254740991e15,\"type\":\"book\",\"title\":\"T\",\"volume\":-1e15,\"issue\":9007199254740991,\"page\":-9007199254740991}]"
+    },
+    {
+      "name": "safe-integer-zero-id",
+      "input": "[{\"id\":-0.0,\"type\":\"book\",\"title\":\"T\",\"volume\":0.0,\"issue\":-0.0,\"page\":0e2}]"
+    },
+    {
+      "name": "safe-integer-equivalent-id-duplicate",
+      "input": "[{\"id\":1e15,\"type\":\"book\",\"title\":\"A\"},{\"id\":\"1000000000000000\",\"type\":\"book\",\"title\":\"B\"}]",
+      "reject": true
+    },
+    {
+      "name": "unsafe-integer-exponent",
+      "input": "[{\"id\":9.007199254740992e15,\"type\":\"book\",\"title\":\"T\"}]",
+      "reject": true
+    },
+    {
+      "name": "unsafe-numeric-publication",
+      "input": "[{\"id\":\"A\",\"type\":\"book\",\"title\":\"T\",\"volume\":9.007199254740992e15}]",
+      "reject": true
     }
-  ]
+  ],
+  "invalidEntryKeys": [["Paper"], true, false, 12, {}, null]
 }

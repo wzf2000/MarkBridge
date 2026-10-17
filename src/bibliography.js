@@ -147,7 +147,8 @@ export function bibliographyURL(value) {
 export function bibliographyEntry(value, fail = failDefault) {
   if (
     !keys(value, bibliographyFields) ||
-    !idPattern.test(value.key || '') ||
+    typeof value.key !== 'string' ||
+    !idPattern.test(value.key) ||
     !bibliographyTypes.includes(value.type) ||
     !Array.isArray(value.authors) ||
     value.authors.length > 8 ||
@@ -383,7 +384,8 @@ export function parseCSL(input, keyMap = {}, fail = failDefault) {
     const key =
       (Object.hasOwn(keyMap, index) ? keyMap[index] : undefined) ??
       (idPattern.test(originalId) ? originalId : 'reference-' + (index + 1));
-    if (!idPattern.test(key || '')) fail('CSL_KEYS', 'A proposed CSL-JSON key is invalid');
+    if (typeof key !== 'string' || !idPattern.test(key))
+      fail('CSL_KEYS', 'A proposed CSL-JSON key is invalid');
     if (key !== originalId) keyMappings.push({ index, from: originalId, to: key });
     for (const field of Object.keys(row)) if (!cslFields.includes(field)) loss(index, field);
     const value = { ...emptyBibliographyEntry(key), type: row.type, title: row.title };

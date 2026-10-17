@@ -33,6 +33,14 @@ for (const c of require('./fixtures/csl.json').cases) {
       'Supported subset roundtrip: ' + c.name,
     );
 }
+for (const key of require('./fixtures/csl.json').invalidEntryKeys) {
+  const entry = { ...api.emptyBibliographyEntry('Valid'), title: 'T', key };
+  assert.throws(
+    () => api.bibliographyEntry(entry),
+    (e) => e.code === 'BIBLIOGRAPHY_V2',
+  );
+  assert.throws(() => api.exportCSL([entry]));
+}
 const a = api.parseCSL('[{"id":"A","type":"book","title":"A"}]'),
   b = api.parseCSL('[{"id":"B","type":"book","title":"B","abstract":"Not retained"}]'),
   mapped = api.parseCSL('[{"id":42,"type":"book","title":"C"}]');

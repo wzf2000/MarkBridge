@@ -30,6 +30,19 @@ foreach ($fixture['cases'] as $c) {
     }
     $results[$c['name']] = $result;
 }
+foreach ($fixture['invalidEntryKeys'] as $key) {
+    $entry = array_replace(Bibliography::empty('Valid'), ['title' => 'T', 'key' => $key]);
+    try {
+        Bibliography::entry($entry);
+        throw new LogicException('Non-string bibliography key accepted');
+    } catch (LogicException $e) {
+        throw $e;
+    } catch (\MarkBridge\Probe\ConversionError $e) {
+        if ($e->errorCode !== 'BIBLIOGRAPHY_V2') {
+            throw $e;
+        }
+    }
+}
 $a = mbb_csl_parse('[{"id":"A","type":"book","title":"A"}]');
 $b = mbb_csl_parse('[{"id":"B","type":"book","title":"B","abstract":"Not retained"}]');
 foreach (

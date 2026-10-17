@@ -77,6 +77,20 @@ try {
       const patch = plan.patches.find((p) => p.clientId === bib.clientId);
       assert.deepEqual(plain(patch.attributes.entries[0]), { ...list[0], key: 'Renamed' });
     }
+  for (const key of require('./fixtures/csl.json').invalidEntryKeys) {
+    const source =
+      ':::mbb:v2 bibliography ' +
+      JSON.stringify({
+        id: 'invalid-key',
+        style: 'author-year',
+        entries: [{ ...entries[0], key }],
+      }) +
+      '\n\n:::mbb:end\n';
+    assert.throws(() => w.MBB.importDocument(source, 'INVALID_BIB_KEY'));
+    const result = php({ mode: 'markdown', source, documentId: 'INVALID_BIB_KEY' });
+    assert.equal(result.ok, false, JSON.stringify(key));
+    assert.equal(result.code, 'BIBLIOGRAPHY_V2');
+  }
   const legacy =
     ':::mbb:v1 bibliography ' +
     JSON.stringify({

@@ -68,6 +68,11 @@ final class Bibliography
         return (is_int($v) || (is_float($v) && is_finite($v) && floor($v) === $v)) &&
             abs($v) <= 9007199254740991;
     }
+    /** JSON safe integers have one decimal spelling across PHP/JS, independent of locale. */
+    private static function integerText(int|float $value): string
+    {
+        return $value == 0 ? '0' : sprintf('%.0F', $value);
+    }
     private static function text(mixed $v, int $limit, bool $required = false): bool
     {
         return is_string($v) &&
@@ -528,7 +533,7 @@ final class Bibliography
                     'A CSL-JSON record requires a bounded string or safe integer id',
                 );
             }
-            $id = (string) $id;
+            $id = is_string($id) ? $id : self::integerText($id);
             if (isset($ids[$id])) {
                 self::fail('CSL_ID', 'CSL-JSON record ids are duplicated');
             }
@@ -649,7 +654,7 @@ final class Bibliography
                             'CSL-JSON numeric fields require text or safe integers',
                         );
                     }
-                    $e[$f] = (string) $r[$f];
+                    $e[$f] = is_string($r[$f]) ? $r[$f] : self::integerText($r[$f]);
                 }
             }
             foreach (self::IDENTIFIERS as $f) {

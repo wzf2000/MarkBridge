@@ -128,6 +128,9 @@ rejected. This is an explicit finite subset of the
 not a full CSL processor.
 
 Supported fields are `id,type,author,issued,title,container-title,publisher,volume,issue,page,DOI,URL,ISBN,ISSN,PMID,PMCID,source`.
+Safe-integer JSON numbers accepted for `id`, `volume`, `issue` and `page` use
+the same plain decimal text in both backends, including exponent notation input;
+negative zero becomes `0`. String values remain literal.
 CSL name fields use `family,given,dropping-particle,non-dropping-particle,suffix`
 or `literal`; supported dates use `literal` or `date-parts`. Safe integer IDs,
 volume/issue/page values and numeric date strings are normalized explicitly.
