@@ -304,7 +304,7 @@ function mbb_collections_media(array $s): array
         clean_post_cache($id);
         wp_cache_delete($id, 'post_meta');
     }
-    $plan = mbb_export_plan($s, 'zip', [], true);
+    $plan = mbb_export_plan($s, 'collection-media', [], true);
     foreach ($plan['retainedImages'] as $item) {
         if (!mbb_static_export_external_url($item['url'])) {
             mbb_collections_fail('collection_media', 422);

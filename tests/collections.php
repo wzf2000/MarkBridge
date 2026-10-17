@@ -181,7 +181,7 @@ function rest_convert_error_to_response($error)
 function clean_post_cache($id) {}
 function mbb_export_plan($s, $format, $map = null, $fresh = false)
 {
-    if ($map !== [] || !$fresh) {
+    if ($format !== 'collection-media' || $map !== [] || !$fresh) {
         throw new RuntimeException('unsafe map');
     }
     return ['retainedImages' => [], 'resources' => [], 'files' => [], 'mappings' => []];

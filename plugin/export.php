@@ -337,7 +337,7 @@ function mbb_export_plan(
     $retained = [];
     $files = [];
     $mappings = [];
-    if (in_array($format, ['zip', 'portable-zip', 'html'], true)) {
+    if (in_array($format, ['zip', 'portable-zip', 'html', 'collection-media'], true)) {
         if ($format === 'zip' && function_exists('mbb_native_media_portable_admission')) {
             $admission = mbb_native_media_portable_admission($document['serialized']);
             if (is_wp_error($admission)) {
@@ -460,6 +460,18 @@ function mbb_export_plan(
         }
         if (count($resources) > 32) {
             mbb_export_throw('export_images', mbb_t('At most 32 actual images may be exported'));
+        }
+        // Internal read-only publication planning: render the saved native body later, rather
+        // than admitting it as Markdown ZIP input or detaching its local media relationships.
+        // Public export requests cannot select this mode. Collections validate retained URLs
+        // and recheck every attachment before emitting any artifact bytes.
+        if ($format === 'collection-media') {
+            return [
+                'resources' => $resources,
+                'retainedImages' => $retained,
+                'mappings' => $mappings,
+                'files' => $files,
+            ];
         }
         if ($format === 'html') {
             if (
