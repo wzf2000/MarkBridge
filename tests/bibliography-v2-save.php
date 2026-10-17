@@ -127,12 +127,11 @@ try {
     foreach ($blocks as &$block) {
         if ($block['blockName'] === 'mbb/bibliography') {
             $block['attrs']['entries'][0]['publisher'] = 'Native publisher';
-            // Let the shared PHP formatter produce the exact native save fallback.
-            $block['innerHTML'] = \MarkBridge\Probe\Technical::html(
-                'bibliography',
-                $block['attrs'],
-                '',
-            );
+            // Match Gutenberg serialization, including the block's inner boundary newlines.
+            $block['innerHTML'] =
+                "\n" .
+                \MarkBridge\Probe\Technical::html('bibliography', $block['attrs'], '') .
+                "\n";
             $block['innerContent'] = [$block['innerHTML']];
         }
     }
