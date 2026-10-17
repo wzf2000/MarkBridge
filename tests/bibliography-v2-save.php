@@ -193,7 +193,7 @@ try {
     file_put_contents($file, $new);
     update_post_meta($id, '_mbb_source_managed', 'file');
     update_post_meta($id, '_mbb_source_path_hash', hash('sha256', realpath($file)));
-    $synced = mbb_sync_document($docId, 'Bibliography fixture', $file, 'draft');
+    $synced = mbb_sync_write($id, $new, 'Bibliography fixture', $file, 'draft');
     bibliography_save_assert($synced === $id, 'source sync');
     clean_post_cache($id);
     $post = get_post($id);
