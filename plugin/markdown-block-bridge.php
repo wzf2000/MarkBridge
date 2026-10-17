@@ -4,7 +4,7 @@
  * Plugin URI: https://github.com/wzf2000/MarkBridge
  * Author: wzf2000
  * Author URI: https://github.com/wzf2000
- * Version: 2.5.0-rc.2
+ * Version: 2.6.0-rc.1
  * License: GPL-3.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  * Requires at least: 7.1
@@ -214,3 +214,18 @@ if (!in_array('wp-editormd/wp-editormd.php', get_option('active_plugins', []), t
     require_once __DIR__ . '/presentation.php';
     require_once __DIR__ . '/comments.php';
 }
+
+add_action('init', static function () {
+    if (!function_exists('register_block_pattern')) {
+        return;
+    }
+    register_block_pattern_category('markbridge-writing', ['label' => mbb_t('Technical writing')]);
+    foreach (json_decode(file_get_contents(__DIR__ . '/writing-patterns.json'), true) as $pattern) {
+        register_block_pattern('markbridge/' . $pattern['id'], [
+            'title' => mbb_t($pattern['title']),
+            'categories' => ['markbridge-writing'],
+            'content' => $pattern['content'],
+            'inserter' => true,
+        ]);
+    }
+});

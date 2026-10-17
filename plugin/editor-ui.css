@@ -884,3 +884,42 @@ body:has(#mbb-toolbar:not([hidden]):not(.mbb-keyboard-open) #mbb-recovery-open:n
     grid-template-columns: 1fr;
   }
 }
+
+.mbb-writing-tools {
+  border-top: 1px solid #dcdcde;
+  margin-top: 12px;
+  padding-top: 8px;
+}
+.mbb-writing-tools > label {
+  display: block;
+  margin: 8px 0;
+}
+.mbb-writing-tools input,
+.mbb-writing-tools select {
+  max-width: 100%;
+}
+.mbb-writing-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0;
+}
+.mbb-writing-row button {
+  overflow-wrap: anywhere;
+  text-align: start;
+}
+.mbb-paste-preview {
+  width: min(740px, calc(100vw - 40px));
+  max-height: calc(100dvh - 40px);
+  overflow: auto;
+}
+.mbb-paste-preview pre,
+.mbb-paste-candidate pre {
+  overflow: auto;
+  max-height: 240px;
+  white-space: pre-wrap;
+}
+.mbb-server-backups {
+  border-top: 1px solid #dcdcde;
+  margin-top: 12px;
+}

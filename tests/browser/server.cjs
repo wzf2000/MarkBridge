@@ -76,7 +76,7 @@ window.MBB_REVISIONS={open(){}};window.MBB_EDITOR.navigationBridge=${JSON.string
     .update(fs.readFileSync(path.join(plugin, 'preview-navigation.js')))
     .digest('base64'),
 })};</script>
-<script defer src="${mapped('math-explorer.js')}"></script><script defer src="${mapped('math.js')}"></script><script defer src="${mapped('resource-ui.js')}"></script><script defer src="${mapped('source-tools.js')}"></script><script defer src="${mapped('editor-ui.js')}"></script>
+<script defer src="${mapped('math-explorer.js')}"></script><script defer src="${mapped('math.js')}"></script><script defer src="${mapped('resource-ui.js')}"></script><script defer src="${mapped('source-tools.js')}"></script><script defer src="${mapped('writing-ui.js')}"></script><script defer src="${mapped('editor-ui.js')}"></script>
 </head><body><button id="mbb-new" type="button">上传新文档</button><button class="mbb-open" data-post="12" type="button">编辑现有文档</button></body></html>`;
 
 // HTTP-only synthetic navigation API. Keeping this off Playwright routing lets
@@ -129,7 +129,9 @@ const taskEditor = (source = '- [ ] Browser task\n- ordinary\n', options = {}) =
     );
   html = html.replace(
     '</head>',
-    '<link rel="stylesheet" href="' +
+    '<script src="' +
+      mapped('writing-ui.js') +
+      '"></script><link rel="stylesheet" href="' +
       mapped('teaching.css') +
       '"><link rel="stylesheet" href="' +
       mapped('technical.css') +
@@ -536,6 +538,8 @@ http
         sourceManaged = query.has('source');
       let html = taskEditor('# Original\n\nOriginal body.\n', { converterOnly: isNew });
       if (!html) return response.writeHead(404).end();
+      if (query.has('serverBackups'))
+        html = html.replace('</body>', '<script src="/plugin/paired-backups.js"></script></body>');
       if (query.has('header'))
         html = html.replace(
           '</body>',
@@ -554,7 +558,7 @@ http
       html = html.replace(
         'const e = wp.element.createElement;',
         `
-window.MBB_EDITOR={root:location.origin+${JSON.stringify(query.has('staticExport') ? '/static-export-fixture/' : '/wp-json/mbb/v1/')},nonce:'synthetic-nonce-not-for-storage',postId:${isNew ? 0 : 12},newPost:${isNew},canPublish:true,
+window.MBB_EDITOR={root:location.origin+${JSON.stringify(query.has('staticExport') ? '/static-export-fixture/' : query.has('plainRest') ? '/index.php?rest_route=/mbb/v1/' : '/wp-json/mbb/v1/')},nonce:'synthetic-nonce-not-for-storage',postId:${isNew ? 0 : 12},newPost:${isNew},canPublish:true,
 recovery:{schema:1,siteKey:'a'.repeat(64),userKey:'b'.repeat(64)},
 state:${isNew ? 'null' : `{post_id:12,expected:'baseline-1',title:'Original',post_status:'draft',featured_media:0,source_managed:${sourceManaged},source_write_available:false,source_sha256:${sourceManaged ? "'f'.repeat(64)" : 'null'},document:{documentId:'RECOVERY',source:'# Original\\n\\nOriginal body.\\n',serialized:wp.blocks.serialize(MBB.toBlocks('# Original\\n\\nOriginal body.\\n'))}}`}};
 window.MBB_REVISIONS={open(){}};window.MBB_MATH_CONFIG={front:false};
@@ -576,7 +580,7 @@ const e = wp.element.createElement;`,
       html = html.replace(
         '</body>',
         `<style>#mbb-new,#fixture-native-save{position:fixed;top:12px;z-index:60;padding:8px}#mbb-new{left:12px}#fixture-native-save{right:12px}</style><div style="position:relative;z-index:30"><button id="mbb-new">新 Markdown 草稿</button><button id="fixture-native-save">Fixture native save</button></div>
-<link rel="stylesheet" href="${mapped('editor-ui.css')}"><script src="${mapped('math.js')}"></script><script src="${mapped('resource-ui.js')}"></script><script src="${mapped('editor-ui.js')}"></script><script src="${mapped('local-recovery.js')}"></script><script src="${mapped('export-ui.js')}"></script>
+<link rel="stylesheet" href="${mapped('editor-ui.css')}"><script src="${mapped('math.js')}"></script><script src="${mapped('resource-ui.js')}"></script><script src="${mapped('source-tools.js')}"></script><script src="${mapped('writing-ui.js')}"></script><script src="${mapped('editor-ui.js')}"></script><script src="${mapped('local-recovery.js')}"></script><script src="${mapped('export-ui.js')}"></script>
 <script>document.getElementById('fixture-native-save').onclick=async()=>{await wp.apiFetch({path:'/wp/v2/posts/12',method:'POST',data:{content:wp.blocks.serialize(taskBlocks),title:recoveryFields.title,status:recoveryFields.status==='auto-draft'?'draft':recoveryFields.status}});window.nativeDirty=false;recoveryNotify();};</script></body>`,
       );
       return response.writeHead(200, { 'Content-Type': 'text/html' }).end(html);

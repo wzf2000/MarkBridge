@@ -2228,6 +2228,7 @@
         panel.querySelector('summary')?.focus();
       };
       moreBody.append(h, recovery);
+      if (window.MBBWritingTools) moreBody.append(window.MBBWritingTools.native());
       bar.append(
         a,
         b,

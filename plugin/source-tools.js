@@ -345,6 +345,95 @@
       }),
     );
     tools.append(wizard);
+    if (window.MBBWritingTools && window.MBB?.writingIndex) {
+      let writingRaw, writingBlocks;
+      const blocks = () => {
+        const raw = readSource();
+        if (raw !== writingRaw) {
+          writingBlocks = window.MBB.toBlocks(raw);
+          writingRaw = raw;
+        }
+        return writingBlocks;
+      };
+      const writing = window.MBBWritingTools.create({
+        blocks,
+        stamp: readSource,
+        select(item) {
+          const tree = blocks();
+          let path = item.path;
+          const find = (list, parent = []) => {
+            for (let n = 0; n < list.length; n++) {
+              const p = [...parent, n];
+              if (list[n].clientId === item.clientId) path = p;
+              find(list[n].innerBlocks || [], p);
+            }
+          };
+          if (!path) find(tree);
+          const range = window.MBB.sourceNavigation(readSource(), tree).ranges.find(
+            (r) => r.blockPath.join('.') === path?.join('.'),
+          );
+          if (range) locateError({ line: range.startLine });
+        },
+        rename(plan) {
+          const patches = new Map(plan.patches.map((p) => [p.clientId, p.attributes]));
+          const update = (list) =>
+            list.map((b) =>
+              wp.blocks.cloneBlock(b, patches.get(b.clientId) || {}, update(b.innerBlocks || [])),
+            );
+          const raw = window.MBB.toMarkdown(update(blocks()), { origin: 'markdown_import' });
+          commit(raw, 0);
+        },
+        insert(text) {
+          const raw = readSource(),
+            start = rawOffset(raw, source.selectionStart),
+            end = rawOffset(raw, source.selectionEnd);
+          commit(
+            raw.slice(0, start) + '\n\n' + text + '\n\n' + raw.slice(end),
+            source.selectionStart,
+          );
+        },
+      });
+      tools.append(writing);
+      source.addEventListener('paste', (event) => {
+        if (!canEdit() || !event.clipboardData || event.clipboardData.getData('text/html')) return;
+        const text = event.clipboardData.getData('text/plain');
+        if (!window.MBB.markdownSnippet(text)) return;
+        try {
+          window.MBB.importDocument(text, 'paste-preview');
+        } catch {
+          return;
+        }
+        event.preventDefault();
+        tools.querySelector('.mbb-paste-candidate')?.remove();
+        const panel = el('section', { className: 'mbb-paste-candidate' }),
+          initial = snapshot();
+        panel.append(
+          el('h3', {}, T('Markdown paste preview')),
+          el('pre', {}, text),
+          button('Insert recognized Markdown', () => {
+            if (readSource() !== initial.raw) {
+              status.textContent = T(
+                'Content changed. Paste again to review the current selection.',
+              );
+              panel.remove();
+              return;
+            }
+            const start = rawOffset(initial.raw, initial.start),
+              end = rawOffset(initial.raw, initial.end);
+            commit(
+              initial.raw.slice(0, start) + text + initial.raw.slice(end),
+              initial.start,
+              initial.start + display(text).length,
+            );
+            panel.remove();
+          }),
+          button('Cancel', () => panel.remove()),
+        );
+        tools.open = true;
+        tools.append(panel);
+        panel.querySelector('button').focus();
+      });
+    }
     const previewTools = el('div', { className: 'mbb-preview-tools' });
     const locate = button('Locate source', () => {
       selecting = !selecting;

@@ -458,9 +458,9 @@ export function technicalDiagnostics(blocks) {
     issues = [],
     invalidTargets = new Set(),
     invalidKeys = new Set();
-  const add = (code, identity = '') => {
+  const add = (code, identity = '', clientId = null) => {
     if (issues.length < 32 && !issues.some((i) => i.code === code && i.identity === identity))
-      issues.push({ code, identity });
+      issues.push({ code, identity, clientId });
   };
   const count = (map, key) => {
     if (typeof key === 'string') map.set(key, (map.get(key) || 0) + 1);
@@ -479,7 +479,7 @@ export function technicalDiagnostics(blocks) {
           throw Error(message);
         });
       } catch {
-        add('attributes', a.id);
+        add('attributes', a.id, block.clientId);
         if (kind === 'bibliography')
           for (const entry of a.entries || []) invalidKeys.add(entry.key);
         else invalidTargets.add(a.id);
@@ -493,11 +493,11 @@ export function technicalDiagnostics(blocks) {
             a.kind
           ])
     ) {
-      add('object-body', a.id);
+      add('object-body', a.id, block.clientId);
       invalidTargets.add(a.id);
     }
     if (kind === 'statement' && !(block.innerBlocks || []).length) {
-      add('statement-body', a.id);
+      add('statement-body', a.id, block.clientId);
       invalidTargets.add(a.id);
     }
     for (const field of parsedFields(block)) {
@@ -505,23 +505,31 @@ export function technicalDiagnostics(blocks) {
       for (const node of field.root.querySelectorAll('span.mbb-xref,span.mbb-cite')) {
         if (node.closest('code,pre')) continue;
         try {
-          references.push(
-            technicalReference(node.outerHTML, (code, message) => {
+          references.push({
+            ...technicalReference(node.outerHTML, (code, message) => {
               throw Error(message);
             }),
-          );
+            clientId: block.clientId,
+          });
         } catch {
-          add('reference-marker');
+          add('reference-marker', '', block.clientId);
         }
       }
     }
   }
-  for (const [id, count] of ids) if (count > 1) add('duplicate-id', id);
+  for (const [id, count] of ids)
+    if (count > 1)
+      add(
+        'duplicate-id',
+        id,
+        allBlocks(blocks).find((b) => b.attributes?.id === id || b.attributes?.anchor === id)
+          ?.clientId,
+      );
   for (const [key, count] of keyCounts) if (count > 1) add('duplicate-key', key);
   for (const ref of references)
     for (const key of ref.keys)
       if (!(ref.kind === 'xref' ? targetCounts : keyCounts).has(key))
-        add(ref.kind === 'xref' ? 'missing-target' : 'missing-key', key);
+        add(ref.kind === 'xref' ? 'missing-target' : 'missing-key', key, ref.clientId);
   return {
     issues,
     validTargets: [...targetCounts.keys()].filter(

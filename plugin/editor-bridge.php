@@ -1387,6 +1387,13 @@ function mbb_enqueue_ui()
         true,
     );
     wp_enqueue_script(
+        'mbb-writing-ui',
+        plugins_url(mbb_asset('writing-ui.js'), __FILE__),
+        ['mbb-kernel'],
+        substr(hash_file('sha256', __DIR__ . '/writing-ui.js'), 0, 12),
+        true,
+    );
+    wp_enqueue_script(
         'mbb-editor-ui',
         plugins_url(mbb_asset('editor-ui.js'), __FILE__),
         [
@@ -1397,6 +1404,7 @@ function mbb_enqueue_ui()
             'mbb-resource-ui',
             'mbb-kernel',
             'mbb-source-tools',
+            'mbb-writing-ui',
         ],
         substr(hash_file('sha256', __DIR__ . '/editor-ui.js'), 0, 12),
         true,
@@ -1485,6 +1493,13 @@ function mbb_enqueue_ui()
         substr(hash_file('sha256', __DIR__ . '/local-recovery.js'), 0, 12),
         true,
     );
+    wp_enqueue_script(
+        'mbb-paired-backups',
+        plugins_url(mbb_asset('paired-backups.js'), __FILE__),
+        ['mbb-local-recovery'],
+        substr(hash_file('sha256', __DIR__ . '/paired-backups.js'), 0, 12),
+        true,
+    );
     wp_enqueue_style(
         'mbb-editor-ui',
         plugins_url(mbb_asset('editor-ui.css'), __FILE__),
@@ -1503,4 +1518,5 @@ add_action('enqueue_block_editor_assets', 'mbb_enqueue_ui');
 add_action('admin_footer-post-new.php', 'mbb_enqueue_ui');
 
 require_once __DIR__ . '/local-recovery.php';
+require_once __DIR__ . '/paired-backups.php';
 require_once __DIR__ . '/lifecycle.php';

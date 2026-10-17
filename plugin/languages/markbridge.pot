@@ -661,6 +661,10 @@ msgid "Advanced JSON"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "All content"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "All whitespace is preserved. Empty code and code without a trailing newline are allowed."
 msgstr ""
 
@@ -726,6 +730,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Another ZIP is being prepared"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Another paired backup is being processed. Try again shortly. Current input is preserved."
 msgstr ""
 
 #: plugin/i18n.js
@@ -1011,6 +1019,10 @@ msgid "Browser draft recovery"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Browser structure check completed. Reading suggestions may be ignored; the server validates again when saving."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Built-in content preview"
 msgstr ""
 
@@ -1115,6 +1127,10 @@ msgid "Check current block conversion"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Check current content"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Check formula delimiters and TeX source. Each block formula delimiter $$ must occupy its own line."
 msgstr ""
 
@@ -1132,6 +1148,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Check this block's styles, attributes, and nesting. A supported block type does not imply support for all formatting. Download Markdown to preserve the candidate if needed."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Checking paired backups…"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1499,7 +1519,23 @@ msgid "Container must contain only its declared child blocks"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Content changed. Check the rename again."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Content changed. Paste again to review the current selection."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Content navigation and checks"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Content preview"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Content type"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1634,6 +1670,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Current metadata was written to the header candidate but has not been saved. Preview again. Source-managed articles still require the source write workflow."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Current stable label"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1810,6 +1850,10 @@ msgid "Draft created"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Draft recovery"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Draft title"
 msgstr ""
 
@@ -1933,6 +1977,10 @@ msgid "Enable local recovery in this browser "
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Enable paired backups while this page is open"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Enabled"
 msgstr ""
 
@@ -1962,6 +2010,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Equation"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Equations"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2104,6 +2156,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Figure"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Figures"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2380,6 +2436,10 @@ msgid "Image alternative text cannot contain footnote markers"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Image alternative text is empty. Review whether the image needs an explanation."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Image blocks cannot contain child blocks"
 msgstr ""
 
@@ -2580,7 +2640,15 @@ msgid "Insert or edit footnote reference"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Insert recognized Markdown"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Insert reference"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Insert writing pattern"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2748,6 +2816,10 @@ msgid "Isolated conversion passed."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Keep as plain text"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Keep at most two active batches. Cancel an older batch or wait for expiry; the site also has a shared staging limit."
 msgstr ""
 
@@ -2761,6 +2833,14 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Language"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Last formal save: "
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Last paired backup: "
 msgstr ""
 
 #: plugin/i18n.js
@@ -2860,6 +2940,10 @@ msgid "Locate source"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Locate source object"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Located the containing structure."
 msgstr ""
 
@@ -2943,6 +3027,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Markdown must be bounded UTF-8 text"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Markdown paste preview"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3149,6 +3237,10 @@ msgid "Multilingual code tabs"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Must fix before saving: "
+msgstr ""
+
+#: plugin/i18n.js
 msgid "My candidate"
 msgstr ""
 
@@ -3275,6 +3367,10 @@ msgid "No fields are applied by default. Select fields and preview again. Cleari
 msgstr ""
 
 #: plugin/i18n.js
+msgid "No indexed objects in the current content."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "No matching text."
 msgstr ""
 
@@ -3333,6 +3429,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Old line number"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Older baseline; compare and resolve conflicts before saving."
 msgstr ""
 
 #: plugin/i18n.js
@@ -3488,7 +3588,31 @@ msgid "PHP version"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Paired backup failed. Current input remains in the editor. "
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Paired backup storage failed. Current input is preserved; try again or download your candidate."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Paired backup storage is full. Delete some of your older backups or contact an administrator. Current input is preserved."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Paired backup verification failed. Current input is preserved; compare the article and try again."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Paired backups require the core WordPress MySQL connection. Normal editing remains available."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Paired body or accompanying field verification failed"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Paper notes"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3704,6 +3828,10 @@ msgid "Private input staging failed."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Private to your account. Up to 10 backups per article for 7 days; site quota 32 MiB. Restoring opens a candidate for comparison. Only an explicit save can update WordPress or a source file. New drafts and unconverted input use browser recovery."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Process execution"
 msgstr ""
 
@@ -3737,6 +3865,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Question"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Question, hint, derivation and experiment"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3788,6 +3920,10 @@ msgid "Reading revisions…"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Reading suggestion: "
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Reading the latest server version…"
 msgstr ""
 
@@ -3828,6 +3964,10 @@ msgid "Reference URL (HTTP or HTTPS)"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Reference markers affected; no changes have been applied."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Reference target"
 msgstr ""
 
@@ -3840,7 +3980,15 @@ msgid "Refresh batch status"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Refresh content navigation"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Refresh or sign in again to verify recovery permissions."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Refresh paired backups"
 msgstr ""
 
 #: plugin/i18n.js
@@ -4184,6 +4332,10 @@ msgstr ""
 msgid "Separator must be empty"
 msgstr ""
 
+#: plugin/i18n.js
+msgid "Server paired backups"
+msgstr ""
+
 #, php-format
 #: plugin/i18n.js
 msgid "Server title: %1$s; status: %2$s."
@@ -4345,6 +4497,10 @@ msgid "Statement %1$s requires body content."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Statements"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Static HTML embeds verified local images and typeset formulas for offline reading. External images become links and are not fetched; unverified local images are refused. All stages and code versions are included; interactive demonstrations use their static fallback."
 msgstr ""
 
@@ -4485,6 +4641,10 @@ msgid "Table width must be consistent"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Tables"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Tag slugs"
 msgstr ""
 
@@ -4597,6 +4757,10 @@ msgid "Teaching structure exceeds its depth or node budget"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Teaching structures"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Teaching title must be nonempty single-line text"
 msgstr ""
 
@@ -4627,6 +4791,14 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Technical references must not be inside links or images"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Technical tutorial"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Technical writing"
 msgstr ""
 
 #: plugin/i18n.js
@@ -6229,6 +6401,10 @@ msgid "The teaching closing marker has no corresponding opening marker"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "The teaching component needs static content before saving."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "The teaching container closing marker is missing"
 msgstr ""
 
@@ -6345,6 +6521,10 @@ msgid "This article is synchronized from a source file. Use the controlled sourc
 msgstr ""
 
 #: plugin/i18n.js
+msgid "This backup has an older baseline. Compare it with the current article before explicitly saving."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "This batch belongs to another account."
 msgstr ""
 
@@ -6418,6 +6598,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "This new article already has unsaved content. Save or clear it before importing Markdown."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "This paired backup is unavailable or expired. Current input is preserved."
 msgstr ""
 
 #: plugin/i18n.js
@@ -6736,6 +6920,10 @@ msgid "Use bibliography candidate"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Use label for rename"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Use my candidate"
 msgstr ""
 
@@ -6908,6 +7096,10 @@ msgid "Write the explanation and static fallback here."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Writing pattern"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Year"
 msgstr ""
 
@@ -6937,6 +7129,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Your changes are preserved against the latest server baseline. Preview all differences and explicitly save again."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Your sign-in expired. Sign in again before using paired backups. Current input is preserved."
 msgstr ""
 
 #, php-format

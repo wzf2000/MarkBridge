@@ -1,3 +1,4 @@
+export { markdownSnippet, writingPatterns, writingIndex, writingAdvice } from './writing-tools.js';
 import {
   mediaImageAttributes,
   mediaGalleryAttributes,
