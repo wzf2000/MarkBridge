@@ -119,7 +119,7 @@ export function technicalReference(raw, fail, complete = true) {
       !/^S_[a-f0-9]{32}$/.test(attrs.get('data-mbb-namespace') || '') ||
       !/^D_[a-f0-9]{32}$/.test(attrs.get('data-mbb-document') || '') ||
       !technicalId.test(identity || '') ||
-      !['equation', 'figure', 'table', 'listing', 'statement', 'step'].includes(
+      !['equation', 'figure', 'table', 'listing', 'statement', 'step', 'activity'].includes(
         attrs.get('data-mbb-kind'),
       ) ||
       match[2] !== '[' + identity + ']'

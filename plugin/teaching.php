@@ -156,6 +156,7 @@ add_filter(
                 'component' => $attrs['component'] ?? '',
                 'componentVersion' => $attrs['componentVersion'] ?? '',
                 'params' => $attrs['params'] ?? (object) [],
+                ...isset($attrs['activity']) ? ['activity' => $attrs['activity']] : [],
                 'status' => !$p
                     ? 'missing'
                     : ($p['version'] !== ($attrs['componentVersion'] ?? '')
@@ -164,13 +165,17 @@ add_filter(
             ];
             if (
                 $config['status'] === 'available' &&
-                (!$paramsConsistent ||
+                ((isset($attrs['activity']) && ($p['activityVersion'] ?? null) !== 1) ||
+                    !$paramsConsistent ||
                     !mbb_component_pure_params($config['params']) ||
                     !mbb_component_schema($config['params'], $p['schema']) ||
                     !mbb_component_domain_valid(
                         $attrs['component'],
                         $attrs['componentVersion'],
                         $config['params'],
+                        isset($attrs['activity'])
+                            ? json_decode(mbb_component_json($attrs['activity']))
+                            : null,
                     ))
             ) {
                 $config['status'] = 'invalid-params';

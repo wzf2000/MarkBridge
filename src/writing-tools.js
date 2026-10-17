@@ -1,3 +1,4 @@
+import { activityParts, validateActivity } from './activities.js';
 import { translate as T } from './i18n.js';
 import patterns from '../plugin/writing-patterns.json';
 // Deliberately complete block fragments only. Never infer inline dollar math or rewrite code bytes.
@@ -92,35 +93,51 @@ export function writingIndex(blocks) {
       const a = block.attributes || {},
         p = [...path, n];
       const category =
-        block.name === 'mbb/math'
-          ? 'math'
-          : block.name === 'core/image' || block.name === 'mbb/gallery'
-            ? 'figure'
-            : block.name === 'core/table'
-              ? 'table'
-              : block.name === 'mbb/statement'
-                ? 'statement'
-                : block.name === 'mbb/bibliography'
-                  ? 'bibliography'
-                  : block.name === 'mbb/object'
-                    ? a.kind
-                    : [
-                          'mbb/component',
-                          'mbb/steps',
-                          'mbb/step',
-                          'mbb/collapse',
-                          'mbb/code-tabs',
-                          'mbb/code-compare',
-                        ].includes(block.name)
-                      ? 'teaching'
-                      : null;
+        block.name === 'mbb/component' && a.version === 2
+          ? 'activity'
+          : block.name === 'mbb/math'
+            ? 'math'
+            : block.name === 'core/image' || block.name === 'mbb/gallery'
+              ? 'figure'
+              : block.name === 'core/table'
+                ? 'table'
+                : block.name === 'mbb/statement'
+                  ? 'statement'
+                  : block.name === 'mbb/bibliography'
+                    ? 'bibliography'
+                    : block.name === 'mbb/object'
+                      ? a.kind
+                      : [
+                            'mbb/component',
+                            'mbb/steps',
+                            'mbb/step',
+                            'mbb/collapse',
+                            'mbb/code-tabs',
+                            'mbb/code-compare',
+                          ].includes(block.name)
+                        ? 'teaching'
+                        : null;
       if (category)
         items.push({
           category,
           clientId: block.clientId,
           path: p,
           id: a.id || '',
-          title: a.title || a.caption || a.tex || a.component || '',
+          title: a.activity
+            ? activityParts(block).get(a.activity.prompt)?.attributes.title || a.id
+            : a.title || a.caption || a.tex || a.component || '',
+          ...(block.name === 'mbb/component'
+            ? {
+                component: a.component,
+                componentVersion: a.componentVersion,
+                activity: a.activity,
+                parts: [...activityParts(block)].map(([id, b]) => ({
+                  id,
+                  title: b.attributes.title,
+                  clientId: b.clientId,
+                })),
+              }
+            : {}),
           name: block.name,
           renameType: ['mbb/object', 'mbb/statement'].includes(block.name) ? 'label' : null,
         });
@@ -145,6 +162,15 @@ export function writingAdvice(blocks) {
   const visit = (list) =>
     list.forEach((block) => {
       const a = block.attributes || {};
+      if (block.name === 'mbb/component' && a.version === 2) {
+        try {
+          validateActivity(block, (code, message) => {
+            throw Error(T(message));
+          });
+        } catch (error) {
+          issues.push({ severity: 'error', clientId: block.clientId, message: error.message });
+        }
+      }
       if (block.name === 'core/image' && !String(a.alt || '').trim())
         issues.push({
           severity: 'advice',

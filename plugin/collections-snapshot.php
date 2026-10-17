@@ -155,7 +155,9 @@ function mbb_collections_object(array $object, array $target, string $article, s
         'label' =>
             ($object['displayKind'] === 'step'
                 ? mbb_t('Stage')
-                : mbb_technical_label($object['displayKind'])) .
+                : ($object['displayKind'] === 'activity'
+                    ? mbb_t('Activity')
+                    : mbb_technical_label($object['displayKind']))) .
             ' ' .
             $object['number'],
         'url' => $url . '#' . rawurlencode($target['target']),

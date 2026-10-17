@@ -693,6 +693,22 @@ msgid "Acquire a new opening baseline after adopting the merged candidate."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Activity"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Activity relations require a closed map of unique local static targets"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Activity targets must exist within their own component; prompts and options must be direct open static parts"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Activity template"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Adapter attributes are missing or contain unknown fields"
 msgstr ""
 
@@ -1905,6 +1921,10 @@ msgid "Copy TeX"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Copy as a new activity"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Copy diagnostic summary"
 msgstr ""
 
@@ -1922,6 +1942,14 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Copy with new identities (default)"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Correct feedback"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Course workbench"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2199,6 +2227,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Download snapshot ZIP"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Download web book ZIP"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2760,6 +2792,10 @@ msgid "FrontMatter values must be valid JSON"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Full explanation"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Full reading entry must remain enabled"
 msgstr ""
 
@@ -2865,6 +2901,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Highlighted lines must be unique positive integers separated by commas"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Hint"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3016,6 +3056,10 @@ msgid "Incomplete teaching attributes"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Incorrect feedback"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Independent body changes were combined. Unchanged metadata uses the latest server version; overlapping metadata requires an explicit choice."
 msgstr ""
 
@@ -3100,6 +3144,10 @@ msgid "Insert a teaching structure"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Insert activity"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Insert cross-reference"
 msgstr ""
 
@@ -3121,6 +3169,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Insert reference"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Insert self-check"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3153,6 +3205,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Invalid Unicode"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Invalid activity template"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3943,6 +3999,10 @@ msgid "No body changes."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "No compatible self-check templates are registered. Existing static content remains readable."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "No fields are applied by default. Select fields and preview again. Clearing a selection changes neither current article settings nor the header."
 msgstr ""
 
@@ -4101,6 +4161,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Operation completed."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Option"
 msgstr ""
 
 #: plugin/i18n.js
@@ -5321,6 +5385,10 @@ msgid "Static HTML requires every image to be a verified local attachment of thi
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Static activity relations"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Static adapter "
 msgstr ""
 
@@ -6040,6 +6108,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "The commit result could not be reliably confirmed. Verify the article before saving again."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The component changed while this candidate was open. Review or discard the candidate."
 msgstr ""
 
 #: plugin/i18n.js
@@ -7599,6 +7671,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Unapplied component version change:"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Unavailable"
 msgstr ""
 
 #: plugin/i18n.js

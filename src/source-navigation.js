@@ -23,7 +23,7 @@ const heading = (line) => /^ {0,3}#{1,6}(?:[ \t]+|$)/.test(line);
 const list = (line) => /^ {0,3}(?:[-+*][ \t]+|\d{1,9}[.)][ \t]+)/.test(line);
 const quote = (line) => /^ {0,3}>/.test(line);
 const definition = (line) => /^ {0,3}\[\^([^\]\r\n]+)\]:/.exec(line);
-const directive = (line) => /^:::mbb:v1 ([a-z-]+) (\{.*\})$/.exec(line);
+const directive = (line) => /^:::mbb:v[12] ([a-z-]+) (\{.*\})$/.exec(line);
 const separator = (line) =>
   /^ {0,3}(?:(?:\*[ \t]*){3,}|(?:-[ \t]*){3,}|(?:_[ \t]*){3,})$/.test(line);
 const setext = (line) => /^ {0,3}(?:=+|-+)[ \t]*$/.test(line);

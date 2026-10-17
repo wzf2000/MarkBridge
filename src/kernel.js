@@ -1,3 +1,4 @@
+import { cloneActivity } from './activity-copy.js';
 export {
   parseCSL,
   cslCandidate,
@@ -1667,3 +1668,45 @@ if (!converterOnly) register();
 configureBlockAdapters(globalThis.MBB_ADAPTERS || [], !converterOnly);
 
 export { parseBibTeX, bibtexCandidate } from './bibtex.js';
+
+export { activityParts, activityRelations, validateActivity } from './activities.js';
+
+export function copyActivity(blocks, clientId) {
+  validateTeaching(blocks, fail);
+  let selected, identity;
+  const walk = (list) => {
+    for (const b of list) {
+      if (b.clientId === clientId) selected = b;
+      if (b.name === 'mbb/identity') identity = b.attributes;
+      walk(b.innerBlocks || []);
+    }
+  };
+  walk(blocks);
+  const copy = cloneActivity(selected, identity, api().createBlock, fail);
+  validateTeaching([...blocks, copy], fail);
+  const source = rawMarkdown([copy]);
+  checkSource(source);
+  return { source, blocks: [copy] };
+}
+export function createActivity(component, version) {
+  const id =
+    'activity-' +
+    [...crypto.getRandomValues(new Uint8Array(12))]
+      .map((n) => n.toString(16).padStart(2, '0'))
+      .join('');
+  const source = globalThis.MarkBridgeComponentAuthors.create(component, version, id),
+    blocks = toBlocks(source);
+  if (
+    blocks.length !== 1 ||
+    blocks[0].name !== 'mbb/component' ||
+    blocks[0].attributes.id !== id ||
+    blocks[0].attributes.component !== component ||
+    blocks[0].attributes.componentVersion !== version ||
+    blocks[0].attributes.version !== 2
+  )
+    fail(
+      'ACTIVITY_RELATION',
+      'Activity relations require a closed map of unique local static targets',
+    );
+  return source;
+}

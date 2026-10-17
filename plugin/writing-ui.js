@@ -20,6 +20,7 @@
     ['statement', 'Statements'],
     ['bibliography', 'Bibliography'],
     ['teaching', 'Teaching structures'],
+    ['activity', 'Course workbench'],
   ];
   function create(adapter) {
     const panel = el('details');
@@ -129,6 +130,8 @@
         for (const item of index.filter(
           (i) =>
             filter.value === 'all' ||
+            (filter.value === 'activity' &&
+              ['mbb/steps', 'mbb/step', 'mbb/component'].includes(i.name)) ||
             i.category === filter.value ||
             (filter.value === 'statement' &&
               ['definition', 'theorem', 'proof'].includes(i.category)) ||
@@ -141,6 +144,42 @@
           );
           locate.title = item.id || item.title || item.category;
           row.append(locate);
+          if (item.name === 'mbb/component') {
+            row.append(el('small', item.component + ' ' + item.componentVersion));
+            if (item.activity) {
+              const relations = el('details');
+              relations.className = 'mbb-activity-relations';
+              relations.append(el('summary', T('Static activity relations')));
+              const roles = [
+                [T('Question'), item.activity.prompt],
+                ...(item.activity.options || []).map((o) => [T('Option') + ' ' + o.key, o.target]),
+                ...(item.activity.hints || []).map((id, n) => [T('Hint') + ' ' + (n + 1), id]),
+                [T('Correct feedback'), item.activity.feedback?.correct],
+                [T('Incorrect feedback'), item.activity.feedback?.incorrect],
+                [T('Full explanation'), item.activity.explanation],
+              ];
+              for (const [role, id] of roles) {
+                const part = item.parts?.find((p) => p.id === id);
+                relations.append(
+                  button(role + ': ' + (part?.title || id || T('Unavailable')), () => {
+                    if (part) adapter.select(part);
+                  }),
+                );
+              }
+              row.append(relations);
+            }
+            if (item.activity)
+              row.append(
+                button('Copy as a new activity', () => {
+                  try {
+                    adapter.insert(window.MBB.copyActivity(adapter.blocks(), item.clientId), item);
+                    refresh();
+                  } catch (error) {
+                    status.textContent = error.message;
+                  }
+                }),
+              );
+          }
           if (item.id && item.title) {
             const label = el('small', item.id);
             label.title = item.id;
@@ -249,6 +288,51 @@
       patterns,
       insert,
     );
+    const activities = el('select');
+    activities.setAttribute('aria-label', T('Activity template'));
+    const updateActivities = () => {
+      activities.replaceChildren();
+      for (const a of globalThis.MarkBridgeComponentAuthors?.templates?.() || []) {
+        const p = (window.MBBComponents || []).find(
+          (p) =>
+            p.id === a.component && p.version === a.componentVersion && p.activityVersion === 1,
+        );
+        if (!p) continue;
+        const option = el('option', p.title);
+        option.value = a.component + '@' + a.componentVersion;
+        activities.append(option);
+      }
+      insertActivity.disabled = !activities.options.length;
+      activityEmpty.hidden = !!activities.options.length;
+    };
+    const activityEmpty = el(
+      'p',
+      T(
+        'No compatible self-check templates are registered. Existing static content remains readable.',
+      ),
+    );
+    const insertActivity = button('Insert activity', () => {
+      try {
+        const [id, version] = activities.value.split('@');
+        adapter.insert(window.MBB.createActivity(id, version));
+        refresh();
+      } catch (error) {
+        status.textContent = error.message;
+      }
+    });
+    insertActivity.disabled = true;
+    const activityGroup = el('details');
+    activityGroup.className = 'mbb-activity-insert';
+    activityGroup.append(
+      el('summary', T('Insert self-check')),
+      activities,
+      insertActivity,
+      activityEmpty,
+    );
+    activityGroup.ontoggle = () => {
+      if (activityGroup.open) updateActivities();
+    };
+    panel.append(activityGroup);
     if (window.MBBReferences) panel.append(window.MBBReferences.create(adapter));
     return panel;
   }
@@ -297,9 +381,9 @@
           true,
         );
       },
-      insert(source) {
-        const blocks = MBB.toBlocks(source),
-          selected = store().getSelectedBlockClientId() || insertionTarget;
+      insert(source, target) {
+        const blocks = typeof source === 'string' ? MBB.toBlocks(source) : source.blocks,
+          selected = target?.clientId || store().getSelectedBlockClientId() || insertionTarget;
         const dispatch = wp.data.dispatch('core/block-editor'),
           block = selected && store().getBlock(selected);
         const content = block?.attributes.content,

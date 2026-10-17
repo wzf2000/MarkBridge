@@ -693,6 +693,22 @@ msgid "Acquire a new opening baseline after adopting the merged candidate."
 msgstr "采用合并候选后须重新获取打开时基线。"
 
 #: plugin/i18n.js
+msgid "Activity"
+msgstr "活动"
+
+#: plugin/i18n.js
+msgid "Activity relations require a closed map of unique local static targets"
+msgstr "活动关系必须使用闭合配置，并指向唯一的本地静态内容"
+
+#: plugin/i18n.js
+msgid "Activity targets must exist within their own component; prompts and options must be direct open static parts"
+msgstr "活动目标必须位于当前组件中；题意和选项必须是直接展开的静态子部件"
+
+#: plugin/i18n.js
+msgid "Activity template"
+msgstr "活动样板"
+
+#: plugin/i18n.js
 msgid "Adapter attributes are missing or contain unknown fields"
 msgstr "适配属性缺失或包含未知字段"
 
@@ -1905,6 +1921,10 @@ msgid "Copy TeX"
 msgstr "复制 TeX"
 
 #: plugin/i18n.js
+msgid "Copy as a new activity"
+msgstr "复制为新活动"
+
+#: plugin/i18n.js
 msgid "Copy diagnostic summary"
 msgstr "复制诊断摘要"
 
@@ -1923,6 +1943,14 @@ msgstr "请手动复制原始代码"
 #: plugin/i18n.js
 msgid "Copy with new identities (default)"
 msgstr "复制并分配新身份（默认）"
+
+#: plugin/i18n.js
+msgid "Correct feedback"
+msgstr "正确反馈"
+
+#: plugin/i18n.js
+msgid "Course workbench"
+msgstr "课程工作台"
 
 #: plugin/i18n.js
 msgid "Create this draft"
@@ -2200,6 +2228,10 @@ msgstr "下载原代码 "
 #: plugin/i18n.js
 msgid "Download snapshot ZIP"
 msgstr "下载快照 ZIP"
+
+#: plugin/i18n.js
+msgid "Download web book ZIP"
+msgstr "下载网页书 ZIP"
 
 #: plugin/i18n.js
 msgid "Downloaded. The saved article, source file, and unsaved input are unchanged."
@@ -2760,6 +2792,10 @@ msgid "FrontMatter values must be valid JSON"
 msgstr "FrontMatter 值必须是合法 JSON"
 
 #: plugin/i18n.js
+msgid "Full explanation"
+msgstr "完整解析"
+
+#: plugin/i18n.js
 msgid "Full reading entry must remain enabled"
 msgstr "全文入口必须保持启用"
 
@@ -2866,6 +2902,10 @@ msgstr "重点行超出对应代码范围"
 #: plugin/i18n.js
 msgid "Highlighted lines must be unique positive integers separated by commas"
 msgstr "重点行需为不重复的正整数，以逗号分隔"
+
+#: plugin/i18n.js
+msgid "Hint"
+msgstr "提示"
 
 #: plugin/i18n.js
 msgid "I reviewed and accept the listed CSL-JSON field losses"
@@ -3016,6 +3056,10 @@ msgid "Incomplete teaching attributes"
 msgstr "教学属性不完整"
 
 #: plugin/i18n.js
+msgid "Incorrect feedback"
+msgstr "错误反馈"
+
+#: plugin/i18n.js
 msgid "Independent body changes were combined. Unchanged metadata uses the latest server version; overlapping metadata requires an explicit choice."
 msgstr "独立正文变化已组合。未修改的元数据采用服务器最新版；重叠元数据仍须明确选择。"
 
@@ -3100,6 +3144,10 @@ msgid "Insert a teaching structure"
 msgstr "插入教学结构"
 
 #: plugin/i18n.js
+msgid "Insert activity"
+msgstr "插入活动"
+
+#: plugin/i18n.js
 msgid "Insert cross-reference"
 msgstr "插入交叉引用"
 
@@ -3122,6 +3170,10 @@ msgstr "插入识别出的 Markdown"
 #: plugin/i18n.js
 msgid "Insert reference"
 msgstr "插入引用"
+
+#: plugin/i18n.js
+msgid "Insert self-check"
+msgstr "插入自测"
 
 #: plugin/i18n.js
 msgid "Insert writing pattern"
@@ -3154,6 +3206,10 @@ msgstr "非法 JSON 属性"
 #: plugin/i18n.js
 msgid "Invalid Unicode"
 msgstr "Unicode 非法"
+
+#: plugin/i18n.js
+msgid "Invalid activity template"
+msgstr "活动样板无效"
 
 #: plugin/i18n.js
 msgid "Invalid block JSON"
@@ -3943,6 +3999,10 @@ msgid "No body changes."
 msgstr "正文无变化。"
 
 #: plugin/i18n.js
+msgid "No compatible self-check templates are registered. Existing static content remains readable."
+msgstr "尚未登记兼容的自测样板；既有静态内容仍可阅读。"
+
+#: plugin/i18n.js
 msgid "No fields are applied by default. Select fields and preview again. Clearing a selection changes neither current article settings nor the header."
 msgstr "默认不应用。逐项选择后须重新预览；取消选择不会改写当前文章设置或头部。"
 
@@ -4102,6 +4162,10 @@ msgstr "打开时版本"
 #: plugin/i18n.js
 msgid "Operation completed."
 msgstr "操作完成。"
+
+#: plugin/i18n.js
+msgid "Option"
+msgstr "选项"
 
 #: plugin/i18n.js
 msgid "Optional ZIP dependencies are unavailable. Markdown single-file download remains available."
@@ -4533,7 +4597,7 @@ msgstr "出版者"
 
 #: plugin/i18n.js
 msgid "Question"
-msgstr "题目"
+msgstr "题意"
 
 #: plugin/i18n.js
 msgid "Question, hint, derivation and experiment"
@@ -5321,6 +5385,10 @@ msgid "Static HTML requires every image to be a verified local attachment of thi
 msgstr "静态 HTML 要求每张图片都是已核验的本篇文章本地附件"
 
 #: plugin/i18n.js
+msgid "Static activity relations"
+msgstr "活动静态关系"
+
+#: plugin/i18n.js
 msgid "Static adapter "
 msgstr "静态适配器 "
 
@@ -6041,6 +6109,10 @@ msgstr "提交结果无法可靠确认；已保留当前源稿、媒体和导入
 #: plugin/i18n.js
 msgid "The commit result could not be reliably confirmed. Verify the article before saving again."
 msgstr "提交结果无法可靠确认，请重新核对文章，勿直接重复保存。"
+
+#: plugin/i18n.js
+msgid "The component changed while this candidate was open. Review or discard the candidate."
+msgstr "候选打开后组件已变化，请核对或放弃该候选。"
 
 #: plugin/i18n.js
 msgid "The component could not be loaded."
@@ -7600,6 +7672,10 @@ msgstr "正在排版完整的离线文章…"
 #: plugin/i18n.js
 msgid "Unapplied component version change:"
 msgstr "尚未应用的组件版本变化："
+
+#: plugin/i18n.js
+msgid "Unavailable"
+msgstr "不可用"
 
 #: plugin/i18n.js
 msgid "Unavailable article"

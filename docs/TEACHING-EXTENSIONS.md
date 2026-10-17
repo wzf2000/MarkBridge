@@ -1,6 +1,6 @@
 # 教学扩展接口
 
-本页描述 MarkBridge 2.8.0-rc.6 的 v1 组件合同。作者操作见[教学内容](TEACHING.md)。主插件保存教学结构、引用、参数和静态替代；算法、课程样例、Worker 与播放控制由独立受信插件提供。文章不能自行登记脚本或运行地址。
+本页描述 MarkBridge 2.8.0-rc.7 的 v1 组件与显式 v2 活动合同。作者操作见[教学内容](TEACHING.md)。主插件保存教学结构、引用、参数和静态替代；算法、课程样例、Worker 与播放控制由独立受信插件提供。文章不能自行登记脚本或运行地址。
 
 ## 内容与提供者
 
@@ -131,3 +131,27 @@ add_action('markbridge_register_teaching_components', static function () {
 2.2 的参数表单从当前服务器登记的精确类型／版本 schema 生成，只支持封闭对象、有限文本／数字／布尔／枚举与有界数组。未知字段或超出可编辑范围时保留全部 JSON，不静默丢值。字段校验为即时辅助，服务器仍是最终准入依据。
 
 已安装的受信扩展可在依赖 `mbb-kernel` 的固定脚本中调用 `MarkBridgeComponentAuthors.register({apiVersion:1,component,componentVersion,Editor,supports,upgrade?})`。32 项上限，精确键不能覆盖。`Editor` 是受信 React 组件，收到候选参数 `value`、`onChange` 和会话状态；只能更新同一草稿。`upgrade` 可声明目标 `componentVersion` 和纯 `migrate`，仅作者明确点击后产生未应用候选，Apply 原子更新参数与版本，Discard 保留旧版。正文不能登记这些回调。读者播放、选中与作者撤销记录都不持久化；服务端登记、配对校验和保存锁不变。
+
+## 显式 v2 活动关系与作者候选
+
+`markbridge_teaching_supports_activities()` 探测活动能力。提供者在原协议登记中显式添加 `activityVersion:1`，最低主插件为 `2.8.0-dev.1`；旧主插件应只跳过新类型，不移除旧版本。v2 组件沿用原属性并要求 `activity`，Markdown 为 `:::mbb:v2 component`。旧 v1 省略该字段且不注册空默认值。
+
+```json
+{
+  "schema": 1,
+  "prompt": "question",
+  "options": [
+    { "key": "a", "target": "option-a" },
+    { "key": "b", "target": "option-b" }
+  ],
+  "hints": ["hint-1"],
+  "feedback": { "correct": "correct", "incorrect": "incorrect" },
+  "explanation": "explanation"
+}
+```
+
+闭合映射最多八个选项、三个提示；选项键为 1–16 位小写 ASCII 字母起始标识，目标为 1–64 位既有块 ID，全部目标唯一。目标必须是当前组件拥有的折叠部件，不穿过嵌套组件；题意与选项须是直接、`open:true` 的子部件。其他角色可有界嵌套。核心在两后端、原生和静态转换中始终校验结构；具体题型和答案规则仍由提供者校验。`markbridge_validate_component_params` 增加第五参数 `$activity`，原四参数回调兼容。参数或活动关系任一变化都触发准入，不能用参数相同跳过关系语义检查。缺提供者可编辑静态文字，原配置须保持。
+
+受信作者登记 `apiVersion:2`，另提供 `validate(params,activity)` 和 `create({id})`。Editor 收到 `activity`、只读 `parts`（id/title/open/direct）与 `onActivityChange`，通过共享未应用候选一次 Apply 更新参数和关系；不直接保存文章。`MarkBridgeComponentAuthors.activityVersion` 为 1，原 `apiVersion` 能力仍为 1 以兼容旧脚本。`templates()` 返回受信类型/精确版本，`MBB.createActivity` 校验厂商模板；`MBB.copyActivity` 仅复制所选子树，重分配全局 DOM 锚点并映射其内部引用。code-tabs 的默认页签和 href 同步，代码字面量及外部引用保留。
+
+主宿主在新 init 的 activity 中派生有界短标签和随机句柄，不发送可写富文本副本。`reveal-target` 只含 protocol/session/type/handle，验证当前 frame、会话、实例配置和准许目标；展开同实例必要祖先。ready 状态可持续思考；五秒只约束初始化和待授权，不限制阅读寿命。活动授权期间完成消息也同步检查两秒期限；关闭、隐藏、销毁、替换后的旧句柄失效。不会写分数、完成记录或第二正文。全部静态角色在无脚本、全文、打印与静态导出中可读，运行标记和临时作答不导出。

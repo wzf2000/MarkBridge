@@ -664,3 +664,43 @@ test('late iframe load callbacks cannot initialize or kill a replacement preview
   await expect(page.locator('iframe')).toHaveCount(0);
   await expect(page.locator('[role=status]')).toContainText('未授权导航');
 });
+
+test('activity controls follow all direct prompt and option bodies when role order differs from DOM order', async ({
+  page,
+}) => {
+  await load(page);
+  await page.evaluate(() => {
+    const node = document.getElementById('demo-0'),
+      config = JSON.parse(node.dataset.mbbTeachingConfig);
+    config.activity = {
+      schema: 1,
+      prompt: 'question',
+      options: [
+        { key: 'c', target: 'option-c' },
+        { key: 'b', target: 'option-b' },
+        { key: 'a', target: 'option-a' },
+      ],
+      hints: ['hint'],
+      feedback: { correct: 'yes', incorrect: 'no' },
+      explanation: 'solution',
+    };
+    config.provider.activityVersion = 1;
+    node.innerHTML =
+      '<div class="mbb-teaching-body">' +
+      ['question', 'option-a', 'option-b', 'option-c', 'hint', 'yes', 'no', 'solution']
+        .map((id) => '<section id="' + id + '"><p>' + id + '</p></section>')
+        .join('') +
+      '</div>';
+    node.dataset.mbbTeachingConfig = JSON.stringify(config);
+    MarkBridgeComponents.scan();
+  });
+  const controls = page.locator('#demo-0 > .mbb-teaching-body > .mbb-component-controls');
+  await expect(controls).toBeVisible();
+  expect(await controls.evaluate((n) => n.previousElementSibling.id)).toBe('option-c');
+  expect(await controls.evaluate((n) => n.nextElementSibling.id)).toBe('hint');
+  expect(
+    await page
+      .locator('#demo-0 > .mbb-teaching-body > section')
+      .evaluateAll((list) => list.map((n) => n.id)),
+  ).toEqual(['question', 'option-a', 'option-b', 'option-c', 'hint', 'yes', 'no', 'solution']);
+});

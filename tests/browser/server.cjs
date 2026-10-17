@@ -148,15 +148,21 @@ const taskEditor = (source = '- [ ] Browser task\n- ordinary\n', options = {}) =
 const e = wp.element.createElement;
 // Stable resolved assets keep attribute edits from navigating the canvas iframe.
 const taskEditorSettings = {allowedBlockTypes:true,__unstableResolvedAssets:{styles:'<link rel="stylesheet" href="/wp-includes/css/dist/block-editor/style.min.css">',scripts:''}};
+${
+  options.history
+    ? `wp.data.dispatch('core').addEntities([{kind:'postType',name:'mbb-activity-fixture',baseURL:'/fixture/entities',key:'id',rawAttributes:['content'],transientEdits:{blocks:true,selection:true},mergedEdits:{meta:true}}]);
+wp.data.dispatch('core').receiveEntityRecords('postType','mbb-activity-fixture',{id:901,content:{raw:wp.blocks.serialize(MBB.toBlocks(${JSON.stringify(source)}))},blocks:MBB.toBlocks(${JSON.stringify(source)}),meta:{footnotes:'[]'}});`
+    : ''
+}
 function EditorBody() {
   window.taskRegistry = wp.data.useRegistry();
   return e(wp.blockEditor.BlockTools, {}, ${options.iframe ? `e(wp.blockEditor.__unstableIframe,{name:'editor-canvas',title:'Editor canvas',style:{width:'100%',height:'500px'}},e(wp.blockEditor.BlockList)),e(wp.components.Panel,{},e(wp.blockEditor.InspectorControls.Slot))` : 'e(wp.blockEditor.BlockList), e(wp.blockEditor.ButtonBlockAppender)'});
 }
 function TaskEditorApp() {
-  const [blocks,setBlocks] = wp.element.useState(() => MBB.toBlocks(${JSON.stringify(source)}));
+  ${options.history ? `const [blocks,taskOnInput,taskOnChange] = wp.coreData.useEntityBlockEditor('postType','mbb-activity-fixture',{id:901});` : `const [blocks,setBlocks] = wp.element.useState(() => MBB.toBlocks(${JSON.stringify(source)}));`}
   window.taskBlocks = blocks;
   return e(wp.components.SlotFillProvider, {}, e(wp.blockEditor.BlockEditorProvider, {
-    value:blocks,onInput:setBlocks,onChange:setBlocks,settings:taskEditorSettings,
+    value:blocks,onInput:${options.history ? 'taskOnInput' : 'setBlocks'},onChange:${options.history ? 'taskOnChange' : 'setBlocks'},settings:taskEditorSettings,
   }, e(EditorBody)));
 }
 wp.element.createRoot(document.getElementById('task-editor')).render(e(TaskEditorApp));
@@ -688,7 +694,10 @@ const e = wp.element.createElement;`,
       };
       const source =
         ':::mbb:v1 component {"id":"editor-component","component":"fixture","componentVersion":"0.1.0","params":{"value":42,"behavior":"complete"}}\n\nEditable static fallback.\n\n:::mbb:end\n';
-      let html = taskEditor(source, { iframe: true });
+      let html = taskEditor(source, {
+        iframe: true,
+        history: new URL(request.url, 'http://localhost').searchParams.has('history'),
+      });
       if (html)
         html = html
           .replace(

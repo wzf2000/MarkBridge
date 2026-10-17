@@ -323,6 +323,52 @@ try {
         mbb_component_admit($candidate, $base) instanceof WP_Error,
         'Missing provider accepted distinct near floats',
     );
+    $activity = (object) [
+        'schema' => 1,
+        'prompt' => 'question',
+        'options' => [
+            (object) ['key' => 'a', 'target' => 'a'],
+            (object) ['key' => 'b', 'target' => 'b'],
+        ],
+        'hints' => [],
+        'feedback' => (object) ['correct' => 'yes', 'incorrect' => 'no'],
+        'explanation' => 'solution',
+    ];
+    $attrs = (object) [
+        'id' => 'check',
+        'component' => 'fixture',
+        'componentVersion' => '0.1.0',
+        'version' => 2,
+        'params' => (object) ['n' => 3],
+        'activity' => $activity,
+    ];
+    $comment = static fn($a) => '<!-- wp:mbb/component ' . json_encode($a) . ' -->';
+    $activityBase = $comment($attrs);
+    registry_assert(
+        mbb_component_admit($activityBase . '<p>edited static text</p>', $activityBase) === true,
+        'Missing provider blocked unchanged activity text',
+    );
+    $attrs->activity->options[0]->key = 'changed';
+    registry_assert(
+        mbb_component_admit($comment($attrs), $activityBase) instanceof WP_Error,
+        'Missing provider accepted relation-only semantic change',
+    );
+    $GLOBALS['mbb_components'] = $original;
+    registry_assert(
+        mbb_component_admit($comment($attrs), $activityBase) instanceof WP_Error,
+        'Non-opt-in provider accepted activity semantics',
+    );
+    $GLOBALS['mbb_components']['fixture']['activityVersion'] = 1;
+    $GLOBALS['domain_result'] = false;
+    registry_assert(
+        mbb_component_admit($comment($attrs), $activityBase) instanceof WP_Error,
+        'Activity-only change skipped provider domain validation',
+    );
+    unset($GLOBALS['domain_result']);
+    registry_assert(
+        mbb_component_admit($comment($attrs), $activityBase) === true,
+        'Opt-in provider domain could not admit activity semantics',
+    );
     $GLOBALS['mbb_components'] = $original;
     registry_assert(
         !mbb_component_schema((object) ['n' => '3'], $provider['schema']),

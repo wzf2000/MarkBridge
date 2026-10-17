@@ -135,7 +135,50 @@
       ready = false,
       generation = 0,
       abort = null,
-      diagnostic = null;
+      diagnostic = null,
+      startupDeadline = 0,
+      runDeadline = 0,
+      activityProjection = null;
+    const activityHandles = new Map();
+    function projectActivity() {
+      activityHandles.clear();
+      if (!config.activity) return null;
+      if (config.provider?.activityVersion !== 1) throw Error('Invalid activity provider');
+      const parts = new Map(
+        [...node.querySelectorAll('[id]')]
+          .filter(
+            (part) =>
+              part.closest('[data-mbb-teaching=component]') === node &&
+              part.matches('[data-mbb-teaching=collapse],.wp-block-mbb-collapse'),
+          )
+          .map((part) => [part.id, part]),
+      );
+      const handle = (id) => {
+        const target = parts.get(id);
+        if (!target) throw Error('Missing activity target');
+        const key = random();
+        activityHandles.set(key, target);
+        return key;
+      };
+      const a = config.activity;
+      return {
+        schema: 1,
+        prompt: handle(a.prompt),
+        options: a.options.map((option) => ({
+          key: option.key,
+          handle: handle(option.target),
+          label: [
+            ...(parts.get(option.target)?.querySelector('.mbb-teaching-title,summary')
+              ?.textContent || option.key),
+          ]
+            .slice(0, 80)
+            .join(''),
+        })),
+        hints: a.hints.map(handle),
+        feedback: { correct: handle(a.feedback.correct), incorrect: handle(a.feedback.incorrect) },
+        explanation: handle(a.explanation),
+      };
+    }
     const send = (type, extra = {}) => {
       if (!frame?.contentWindow) return false;
       const message = { protocol: PROTOCOL, session, type, ...extra };
@@ -164,6 +207,9 @@
         automaticStarting.delete(node);
       }
       generation++;
+      activityHandles.clear();
+      activityProjection = null;
+      startupDeadline = runDeadline = 0;
       abort?.abort();
       abort = null;
       clearTimeout(timer);
@@ -315,8 +361,20 @@
         }
         return;
       }
+      try {
+        activityProjection = projectActivity();
+      } catch {
+        failure(
+          T(
+            'Activity targets must exist within their own component; prompts and options must be direct open static parts',
+          ),
+          'ACTIVITY_TARGET',
+        );
+        return;
+      }
       slots.add(node);
       loading = true;
+      startupDeadline = performance.now() + budgets.startupMs;
       node.dataset.mbbComponentState = 'loading';
       launch.setAttribute('aria-expanded', 'true');
       close.setAttribute('aria-expanded', 'true');
@@ -363,6 +421,7 @@
           initialized = true;
           send('init', {
             params: config.params,
+            ...(activityProjection ? { activity: activityProjection } : {}),
             execution: EXECUTION_ENABLED,
             ...(diagram ? { presentation: 'diagram' } : {}),
             ...(config.provider.supportsUiLocale === true
@@ -404,7 +463,16 @@
     node.dataset.mbbComponentState = 'closed';
     close.hidden = true;
     controls.append(launch, close, status);
-    node.insertBefore(controls, node.firstChild);
+    if (config.activity) {
+      const body = node.querySelector(':scope > .mbb-teaching-body'),
+        roleIds = new Set([
+          config.activity.prompt,
+          ...(config.activity.options || []).map((o) => o.target),
+        ]),
+        anchor = [...(body?.children || [])].filter((part) => roleIds.has(part.id)).at(-1);
+      if (anchor) anchor.after(controls);
+      else (body || node).append(controls);
+    } else node.insertBefore(controls, node.firstChild);
     status.textContent =
       config.status === 'available'
         ? ''
@@ -450,6 +518,41 @@
         );
         return;
       }
+      if (
+        config.activity &&
+        ((!ready && performance.now() > startupDeadline) ||
+          (runId && performance.now() > runDeadline))
+      ) {
+        failure(T('Execution exceeded its time budget and was terminated.'), 'RUN_BUDGET');
+        return;
+      }
+      if (data.type === 'reveal-target') {
+        if (
+          Object.keys(data).length !== 4 ||
+          Object.keys(data).some(
+            (key) => !['protocol', 'session', 'type', 'handle'].includes(key),
+          ) ||
+          node.dataset.mbbTeachingConfig !== signature
+        )
+          return;
+        const target = activityHandles.get(data.handle);
+        if (
+          !ready ||
+          !config.activity ||
+          !node.isConnected ||
+          node.closest('[hidden]') ||
+          !node.getClientRects().length ||
+          !target?.isConnected ||
+          target.closest('[data-mbb-teaching=component]') !== node ||
+          !window.MarkBridgeTeaching?.revealTarget
+        )
+          return;
+        window.MarkBridgeTeaching.revealTarget(target);
+        target.scrollIntoView({ block: 'nearest' });
+        target.tabIndex = -1;
+        target.focus({ preventScroll: true });
+        return;
+      }
       if (data.type === 'ready' && !ready) {
         clearTimeout(startup);
         automaticStarting.delete(node);
@@ -479,6 +582,7 @@
         diagnostic?.stage('execution');
         active.add(node);
         runId = data.runId;
+        if (config.activity) runDeadline = performance.now() + budgets.wallMs;
         const expectedRun = runId;
         timer = setTimeout(() => {
           if (runId === expectedRun)

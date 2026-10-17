@@ -209,9 +209,21 @@ export function createParameterEditor({
   const el = wp.element.createElement;
   const find = (component, version) =>
     providers().find((p) => p.id === component && p.version === version);
-  return function ParameterEditor({ value, onCommit, clientId, component, componentVersion }) {
+  return function ParameterEditor({
+    value,
+    onCommit,
+    clientId,
+    component,
+    componentVersion,
+    activity,
+    parts = [],
+  }) {
     const original = JSON.stringify(value || {}, null, 2);
-    const identity = component + '@' + componentVersion;
+    const identity =
+      component + '@' + componentVersion + (activity ? ':' + JSON.stringify(activity) : '');
+    const [candidateActivity, setCandidateActivity] = wp.element.useState(
+      drafts.get(clientId)?.activity ?? activity,
+    );
     const [candidateVersion, setCandidateVersion] = wp.element.useState(
       drafts.get(clientId)?.componentVersion ?? componentVersion,
     );
@@ -233,7 +245,9 @@ export function createParameterEditor({
     const author = provider ? componentAuthor(component, candidateVersion) : undefined;
     let authorSupported = false;
     try {
-      authorSupported = candidate !== undefined && !!author?.supports(clone(candidate));
+      authorSupported =
+        candidate !== undefined &&
+        !!author?.supports(clone(candidate), { activity: candidateActivity });
     } catch {}
 
     const upgrade =
@@ -256,10 +270,12 @@ export function createParameterEditor({
         // final input event commits. Read the shared candidate again at commit
         // time, rather than relying only on the useState initializer.
         setRaw(pending.raw);
+        setCandidateActivity(pending.activity ?? activity);
         setCandidateVersion(pending.componentVersion ?? componentVersion);
         setError(pending.error || '');
       } else {
         setRaw(original);
+        setCandidateActivity(activity);
         setCandidateVersion(componentVersion);
         setError('');
         if (currentIssues(original, find(component, componentVersion)?.schema).length) {
@@ -273,11 +289,17 @@ export function createParameterEditor({
       setRaw(text);
       setError('');
       const prior = drafts.get(clientId);
-      if (text === original && targetVersion === componentVersion && !currentIssues(text).length)
+      if (
+        text === original &&
+        targetVersion === componentVersion &&
+        equal(candidateActivity, activity) &&
+        !currentIssues(text).length
+      )
         drafts.delete(clientId);
       else
         drafts.set(clientId, {
           raw: text,
+          ...(candidateActivity ? { activity: clone(candidateActivity) } : {}),
           componentVersion: targetVersion,
           error: '',
           baseline: prior?.baseline ?? original,
@@ -289,6 +311,12 @@ export function createParameterEditor({
       try {
         // Re-read the currently registered exact id/version, not author-supplied metadata.
         const registered = find(component, candidateVersion);
+        if (activity && (!registered || registered.activityVersion !== 1))
+          throw Error(
+            T(
+              'The component is missing or incompatible. Preserve its configuration or enable the matching extension before editing.',
+            ),
+          );
         if (candidateVersion !== componentVersion && !registered)
           throw Error(
             T(
@@ -301,8 +329,23 @@ export function createParameterEditor({
         });
         const issues = validateParameterSchema(parsed, registered?.schema);
         if (issues.length) throw Error(labelOf(issues[0].path) + ': ' + T(issues[0].message));
-        if (!equal(parsed, value) || candidateVersion !== componentVersion)
-          onCommit(parsed, { componentVersion: candidateVersion });
+        if (author?.apiVersion === 2) author.validate(parsed, candidateActivity);
+        const pending = drafts.get(clientId);
+        if (pending && pending.identity !== identity)
+          throw Error(
+            T(
+              'The component changed while this candidate was open. Review or discard the candidate.',
+            ),
+          );
+        if (
+          !equal(parsed, value) ||
+          candidateVersion !== componentVersion ||
+          !equal(candidateActivity, activity)
+        )
+          onCommit(parsed, {
+            componentVersion: candidateVersion,
+            ...(candidateActivity ? { activity: clone(candidateActivity) } : {}),
+          });
         drafts.delete(clientId);
         syncDraftLock();
         setError('');
@@ -311,6 +354,7 @@ export function createParameterEditor({
         setError(message);
         drafts.set(clientId, {
           raw,
+          ...(candidateActivity ? { activity: clone(candidateActivity) } : {}),
           componentVersion: candidateVersion,
           error: message,
           baseline: drafts.get(clientId)?.baseline ?? original,
@@ -497,6 +541,25 @@ export function createParameterEditor({
         ? el(author.Editor, {
             wp,
             session: authorSession.current,
+            ...(author.apiVersion === 2
+              ? {
+                  activity: clone(candidateActivity ?? null),
+                  parts: clone(parts),
+                  onActivityChange(next) {
+                    setCandidateActivity(clone(next));
+                    const prior = drafts.get(clientId);
+                    drafts.set(clientId, {
+                      raw,
+                      activity: clone(next),
+                      componentVersion: candidateVersion,
+                      error: '',
+                      baseline: prior?.baseline ?? original,
+                      identity: prior?.identity ?? identity,
+                    });
+                    syncDraftLock();
+                  },
+                }
+              : {}),
             value: clone(candidate),
             onChange: (next) => {
               try {
@@ -575,6 +638,7 @@ export function createParameterEditor({
               drafts.set(clientId, { raw: original, baseline: original, identity });
             syncDraftLock();
             setRaw(original);
+            setCandidateActivity(activity);
             setError('');
           },
         },

@@ -386,6 +386,7 @@
           commit(raw, 0);
         },
         insert(text) {
+          if (typeof text !== 'string') text = text.source;
           const raw = readSource(),
             start = rawOffset(raw, source.selectionStart),
             end = rawOffset(raw, source.selectionEnd);

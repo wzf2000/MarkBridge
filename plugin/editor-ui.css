@@ -1146,3 +1146,33 @@ body:has(#mbb-toolbar:not([hidden]):not(.mbb-keyboard-open) #mbb-recovery-open:n
   padding-block: 0.5rem;
   border-block-end: 1px solid var(--mbb-border, #dcdcde);
 }
+
+.mbb-activity-insert {
+  margin-block: 12px;
+  padding: 10px;
+  border: 1px solid #dcdcde;
+  border-radius: 5px;
+  background: #f6f7f7;
+}
+.mbb-activity-insert :is(select, button) {
+  margin-block: 6px;
+}
+.mbb-activity-relations {
+  flex-basis: 100%;
+  padding: 8px;
+  border-inline-start: 2px solid #dcdcde;
+}
+.mbb-activity-relations button {
+  display: block;
+  max-width: 100%;
+  min-height: 40px;
+  margin-block: 5px;
+}
+.mbb-writing-row small {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #646970;
+}

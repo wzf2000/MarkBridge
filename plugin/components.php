@@ -331,18 +331,33 @@ function markbridge_teaching_supports_component_versions(): bool
 {
     return true;
 }
+function markbridge_teaching_supports_activities(): bool
+{
+    return true;
+}
+
 /** Installed providers can add data-only domain checks after the strict generic schema. */
 /** Trusted providers may opt passive diagrams into automatic frontend presentation. */
 function markbridge_teaching_supports_reader_diagrams(): bool
 {
     return true;
 }
-function mbb_component_domain_valid(string $id, string $version, mixed $params): bool
-{
+function mbb_component_domain_valid(
+    string $id,
+    string $version,
+    mixed $params,
+    mixed $activity = null,
+): bool {
     try {
         return !function_exists('apply_filters') ||
-            apply_filters('markbridge_validate_component_params', true, $id, $version, $params) ===
-                true;
+            apply_filters(
+                'markbridge_validate_component_params',
+                true,
+                $id,
+                $version,
+                $params,
+                $activity,
+            ) === true;
     } catch (Throwable) {
         return false;
     }
@@ -368,10 +383,16 @@ function mbb_component_register_checked(string $id, array $provider): bool
     ];
     if (
         count($registry) >= 32 ||
-        array_diff(array_keys($provider), [...$fields, 'supportsUiLocale', 'readerMode']) ||
+        array_diff(array_keys($provider), [
+            ...$fields,
+            'supportsUiLocale',
+            'readerMode',
+            'activityVersion',
+        ]) ||
         (array_key_exists('supportsUiLocale', $provider) &&
             !is_bool($provider['supportsUiLocale'])) ||
         (array_key_exists('readerMode', $provider) && $provider['readerMode'] !== 'diagram') ||
+        (array_key_exists('activityVersion', $provider) && $provider['activityVersion'] !== 1) ||
         array_diff($fields, array_keys($provider)) ||
         !preg_match('/^[a-z][a-z0-9-]{0,63}$/D', $id) ||
         !is_string($provider['version']) ||
@@ -502,7 +523,8 @@ function mbb_component_admit(string $serialized, string $base)
             $old &&
             $old->component === $a->component &&
             $old->componentVersion === $a->componentVersion &&
-            mbb_component_equal($old->params, $a->params)
+            mbb_component_equal($old->params, $a->params) &&
+            mbb_component_equal($old->activity ?? null, $a->activity ?? null)
         ) {
             continue;
         }
@@ -518,7 +540,13 @@ function mbb_component_admit(string $serialized, string $base)
         }
         if (
             !mbb_component_schema($a->params, $p['schema']) ||
-            !mbb_component_domain_valid($a->component, $a->componentVersion, $a->params)
+            (isset($a->activity) && ($p['activityVersion'] ?? null) !== 1) ||
+            !mbb_component_domain_valid(
+                $a->component,
+                $a->componentVersion,
+                $a->params,
+                $a->activity ?? null,
+            )
         ) {
             return mbb_error(
                 'component_params',
@@ -544,6 +572,7 @@ function mbb_component_public(array $p): array
             'budgets',
             'supportsUiLocale',
             'readerMode',
+            'activityVersion',
         ]),
     ) + [
         'resource' => ['url' => $p['resource']['url'], 'sha256' => $p['resource']['sha256']],

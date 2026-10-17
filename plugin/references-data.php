@@ -16,7 +16,7 @@ function mbb_references_target(mixed $value): bool
         preg_match('/^[A-Za-z][A-Za-z0-9_-]{0,63}$/D', $value['target']) &&
         in_array(
             $value['kind'],
-            ['equation', 'figure', 'table', 'listing', 'statement', 'step'],
+            ['equation', 'figure', 'table', 'listing', 'statement', 'step', 'activity'],
             true,
         );
 }
@@ -36,6 +36,25 @@ function mbb_references_marker(array $value): string
         '" class="mbb-xref">[' .
         $value['target'] .
         ']</span>';
+}
+function mbb_references_activity_title(array $blocks, string $id, int $depth = 0): string
+{
+    if ($depth > 32) {
+        throw new RuntimeException('Reference structure exceeds its existing budget');
+    }
+    foreach ($blocks as $block) {
+        if ($block['blockName'] === 'mbb/component') {
+            continue;
+        }
+        if ($block['blockName'] === 'mbb/collapse' && ($block['attrs']['id'] ?? '') === $id) {
+            return (string) ($block['attrs']['title'] ?? '');
+        }
+        $title = mbb_references_activity_title($block['innerBlocks'] ?? [], $id, $depth + 1);
+        if ($title !== '') {
+            return $title;
+        }
+    }
+    return '';
 }
 function mbb_references_projection(string $serialized): array
 {
@@ -74,12 +93,14 @@ function mbb_references_projection(string $serialized): array
                         ? 'statement'
                         : ($name === 'mbb/step'
                             ? 'step'
-                            : null));
+                            : ($name === 'mbb/component' && ($a['version'] ?? 1) === 2
+                                ? 'activity'
+                                : null)));
             if (
                 $kind &&
                 in_array(
                     $kind,
-                    ['equation', 'figure', 'table', 'listing', 'statement', 'step'],
+                    ['equation', 'figure', 'table', 'listing', 'statement', 'step', 'activity'],
                     true,
                 )
             ) {
@@ -96,7 +117,13 @@ function mbb_references_projection(string $serialized): array
                 $out['objects'][$id] = [
                     'id' => $id,
                     'kind' => $kind,
-                    'title' => $a['title'] ?? ($a['caption'] ?? ''),
+                    'title' =>
+                        $kind === 'activity'
+                            ? mbb_references_activity_title(
+                                $block['innerBlocks'],
+                                $a['activity']['prompt'] ?? '',
+                            )
+                            : $a['title'] ?? ($a['caption'] ?? ''),
                     'number' => $numbers[$numberKind],
                     'displayKind' => $numberKind,
                 ];

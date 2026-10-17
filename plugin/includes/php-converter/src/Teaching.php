@@ -1,6 +1,7 @@
 <?php
 namespace MarkBridge\Probe;
 require_once __DIR__ . '/Bibliography.php';
+require_once __DIR__ . '/Activity.php';
 
 // Standalone CLI conversion and model tests remain supported; direct web access requires WordPress.
 if (!defined('ABSPATH')) {
@@ -441,7 +442,7 @@ final class Technical
                 !preg_match('/^[A-Za-z][A-Za-z0-9_-]{0,63}$/D', $identity) ||
                 !in_array(
                     $attrs['data-mbb-kind'] ?? '',
-                    ['equation', 'figure', 'table', 'listing', 'statement', 'step'],
+                    ['equation', 'figure', 'table', 'listing', 'statement', 'step', 'activity'],
                     true,
                 ) ||
                 $m[2] !== '[' . $identity . ']'
@@ -797,6 +798,10 @@ final class Teaching
         }
         $schema =
             self::SCHEMAS[$kind] +
+            ($kind === 'component' &&
+            (($attrs['version'] ?? 1) === 2 || ($source && array_key_exists('activity', $attrs)))
+                ? ['activity' => 'object']
+                : []) +
             ($kind === 'bibliography' &&
             (($attrs['version'] ?? 1) === 2 || ($source && array_key_exists('style', $attrs)))
                 ? ['style' => 'string'] +
@@ -815,7 +820,7 @@ final class Teaching
         if (
             !$source &&
             $attrs['version'] !== 1 &&
-            !($kind === 'bibliography' && $attrs['version'] === 2)
+            !(in_array($kind, ['bibliography', 'component'], true) && $attrs['version'] === 2)
         ) {
             self::fail('TEACHING_VERSION', 'Unsupported teaching block version');
         }
@@ -859,6 +864,9 @@ final class Teaching
             }
         }
         if ($kind === 'component') {
+            if (array_key_exists('activity', $out)) {
+                Activity::relations($out['activity']);
+            }
             if (
                 !preg_match('/^[a-z][a-z0-9-]{0,63}$/D', $out['component']) ||
                 !preg_match('/^\d+\.\d+\.\d+$/D', $out['componentVersion'])
@@ -1132,6 +1140,17 @@ final class Teaching
         }
         if (is_object($object) && property_exists($object, 'params')) {
             $attrs['params'] = $object->params;
+        }
+        if (is_object($object) && property_exists($object, 'activity')) {
+            $attrs['activity'] = $object->activity;
+        }
+        if (
+            is_object($object) &&
+            isset($object->attrs) &&
+            is_object($object->attrs) &&
+            property_exists($object->attrs, 'activity')
+        ) {
+            $attrs['attrs']['activity'] = $object->attrs->activity;
         }
         return $attrs;
     }
@@ -1456,8 +1475,14 @@ final class Teaching
                 } catch (\JsonException $e) {
                     self::fail('TEACHING_ATTRIBUTES', 'Invalid JSON attributes');
                 }
-                if ($m[1] === '2' && $m[2] !== 'bibliography') {
+                if ($m[1] === '2' && !in_array($m[2], ['bibliography', 'component'], true)) {
                     self::fail('TEACHING_VERSION', 'Unsupported teaching block version');
+                }
+                if ($m[2] === 'component' && ($m[1] === '2') !== array_key_exists('activity', $a)) {
+                    self::fail(
+                        'ACTIVITY_RELATION',
+                        'Activity relations require a closed map of unique local static targets',
+                    );
                 }
                 if ($m[2] === 'bibliography' && ($m[1] === '2') !== array_key_exists('style', $a)) {
                     self::fail('TEACHING_ATTRIBUTES', 'Incomplete teaching attributes');
@@ -1661,6 +1686,13 @@ final class Teaching
                 }
                 if ($kind !== null) {
                     $a = self::attrs($kind, $b['attrs'], false, $b['name']);
+                    if ($kind === 'component') {
+                        Activity::validate([
+                            'name' => $b['name'],
+                            'attrs' => $a,
+                            'children' => $inner,
+                        ]);
+                    }
                     if ($kind === 'identity') {
                         if ($depth || ++$identities > 1 || $inner) {
                             self::fail(
@@ -1872,6 +1904,9 @@ final class Teaching
         foreach (self::SCHEMAS[$kind] as $key => $type) {
             $attrs[$key] = $a[$key];
         }
+        if ($kind === 'component' && $a['version'] === 2) {
+            $attrs['activity'] = $a['activity'];
+        }
         if ($kind === 'bibliography' && $a['version'] === 2) {
             $attrs['style'] = $a['style'];
             if (array_key_exists('origins', $a)) {
@@ -1892,7 +1927,7 @@ final class Teaching
             }
         }
         return ':::mbb:v' .
-            ($kind === 'bibliography' ? $a['version'] : 1) .
+            (in_array($kind, ['bibliography', 'component'], true) ? $a['version'] : 1) .
             ' ' .
             $kind .
             ' ' .

@@ -75,7 +75,8 @@
     "component": "string",
     "componentVersion": "string",
     "params": "object",
-    "version": "integer"
+    "version": "integer",
+    "activity": "object"
   },
   "mbb/frontmatter": {
     "version": "integer",

@@ -1,3 +1,4 @@
+import { activityRelations, validateActivity, activityParts } from './activities.js';
 import { mediaKinds, mediaAttributes, assembleMedia, validateMedia } from './native-media.js';
 import {
   technicalSchemas,
@@ -84,6 +85,10 @@ export function teachingAttributes(kind, attrs, fail, source = false, blockName 
   }
   const schema = {
     ...teachingSchemas[kind],
+    ...(kind === 'component' &&
+    (attrs?.version === 2 || (source && Object.hasOwn(attrs || {}, 'activity')))
+      ? { activity: 'object' }
+      : {}),
     ...(kind === 'bibliography' &&
     (attrs?.version === 2 || (source && Object.hasOwn(attrs || {}, 'style')))
       ? { style: 'string', ...(Object.hasOwn(attrs || {}, 'origins') ? { origins: 'object' } : {}) }
@@ -102,7 +107,11 @@ export function teachingAttributes(kind, attrs, fail, source = false, blockName 
       'TEACHING_ATTRIBUTES',
       'Teaching container attributes are incomplete, unknown, or have invalid types',
     );
-  if (!source && attrs.version !== 1 && !(kind === 'bibliography' && attrs.version === 2))
+  if (
+    !source &&
+    attrs.version !== 1 &&
+    !(['bibliography', 'component'].includes(kind) && attrs.version === 2)
+  )
     fail('TEACHING_VERSION', 'The teaching block version must be 1');
   if (Object.values(attrs).some((v) => typeof v === 'string' && /[\uD800-\uDFFF]/u.test(v)))
     fail('TEACHING_ATTRIBUTES', 'Teaching attributes must be valid Unicode');
@@ -140,6 +149,7 @@ export function teachingAttributes(kind, attrs, fail, source = false, blockName 
     )
       fail('COMPONENT_VERSION', 'Invalid component name or version');
     componentParams(out.params, fail);
+    if (Object.hasOwn(out, 'activity')) activityRelations(out.activity, fail);
   }
   if (kind === 'steps' && (!['full', 'staged'].includes(out.mode) || out.full !== true))
     fail('TEACHING_MODE', 'Stage mode must be full/staged and the full-text entry must be enabled');
@@ -374,8 +384,13 @@ export function teachingSource(source, fail, ignored = new Set(), nonce, fences 
         } catch {
           fail('TEACHING_ATTRIBUTES', 'Teaching attributes must be a valid JSON object');
         }
-        if (match[1] === '2' && match[2] !== 'bibliography')
+        if (match[1] === '2' && !['bibliography', 'component'].includes(match[2]))
           fail('TEACHING_VERSION', 'The teaching block version must be 1');
+        if (match[2] === 'component' && (match[1] === '2') !== Object.hasOwn(attrs, 'activity'))
+          fail(
+            'ACTIVITY_RELATION',
+            'Activity relations require a closed map of unique local static targets',
+          );
         if (match[2] === 'bibliography' && (match[1] === '2') !== Object.hasOwn(attrs, 'style'))
           fail(
             'TEACHING_ATTRIBUTES',
@@ -516,6 +531,7 @@ export function validateTeaching(blocks, fail) {
         fail('TEACHING_STRUCTURE', 'A stage group may only contain stages');
       if (kind) {
         const a = teachingAttributes(kind, b.attributes, fail, false, b.name);
+        if (kind === 'component') validateActivity(b, fail);
         if (kind === 'identity') {
           if (depth || ++identities > 1 || inner.length)
             fail('DOCUMENT_IDENTITY', 'A document permits one empty top-level logical identity');
@@ -634,6 +650,7 @@ export function teachingMarkdown(b, body, fail) {
   const attrs = Object.fromEntries(
     [
       ...Object.keys(teachingSchemas[kind]),
+      ...(kind === 'component' && a.version === 2 ? ['activity'] : []),
       ...(kind === 'bibliography' && a.version === 2 ? ['style'] : []),
       ...(kind === 'bibliography' && a.version === 2 && Object.hasOwn(a, 'origins')
         ? ['origins']
@@ -647,7 +664,7 @@ export function teachingMarkdown(b, body, fail) {
   };
   return (
     ':::mbb:v' +
-    (kind === 'bibliography' ? a.version : 1) +
+    (['bibliography', 'component'].includes(kind) ? a.version : 1) +
     ' ' +
     kind +
     ' ' +
@@ -774,6 +791,7 @@ export function registerTeaching() {
       attributes: Object.fromEntries(
         Object.entries({
           ...schema,
+          ...(kind === 'component' ? { activity: 'object' } : {}),
           version: 'number',
           ...(kind === 'code-compare' ? sourceFields : {}),
         }).map(([key, type]) => [key, { type }]),
@@ -781,6 +799,10 @@ export function registerTeaching() {
       supports: { html: false, customClassName: false, anchor: false },
       edit: ({ attributes: a, setAttributes, clientId }) => {
         const registry = wp.data.useRegistry();
+        const currentBlock = wp.data.useSelect(
+          (select) => select('core/block-editor').getBlock(clientId),
+          [clientId],
+        );
         wp.element.useEffect(() => retainDraftOwner(registry, clientId), [registry, clientId]);
         wp.element.useEffect(() => {
           const initial = a.version === undefined ? { version: 1 } : {};
@@ -828,13 +850,34 @@ export function registerTeaching() {
                   component: a.component,
                   componentVersion: a.componentVersion,
                   clientId,
-                  onCommit: (params, meta) =>
+                  activity: a.activity,
+                  parts: [...activityParts(currentBlock || { innerBlocks: [] })].map(([id, b]) => ({
+                    id,
+                    title: b.attributes.title,
+                    open: b.attributes.open,
+                    direct: (currentBlock?.innerBlocks || []).some(
+                      (child) => child.clientId === b.clientId,
+                    ),
+                  })),
+                  onCommit: (params, meta) => {
+                    if (meta?.activity)
+                      validateActivity(
+                        {
+                          ...registry.select('core/block-editor').getBlock(clientId),
+                          attributes: { ...a, params, version: 2, activity: meta.activity },
+                        },
+                        (code, message) => {
+                          throw Error(message);
+                        },
+                      );
                     setAttributes({
                       params,
+                      ...(meta?.activity ? { activity: meta.activity, version: 2 } : {}),
                       ...(meta?.componentVersion
                         ? { componentVersion: meta.componentVersion }
                         : {}),
-                    }),
+                    });
+                  },
                 })
               : el(
                   key === 'mode'
@@ -931,6 +974,7 @@ export function registerTeaching() {
               kind === 'component'
                 ? el(wp.components.SelectControl, {
                     label: T('Registered teaching component'),
+                    disabled: !!a.activity,
                     value: (a.component || '') + '@' + (a.componentVersion || ''),
                     options: [
                       ...((window.MBBComponents || []).some(
@@ -966,7 +1010,7 @@ export function registerTeaching() {
                   })
                 : null,
               ...controls.filter((control) => !visible.includes(control.key)),
-              kind === 'component'
+              kind === 'component' && !a.activity
                 ? el(
                     'div',
                     {

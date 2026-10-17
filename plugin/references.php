@@ -115,7 +115,9 @@ function mbb_references_resolve(array $target): array
             'label' =>
                 ($object['displayKind'] === 'step'
                     ? mbb_t('Stage')
-                    : mbb_technical_label($object['displayKind'])) .
+                    : ($object['displayKind'] === 'activity'
+                        ? mbb_t('Activity')
+                        : mbb_technical_label($object['displayKind']))) .
                 ' ' .
                 $object['number'],
             'url' =>
@@ -566,7 +568,9 @@ function mbb_references_search($r)
                     'label' =>
                         ($object['displayKind'] === 'step'
                             ? mbb_t('Stage')
-                            : mbb_technical_label($object['displayKind'])) .
+                            : ($object['displayKind'] === 'activity'
+                                ? mbb_t('Activity')
+                                : mbb_technical_label($object['displayKind']))) .
                         ' ' .
                         $object['number'],
                 ];
