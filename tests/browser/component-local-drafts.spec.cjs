@@ -207,3 +207,36 @@ test('baseline and identity changes invalidate tool callbacks without clearing n
   await discard(page).click();
   await expect(await exported(page)).not.toContainText('ERROR:');
 });
+
+test('same-value changes, active mode clicks and clean Apply retain a live author callback', async ({
+  page,
+}) => {
+  await open(page);
+  await page.evaluate(() => {
+    window.beforeSame = currentAuthor;
+    currentAuthor.onChange({ ...currentAuthor.value });
+  });
+  await expect.poll(() => page.evaluate(() => currentAuthor !== beforeSame)).toBe(true);
+  await local(page).fill('same params should consume this');
+  await page.evaluate(() => {
+    window.beforeConsume = currentAuthor;
+    currentAuthor.onChange({ ...currentAuthor.value }, { consumeLocalDraft: true });
+  });
+  await expect(local(page)).toHaveValue('');
+  await expect(await exported(page)).not.toContainText('ERROR:');
+  await page.evaluate(() => {
+    window.beforeModeClick = currentAuthor;
+  });
+  await page.getByRole('button', { name: 'Visual editor', exact: true }).click();
+  await local(page).fill('active mode remains usable');
+  await expect(local(page)).toHaveValue('active mode remains usable');
+  await discard(page).click();
+  await page.evaluate(() => (window.beforeCleanApply = currentAuthor));
+  await apply(page).click();
+  await expect.poll(() => page.evaluate(() => currentAuthor !== beforeCleanApply)).toBe(true);
+  await stale(page, 'beforeCleanApply', 'old no-op Apply');
+  await local(page).fill('new callback after clean Apply');
+  await expect(local(page)).toHaveValue('new callback after clean Apply');
+  await expect(await exported(page)).toContainText('ERROR: Parameters have not been applied');
+  await discard(page).click();
+});

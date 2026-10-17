@@ -337,6 +337,7 @@ export function createParameterEditor({
         throw Error(T('The author candidate changed. Preview again.'));
     };
     const chooseMode = (next) => {
+      if (next === mode) return;
       authorLife.current.generation++;
       setMode(next);
     };
@@ -419,6 +420,8 @@ export function createParameterEditor({
             : {}),
         });
       syncDraftLock();
+      // A same-value update can still consume local input or rotate its callback.
+      refreshLocalDraft((n) => n + 1);
     };
     const updateLocalDraft = (next) => {
       assertAuthorCurrent();

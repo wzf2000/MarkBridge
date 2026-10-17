@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.9.0-rc.6
+
+- Keep component author callbacks live after same-value changes/consumption and repeated clicks on the active editor mode. Preserve explicit clean Apply/Discard session rotation.
+
 ## 2.9.0-rc.5
 
 - Let trusted component authors retain bounded local table/CSV input in the existing in-memory candidate and Save lock, with explicit atomic preparation or discard. Preserve mode/remount drafts and reject obsolete tool sessions/baselines.
