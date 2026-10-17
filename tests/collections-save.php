@@ -33,6 +33,78 @@ function collection_request(string $method, string $path, array $data = []): WP_
     }
     return rest_do_request($r);
 }
+// Exercise the real paired editing API. A bare wp_update_post on a managed
+// article is deliberately rejected by the ordinary pair guard, so it cannot
+// manufacture a stale snapshot fixture.
+function collection_bridge_request(string $route, array $data): WP_REST_Response
+{
+    $request = new WP_REST_Request('POST', '/mbb/v1/' . $route);
+    $request->set_header('Content-Type', 'application/json');
+    $request->set_body(wp_json_encode($data));
+    foreach ($data as $key => $value) {
+        $request->set_param($key, $value);
+    }
+    return rest_do_request($request);
+}
+function collection_save_title(int $id, string $title): void
+{
+    $request = new WP_REST_Request('GET', '/mbb/v1/document');
+    $request->set_param('post_id', $id);
+    $response = rest_do_request($request);
+    collection_assert(
+        $response->get_status() === 200,
+        'title edit context: ' . wp_json_encode($response->get_data()),
+    );
+    $context = $response->get_data();
+    collection_assert(empty($context['source_managed']), 'synthetic article has no bound source');
+    clean_post_cache($id);
+    $before = get_post($id, ARRAY_A);
+    $cover = (int) get_post_thumbnail_id($id);
+    collection_assert(
+        $context['document']['source'] === $before['post_content_filtered'],
+        'title edit keeps the current source baseline',
+    );
+    $payload = [
+        'post_id' => $id,
+        'expected' => $context['expected'],
+        'documentId' => $context['document']['documentId'],
+        'mode' => 'markdown',
+        'source' => $context['document']['source'],
+        'title' => $title,
+        'post_status' => $context['post_status'],
+        'featured_media' => $cover,
+    ];
+    $preview = collection_bridge_request('preview', $payload);
+    collection_assert(
+        $preview->get_status() === 200,
+        'title edit preview: ' . wp_json_encode($preview->get_data()),
+    );
+    $view = $preview->get_data();
+    foreach (['adapter_digest', 'resource_receipt', 'frontmatter_receipt'] as $field) {
+        $payload[$field] = $view[$field] ?? null;
+    }
+    $saved = collection_bridge_request('save', $payload);
+    collection_assert(
+        $saved->get_status() === 200,
+        'title edit paired save: ' . wp_json_encode($saved->get_data()),
+    );
+    clean_post_cache($id);
+    $after = get_post($id, ARRAY_A);
+    collection_assert(
+        $after['post_title'] === $title,
+        'paired title edit actually changed the title',
+    );
+    foreach (['post_content', 'post_content_filtered', 'post_status', 'post_author'] as $field) {
+        collection_assert(
+            $after[$field] === $before[$field],
+            'title-only paired save preserved ' . $field,
+        );
+    }
+    collection_assert(
+        (int) get_post_thumbnail_id($id) === $cover,
+        'title edit preserved the current cover',
+    );
+}
 $previous = get_current_user_id();
 $users = [];
 $posts = [];
@@ -146,7 +218,11 @@ try {
     $made = collection_request('POST', '/prepare', $prepare)->get_data();
     collection_assert(isset($made['token']), 'second candidate');
     $tokens[] = $made['token'];
-    wp_update_post(['ID' => $posts[0], 'post_title' => 'Changed after preparation']);
+    collection_save_title($posts[0], 'Changed after preparation');
+    collection_assert(
+        get_post_field('post_title', $posts[0], 'raw') !== $before[0]['post_title'],
+        'stale test title differs from the prepared snapshot',
+    );
     collection_assert(
         collection_request('POST', '/jobs/' . $made['token'] . '/confirm', [
             'schema' => 1,
@@ -154,7 +230,11 @@ try {
         ])->get_status() === 409,
         'stale snapshot rejected',
     );
-    wp_update_post(['ID' => $posts[0], 'post_title' => $before[0]['post_title']]);
+    collection_save_title($posts[0], $before[0]['post_title']);
+    collection_assert(
+        get_post_field('post_title', $posts[0], 'raw') === $before[0]['post_title'],
+        'paired title restoration completed',
+    );
     $config['chapters'][] = ['key' => 'C_' . bin2hex(random_bytes(16)), 'post_id' => $posts[1]];
     collection_assert(
         collection_request('POST', '', [

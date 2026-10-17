@@ -79,4 +79,4 @@ mbb_register_publication_adapter('publisher-html', [
 
 ## 验证入口
 
-`php tests/collections.php` 是可重复的配置／CAS／权限／限定引用／私有槽／实际 ZIP 与流句柄模型；不是生产数据库或 HTTP 权限证据。`tests/collections-save.php` 通过 `wp eval-file` 在明确环境变量、回环 home、`local` 环境的独立合成 WordPress 中执行真实 REST、owner 隔离、保存正文不变和失效检查。两后端分别运行；不可用于生产。浏览器 fixture 使用真实产品 UI 与合成 REST，分别留 1440／390 截图，不能代替独立实际站点、两账号与近上限内存验收。预算在不同宿主上的峰值仍以实际请求测量为准，不提高宿主全局内存或上传限制。
+`php tests/collections.php` 是可重复的配置／CAS／权限／限定引用／私有槽／实际 ZIP 与流句柄模型；不是生产数据库或 HTTP 权限证据。`tests/collections-save.php` 通过 `wp eval-file` 在明确环境变量、回环 home、`local` 环境的独立合成 WordPress 中执行真实 REST、owner 隔离、保存正文不变和失效检查。两后端分别运行；不可用于生产。标题失效夹具通过正常 preview／配对 save 改动并恢复元数据，先断言真实变动；不能用被配对保护拒绝的裸 `wp_update_post` 充当外部变更。浏览器 fixture 使用真实产品 UI 与合成 REST，分别留 1440／390 截图，不能代替独立实际站点、两账号与近上限内存验收。预算在不同宿主上的峰值仍以实际请求测量为准，不提高宿主全局内存或上传限制。
