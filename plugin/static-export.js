@@ -156,6 +156,18 @@
           /^aria-[a-z-]+$/.test(k)
         )
           continue;
+        // Fixed SRE collapse bookkeeping is inert in a scriptless artifact.
+        // Remove only the pinned node/key and finite tree syntax, never source attributes.
+        if (
+          rendered &&
+          node.localName === 'mjx-math' &&
+          k === 'data-semantic-collapsed' &&
+          v.length <= 8192 &&
+          /^[() c0-9]+$/.test(v)
+        ) {
+          node.removeAttribute(k);
+          continue;
+        }
         // Pinned MathJax 4.1.3 CHTML marks glyphs without italic correction
         // with this exact literal. This is not an author-supplied math attribute.
         if (rendered && node.localName === 'mjx-c' && k === 'noic' && v === 'true') continue;
@@ -228,6 +240,14 @@
               'fence',
               'separator',
             ].includes(k))
+        )
+          continue;
+        if (rendered && k === 'data-mbb-generated' && v === '') continue;
+        if (
+          rendered &&
+          k === 'data-mbb-math-projection' &&
+          v === 'chtml/v1' &&
+          node.classList.contains('mbb-typeset')
         )
           continue;
         if (rendered && (k.startsWith('data-mbb-') || k === 'tabindex')) {
@@ -316,7 +336,16 @@
       if (!images.has(key)) fail('The static HTML contains an unverified image');
       img.src = images.get(key);
     }
-    const count = doc.querySelectorAll('pre.wp-block-mbb-math,span.mbb-math[data-mbb-tex]').length;
+    const mathSources = [
+      ...doc.querySelectorAll('pre.wp-block-mbb-math,span.mbb-math[data-mbb-tex]'),
+    ].map((n) => ({
+      tex:
+        n.localName === 'pre'
+          ? (n.querySelector('code')?.textContent ?? n.getAttribute('data-mbb-tex'))
+          : n.getAttribute('data-mbb-tex'),
+      display: n.localName === 'pre',
+    }));
+    const count = mathSources.length;
     if (!window.MBB_MATH?.preview)
       fail('The formula preview engine is unavailable for static export');
     const rendered = await window.MBB_MATH.preview(doc.body.innerHTML);
@@ -335,13 +364,19 @@
     if (
       formulas.length !== count ||
       formulas.some(
-        (n) =>
+        (n, i) =>
+          n.children.length !== 1 ||
+          !n.firstElementChild.classList.contains('mbb-typeset') ||
+          n.firstElementChild.getAttribute('aria-label') !== mathSources[i].tex ||
+          (n.localName === 'pre') !== mathSources[i].display ||
           n.hasAttribute('data-mbb-math-error') ||
           !n.querySelector('mjx-container[jax="CHTML"]') ||
           n.querySelector('[data-mml-node="merror"]'),
       )
     )
       fail('Formula typesetting failed. No incomplete HTML was downloaded');
+    for (const n of formulas)
+      n.firstElementChild.setAttribute('data-mbb-math-projection', 'chtml/v1');
     if (window.MarkBridgeStaticCode?.render)
       await window.MarkBridgeStaticCode.render(doc.body, { cancelled });
     if (value.schema === 2) window.MarkBridgeProjection.insert(doc.body, value.projections);

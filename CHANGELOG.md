@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.9.0-rc.3
+
+- Add a queued, bounded Presentation MathML projection API using the existing MathJax 4.1.3 engine, without accepting authored MathML or requiring a server renderer.
+- Bind exported formulas to validated engine nodes; retain generated-view markers for publication navigation filtering.
+- Let trusted publication clients describe their download filename and concise format controls; keep the existing snapshot/final authorization chain.
+
 ## 2.9.0-rc.2
 
 - Compare front-end derived views with a fresh persisted baseline, accounting only for WordPress’s authorized draft/pending preview date projection. Keep all other field, metadata, session and final permission checks.

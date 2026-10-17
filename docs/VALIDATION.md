@@ -1,5 +1,11 @@
 # 当前验证范围
 
+## 2.9.0-rc.3：EPUB 公式接缝
+
+完整 `npm test` 模型通过；最后只改生成式 SRE metadata 剥离后，定向实际 MathJax／MathML 两尺寸 10 项通过，覆盖四类公式、真实 `\hspace{1cm}x` 子集回退、独立字节／节点／深度预算及命名空间／URL／事件／结构拒绝。CHTML 的 `data-semantic-collapsed` 仅在已渲染的 `mjx-math`、有限语法和字节上限内移除；其他节点、非法值与作者原始属性仍拒绝。既有 CHTML／字体／单篇 HTML／SDK 浏览器子集通过；两个可选 retained-input 用例因未指定历史输入明确跳过。
+
+Publisher 的最终网页书／EPUB、作者候选／opaque 预览／确认／摘要下载与取消、解包 XHTML 无脚本离线两尺寸 16 项通过。它们是合成 REST／真实核心脚本及渲染证据，不代替固定包实际 WordPress 鉴权／两阅读器验收。默认 PHP、原输入 sanitizer 和全部旧预算不变。CHTML 自身失败继续拒绝候选，不引入宽松静态导出模式或新的 TeX 包。
+
 ## 2.9.0-rc.2：草稿预览日期
 
 `tests/projection-preview.php` 在只读核心源码中定位并执行实际 WP_Query 日期投影片段，使用实际 WP_Post 与产品 mbb_token（其余存储／权限为内存模型）。验证 draft/pending 日期唯一例外、无权限／非预览／公开状态拒绝、其他字段和 autosave 正文差异拒绝，以及渲染期间数据／metadata／权限变化。全局预览对象与持久对象不修改。复用 rc.1 其余已固定证据，并定向复验 PHP8.2／8.5、密码表单与 typed projection。实际站点预览由隔离环境独立验收。

@@ -95,8 +95,18 @@
         !/^[a-z][a-z0-9-]{0,31}$/.test(id) ||
         clients.has(id) ||
         !value ||
-        Object.keys(value).sort().join(',') !==
-          ['schema', 'version', 'fingerprint', 'label', 'build'].sort().join(',') ||
+        Object.keys(value)
+          .filter((k) => k !== 'output')
+          .sort()
+          .join(',') !== ['schema', 'version', 'fingerprint', 'label', 'build'].sort().join(',') ||
+        (Object.hasOwn(value, 'output') &&
+          (!value.output ||
+            Object.keys(value.output).sort().join(',') !==
+              ['filename', 'downloadLabel', 'generateLabel', 'previewLabel', 'description']
+                .sort()
+                .join(',') ||
+            !/^[a-z0-9][a-z0-9.-]{0,95}$/.test(value.output.filename) ||
+            Object.values(value.output).some((v) => typeof v !== 'string' || v.length > 1000))) ||
         value.schema !== 1 ||
         typeof value.build !== 'function' ||
         !/^[a-f0-9]{64}$/.test(value.fingerprint) ||
@@ -277,9 +287,13 @@
         client.version === job.client.version &&
         client.fingerprint === job.client.fingerprint;
       if (job.client) {
+        if (projection?.warnings?.length)
+          report.append(
+            el('p', projection.warnings.join(' · '), { class: 'mbbc-publication-warning' }),
+          );
         report.append(
           button(
-            'Generate web book',
+            client?.output?.generateLabel || 'Generate web book',
             () =>
               run(
                 async ({ cancelled, progress }) => {
@@ -304,7 +318,11 @@
                     !(result?.blob instanceof Blob) ||
                     result.blob.size < 1 ||
                     result.blob.size > 25165824 ||
-                    typeof result.previewHTML !== 'string'
+                    typeof result.previewHTML !== 'string' ||
+                    (result.warnings != null &&
+                      (!Array.isArray(result.warnings) ||
+                        result.warnings.length > 64 ||
+                        result.warnings.some((v) => typeof v !== 'string' || v.length > 200)))
                   ) {
                     result?.dispose?.();
                     throw Error(T('The publication output is invalid or exceeds its budget.'));
@@ -349,7 +367,7 @@
         report.append(explanation);
         if (projection) {
           const frame = el('iframe', undefined, {
-            title: T('Web book preview'),
+            title: client?.output?.previewLabel || T('Web book preview'),
             sandbox: '',
             referrerpolicy: 'no-referrer',
             class: 'mbbc-book-preview',
@@ -380,7 +398,9 @@
           !!loading || confirmed || (!!job.client && (!projection || !previewReady)),
         ),
         button(
-          job.client ? 'Download web book ZIP' : 'Download snapshot ZIP',
+          job.client
+            ? client?.output?.downloadLabel || 'Download web book ZIP'
+            : 'Download snapshot ZIP',
           () =>
             run(
               async ({ cancelled }) => {
@@ -421,7 +441,9 @@
                 const href = URL.createObjectURL(blob),
                   a = el('a', undefined, {
                     href,
-                    download: job.client ? 'markbridge-webbook.zip' : 'markbridge-collection.zip',
+                    download: job.client
+                      ? client?.output?.filename || 'markbridge-webbook.zip'
+                      : 'markbridge-collection.zip',
                   });
                 document.body.append(a);
                 a.click();
@@ -686,11 +708,12 @@
     prepare.append(
       el(
         'p',
-        T(
-          adapter === 'snapshot-v1'
-            ? 'This ZIP is a fixed publication snapshot for an export adapter, not yet a complete reading website. Articles and resource bytes are checked again before confirmation and download.'
-            : 'Generate a complete offline web book in your browser, inspect its static preview, then confirm and download. Articles and resources are checked again before download.',
-        ),
+        clients.get(adapter)?.output?.description ||
+          T(
+            adapter === 'snapshot-v1'
+              ? 'This ZIP is a fixed publication snapshot for an export adapter, not yet a complete reading website. Articles and resource bytes are checked again before confirmation and download.'
+              : 'Generate a complete offline web book in your browser, inspect its static preview, then confirm and download. Articles and resources are checked again before download.',
+          ),
       ),
       actions(),
     );

@@ -292,7 +292,7 @@
           clearTimeout(timer);
           clearInterval(poll);
           resolve({
-            mbbRender: (tex, display) =>
+            request: (action, tex, display) =>
               new Promise((resolve, reject) => {
                 const id = ++sequence;
                 const timer = setTimeout(() => {
@@ -304,8 +304,8 @@
                     ),
                   );
                 }, 120000);
-                pending.set(id, { resolve, reject, timer });
-                send({ action: 'render', id, tex, display });
+                pending.set(id, { resolve, reject, timer, action });
+                send({ action, id, tex, display });
               }),
           });
         }
@@ -327,7 +327,7 @@
                 updateStyles(m.css);
               }
             }
-            p.resolve(m.html);
+            p.resolve(p.action === 'mathml' ? m.mathml : m.html);
           }
         }
       };
@@ -350,7 +350,7 @@
     if (!cache.has(key)) {
       const p = load().then((w) => {
         stage?.('typesetting');
-        return w.mbbRender(tex, display);
+        return w.request('render', tex, display);
       });
       cache.set(key, p);
       if (cache.size > 256) cache.delete(cache.keys().next().value);
@@ -499,6 +499,20 @@
     render,
     typeset,
     preview,
+    presentationMathML: async (tex, display = false) => {
+      if (typeof tex !== 'string' || tex.length > 20000 || typeof display !== 'boolean')
+        throw coded('MATHML_INPUT', T('Invalid MathML conversion input'));
+      try {
+        const raw = await (await load()).request('mathml', tex, display);
+        if (!window.MarkBridgeMathML)
+          throw coded('MATHML_UNSAFE', T('MathML validator unavailable'));
+        return { mathml: window.MarkBridgeMathML.validate(raw, tex, display), reason: null };
+      } catch (error) {
+        if (error.mbbCode === 'MATHML_UNSUPPORTED' || error.mbbCode === 'TYPESET')
+          return { mathml: null, reason: error.mbbCode };
+        throw error;
+      }
+    },
     diagnostic: (error) => {
       const d = window.MBB_DIAGNOSTICS?.begin('math');
       d?.stage(error?.mbbCode?.startsWith('FONT') ? 'font' : 'typesetting');

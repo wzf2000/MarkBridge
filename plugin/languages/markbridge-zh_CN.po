@@ -3240,6 +3240,10 @@ msgid "Invalid JSON property"
 msgstr "非法 JSON 属性"
 
 #: plugin/i18n.js
+msgid "Invalid MathML conversion input"
+msgstr "MathML 转换输入无效。"
+
+#: plugin/i18n.js
 msgid "Invalid Unicode"
 msgstr "Unicode 非法"
 
@@ -3712,6 +3716,10 @@ msgstr "图片替代文字中的公式会被现有引擎丢弃"
 #: plugin/i18n.js
 msgid "Math span must contain only text"
 msgstr "公式 span 只能包含文字"
+
+#: plugin/i18n.js
+msgid "MathML validator unavailable"
+msgstr "MathML 校验器不可用。"
 
 #: plugin/i18n.js
 msgid "Maximum three nested collapse containers"
@@ -7862,6 +7870,10 @@ msgid "Unsafe links, duplicate HTML attributes, and image inputs that would lose
 msgstr "危险链接、重复 HTML 属性及会丢失替代文字的图片输入明确拒绝。"
 
 #: plugin/i18n.js
+msgid "Unsafe or malformed Presentation MathML"
+msgstr "Presentation MathML 结构无效或含不安全内容。"
+
+#: plugin/i18n.js
 msgid "Unsafe or overlong code language"
 msgstr "不安全或过长的代码语言"
 
@@ -7908,6 +7920,10 @@ msgstr "不支持Markdown节点 %1$s"
 #: plugin/i18n.js
 msgid "Unsupported Markdown syntax"
 msgstr "不支持的 Markdown 语法"
+
+#: plugin/i18n.js
+msgid "Unsupported Presentation MathML"
+msgstr "此公式超出支持的 Presentation MathML 子集。"
 
 #: plugin/i18n.js
 msgid "Unsupported TeX command or math in BibTeX"

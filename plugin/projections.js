@@ -129,6 +129,7 @@
       if (targets.length !== 1) fail();
       const wrapper = doc.createElement('section');
       wrapper.className = 'mbb-projection';
+      wrapper.setAttribute('data-mbb-generated', '');
       try {
         if (item.state !== 'available') fail();
         const keys = validate(item.projection),

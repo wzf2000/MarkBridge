@@ -19,7 +19,7 @@ const config = asset('math-engine.js'),
   engine = asset('math-engine.html', read('math-engine.html').replace('math-engine.js', config));
 asset(
   'math.js',
-  read('math.js').replace(
+  (read('mathml.js') + '\n' + read('math.js')).replace(
     /root\s*\+\s*['"]math-engine\.html['"]/,
     'root + ' + JSON.stringify(engine),
   ),
