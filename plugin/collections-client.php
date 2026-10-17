@@ -369,4 +369,5 @@ function mbb_collections_client_serve($served, $response, $request, $server)
     }
     return true;
 }
-add_filter('rest_pre_serve_request', 'mbb_collections_client_serve', 10, 4);
+// Like the binary stream, the JSON handoff follows core CORS/header filters.
+add_filter('rest_pre_serve_request', 'mbb_collections_client_serve', 100, 4);

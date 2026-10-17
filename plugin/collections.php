@@ -883,7 +883,8 @@ function mbb_collections_serve($served, $response, $request, $server)
     }
     return true;
 }
-add_filter('rest_pre_serve_request', 'mbb_collections_serve', 10, 4);
+// Emit body bytes only after WordPress's priority-10 CORS headers.
+add_filter('rest_pre_serve_request', 'mbb_collections_serve', 100, 4);
 require_once __DIR__ . '/collections-admin.php';
 
 // Bound the raw body before core JSON parameter decoding, as well as the closed fields.

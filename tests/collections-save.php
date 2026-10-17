@@ -106,6 +106,7 @@ function collection_save_title(int $id, string $title): void
     );
 }
 $previous = get_current_user_id();
+$previousOrigin = $_SERVER['HTTP_ORIGIN'] ?? null;
 $users = [];
 $posts = [];
 $tokens = [];
@@ -213,7 +214,49 @@ try {
     collection_assert($manifest['schema'] === 1 && count($manifest['chapters']) === 1, 'manifest');
     collection_assert(!str_contains($zip->getFromName('manifest.json'), 'post_id'), 'no post id');
     $zip->close();
-    mbb_collections_finish_download(spl_object_id($response));
+    $corePriority = has_filter('rest_pre_serve_request', 'rest_send_cors_headers');
+    collection_assert($corePriority !== false, 'real core CORS filter registered');
+    foreach (['mbb_collections_serve', 'mbb_collections_client_serve'] as $handler) {
+        $priority = has_filter('rest_pre_serve_request', $handler);
+        collection_assert(
+            is_int($priority) && $priority > $corePriority,
+            'body handler follows core CORS: ' . $handler,
+        );
+    }
+    $_SERVER['HTTP_ORIGIN'] = home_url();
+    $serveRequest = new WP_REST_Request(
+        'POST',
+        '/mbb/v1/collections/jobs/' . $made['token'] . '/download',
+    );
+    rewind($stream['handle']);
+    set_error_handler(static function ($level, $message, $file, $line) {
+        if (str_contains($message, 'Cannot modify header information')) {
+            throw new ErrorException($message, 0, $level, $file, $line);
+        }
+        return false;
+    }, E_WARNING);
+    ob_start();
+    try {
+        $served = apply_filters(
+            'rest_pre_serve_request',
+            false,
+            $response,
+            $serveRequest,
+            rest_get_server(),
+        );
+        $binary = ob_get_contents();
+    } finally {
+        ob_end_clean();
+        restore_error_handler();
+    }
+    collection_assert(
+        $served === true && hash('sha256', $binary) === $made['artifact']['sha256'],
+        'real Origin filter chain serves exact ZIP without header warnings',
+    );
+    collection_assert(
+        !isset($GLOBALS['mbb_collection_downloads'][spl_object_id($response)]),
+        'filter stream cleaned',
+    );
     $response = null;
     $made = collection_request('POST', '/prepare', $prepare)->get_data();
     collection_assert(isset($made['token']), 'second candidate');
@@ -264,6 +307,11 @@ try {
     }
     echo "Collection real REST config/prepare/confirm/ZIP/no-body-write/owner/private/stale checks passed\n";
 } finally {
+    if ($previousOrigin === null) {
+        unset($_SERVER['HTTP_ORIGIN']);
+    } else {
+        $_SERVER['HTTP_ORIGIN'] = $previousOrigin;
+    }
     if ($response) {
         mbb_collections_finish_download(spl_object_id($response));
     }

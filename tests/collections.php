@@ -2,7 +2,10 @@
 // Deterministic authorization, scope, exact-byte CAS, slot, resource and streaming models.
 define('ABSPATH', sys_get_temp_dir() . '/mbb-collections-model-not-web/');
 function add_action(...$args) {}
-function add_filter(...$args) {}
+function add_filter($name, $callback, $priority = 10, $arguments = 1)
+{
+    $GLOBALS['modelFilters'][$name][$priority][] = $callback;
+}
 function do_action(...$args) {}
 function mbb_t($s)
 {
@@ -246,6 +249,30 @@ class WP_REST_Response
 // Exercise the real safe HTML projection against small canonical fragments.
 require_once dirname(__DIR__) . '/plugin/static-export.php';
 require_once dirname(__DIR__) . '/plugin/collections.php';
+// Core installs its default CORS callback after plugin registration in real REST.
+// Reproduce that order: equal priorities would send bytes before these headers.
+function rest_send_cors_headers($served)
+{
+    check(ob_get_length() === 0, 'CORS headers must precede every response byte');
+    $GLOBALS['corsHandled'] = true;
+    return $served;
+}
+add_filter('rest_pre_serve_request', 'rest_send_cors_headers', 10, 4);
+function collection_model_serve($response, $request)
+{
+    $filters = $GLOBALS['modelFilters']['rest_pre_serve_request'];
+    ksort($filters, SORT_NUMERIC);
+    $served = false;
+    $GLOBALS['corsHandled'] = false;
+    foreach ($filters as $callbacks) {
+        foreach ($callbacks as $callback) {
+            $served = $callback($served, $response, $request, null);
+        }
+    }
+    check($GLOBALS['corsHandled'], 'actual registered filter chain includes CORS');
+    return $served;
+}
+
 function wp_json_encode($value)
 {
     return mbb_component_json($value);
@@ -553,7 +580,7 @@ try {
     check($zip->numFiles === 3, 'manifest/css/chapter only');
     $zip->close();
     ob_start();
-    check(mbb_collections_serve(false, $response, $request, null), 'real stream serve');
+    check(collection_model_serve($response, $request), 'real stream serve after headers');
     $binary = ob_get_clean();
     check(
         hash('sha256', $binary) === $made['artifact']['sha256'],
@@ -741,7 +768,7 @@ try {
             };
         }
         ob_start();
-        mbb_collections_client_serve(false, $response, $request, null);
+        collection_model_serve($response, $request);
         $grant = json_decode(ob_get_clean(), true);
         check(
             ($grant['authorized'] ?? false) === ($scenario === 'success'),

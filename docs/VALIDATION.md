@@ -1,5 +1,9 @@
 # 当前验证范围
 
+## 2.8.0-rc.5：真实 REST 头部顺序
+
+两个真正出流 handler 使用 priority 100，晚于核心 priority 10 的 `rest_send_cors_headers`，并保留输出前鉴权。`tests/collections.php` 在插件 handler 之后登记同优先级核心模型，再通过实际登记链运行二进制／JSON 输出，断言 CORS 前无正文；可复现此前相同 priority 的注册顺序问题。`tests/collections-save.php` 核对真实核心 filter 优先级，带 Origin 运行完整 `rest_pre_serve_request` 链并检查精确 ZIP／清理；不以直接调用自有 serve 代替核心链。实际 HTTP Origin／响应头仍由隔离站独立验收。
+
 ## 2.8.0-rc.4：作者端出版桥接
 
 `tests/collections.php` 增加真实 handler 的非消费输入重读、声明摘要绑定授权与一次消费；在消费 CAS 的 query 内分别撤会话、edit_post 和改文章，真正 JSON 输出必须无 authorized。这些是确定性模型，不等同实际 WordPress HTTP 故障证据。`static-export.php`／浏览器静态导出回归覆盖安全表格 headers/scope 与原预算。Publisher 独立包提供真实 CHTML/Prism、file:// 无脚本字体图片及跨章重写、作者 UI 和实际 WordPress REST 入口；范围见其验证文档。
