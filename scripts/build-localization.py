@@ -177,6 +177,7 @@ handles = [
     "mbb-export-ui",
     "mbb-static-export",
     "mbb-batch-ui",
+    "mbb-collections",
     "mbb-emoji",
 ]
 for handle in handles:

@@ -1,0 +1,109 @@
+.mbb-collections {
+  --mbbc-border: #dcdcde;
+  --mbbc-muted: #50575e;
+  max-width: 1200px;
+}
+.mbb-collections *,
+.mbb-collections *::before,
+.mbb-collections *::after {
+  box-sizing: border-box;
+}
+.mbbc-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.mbbc-panel {
+  min-width: 0;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid var(--mbbc-border);
+  border-radius: 8px;
+}
+.mbbc-panel:first-child,
+.mbbc-panel:last-child {
+  grid-column: 1/-1;
+}
+.mbbc-panel h2 {
+  margin: 0 0 16px;
+  font-size: 18px;
+}
+.mbbc-panel p {
+  color: var(--mbbc-muted);
+  line-height: 1.65;
+}
+.mbbc-panel label {
+  display: block;
+  margin: 0 0 16px;
+  line-height: 1.6;
+}
+.mbbc-panel label > input:not([type='checkbox']),
+.mbbc-panel textarea,
+.mbbc-panel select {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  margin-top: 6px;
+  min-height: 40px;
+}
+.mbbc-panel textarea {
+  min-height: 96px;
+}
+.mbbc-panel label input[type='checkbox'] {
+  margin-right: 8px;
+}
+.mbbc-panel form {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.mbbc-panel form input {
+  flex: 1;
+  min-width: 140px;
+  min-height: 40px;
+}
+.mbbc-panel .button {
+  min-height: 40px;
+  white-space: normal;
+  margin: 4px 6px 4px 0;
+}
+.mbbc-results,
+.mbbc-selected {
+  padding-left: 22px;
+}
+.mbbc-results li,
+.mbbc-selected li {
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+  overflow-wrap: anywhere;
+}
+.mbbc-results li > span,
+.mbbc-selected li > span {
+  display: block;
+  font-weight: 500;
+  line-height: 1.6;
+}
+.mbbc-scope {
+  margin-top: 20px;
+  border-top: 1px solid var(--mbbc-border);
+  padding-top: 12px;
+}
+.mbbc-status {
+  min-height: 24px;
+  overflow-wrap: anywhere;
+  color: #8a2424;
+}
+@media (max-width: 700px) {
+  .mbbc-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  .mbbc-panel {
+    padding: 16px;
+  }
+  .mbbc-panel:first-child,
+  .mbbc-panel:last-child {
+    grid-column: auto;
+  }
+}

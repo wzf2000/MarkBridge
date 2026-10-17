@@ -299,11 +299,15 @@ function mbb_export_media_file(string $file): string
     }
     return $real;
 }
-function mbb_export_plan(array $snapshot, string $format): array
-{
+function mbb_export_plan(
+    array $snapshot,
+    string $format,
+    ?array $referenceMap = null,
+    bool $freshMedia = false,
+): array {
     $document = $snapshot['document'];
     $p = $snapshot['post'];
-    $referenceMap = function_exists('mbb_references_export_map')
+    $referenceMap ??= function_exists('mbb_references_export_map')
         ? mbb_references_export_map($document['serialized'])
         : [];
     $snapshot['referenceMap'] = $referenceMap;
@@ -355,6 +359,7 @@ function mbb_export_plan(array $snapshot, string $format): array
             'post_type' => 'attachment',
             'post_status' => 'inherit',
             'post_parent' => $p->ID,
+            'cache_results' => !$freshMedia,
             'post_mime_type' => ['image/png', 'image/jpeg', 'image/gif', 'image/webp'],
             'posts_per_page' => 33,
             'fields' => 'ids',
@@ -379,7 +384,15 @@ function mbb_export_plan(array $snapshot, string $format): array
         }
         $known = [];
         foreach ($ids as $id) {
-            if (!current_user_can('read_post', $id) || get_post_type($id) !== 'attachment') {
+            if ($freshMedia) {
+                clean_post_cache($id);
+                wp_cache_delete($id, 'post_meta');
+            }
+            if (
+                ($freshMedia && (int) get_post_field('post_parent', $id) !== (int) $p->ID) ||
+                !current_user_can('read_post', $id) ||
+                get_post_type($id) !== 'attachment'
+            ) {
                 continue;
             }
             $file = get_attached_file($id, true);

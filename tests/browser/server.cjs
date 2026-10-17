@@ -502,6 +502,11 @@ http
         }),
       );
     }
+    if (pathname === '/collections-editor') {
+      const plain = new URL(request.url, 'http://localhost').searchParams.has('plain');
+      const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="${mapped('collections-ui.css')}"><style>body{margin:0;padding:20px;background:#f0f0f1;color:#1d2327;font:14px/1.6 Arial,sans-serif}.button{border:1px solid #8c8f94;border-radius:4px;background:#f6f7f7;color:#2c3338;padding:6px 12px;cursor:pointer}input,textarea,select{font:inherit;border:1px solid #8c8f94;border-radius:4px;padding:8px;max-width:100%}h1{font-size:26px}h2{font-weight:600}</style></head><body><main class="wrap mbb-collections"><h1>Collections</h1><p>Arrange references to saved articles, then prepare an immutable snapshot. Collection configuration is not a second article body.</p><div id="mbb-collections"></div></main><script>window.MBB_COLLECTIONS={url:location.origin+${JSON.stringify(plain ? '/index.php?rest_route=/mbb/v1/collections' : '/wp-json/mbb/v1/collections')},nonce:'synthetic',lang:'en-US'};</script><script src="${mapped('collections-ui.js')}"></script></body></html>`;
+      return response.writeHead(200, { 'Content-Type': 'text/html; charset=UTF-8' }).end(html);
+    }
     if (pathname === '/health') return response.writeHead(200).end('ok');
     if (pathname === '/technical-presentation') {
       const html = execFileSync('php', [path.join(__dirname, 'technical-presentation.php')], {

@@ -197,6 +197,18 @@ msgid ". The source is preserved. You can retry."
 msgstr "。已保留源码，可重试。"
 
 #: plugin/i18n.js
+msgid "1. Select and order articles"
+msgstr "1. 选择文章并排序"
+
+#: plugin/i18n.js
+msgid "2. Metadata and scope"
+msgstr "2. 元数据与范围"
+
+#: plugin/i18n.js
+msgid "3. Prepare, confirm, download"
+msgstr "3. 准备、确认、下载"
+
+#: plugin/i18n.js
 msgid "; automatic three-way merge is unavailable. Download the candidate and compare manually."
 msgstr "；自动三方合并不可用，原候选可下载并手动比较。"
 
@@ -685,6 +697,10 @@ msgid "Add a trailing newline to the "
 msgstr "为"
 
 #: plugin/i18n.js
+msgid "Add article"
+msgstr "加入文章"
+
+#: plugin/i18n.js
 msgid "Add author or institution"
 msgstr "添加作者或机构"
 
@@ -859,6 +875,10 @@ msgstr "应用参数"
 #: plugin/i18n.js
 msgid "Apply text edits"
 msgstr "应用文字修改"
+
+#: plugin/i18n.js
+msgid "Arrange references to saved articles, then prepare an immutable snapshot. Collection configuration is not a second article body."
+msgstr "编排已保存文章的引用，再准备不可变快照。文集配置不是第二份正文。"
 
 #: plugin/i18n.js
 msgid "Article metadata changed while reading. Reconcile again"
@@ -1259,6 +1279,10 @@ msgid "Cancel remaining items and remove staging"
 msgstr "取消剩余条目并移除暂存文件"
 
 #: plugin/i18n.js
+msgid "Cancel snapshot"
+msgstr "取消快照"
+
+#: plugin/i18n.js
 msgid "Canceled"
 msgstr "已取消"
 
@@ -1333,6 +1357,10 @@ msgstr "请核对命名脚注的引用和定义；定义需唯一、被引用，
 #: plugin/i18n.js
 msgid "Check the indicated position and use supported blocks and formatting. The candidate is preserved; correct it and preview again."
 msgstr "请检查标示位置，使用受支持的区块和格式；当前候选保留，请修正后重新预览。"
+
+#: plugin/i18n.js
+msgid "Check the snapshot scope"
+msgstr "检查快照范围"
 
 #: plugin/i18n.js
 msgid "Check this block's styles, attributes, and nesting. A supported block type does not imply support for all formatting. Download Markdown to preserve the candidate if needed."
@@ -1639,8 +1667,24 @@ msgid "Collapsible content is limited to three nested levels"
 msgstr "折叠内容最多嵌套三层"
 
 #: plugin/i18n.js
+msgid "Collection title"
+msgstr "文集标题"
+
+#: plugin/i18n.js
+msgid "Collections"
+msgstr "文集"
+
+#: plugin/i18n.js
 msgid "Comment was not saved: "
 msgstr "评论未保存："
+
+#: plugin/i18n.js
+msgid "Comments, private notes, and source paths are excluded. Unselected private reference targets remain unavailable."
+msgstr "不包含评论、私人笔记和源文件路径。未选入的私人引用目标仍不可用。"
+
+#: plugin/i18n.js
+msgid "Companion series import is unavailable or exceeds the bounded candidate list. Select articles manually."
+msgstr "Companion 系列导入不可用或超过候选列表上限，请手动选择文章。"
 
 #: plugin/i18n.js
 msgid "Compatibility and advanced runtime settings"
@@ -1737,6 +1781,10 @@ msgstr "请确认原媒体 URL 可能公开的风险，并重新预览资源变�
 #: plugin/i18n.js
 msgid "Confirm that uploaded image URLs may be public, including for a draft."
 msgstr "请确认上传图片的地址可能公开，即使文章仍为草稿。"
+
+#: plugin/i18n.js
+msgid "Confirm this snapshot"
+msgstr "确认此快照"
 
 #: plugin/i18n.js
 msgid "Conflict repair requires an administrator and the unchanged article identity."
@@ -1985,6 +2033,10 @@ msgid "Default code version"
 msgstr "默认代码版本"
 
 #: plugin/i18n.js
+msgid "Default scope is public, password-free, editable articles. Private selection never includes unselected private reference targets."
+msgstr "默认仅包含可编辑、公开且无密码的文章。明确选入私人文章，也不会包含未选中的私人引用目标。"
+
+#: plugin/i18n.js
 msgid "Default version must reference a group member"
 msgstr "默认版本必须引用组内成员"
 
@@ -2001,6 +2053,10 @@ msgid "Delete candidate"
 msgstr "删除候选"
 
 #: plugin/i18n.js
+msgid "Delete configuration"
+msgstr "删除配置"
+
+#: plugin/i18n.js
 msgid "Delete current version"
 msgstr "删除当前版本"
 
@@ -2011,6 +2067,10 @@ msgstr "删除空列表"
 #: plugin/i18n.js
 msgid "Delete entire code group"
 msgstr "删除整个代码组"
+
+#: plugin/i18n.js
+msgid "Deleting configuration never deletes articles. Maximum 10 chapters; verified image bytes total at most 16 MiB."
+msgstr "删除配置不会删除文章。最多 10 篇；已核验图片总计最多 16 MiB。"
 
 #: plugin/i18n.js
 msgid "Dependency loading"
@@ -2132,6 +2192,10 @@ msgstr "下载本地候选"
 #: plugin/i18n.js
 msgid "Download original code "
 msgstr "下载原代码 "
+
+#: plugin/i18n.js
+msgid "Download snapshot ZIP"
+msgstr "下载快照 ZIP"
 
 #: plugin/i18n.js
 msgid "Downloaded. The saved article, source file, and unsaved input are unchanged."
@@ -2333,6 +2397,10 @@ msgid "Every cross-site native image requires a verified association"
 msgstr "跨站副本中每张原生图片都需要经核验的关联"
 
 #: plugin/i18n.js
+msgid "Every local image must be a readable attachment of its selected article. External images remain links and are not fetched."
+msgstr "每张本地图片都必须是所选文章的可读附件。外站图片只保留链接，不联网抓取。"
+
+#: plugin/i18n.js
 msgid "Excerpt"
 msgstr "摘要"
 
@@ -2417,6 +2485,14 @@ msgstr "明确拆分的人名"
 #: plugin/i18n.js
 msgid "Explicitly apply edits. The server validates parameters against the registered schema when saving."
 msgstr "编辑后明确应用；保存时由服务端登记 schema 校验。"
+
+#: plugin/i18n.js
+msgid "Explicitly include the selected private drafts"
+msgstr "明确包含所选私人草稿"
+
+#: plugin/i18n.js
+msgid "Explicitly selected private article"
+msgstr "明确选入的私人文章"
 
 #: plugin/i18n.js
 msgid "Explore with keyboard"
@@ -2884,6 +2960,10 @@ msgid "Import CSL-JSON"
 msgstr "导入 CSL-JSON"
 
 #: plugin/i18n.js
+msgid "Import Companion series"
+msgstr "导入 Companion 系列"
+
+#: plugin/i18n.js
 msgid "Import Markdown"
 msgstr "导入 Markdown"
 
@@ -3222,6 +3302,10 @@ msgstr "标识和文献键必须以 ASCII 字母开头，至多 64 位字母、�
 #: plugin/i18n.js
 msgid "Language"
 msgstr "语言"
+
+#: plugin/i18n.js
+msgid "Language tag"
+msgstr "语言标签"
 
 #: plugin/i18n.js
 msgid "Last formal save: "
@@ -3669,6 +3753,14 @@ msgid "Move current version up"
 msgstr "上移当前版本"
 
 #: plugin/i18n.js
+msgid "Move down"
+msgstr "下移"
+
+#: plugin/i18n.js
+msgid "Move up"
+msgstr "上移"
+
+#: plugin/i18n.js
 msgid "Multi-paragraph list"
 msgstr "多段落列表"
 
@@ -3767,6 +3859,10 @@ msgid "New attachment ownership verification failed"
 msgstr "新附件所有权核验失败"
 
 #: plugin/i18n.js
+msgid "New collection"
+msgstr "新建文集"
+
+#: plugin/i18n.js
 msgid "New draft"
 msgstr "新草稿"
 
@@ -3803,12 +3899,20 @@ msgid "Next match"
 msgstr "下一个匹配"
 
 #: plugin/i18n.js
+msgid "Next page"
+msgstr "Next page"
+
+#: plugin/i18n.js
 msgid "Next stage"
 msgstr "下一阶段"
 
 #: plugin/i18n.js
 msgid "Next term"
 msgstr "后一项"
+
+#: plugin/i18n.js
+msgid "No articles selected."
+msgstr "尚未选择文章。"
 
 #: plugin/i18n.js
 msgid "No body changes."
@@ -3978,6 +4082,10 @@ msgstr "操作完成。"
 #: plugin/i18n.js
 msgid "Optional ZIP dependencies are unavailable. Markdown single-file download remains available."
 msgstr "ZIP 所需可选环境不可用，Markdown 单文件仍可下载。"
+
+#: plugin/i18n.js
+msgid "Optional cover attachment ID"
+msgstr "可选封面附件 ID"
 
 #: plugin/i18n.js
 msgid "Original Markdown"
@@ -4212,6 +4320,10 @@ msgid "Prepare initial parameters"
 msgstr "准备初始参数"
 
 #: plugin/i18n.js
+msgid "Prepare snapshot"
+msgstr "准备快照"
+
+#: plugin/i18n.js
 msgid "Prepare the identity operation again. Current input is preserved."
 msgstr "请重新准备身份操作，当前输入已保留。"
 
@@ -4328,6 +4440,10 @@ msgid "Private batch staging is unavailable."
 msgstr "批次私有暂存空间不可用。"
 
 #: plugin/i18n.js
+msgid "Private collection storage is unavailable. Refresh before retrying; no successful operation was reported."
+msgstr "文集私有存储不可用，请刷新后重试；当前操作未报告成功。"
+
+#: plugin/i18n.js
 msgid "Private export staging could not be created"
 msgstr "无法建立私有导出暂存"
 
@@ -4362,6 +4478,10 @@ msgstr "拟使用的新文献键"
 #: plugin/i18n.js
 msgid "Proposed stable ID"
 msgstr "拟使用的新稳定标识"
+
+#: plugin/i18n.js
+msgid "Public"
+msgstr "公开"
 
 #: plugin/i18n.js
 msgid "Publication and source fields are limited to 512 plain characters"
@@ -4532,6 +4652,10 @@ msgid "Refresh batch status"
 msgstr "刷新批次状态"
 
 #: plugin/i18n.js
+msgid "Refresh collections"
+msgstr "刷新文集"
+
+#: plugin/i18n.js
 msgid "Refresh content navigation"
 msgstr "刷新内容导航"
 
@@ -4546,6 +4670,10 @@ msgstr "刷新配对备份"
 #: plugin/i18n.js
 msgid "Registered teaching component"
 msgstr "登记的教学组件"
+
+#: plugin/i18n.js
+msgid "Remove article"
+msgstr "移除文章"
 
 #: plugin/i18n.js
 msgid "Remove author"
@@ -4813,6 +4941,10 @@ msgid "Right title"
 msgstr "右侧标题"
 
 #: plugin/i18n.js
+msgid "Rights statement"
+msgstr "版权声明"
+
+#: plugin/i18n.js
 msgid "Runtime dependencies"
 msgstr "运行依赖"
 
@@ -4841,6 +4973,10 @@ msgid "Save as "
 msgstr "保存为 "
 
 #: plugin/i18n.js
+msgid "Save collection configuration"
+msgstr "保存文集配置"
+
+#: plugin/i18n.js
 msgid "Save directly; both formats stay in sync"
 msgstr "可直接保存，双格式同步"
 
@@ -4859,6 +4995,10 @@ msgstr "保存状态"
 #: plugin/i18n.js
 msgid "Save succeeded. Only this tab's candidates matching this save were cleaned; other changes are preserved."
 msgstr "成功保存；仅清理与本次保存相同的本标签页候选，其他修改保留。"
+
+#: plugin/i18n.js
+msgid "Saved collections"
+msgstr "已保存文集"
 
 #: plugin/i18n.js
 msgid "Saving both representations…"
@@ -4889,12 +5029,32 @@ msgid "Scroll horizontally to read long lines. Focus the code and use the arrow 
 msgstr "长行可横向滚动；聚焦代码后可使用方向键。"
 
 #: plugin/i18n.js
+msgid "Search"
+msgstr "搜索"
+
+#: plugin/i18n.js
+msgid "Search editable articles"
+msgstr "搜索可编辑文章"
+
+#: plugin/i18n.js
+msgid "Search for saved articles you can edit."
+msgstr "搜索当前账号可编辑的已保存文章。"
+
+#: plugin/i18n.js
 msgid "Search reference targets"
 msgstr "搜索引用目标"
 
 #: plugin/i18n.js
 msgid "Select a preview object, or use Tab and Enter, to locate its source."
 msgstr "点击预览对象，或使用 Tab 和 Enter，定位其源码。"
+
+#: plugin/i18n.js
+msgid "Select at least one article before preparing a snapshot."
+msgstr "请至少选择一篇文章再准备快照。"
+
+#: plugin/i18n.js
+msgid "Select editable public articles without passwords, or explicitly include selected private drafts. Password-protected articles are not supported."
+msgstr "请选择可编辑且无密码的公开文章，或明确包含所选私人草稿。本期不支持密码保护文章。"
 
 #: plugin/i18n.js
 msgid "Select the same bibliography block before using this candidate"
@@ -5831,6 +5991,22 @@ msgid "The code language must be a safe ASCII token of at most 64 characters"
 msgstr "代码语言需为最长 64 位安全 ASCII 标记"
 
 #: plugin/i18n.js
+msgid "The collection budget is full. Cancel an unused candidate or reduce the selected articles or images. Saved articles are unchanged."
+msgstr "文集预算已满，请取消未使用的候选，或减少所选文章和图片；已保存文章保持不变。"
+
+#: plugin/i18n.js
+msgid "The collection input is invalid. Current fields are preserved."
+msgstr "文集输入无效，当前字段已保留。"
+
+#: plugin/i18n.js
+msgid "The collection operation failed. Current fields are preserved."
+msgstr "文集操作未完成，当前字段已保留。"
+
+#: plugin/i18n.js
+msgid "The collection, article, permissions, or resources changed. Prepare a new snapshot; saved articles are unchanged."
+msgstr "文集、文章、权限或资源已变化，请重新准备快照；已保存文章保持不变。"
+
+#: plugin/i18n.js
 msgid "The commit result could not be reliably confirmed. Current source, media, and import records are preserved. Verify the article before importing again."
 msgstr "提交结果无法可靠确认；已保留当前源稿、媒体和导入记录，请重新核对文章，勿重复导入。"
 
@@ -6765,6 +6941,10 @@ msgid "The saved representations do not match and cannot be exported"
 msgstr "已保存双格式不匹配，不能导出"
 
 #: plugin/i18n.js
+msgid "The selected publication adapter is unavailable."
+msgstr "所选出版适配器不可用。"
+
+#: plugin/i18n.js
 msgid "The selected reference target no longer exists."
 msgstr "所选引用目标已不存在。"
 
@@ -7165,6 +7345,10 @@ msgid "This URL was not verified as a readable local attachment related to this 
 msgstr "未验证为本文章可读的本地关联附件；保留原 URL，不抓取"
 
 #: plugin/i18n.js
+msgid "This ZIP is a fixed publication snapshot for an export adapter, not yet a complete reading website. Articles and resource bytes are checked again before confirmation and download."
+msgstr "此 ZIP 是供出版适配器使用的固定快照，尚不是完整阅读网站。确认与下载前会再次核验文章和资源字节。"
+
+#: plugin/i18n.js
 msgid "This account cannot publish articles. Save a draft or submit for review."
 msgstr "当前账号没有发布文章的权限，可保存草稿或提交审核。"
 
@@ -7247,6 +7431,14 @@ msgstr "浏览器不支持可靠存储锁。"
 #: plugin/i18n.js
 msgid "This candidate still references pending images. Upload the ZIP again or remove those images. Body content is preserved"
 msgstr "此候选仍引用待上传图片；请重新上传 ZIP 或移除这些图片，正文仍保留"
+
+#: plugin/i18n.js
+msgid "This collection candidate is busy. Try again shortly."
+msgstr "此文集候选正在处理，请稍后重试。"
+
+#: plugin/i18n.js
+msgid "This collection operation is unavailable. Sign in again or refresh your collection list."
+msgstr "此文集操作不可用，请重新登录或刷新文集列表。"
 
 #: plugin/i18n.js
 msgid "This cross-site ZIP creates new local attachment IDs; IDs from the source site are never reused."
@@ -7362,12 +7554,20 @@ msgid "Transaction commit failed"
 msgstr "事务提交失败"
 
 #: plugin/i18n.js
+msgid "Two selected articles declare the same logical identity. Resolve the identity conflict before preparing."
+msgstr "两篇所选文章声明了相同逻辑身份，请先解决身份冲突再准备。"
+
+#: plugin/i18n.js
 msgid "Typesetting the complete offline article…"
 msgstr "正在排版完整的离线文章…"
 
 #: plugin/i18n.js
 msgid "Unapplied component version change:"
 msgstr "尚未应用的组件版本变化："
+
+#: plugin/i18n.js
+msgid "Unavailable article"
+msgstr "文章不可用"
 
 #: plugin/i18n.js
 msgid "Unclosed teaching container"
@@ -7672,6 +7872,10 @@ msgid "Validation passed; target status: "
 msgstr "校验通过；目标状态："
 
 #: plugin/i18n.js
+msgid "Verified image resources: "
+msgstr "已核验图片资源："
+
+#: plugin/i18n.js
 msgid "Verify and apply conversion backend"
 msgstr "验证并应用转换方案"
 
@@ -7810,6 +8014,10 @@ msgstr "WordPress 版本"
 #: plugin/i18n.js
 msgid "WordPress would rewrite this title. Correct the proposal."
 msgstr "标题会被 WordPress 改写，请修改提案。"
+
+#: plugin/i18n.js
+msgid "Working…"
+msgstr "正在处理…"
 
 #: plugin/i18n.js
 msgid "Write current metadata into the header"

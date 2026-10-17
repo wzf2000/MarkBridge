@@ -197,6 +197,18 @@ msgid ". The source is preserved. You can retry."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "1. Select and order articles"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "2. Metadata and scope"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "3. Prepare, confirm, download"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "; automatic three-way merge is unavailable. Download the candidate and compare manually."
 msgstr ""
 
@@ -685,6 +697,10 @@ msgid "Add a trailing newline to the "
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Add article"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Add author or institution"
 msgstr ""
 
@@ -858,6 +874,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Apply text edits"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Arrange references to saved articles, then prepare an immutable snapshot. Collection configuration is not a second article body."
 msgstr ""
 
 #: plugin/i18n.js
@@ -1259,6 +1279,10 @@ msgid "Cancel remaining items and remove staging"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Cancel snapshot"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Canceled"
 msgstr ""
 
@@ -1332,6 +1356,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Check the indicated position and use supported blocks and formatting. The candidate is preserved; correct it and preview again."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Check the snapshot scope"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1639,7 +1667,23 @@ msgid "Collapsible content is limited to three nested levels"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Collection title"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Collections"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Comment was not saved: "
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Comments, private notes, and source paths are excluded. Unselected private reference targets remain unavailable."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Companion series import is unavailable or exceeds the bounded candidate list. Select articles manually."
 msgstr ""
 
 #: plugin/i18n.js
@@ -1736,6 +1780,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Confirm that uploaded image URLs may be public, including for a draft."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Confirm this snapshot"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1985,6 +2033,10 @@ msgid "Default code version"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Default scope is public, password-free, editable articles. Private selection never includes unselected private reference targets."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Default version must reference a group member"
 msgstr ""
 
@@ -2001,6 +2053,10 @@ msgid "Delete candidate"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Delete configuration"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Delete current version"
 msgstr ""
 
@@ -2010,6 +2066,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Delete entire code group"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Deleting configuration never deletes articles. Maximum 10 chapters; verified image bytes total at most 16 MiB."
 msgstr ""
 
 #: plugin/i18n.js
@@ -2131,6 +2191,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Download original code "
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Download snapshot ZIP"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2333,6 +2397,10 @@ msgid "Every cross-site native image requires a verified association"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Every local image must be a readable attachment of its selected article. External images remain links and are not fetched."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Excerpt"
 msgstr ""
 
@@ -2416,6 +2484,14 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Explicitly apply edits. The server validates parameters against the registered schema when saving."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Explicitly include the selected private drafts"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Explicitly selected private article"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2884,6 +2960,10 @@ msgid "Import CSL-JSON"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Import Companion series"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Import Markdown"
 msgstr ""
 
@@ -3221,6 +3301,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Language"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Language tag"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3669,6 +3753,14 @@ msgid "Move current version up"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Move down"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Move up"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Multi-paragraph list"
 msgstr ""
 
@@ -3767,6 +3859,10 @@ msgid "New attachment ownership verification failed"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "New collection"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "New draft"
 msgstr ""
 
@@ -3803,11 +3899,19 @@ msgid "Next match"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Next page"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Next stage"
 msgstr ""
 
 #: plugin/i18n.js
 msgid "Next term"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "No articles selected."
 msgstr ""
 
 #: plugin/i18n.js
@@ -3977,6 +4081,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Optional ZIP dependencies are unavailable. Markdown single-file download remains available."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Optional cover attachment ID"
 msgstr ""
 
 #: plugin/i18n.js
@@ -4212,6 +4320,10 @@ msgid "Prepare initial parameters"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Prepare snapshot"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Prepare the identity operation again. Current input is preserved."
 msgstr ""
 
@@ -4328,6 +4440,10 @@ msgid "Private batch staging is unavailable."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Private collection storage is unavailable. Refresh before retrying; no successful operation was reported."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Private export staging could not be created"
 msgstr ""
 
@@ -4361,6 +4477,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Proposed stable ID"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Public"
 msgstr ""
 
 #: plugin/i18n.js
@@ -4532,6 +4652,10 @@ msgid "Refresh batch status"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Refresh collections"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Refresh content navigation"
 msgstr ""
 
@@ -4545,6 +4669,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Registered teaching component"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Remove article"
 msgstr ""
 
 #: plugin/i18n.js
@@ -4813,6 +4941,10 @@ msgid "Right title"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Rights statement"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Runtime dependencies"
 msgstr ""
 
@@ -4841,6 +4973,10 @@ msgid "Save as "
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Save collection configuration"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Save directly; both formats stay in sync"
 msgstr ""
 
@@ -4858,6 +4994,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Save succeeded. Only this tab's candidates matching this save were cleaned; other changes are preserved."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Saved collections"
 msgstr ""
 
 #: plugin/i18n.js
@@ -4889,11 +5029,31 @@ msgid "Scroll horizontally to read long lines. Focus the code and use the arrow 
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Search"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Search editable articles"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Search for saved articles you can edit."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Search reference targets"
 msgstr ""
 
 #: plugin/i18n.js
 msgid "Select a preview object, or use Tab and Enter, to locate its source."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Select at least one article before preparing a snapshot."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Select editable public articles without passwords, or explicitly include selected private drafts. Password-protected articles are not supported."
 msgstr ""
 
 #: plugin/i18n.js
@@ -5831,6 +5991,22 @@ msgid "The code language must be a safe ASCII token of at most 64 characters"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "The collection budget is full. Cancel an unused candidate or reduce the selected articles or images. Saved articles are unchanged."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The collection input is invalid. Current fields are preserved."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The collection operation failed. Current fields are preserved."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The collection, article, permissions, or resources changed. Prepare a new snapshot; saved articles are unchanged."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "The commit result could not be reliably confirmed. Current source, media, and import records are preserved. Verify the article before importing again."
 msgstr ""
 
@@ -6765,6 +6941,10 @@ msgid "The saved representations do not match and cannot be exported"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "The selected publication adapter is unavailable."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "The selected reference target no longer exists."
 msgstr ""
 
@@ -7165,6 +7345,10 @@ msgid "This URL was not verified as a readable local attachment related to this 
 msgstr ""
 
 #: plugin/i18n.js
+msgid "This ZIP is a fixed publication snapshot for an export adapter, not yet a complete reading website. Articles and resource bytes are checked again before confirmation and download."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "This account cannot publish articles. Save a draft or submit for review."
 msgstr ""
 
@@ -7246,6 +7430,14 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "This candidate still references pending images. Upload the ZIP again or remove those images. Body content is preserved"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "This collection candidate is busy. Try again shortly."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "This collection operation is unavailable. Sign in again or refresh your collection list."
 msgstr ""
 
 #: plugin/i18n.js
@@ -7362,11 +7554,19 @@ msgid "Transaction commit failed"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Two selected articles declare the same logical identity. Resolve the identity conflict before preparing."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Typesetting the complete offline article…"
 msgstr ""
 
 #: plugin/i18n.js
 msgid "Unapplied component version change:"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Unavailable article"
 msgstr ""
 
 #: plugin/i18n.js
@@ -7672,6 +7872,10 @@ msgid "Validation passed; target status: "
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Verified image resources: "
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Verify and apply conversion backend"
 msgstr ""
 
@@ -7809,6 +8013,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "WordPress would rewrite this title. Correct the proposal."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Working…"
 msgstr ""
 
 #: plugin/i18n.js

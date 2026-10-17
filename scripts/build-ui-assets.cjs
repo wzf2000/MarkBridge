@@ -40,6 +40,8 @@ asset('static-export.js');
 asset('static-export.css');
 asset('export-ui.js');
 asset('batch-ui.js');
+asset('collections-ui.js');
+asset('collections-ui.css');
 asset('batch-ui.css');
 asset('local-recovery.js');
 asset('paired-backups.js');

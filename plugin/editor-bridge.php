@@ -1356,6 +1356,15 @@ add_action('admin_menu', function () {
         'edit_posts',
         'mbb-editor',
         function () {
+            if (($_GET['view'] ?? '') === 'collections') {
+                mbb_collections_page();
+                return;
+            }
+            echo '<p><a class="button" href="' .
+                esc_url(admin_url('tools.php?page=mbb-editor&view=collections')) .
+                '">' .
+                esc_html(mbb_t('Collections')) .
+                '</a></p>';
             echo mbb_t(
                 '<div class="wrap"><h1>Markdown editing bridge</h1><p>Upload Markdown for editing in both representations. Preview differences before saving, publishing, or submitting for review. Set a featured image before publishing.</p><p><button class="button button-primary" id="mbb-new">Upload a new document</button></p><ul>',
             );
