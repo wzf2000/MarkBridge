@@ -148,6 +148,97 @@ test('opaque trusted bridge selects repeated source objects and rejects stale or
     path: test.info().outputPath('source-navigation-' + info.project.name + '.png'),
   });
 });
+test('a delayed empty navigation and messages from the retired frame cannot replace the new preview', async ({
+  page,
+}, info) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await open(page);
+  await page.evaluate(() => {
+    const old = document.querySelector('iframe[title="Built-in content preview"]');
+    window.retiredPreview = old;
+    window.retiredPreviewWindow = old.contentWindow;
+    const descriptor = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, 'srcdoc');
+    window.pendingEmptyNavigations = [];
+    Object.defineProperty(old, 'srcdoc', {
+      ...descriptor,
+      set(value) {
+        if (value === '') {
+          // Deterministically hold the old empty navigation until the new document is ready.
+          pendingEmptyNavigations.push(
+            () =>
+              new Promise((resolve) => {
+                old.addEventListener('load', resolve, { once: true });
+                descriptor.set.call(old, value);
+                if (!old.isConnected) old.dispatchEvent(new Event('load'));
+              }),
+          );
+        } else descriptor.set.call(old, value);
+      },
+    });
+  });
+  await review(page);
+  const iframe = page.locator('iframe[title="Built-in content preview"]');
+  await expect(page.getByRole('button', { name: 'Locate source', exact: true })).toBeEnabled();
+  expect(await iframe.getAttribute('sandbox')).toBe('allow-scripts');
+  expect(await page.evaluate(() => pendingEmptyNavigations.length)).toBeGreaterThan(0);
+  const frame = page.frameLocator('iframe[title="Built-in content preview"]');
+  await expect(frame.locator('[data-mbb-preview-range="r4"] mjx-container')).toBeVisible();
+  const identity = await frame.locator('html').evaluate((node) => ({
+    session: node.dataset.mbbPreviewSession,
+    sourceHash: node.dataset.mbbPreviewSource,
+  }));
+  await page.evaluate(() =>
+    Promise.all(pendingEmptyNavigations.splice(0).map((release) => release())),
+  );
+  // Functional negative control: the old in-place implementation loses this rendered content.
+  await expect(frame.locator('[data-mbb-preview-range="r4"] mjx-container')).toBeVisible();
+  await expect(frame.locator('[data-mbb-preview-range="r2"]')).toHaveText('重复段落。');
+  expect(await iframe.evaluate((node) => node !== retiredPreview)).toBe(true);
+  await page.getByRole('button', { name: 'Locate source', exact: true }).click();
+  await expect(frame.locator('html')).toHaveAttribute('data-mbb-preview-locate', '');
+  await page.locator('#mbb-source').evaluate((node) => node.setSelectionRange(2, 4));
+  const unchanged = await page.locator('#mbb-source').evaluate((node) => ({
+    value: node.value,
+    selection: [node.selectionStart, node.selectionEnd],
+  }));
+  const delivered = await page.evaluate((identity) => {
+    const data = { type: 'mbb-author-navigation/v1', action: 'select', id: 'r0', ...identity };
+    let observed = false;
+    const witness = (event) => {
+      if (event.source === retiredPreviewWindow && event.data === data) observed = true;
+    };
+    addEventListener('message', witness);
+    // The current session/hash deliberately match: source-window provenance must reject this.
+    // Artificial delayed delivery retains the actual retired proxy. WebKit's native
+    // MessageEvent getter drops a discarded context, so do not use that constructor here.
+    const event = new Event('message');
+    Object.defineProperties(event, {
+      source: { value: retiredPreviewWindow },
+      origin: { value: 'null' },
+      data: { value: data },
+    });
+    dispatchEvent(event);
+    removeEventListener('message', witness);
+    return observed;
+  }, identity);
+  expect(delivered).toBe(true);
+  expect(
+    await page.locator('#mbb-source').evaluate((node) => ({
+      value: node.value,
+      selection: [node.selectionStart, node.selectionEnd],
+    })),
+  ).toEqual(unchanged);
+  await expect(frame.locator('[data-mbb-preview-range="r2"]')).toHaveText('重复段落。');
+  await expect(frame.locator('[data-mbb-preview-range="r4"] mjx-container')).toBeVisible();
+  expect(await iframe.evaluate((node) => node.isConnected && !retiredPreview.isConnected)).toBe(
+    true,
+  );
+  await page.screenshot({
+    path: info.outputPath('preview-generation-' + info.project.name + '.png'),
+  });
+  expect(errors).toEqual([]);
+});
 test('literal replacements preserve untouched CRLF and undo; IME composition is one source transaction', async ({
   page,
 }) => {

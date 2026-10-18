@@ -27,6 +27,7 @@
   function create(options) {
     const { source, frame, readSource, applySource, stamp, canEdit, showSource, showPreview } =
       options;
+    const currentFrame = () => (typeof frame === 'function' ? frame() : frame);
     const el = (tag, attrs = {}, text = '') => {
       const node = document.createElement(tag);
       Object.assign(node, attrs);
@@ -455,7 +456,7 @@
     const valid = () => !!navigation && activeStamp === stamp();
     function send(action, more = {}) {
       if (valid() && ready)
-        frame.contentWindow?.postMessage(
+        currentFrame()?.contentWindow?.postMessage(
           { type: protocol, action, session, sourceHash: navigation.sourceSha256, ...more },
           '*',
         );
@@ -525,7 +526,7 @@
     const receive = (event) => {
       const m = event.data;
       if (
-        event.source !== frame.contentWindow ||
+        event.source !== currentFrame()?.contentWindow ||
         event.origin !== 'null' ||
         !valid() ||
         !m ||

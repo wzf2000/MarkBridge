@@ -1199,7 +1199,10 @@
               .catch(() => null)
           : null;
       if (!active(session) || version !== serial) return;
-      preview.setAttribute('sandbox', navigation ? 'allow-scripts' : '');
+      // Configure the new generation before connecting it. A pending empty srcdoc
+      // navigation on the old frame must never replace this verified preview.
+      const nextPreview = preview.cloneNode(false);
+      nextPreview.setAttribute('sandbox', navigation ? 'allow-scripts' : '');
       const previewStyles =
         MBB_MATH.style +
         (cfg.footnoteStyle || '') +
@@ -1207,7 +1210,7 @@
         (cfg.technicalStyle || '') +
         (cfg.nativeMediaStyle || '') +
         (cfg.codeDisplayStyle || '');
-      preview.srcdoc = window.MBBSourceTools
+      nextPreview.srcdoc = window.MBBSourceTools
         ? window.MBBSourceTools.frameDocument(previewContent.content, previewStyles, navigation)
         : '<!doctype html><html><head><meta charset="utf-8"><style>' +
           MBB_MATH.style +
@@ -1219,6 +1222,9 @@
           'body{font:16px/1.7 system-ui;padding:16px;overflow-wrap:anywhere}pre{overflow:auto}table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:4px}img{max-width:100%}</style></head><body data-mbb-content-view>' +
           previewContent.innerHTML +
           '</body></html>';
+      const previousPreview = preview;
+      preview = nextPreview;
+      previousPreview.replaceWith(nextPreview);
       candidate = payload;
       candidateSource = result.document.source;
       if (viewChoice === requestedView) showPreview(true);
@@ -1785,7 +1791,7 @@
         featured_media: request().featured_media,
       }),
       source,
-      frame: preview,
+      frame: () => preview,
       readSource,
       applySource: (raw) => {
         setSource(raw, true);

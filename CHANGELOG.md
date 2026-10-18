@@ -2,6 +2,7 @@
 
 ## 3.0.0-rc.6
 
+- 修复 WebKit 中旧空预览导航偶发覆盖新内容：每次验证完成后以独立 iframe 交接，保留沙箱、来源与会话校验，并拒绝退役窗口的消息。
 - Reuse the existing trusted teaching stylesheet in scriptless revision previews so internal parameter carriers stay hidden, preserving exact HTML, authored fallback, formula content and restoration payloads.
 
 ## 3.0.0-rc.5
