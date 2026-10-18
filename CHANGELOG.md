@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.0.0-rc.8
+
+- Include the natural body box, padding and collapsed final margins when measuring verified component frames; retain shrinking, session validation and the 4096 px cap. Provider payloads and teaching parameters are unchanged.
+
 ## 3.0.0-rc.7
 
 - Keep theorem and proof text upright in the article reading font; remove only the first/last edge gaps in quotes and component explanations.

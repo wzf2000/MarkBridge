@@ -766,3 +766,49 @@ test('verified host layout expands and shrinks dynamic results, rejects forged s
   await page.getByRole('button', { name: '关闭交互预览' }).click();
   await expect(page.locator('iframe')).toHaveCount(0);
 });
+
+test('verified layout includes natural body padding and collapsed final margins without a viewport floor', async ({
+  page,
+}, info) => {
+  await load(page);
+  await page.getByRole('button', { name: '启动交互演示' }).click();
+  const frame = page.frameLocator('iframe');
+  await expect(frame.locator('#status')).toHaveText('Ready');
+  await frame.locator('body').evaluate((body) => {
+    body.style.cssText = 'margin:0;padding:16px;box-sizing:border-box';
+    const main = document.createElement('main');
+    main.style.margin = '0';
+    const results = document.createElement('div');
+    results.id = 'natural-results';
+    results.style.height = '900px';
+    results.textContent = 'Generated experiment results';
+    const end = document.createElement('section');
+    end.style.cssText = 'margin:0;padding:0';
+    const paragraph = document.createElement('p');
+    paragraph.textContent = 'Final explanation remains accessible.';
+    paragraph.style.cssText = 'height:100px;margin:0 0 12px';
+    end.append(paragraph);
+    main.append(results, end);
+    body.replaceChildren(main);
+  });
+  const overflow = () => frame.locator('html').evaluate((n) => n.scrollHeight - n.clientHeight);
+  await expect.poll(overflow).toBeLessThanOrEqual(1);
+  expect(
+    await frame
+      .locator('body')
+      .evaluate(
+        (body) =>
+          body.getBoundingClientRect().bottom -
+          body.querySelector('main').getBoundingClientRect().bottom,
+      ),
+  ).toBeGreaterThanOrEqual(28);
+  const tall = await page.locator('iframe').evaluate((n) => n.getBoundingClientRect().height);
+  await frame.locator('#natural-results').evaluate((n) => (n.style.height = '100px'));
+  await expect
+    .poll(() => page.locator('iframe').evaluate((n) => n.getBoundingClientRect().height))
+    .toBeLessThan(tall / 2);
+  await expect.poll(overflow).toBeLessThanOrEqual(1);
+  await page.screenshot({
+    path: info.outputPath('body-natural-height-' + info.project.name + '.png'),
+  });
+});

@@ -93,8 +93,13 @@
       if (!active || !document.body) return;
       const body = document.body;
       const children = [...body.children].filter((n) => !['SCRIPT', 'STYLE'].includes(n.tagName));
+      // height:auto/min-height:0 in the fixed reading style makes this the natural
+      // body box, including padding and descendant margins collapsed past <main>.
+      // Unlike scrollHeight/clientHeight it has no current-viewport floor, so it can shrink.
       const bottom = Math.max(
-        0,
+        body.getBoundingClientRect().bottom +
+          scrollY +
+          (parseFloat(getComputedStyle(body).marginBottom) || 0),
         ...children.map((n) => {
           const rect = n.getBoundingClientRect();
           return rect.bottom + scrollY + (parseFloat(getComputedStyle(n).marginBottom) || 0);
