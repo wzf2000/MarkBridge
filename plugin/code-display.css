@@ -1,13 +1,17 @@
 /* Scoped to code displayed by MarkBridge, including delayed Prism output. */
 pre.mbb-code-display {
-  --mbb-code-muted: #526577;
-  --mbb-code-surface: #fdf6e3;
+  font-family: var(--mbb-font-code, monospace);
+  font-size: var(--mbb-code-size, 0.85em);
+  line-height: var(--mbb-code-line-height, 1.7);
+  background: var(--mbb-code-surface, #f5f6f8);
+  color: var(--mbb-code-text, #293630);
+  text-shadow: none;
   max-width: 100%;
   overflow-x: auto;
   overscroll-behavior-x: contain;
 }
 pre.mbb-code-display:focus-visible {
-  outline: 3px solid #2271b1;
+  outline: 3px solid var(--mbb-focus-color, #2271b1);
   outline-offset: -3px;
 }
 pre.mbb-code-display .token.comment,
@@ -19,12 +23,45 @@ pre.mbb-code-display .mbb-compare-line-number {
   color: var(--mbb-code-muted);
   opacity: 1;
 }
+pre.mbb-code-display > code {
+  font: inherit;
+  color: inherit;
+  text-shadow: none;
+}
+/* A positioned block anchors Prism's gutter to the entire code height. */
+pre.mbb-code-display.line-numbers[class*='language-'] {
+  padding-inline-start: var(--mbb-code-gutter, 3.25em) !important;
+}
+pre.mbb-code-display.line-numbers > code {
+  position: relative;
+  display: block;
+  min-inline-size: 100%;
+  inline-size: max-content;
+  font: inherit;
+}
+pre.mbb-code-display.line-numbers .line-numbers-rows {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  height: auto;
+  left: calc(-1 * var(--mbb-code-gutter, 3.25em));
+  width: calc(var(--mbb-code-gutter, 3.25em) - 0.4em);
+  border-right: 1px solid #8885;
+  pointer-events: none;
+  user-select: none;
+}
+pre.mbb-code-display.line-numbers .line-numbers-rows > span::before {
+  padding-right: 0.35em;
+}
+pre.mbb-code-display.line-numbers .line-numbers-rows > span {
+  display: block;
+}
 .mbb-code-scroll-hint {
   margin: 0;
   padding: 4px 12px;
-  font: 12px/1.5 system-ui;
-  background: #f5f6f8;
-  color: #526577;
+  font: 12px/1.5 var(--mbb-font-ui, system-ui);
+  background: var(--mbb-code-surface, #f5f6f8);
+  color: var(--mbb-code-muted, #526577);
 }
 .mbb-code-scroll-hint[hidden] {
   display: none;
@@ -32,6 +69,11 @@ pre.mbb-code-display .mbb-compare-line-number {
 @media print {
   .mbb-code-scroll-hint {
     display: none !important;
+  }
+  pre.mbb-code-display.line-numbers > code {
+    inline-size: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
   pre.mbb-code-display {
     overflow: visible;

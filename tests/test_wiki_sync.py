@@ -1,5 +1,7 @@
 import importlib.util
 import json
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -14,6 +16,78 @@ REPO = "example/markbridge"
 
 
 class WikiSyncTests(unittest.TestCase):
+    def test_publication_policy_and_explicit_main_override(self):
+        for version in ["0.0.0", "2.0.1", "3.0.0"]:
+            self.assertTrue(wiki.should_publish(version, "push", "refs/heads/main"))
+        for version in [
+            "3.0.0-rc.6",
+            "3.0.0-dev.1",
+            "3.0.0-beta.1",
+            "3.0.0+build",
+            "03.0.0",
+            "unknown",
+            None,
+        ]:
+            with self.subTest(version=version):
+                self.assertFalse(wiki.should_publish(version, "push", "refs/heads/main", True))
+                self.assertTrue(
+                    wiki.should_publish(version, "workflow_dispatch", "refs/heads/main", True)
+                )
+                self.assertFalse(
+                    wiki.should_publish(version, "workflow_dispatch", "refs/heads/main", False)
+                )
+        for ref in ["refs/heads/review", "refs/tags/v3.0.0", ""]:
+            for event in ["push", "workflow_dispatch"]:
+                self.assertFalse(wiki.should_publish("3.0.0", event, ref, True))
+        self.assertFalse(wiki.should_publish("3.0.0", "pull_request", "refs/heads/main", True))
+        self.assertFalse(
+            wiki.should_publish("3.0.0-rc.6", "workflow_dispatch", "refs/heads/main", "false")
+        )
+
+    def test_policy_cli_reads_checked_out_version_and_workflow_uses_output(self):
+        root = Path(__file__).resolve().parents[1]
+        with tempfile.TemporaryDirectory() as temporary:
+            source = Path(temporary)
+            for version, event, requested, expected in [
+                ("3.0.0-rc.6", "push", "false", "false"),
+                ("3.0.0-rc.6", "workflow_dispatch", "false", "false"),
+                ("3.0.0-rc.6", "workflow_dispatch", "true", "true"),
+                ("3.0.0", "push", "false", "true"),
+            ]:
+                (source / "package.json").write_text(json.dumps({"version": version}))
+                result = subprocess.run(
+                    [
+                        sys.executable,
+                        str(root / "scripts/wiki_sync.py"),
+                        "publication-policy",
+                        "--root",
+                        str(source),
+                        "--event",
+                        event,
+                        "--ref",
+                        "refs/heads/main",
+                        "--publish",
+                        requested,
+                    ],
+                    text=True,
+                    capture_output=True,
+                    check=True,
+                )
+                self.assertEqual(result.stdout, "publish=" + expected + "\n")
+        workflow = (root / ".github/workflows/wiki.yml").read_text()
+        self.assertIn("publish: ${{ steps.generate.outputs.publish }}", workflow)
+        self.assertIn(
+            "if: github.ref == 'refs/heads/main' && needs.preview.outputs.publish == 'true'",
+            workflow,
+        )
+        self.assertIn(
+            'publication-policy --event "$GITHUB_EVENT_NAME" --ref "$GITHUB_REF" --publish "$WIKI_PUBLISH_REQUEST" >> "$GITHUB_OUTPUT"',
+            workflow,
+        )
+        self.assertIn('wiki_sync.py generate --output "$RUNNER_TEMP/wiki-staging"', workflow)
+        self.assertIn("contents: read", workflow)
+        self.assertIn("contents: write", workflow)
+
     def test_links_and_literals(self):
         source = (
             "[guide](USAGE.md#脚注) ![image](assets/hero.svg) "

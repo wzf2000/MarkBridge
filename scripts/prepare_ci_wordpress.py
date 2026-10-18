@@ -127,7 +127,7 @@ def main():
         + repr(str(php))
         + ", ["
         + repr(str(php))
-        + ", "
+        + ", '-d', 'display_errors=stderr', "
         + repr(str(phar))
         + "] + sys.argv[1:])\n"
     )

@@ -11,11 +11,11 @@
 .mbb-footnote-ref a:focus-visible,
 .mbb-footnote-backrefs a:focus-visible,
 .mbb-footnotes li:focus-visible {
-  outline: 2px solid currentColor;
+  outline: 2px solid var(--mbb-focus-color, currentColor);
   outline-offset: 3px;
 }
 .mbb-footnotes {
-  border-top: 1px solid currentColor;
+  border-top: 1px solid var(--mbb-border-color, currentColor);
   margin-block: 2em 0;
   padding-block-start: 1em;
   font-size: 0.9em;

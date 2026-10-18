@@ -1,0 +1,21 @@
+[
+  {
+    "id": "tutorial",
+    "title": "Technical tutorial",
+    "source": "# Tutorial\n\n## Goal\n\nDescribe the goal and prerequisites.\n\n## Explanation\n\nExplain the idea and assumptions.\n\n$$\nx^2 + y^2 = z^2\n$$\n\n## Example\n\n```python\nprint(1)\n```\n\n## Review\n\nExplain the result and check a boundary case.\n",
+    "content": "<!-- wp:heading {\"level\":1} --><h1 class=\"wp-block-heading\">Tutorial</h1><!-- /wp:heading -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Goal</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Describe the goal and prerequisites.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Explanation</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Explain the idea and assumptions.</p><!-- /wp:paragraph -->\n\n<!-- wp:mbb/math {\"tex\":\"x^2 + y^2 = z^2\"} -->\n<pre class=\"wp-block-mbb-math\"><code class=\"mbb-tex\">x^2 + y^2 = z^2</code></pre>\n<!-- /wp:mbb/math -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Example</h2><!-- /wp:heading -->\n\n<!-- wp:mbb/code {\"language\":\"python\",\"code\":\"print(1)\\n\"} --><pre class=\"wp-block-mbb-code\"><code class=\"language-python\">print(1)\n</code></pre><!-- /wp:mbb/code -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Review</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Explain the result and check a boundary case.</p><!-- /wp:paragraph -->"
+  },
+  {
+    "id": "paper-notes",
+    "title": "Paper notes",
+    "source": "# Paper notes\n\n## Question\n\nDescribe the research question.\n\n## Method\n\nExplain assumptions and evidence.\n\n## Findings\n\nSummarize the findings in your own words.\n\n## Limitations\n\nRecord limitations and follow-up questions.\n",
+    "content": "<!-- wp:heading {\"level\":1} --><h1 class=\"wp-block-heading\">Paper notes</h1><!-- /wp:heading -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Question</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Describe the research question.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Method</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Explain assumptions and evidence.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Findings</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Summarize the findings in your own words.</p><!-- /wp:paragraph -->\n\n<!-- wp:heading --><h2 class=\"wp-block-heading\">Limitations</h2><!-- /wp:heading -->\n\n<!-- wp:paragraph --><p>Record limitations and follow-up questions.</p><!-- /wp:paragraph -->"
+  },
+  {
+    "id": "lesson",
+    "title": "Question, hint, derivation and experiment",
+    "source": ":::mbb:v1 collapse {\"id\":\"{{instance}}-question\",\"title\":\"Question\",\"open\":true}\n\nState the problem and input constraints.\n\n:::mbb:v1 collapse {\"id\":\"{{instance}}-hint\",\"title\":\"Hint\",\"open\":false}\n\nGive a hint without disclosing the result.\n\n:::mbb:end\n\n:::mbb:end\n\n:::mbb:v1 collapse {\"id\":\"{{instance}}-derivation\",\"title\":\"Derivation\",\"open\":true}\n\n:::mbb:v1 statement {\"id\":\"{{instance}}-claim\",\"kind\":\"definition\",\"title\":\"Goal\",\"open\":true}\n\nExplain the reasoning and a boundary case.\n\n:::mbb:end\n\n:::mbb:v1 object {\"id\":\"{{instance}}-equation\",\"kind\":\"equation\",\"caption\":\"Invariant\"}\n\n$$\nx^2 + y^2 = z^2\n$$\n\n:::mbb:end\n\nSee <span class=\"mbb-xref\" data-mbb-target=\"{{instance}}-equation\" data-mbb-version=\"1\">[{{instance}}-equation]</span>.\n\n:::mbb:end\n\n:::mbb:v1 collapse {\"id\":\"{{instance}}-experiment\",\"title\":\"Experiment\",\"open\":true}\n\n```javascript\nconsole.log(1);\n```\n\nKeep the explanation readable without an interactive extension.\n\n:::mbb:end\n\n",
+    "content": "<!-- wp:mbb/writing-pattern {\"pattern\":\"lesson\"} /-->",
+    "instantiate": true
+  }
+]

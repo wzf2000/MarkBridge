@@ -1,0 +1,3 @@
+/* Compatibility entry point for opaque previews and offline HTML.
+ * Native media rules live in media-presentation.css, included by each host alongside
+ * this file. Keep that shared CSS inline in exports; do not add a network @import. */

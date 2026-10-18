@@ -178,12 +178,59 @@
 .mbb-status {
   color: #126b35;
 }
+.mbb-bibliography-author {
+  margin-block: 12px;
+  padding: 10px;
+  border: 1px solid #dcdcde;
+  min-inline-size: 0;
+}
+.mbb-bibliography-author legend {
+  max-inline-size: 100%;
+  overflow-wrap: anywhere;
+}
+.mbb-csl-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block-end: 12px;
+}
+.components-modal__frame.mbb-csl-modal {
+  width: min(720px, calc(100vw - 32px));
+  font: 14px/1.5 system-ui;
+  inline-size: min(720px, calc(100vw - 32px));
+  overflow-wrap: anywhere;
+}
+.mbb-csl-modal input[type='file'] {
+  max-inline-size: 100%;
+  display: block;
+  margin-block: 8px 16px;
+}
+.mbb-csl-preview {
+  max-block-size: 24rem;
+  overflow: auto;
+  margin-block: 16px;
+  padding-inline-end: 8px;
+}
+.mbb-csl-preview details {
+  margin-block: 8px 12px;
+}
+.mbb-csl-preview dt {
+  font-weight: 600;
+}
+.mbb-csl-preview dd {
+  margin-inline-start: 0;
+  margin-block-end: 8px;
+}
+.mbb-csl-preview section + section {
+  border-block-start: 1px solid #dcdcde;
+  margin-block-start: 12px;
+}
 @media (max-width: 600px) {
   #mbb-toolbar {
     bottom: 8px;
     font-size: 12px;
   }
-  #mbb-toolbar span {
+  #mbb-toolbar > span {
     display: none;
   }
   .mbb-fields {
@@ -382,6 +429,27 @@
   border-radius: 12px;
   padding: 20px;
 }
+#mbb-export-dialog.mbb-export-html {
+  width: min(1080px, calc(100vw - 24px));
+}
+#mbb-export-dialog #mbb-export-html-preview h3 {
+  margin: 0.9rem 0 0.6rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+#mbb-export-dialog #mbb-export-html-preview iframe {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  height: clamp(320px, 58dvh, 620px);
+  border: 1px solid var(--mbb-editor-border, #c3c4c7);
+  border-radius: 6px;
+  background: #fff;
+}
+#mbb-export-dialog #mbb-export-html-preview[hidden],
+#mbb-export-dialog #mbb-export-projected-source[hidden] {
+  display: none;
+}
 #mbb-export-dialog::backdrop {
   background: rgb(0 0 0 / 45%);
 }
@@ -539,12 +607,14 @@ body:has(#mbb-toolbar:not([hidden]):not(.mbb-keyboard-open) #mbb-recovery-open:n
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
+  flex-direction: column;
   padding: 0 18px 12px;
 }
 #mbb-dialog .mbb-preview-body iframe {
   flex: 1;
   min-width: 0;
-  height: 100%;
+  height: 0;
+  min-height: 0;
   box-sizing: border-box;
 }
 .mbb-dialog-body[hidden],
@@ -768,4 +838,341 @@ body:has(#mbb-toolbar:not([hidden]):not(.mbb-keyboard-open) #mbb-recovery-open:n
     appearance: auto;
     background-image: none;
   }
+}
+.mbb-dialog-workspace {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.mbb-dialog-workspace > * {
+  min-width: 0;
+  width: 100%;
+}
+.mbb-workspace-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+}
+.mbb-source-tools {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border: 1px solid #dcdcde;
+  border-radius: 6px;
+}
+.mbb-source-tools summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.mbb-source-tools-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 12px;
+  margin-top: 10px;
+}
+.mbb-source-tools-fields label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.mbb-source-tools-fields input:not([type='checkbox']) {
+  width: 100%;
+  min-width: 0;
+}
+.mbb-source-tools-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.mbb-source-tools-status {
+  margin: 8px 0 0;
+}
+.mbb-insert-example > label {
+  display: grid;
+  gap: 4px;
+  margin: 8px 0;
+}
+.mbb-insert-example > label > input,
+.mbb-insert-example > label > select {
+  width: 100%;
+  min-width: 0;
+}
+.mbb-preview-tools {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 8px;
+  border-bottom: 1px solid #dcdcde;
+}
+.mbb-preview-tools label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.mbb-preview-tools button[aria-pressed='true'] {
+  background: #f0f6fc;
+  border: 1px solid #2271b1;
+  color: #135e96;
+}
+.mbb-preview-tools [role='status'] {
+  color: #646970;
+  font-size: 12px;
+}
+@media (max-width: 899px) {
+  .mbb-split-toggle {
+    display: none !important;
+  }
+}
+@media (max-width: 600px) {
+  .mbb-source-tools-fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+.mbb-writing-tools {
+  border-top: 1px solid #dcdcde;
+  margin-top: 12px;
+  padding-top: 8px;
+}
+.mbb-writing-tools > label {
+  display: block;
+  margin: 8px 0;
+}
+.mbb-writing-tools input,
+.mbb-writing-tools select {
+  max-width: 100%;
+}
+.mbb-writing-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0;
+}
+.mbb-writing-row button {
+  overflow-wrap: anywhere;
+  text-align: start;
+}
+.mbb-paste-preview {
+  width: min(740px, calc(100vw - 40px));
+  max-height: calc(100dvh - 40px);
+  overflow: auto;
+}
+.mbb-paste-preview pre,
+.mbb-paste-candidate pre {
+  overflow: auto;
+  max-height: 240px;
+  white-space: pre-wrap;
+}
+.mbb-server-backups {
+  border-top: 1px solid #dcdcde;
+  margin-top: 12px;
+}
+
+/* New writing panels use the existing author-control spacing and WordPress color. */
+:is(#mbb-toolbar, #mbb-dialog) .mbb-writing-tools label {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 5px;
+  margin: 10px 0;
+}
+:is(#mbb-toolbar, #mbb-dialog) .mbb-writing-tools :is(input, select) {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+  margin: 0;
+  padding: 7px 9px;
+  border: 1px solid #8c8f94;
+  border-radius: 4px;
+  background-color: #fff;
+  color: #2c3338;
+  font: inherit;
+}
+.mbb-writing-tools > button,
+.mbb-writing-rename > button {
+  margin: 4px 6px 4px 0;
+}
+.mbb-writing-rename {
+  margin-block: 12px;
+  padding: 10px;
+  border: 1px solid #dcdcde;
+  border-radius: 5px;
+  background: #f6f7f7;
+}
+.mbb-paste-preview {
+  box-sizing: border-box;
+  padding: 20px;
+  border: 1px solid #c3c4c7;
+  border-radius: 8px;
+  box-shadow: 0 12px 40px #0003;
+  background: #fff;
+  color: #2c3338;
+  font: 14px/1.6 system-ui;
+}
+.mbb-paste-preview::backdrop {
+  background: #0006;
+}
+.mbb-paste-preview :is(h2, h3) {
+  margin: 0 0 10px;
+  line-height: 1.4;
+}
+.mbb-paste-preview h2 {
+  font-size: 20px;
+}
+.mbb-paste-preview h3 {
+  font-size: 14px;
+}
+.mbb-paste-preview section {
+  margin-block: 16px;
+  padding: 12px;
+  border: 1px solid #dcdcde;
+  border-radius: 5px;
+}
+.mbb-paste-preview pre,
+.mbb-paste-candidate pre {
+  margin: 0;
+  padding: 12px;
+  background: #f6f7f7;
+  color: #2c3338;
+  font:
+    13px/1.6 ui-monospace,
+    SFMono-Regular,
+    Consolas,
+    monospace;
+  white-space: pre;
+  overflow: auto;
+}
+.mbb-paste-preview pre code {
+  display: block;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  white-space: inherit;
+}
+.mbb-paste-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 8px;
+}
+.mbb-paste-preview button {
+  min-height: 38px;
+  padding: 7px 12px;
+  border: 1px solid #c3c4c7;
+  border-radius: 5px;
+  background: #fff;
+  color: #2c3338;
+  font: inherit;
+  cursor: pointer;
+}
+.mbb-paste-preview button:hover {
+  background: #f6f7f7;
+}
+.mbb-paste-preview .mbb-primary {
+  background: var(--wp-admin-theme-color, #2271b1);
+  border-color: var(--wp-admin-theme-color, #2271b1);
+  color: #fff;
+}
+.mbb-paste-preview button:focus-visible {
+  outline: 2px solid var(--wp-admin-theme-color, #2271b1);
+  outline-offset: 2px;
+}
+@media (pointer: coarse) {
+  .mbb-writing-tools button,
+  .mbb-paste-preview button,
+  :is(#mbb-toolbar, #mbb-dialog) .mbb-writing-tools :is(input, select) {
+    min-height: 44px;
+  }
+}
+@media (max-width: 600px) {
+  .mbb-paste-preview {
+    padding: 16px;
+  }
+  .mbb-paste-actions button {
+    flex: 1 1 140px;
+  }
+}
+.mbb-writing-row > small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  color: var(--mbb-muted, #646970);
+}
+.mbb-identity-indicator {
+  font-size: 0.8125rem;
+  color: #646970;
+  border-inline-start: 2px solid #c3c4c7;
+  padding-inline-start: 0.65rem;
+}
+.mbb-reference-tools {
+  margin-block: 1rem;
+  border-block-start: 1px solid var(--mbb-border, #dcdcde);
+  padding-block-start: 0.75rem;
+}
+.mbb-reference-tools label {
+  display: grid;
+  gap: 0.4rem;
+  margin-block: 0.75rem;
+}
+.mbb-reference-tools input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 40px;
+}
+.mbb-reference-tools button {
+  min-height: 40px;
+  margin: 0 0.5rem 0.5rem 0;
+}
+.mbb-reference-tools pre {
+  overflow: auto;
+  max-height: 10rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 0.75rem;
+  background: var(--mbb-surface, #f6f7f7);
+}
+.mbb-reference-result {
+  display: grid;
+  gap: 0.5rem;
+  margin-block: 0.75rem;
+  padding-block: 0.5rem;
+  border-block-end: 1px solid var(--mbb-border, #dcdcde);
+}
+
+.mbb-activity-insert {
+  margin-block: 12px;
+  padding: 10px;
+  border: 1px solid #dcdcde;
+  border-radius: 5px;
+  background: #f6f7f7;
+}
+.mbb-activity-insert :is(select, button) {
+  margin-block: 6px;
+}
+.mbb-activity-relations {
+  flex-basis: 100%;
+  padding: 8px;
+  border-inline-start: 2px solid #dcdcde;
+}
+.mbb-activity-relations button {
+  display: block;
+  max-width: 100%;
+  min-height: 40px;
+  margin-block: 5px;
+}
+.mbb-writing-row small {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #646970;
 }

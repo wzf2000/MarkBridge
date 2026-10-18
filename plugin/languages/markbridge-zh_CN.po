@@ -151,6 +151,11 @@ msgstr "%1$s / 8 个版本；%2$s / 131072 字节"
 
 #, php-format
 #: plugin/i18n.js
+msgid "%1$s reference markers will be updated. No change has been applied."
+msgstr "将更新 %1$s 处引用标记，尚未应用修改。"
+
+#, php-format
+#: plugin/i18n.js
 msgid "%1$s · %2$s · %3$s×%4$s · %5$s bytes"
 msgstr "%1$s · %2$s · %3$s×%4$s · %5$s 字节"
 
@@ -190,6 +195,18 @@ msgstr "。当前候选未丢弃，请下载或手动比较。"
 #: plugin/i18n.js
 msgid ". The source is preserved. You can retry."
 msgstr "。已保留源码，可重试。"
+
+#: plugin/i18n.js
+msgid "1. Select and order articles"
+msgstr "1. 选择文章并排序"
+
+#: plugin/i18n.js
+msgid "2. Metadata and scope"
+msgstr "2. 元数据与范围"
+
+#: plugin/i18n.js
+msgid "3. Prepare, confirm, download"
+msgstr "3. 准备、确认、下载"
 
 #: plugin/i18n.js
 msgid "; automatic three-way merge is unavailable. Download the candidate and compare manually."
@@ -388,6 +405,26 @@ msgid "<p>Unicode is used by default; external resources are not automatically d
 msgstr "<p>默认使用 Unicode，不自动下载外部资源。当前没有预置下载源；可导入具有明确来源与许可的图片数据包。导入不授予资源使用许可。</p>"
 
 #: plugin/i18n.js
+msgid "A CSL-JSON author is invalid"
+msgstr "CSL-JSON 作者数据无效"
+
+#: plugin/i18n.js
+msgid "A CSL-JSON issue date is invalid"
+msgstr "CSL-JSON 出版日期无效"
+
+#: plugin/i18n.js
+msgid "A CSL-JSON record has an unsupported or missing type"
+msgstr "CSL-JSON 记录的类型缺失或不受支持"
+
+#: plugin/i18n.js
+msgid "A CSL-JSON record requires a bounded string or safe integer id"
+msgstr "CSL-JSON 记录需有界字符串或安全整数 ID"
+
+#: plugin/i18n.js
+msgid "A DOI must be a bounded supported DOI identifier, without a URL prefix"
+msgstr "DOI 必须是有界且受支持的标识符，不含网址前缀"
+
+#: plugin/i18n.js
 msgid "A FrontMatter header is limited to 16 KiB"
 msgstr "FrontMatter 头最多 16 KiB"
 
@@ -404,8 +441,16 @@ msgid "A ZIP may contain only one document and at most 32 images"
 msgstr "ZIP 只能有一个文稿和最多 32 张图片"
 
 #: plugin/i18n.js
+msgid "A batch operation is in progress. Refresh its status after it completes."
+msgstr "批次操作正在进行，请在完成后刷新状态。"
+
+#: plugin/i18n.js
 msgid "A batch requires at most five items"
 msgstr "一次批处理最多五项"
+
+#: plugin/i18n.js
+msgid "A bibliography requires 1–64 entries within 64 KiB"
+msgstr "参考文献需要 1–64 个条目，合计不超过 64 KiB"
 
 #: plugin/i18n.js
 msgid "A button group requires 1–32 direct link buttons"
@@ -444,6 +489,14 @@ msgid "A document may contain only one footnote definition section"
 msgstr "一篇文档只能有一个脚注定义区"
 
 #: plugin/i18n.js
+msgid "A document permits one empty top-level logical identity"
+msgstr "文档只允许一个位于顶层且无内容的逻辑身份"
+
+#: plugin/i18n.js
+msgid "A file did not finish uploading. No drafts were created."
+msgstr "有文件尚未上传完成，未创建任何草稿。"
+
+#: plugin/i18n.js
 msgid "A footnote definition is not referenced"
 msgstr "脚注定义未被引用"
 
@@ -454,6 +507,10 @@ msgstr "脚注名称需为1–64位字母、数字、下划线或连字符"
 #: plugin/i18n.js
 msgid "A footnote reference has no definition"
 msgstr "脚注引用缺少定义"
+
+#: plugin/i18n.js
+msgid "A gallery requires 1 to 32 direct native images"
+msgstr "图库需要 1–32 个直接隶属的原生图片区块"
 
 #: plugin/i18n.js
 msgid "A link button must be a direct leaf of a button group"
@@ -472,8 +529,20 @@ msgid "A list contains a non-list item"
 msgstr "列表包含非列表项"
 
 #: plugin/i18n.js
+msgid "A literal author name requires 1–120 plain characters"
+msgstr "原文作者名必须是 1–120 个普通字符"
+
+#: plugin/i18n.js
+msgid "A literal issue date must be bounded single-line text"
+msgstr "原文出版日期必须是有界单行文字"
+
+#: plugin/i18n.js
 msgid "A local image reference is not present in the ZIP: "
 msgstr "本地图引用在 ZIP 中不存在："
+
+#: plugin/i18n.js
+msgid "A logical identity requires a closed namespace and document tuple"
+msgstr "逻辑身份需要闭合的命名空间与文档标识组合"
 
 #: plugin/i18n.js
 msgid "A native container may only contain its declared child block types"
@@ -500,8 +569,28 @@ msgid "A pending image path is invalid"
 msgstr "待上传图片路径无效"
 
 #: plugin/i18n.js
+msgid "A preview image changed or has the wrong content type."
+msgstr "预览图片已变化或内容类型不符。"
+
+#: plugin/i18n.js
+msgid "A preview image digest does not match."
+msgstr "预览图片摘要不匹配。"
+
+#: plugin/i18n.js
+msgid "A proposed CSL-JSON key is invalid"
+msgstr "CSL-JSON 候选引用键无效"
+
+#: plugin/i18n.js
 msgid "A real WordPress block runtime is required"
 msgstr "需要真实WordPress区块运行时"
+
+#: plugin/i18n.js
+msgid "A reference marker is malformed. Correct it before saving."
+msgstr "引用标记格式有误，请修正后保存。"
+
+#: plugin/i18n.js
+msgid "A relative image is missing. Include it in the single-document ZIP."
+msgstr "缺少相对路径图片，请将其加入单文档 ZIP。"
 
 #: plugin/i18n.js
 msgid "A resource ZIP can only be imported as a Markdown candidate"
@@ -510,6 +599,10 @@ msgstr "资源 ZIP 只能作为 Markdown 候选导入"
 #: plugin/i18n.js
 msgid "A resource candidate cannot be saved twice"
 msgstr "资源候选不可重复保存"
+
+#: plugin/i18n.js
+msgid "A save result is uncertain. Keep this batch for verification before canceling."
+msgstr "有保存结果尚不确定，请保留此批次，核查后再取消。"
 
 #: plugin/i18n.js
 msgid "A selected field is not present in the current header proposal."
@@ -532,6 +625,34 @@ msgid "A stage must be a direct child of a stage group"
 msgstr "阶段只能作为阶段组直接子块"
 
 #: plugin/i18n.js
+msgid "A staged input changed. Prepare that file again."
+msgstr "暂存输入已变化，请重新准备该文件。"
+
+#: plugin/i18n.js
+msgid "A staged input digest changed. Prepare that file again."
+msgstr "暂存输入的摘要已变化，请重新准备该文件。"
+
+#: plugin/i18n.js
+msgid "A statement body must not be empty"
+msgstr "声明正文不能为空"
+
+#: plugin/i18n.js
+msgid "A statement requires a supported kind and title; only proofs may be closed"
+msgstr "声明需要受支持的类型及标题；只有证明可以默认关闭"
+
+#: plugin/i18n.js
+msgid "A static article link is unsafe"
+msgstr "静态文章链接不安全"
+
+#: plugin/i18n.js
+msgid "A structured author requires an explicit family name within the existing 120-character name budget"
+msgstr "结构化作者需明确填写姓氏，完整姓名不超过既有的 120 字符上限"
+
+#: plugin/i18n.js
+msgid "A structured issue date requires one or two year/month/day parts"
+msgstr "结构化出版日期需一组或两组年月日数据"
+
+#: plugin/i18n.js
 msgid "A summary must be single-line plain text"
 msgstr "摘要只允许单行纯文字"
 
@@ -552,6 +673,10 @@ msgid "A teaching title must be single-line plain text of 1–200 characters"
 msgstr "教学标题需为 1–200 字符的单行纯文字"
 
 #: plugin/i18n.js
+msgid "A technical reference has no matching object or bibliography entry"
+msgstr "引用缺少匹配的编号对象或文献条目"
+
+#: plugin/i18n.js
 msgid "A valid article ID is required"
 msgstr "缺少有效文章 ID"
 
@@ -560,8 +685,28 @@ msgid "A version conflict was detected. Saving is disabled. Compare the server v
 msgstr "检测到版本冲突，保存已停用。请检查下方服务器版本与当前候选。"
 
 #: plugin/i18n.js
+msgid "About the input and final download"
+msgstr "关于输入与最终下载"
+
+#: plugin/i18n.js
 msgid "Acquire a new opening baseline after adopting the merged candidate."
 msgstr "采用合并候选后须重新获取打开时基线。"
+
+#: plugin/i18n.js
+msgid "Activity"
+msgstr "活动"
+
+#: plugin/i18n.js
+msgid "Activity relations require a closed map of unique local static targets"
+msgstr "活动关系必须使用闭合配置，并指向唯一的本地静态内容"
+
+#: plugin/i18n.js
+msgid "Activity targets must exist within their own component; prompts and options must be direct open static parts"
+msgstr "活动目标必须位于当前组件中；题意和选项必须是直接展开的静态子部件"
+
+#: plugin/i18n.js
+msgid "Activity template"
+msgstr "活动样板"
 
 #: plugin/i18n.js
 msgid "Adapter attributes are missing or contain unknown fields"
@@ -572,12 +717,60 @@ msgid "Add a trailing newline to the "
 msgstr "为"
 
 #: plugin/i18n.js
+msgid "Add article"
+msgstr "加入文章"
+
+#: plugin/i18n.js
+msgid "Add author or institution"
+msgstr "添加作者或机构"
+
+#: plugin/i18n.js
+msgid "Add bibliography entry"
+msgstr "添加文献条目"
+
+#: plugin/i18n.js
 msgid "Add code version"
 msgstr "添加代码版本"
 
 #: plugin/i18n.js
+msgid "Add end date"
+msgstr "添加结束日期"
+
+#: plugin/i18n.js
+msgid "Add entries"
+msgstr "添加条目"
+
+#: plugin/i18n.js
+msgid "Add field"
+msgstr "添加字段"
+
+#: plugin/i18n.js
+msgid "Add item"
+msgstr "添加项目"
+
+#: plugin/i18n.js
+msgid "Additional identifiers"
+msgstr "其他标识符"
+
+#: plugin/i18n.js
+msgid "Additional source text"
+msgstr "补充来源文字"
+
+#: plugin/i18n.js
+msgid "Administrator permission is required."
+msgstr "需要管理员权限。"
+
+#: plugin/i18n.js
 msgid "Adopt unsaved merge candidate"
 msgstr "采用未保存合并候选"
+
+#: plugin/i18n.js
+msgid "Advanced JSON"
+msgstr "高级 JSON"
+
+#: plugin/i18n.js
+msgid "All content"
+msgstr "全部内容"
 
 #: plugin/i18n.js
 msgid "All whitespace is preserved. Empty code and code without a trailing newline are allowed."
@@ -588,6 +781,14 @@ msgid "An anchor must begin with a letter and contain 1–64 ASCII letters, digi
 msgstr "锚点需为字母开头的 1–64 位 ASCII 字母、数字、下划线或连字符"
 
 #: plugin/i18n.js
+msgid "An editable article already has this title. This operation only creates a new draft."
+msgstr "已有可编辑文章使用此标题，本操作只会创建新草稿。"
+
+#: plugin/i18n.js
+msgid "An editable managed article has identical Markdown. This operation does not update it."
+msgstr "已有可编辑的托管文章使用相同 Markdown，本操作不会更新它。"
+
+#: plugin/i18n.js
 msgid "An empty anchor must occupy a separate paragraph to prevent editor tag loss"
 msgstr "空锚点需独立成段，避免编辑器丢失标签"
 
@@ -596,8 +797,20 @@ msgid "An existing block with this name does not match the registered static tem
 msgstr "已有同名区块不属于登记静态模板；不会覆盖原区块"
 
 #: plugin/i18n.js
+msgid "An external image link is unsafe"
+msgstr "外部图片链接不安全"
+
+#: plugin/i18n.js
 msgid "An image changed during packaging. Export did not complete"
 msgstr "图片在打包期间变化，未完成导出"
+
+#: plugin/i18n.js
+msgid "An image changed during static export"
+msgstr "图片在静态导出期间发生变化"
+
+#: plugin/i18n.js
+msgid "An image directive requires exactly one ordinary Markdown image"
+msgstr "图片指令必须恰好包含一张普通 Markdown 图片"
 
 #: plugin/i18n.js
 msgid "An image reference must not traverse above the ZIP root"
@@ -606,6 +819,14 @@ msgstr "图片引用不能越过 ZIP 根目录"
 #: plugin/i18n.js
 msgid "An invalid block cannot be exported"
 msgstr "无效区块不能回写"
+
+#: plugin/i18n.js
+msgid "An object must contain exactly one matching supported block"
+msgstr "编号对象必须恰好包含一个匹配的受支持区块"
+
+#: plugin/i18n.js
+msgid "An object requires a supported kind and a plain caption of 1–512 characters"
+msgstr "编号对象需要受支持的类型及 1–512 字符的纯文字说明"
 
 #: plugin/i18n.js
 msgid "Annotate additional code lines"
@@ -620,8 +841,24 @@ msgid "Another ZIP is being prepared"
 msgstr "另一个 ZIP 正在准备"
 
 #: plugin/i18n.js
+msgid "Another paired backup is being processed. Try again shortly. Current input is preserved."
+msgstr "另一项配对备份正在处理中。请稍后重试；当前输入已保留。"
+
+#: plugin/i18n.js
 msgid "Another save is in progress. Try again later."
 msgstr "另一个保存正在进行，请稍后重试。"
+
+#: plugin/i18n.js
+msgid "Another selected file has identical Markdown."
+msgstr "另一个所选文件的 Markdown 内容相同。"
+
+#: plugin/i18n.js
+msgid "Another selected file has the same name."
+msgstr "另一个所选文件使用相同文件名。"
+
+#: plugin/i18n.js
+msgid "Another selected file has the same title."
+msgstr "另一个所选文件使用相同标题。"
 
 #: plugin/i18n.js
 msgid "Another window disabled local recovery."
@@ -632,6 +869,18 @@ msgid "Another window disabled recovery. Older verification cannot enable it or 
 msgstr "另一窗口已停用恢复，旧校验不能重新启用或写入。"
 
 #: plugin/i18n.js
+msgid "Answer"
+msgstr "答案"
+
+#: plugin/i18n.js
+msgid "Append values"
+msgstr "追加数值"
+
+#: plugin/i18n.js
+msgid "Applied bibliography changed. The current candidate is preserved and unapplied."
+msgstr "已应用的参考文献发生变化，当前候选已保留且尚未应用。"
+
+#: plugin/i18n.js
 msgid "Applied configuration changed. The current candidate is preserved and unapplied. Saving is paused."
 msgstr "已应用配置已变化；当前候选仍保留，尚未应用。保存已暂停。"
 
@@ -640,12 +889,28 @@ msgid "Applied value: "
 msgstr "应用值："
 
 #: plugin/i18n.js
+msgid "Apply bibliography edits"
+msgstr "应用参考文献修改"
+
+#: plugin/i18n.js
 msgid "Apply formula"
 msgstr "应用公式"
 
 #: plugin/i18n.js
 msgid "Apply parameters"
 msgstr "应用参数"
+
+#: plugin/i18n.js
+msgid "Apply text edits"
+msgstr "应用文字修改"
+
+#: plugin/i18n.js
+msgid "Arrange references to saved articles, then prepare an immutable snapshot. Collection configuration is not a second article body."
+msgstr "编排已保存文章的引用，再准备不可变快照。文集配置不是第二份正文。"
+
+#: plugin/i18n.js
+msgid "Article IDs (comma separated, up to 50)"
+msgstr "文章 ID（以逗号分隔，最多 50 个）"
 
 #: plugin/i18n.js
 msgid "Article metadata changed while reading. Reconcile again"
@@ -680,6 +945,26 @@ msgid "Authentication expired. Local candidates are preserved. Refresh or sign i
 msgstr "认证已过期；本地候选保留。请刷新页面或重新登录，再重新校验恢复权限。"
 
 #: plugin/i18n.js
+msgid "Authors"
+msgstr "作者"
+
+#: plugin/i18n.js
+msgid "Authors (one per line, at most eight)"
+msgstr "作者（每行一位，最多八位）"
+
+#: plugin/i18n.js
+msgid "Authors and institutions"
+msgstr "作者与机构"
+
+#: plugin/i18n.js
+msgid "Author–year"
+msgstr "作者—年份"
+
+#: plugin/i18n.js
+msgid "Automatic copy failed. Select the summary to copy it manually."
+msgstr "自动复制失败，请选择摘要后手动复制。"
+
+#: plugin/i18n.js
 msgid "Automatic copy failed. The source is selected for manual copying"
 msgstr "无法自动复制，已选中源码，请手动复制"
 
@@ -690,6 +975,130 @@ msgstr "此文档的自动保存与修订不能单独写入。"
 #: plugin/i18n.js
 msgid "Awaiting selection"
 msgstr "待选择"
+
+#: plugin/i18n.js
+msgid "Batch Markdown source"
+msgstr "批次 Markdown 源稿"
+
+#: plugin/i18n.js
+msgid "Batch files"
+msgstr "批次文件"
+
+#: plugin/i18n.js
+msgid "Batch import drafts"
+msgstr "批量导入草稿"
+
+#: plugin/i18n.js
+msgid "Batch item preview"
+msgstr "批次条目预览"
+
+#: plugin/i18n.js
+msgid "Batch ownership or its manifest could not be verified."
+msgstr "无法验证批次归属或清单。"
+
+#: plugin/i18n.js
+msgid "Batch restored for the current account. Preview unfinished items again."
+msgstr "已恢复当前账号的批次，请重新预览未完成的条目。"
+
+#: plugin/i18n.js
+msgid "BibTeX DOI values must be bounded DOI identifiers"
+msgstr "BibTeX DOI 须为长度受限的 DOI 标识"
+
+#: plugin/i18n.js
+msgid "BibTeX accent conversion requires Unicode normalization"
+msgstr "BibTeX 重音转换需要 Unicode 规范化支持"
+
+#: plugin/i18n.js
+msgid "BibTeX entries support at most eight authors"
+msgstr "每条 BibTeX 文献最多支持八位作者"
+
+#: plugin/i18n.js
+msgid "BibTeX input must be UTF-8 text within 64 KiB"
+msgstr "BibTeX 输入须为不超过 64 KiB 的 UTF-8 文本"
+
+#: plugin/i18n.js
+msgid "BibTeX is outside the supported bounded data subset"
+msgstr "BibTeX 超出当前支持的有限数据范围"
+
+#: plugin/i18n.js
+msgid "BibTeX replacement must preserve every currently cited key"
+msgstr "替换 BibTeX 文献必须保留所有已被引用的键"
+
+#: plugin/i18n.js
+msgid "BibTeX source (up to 64 KiB)"
+msgstr "BibTeX 源码（最多 64 KiB）"
+
+#: plugin/i18n.js
+msgid "BibTeX supports one to 64 entries"
+msgstr "BibTeX 支持 1–64 条文献"
+
+#: plugin/i18n.js
+msgid "Bibliography"
+msgstr "参考文献"
+
+#: plugin/i18n.js
+msgid "Bibliography URLs must use absolute HTTP or HTTPS"
+msgstr "文献链接必须使用绝对 HTTP 或 HTTPS 地址"
+
+#: plugin/i18n.js
+msgid "Bibliography URLs must use absolute HTTP or HTTPS without credentials"
+msgstr "文献链接必须为不含凭据的 HTTP 或 HTTPS 绝对地址"
+
+#: plugin/i18n.js
+msgid "Bibliography author names are outside their bounds"
+msgstr "文献作者名超出限制"
+
+#: plugin/i18n.js
+msgid "Bibliography edits changed. Preview the BibTeX mapping again"
+msgstr "文献草稿已变化，请重新预览 BibTeX 映射"
+
+#: plugin/i18n.js
+msgid "Bibliography edits changed. Preview the CSL-JSON mapping again."
+msgstr "文献候选已变化，请重新预览 CSL-JSON 映射。"
+
+#: plugin/i18n.js
+msgid "Bibliography edits have not been applied. Apply or discard them before saving or renaming keys."
+msgstr "参考文献修改尚未应用，请先应用或放弃，再保存文章或更改文献键。"
+
+#: plugin/i18n.js
+msgid "Bibliography fields are incomplete, duplicated, or outside their bounds"
+msgstr "文献字段不完整、重复或超出限制"
+
+#: plugin/i18n.js
+msgid "Bibliography identifiers require bounded ISBN, ISSN, PMID and PMCID text fields"
+msgstr "文献标识符需完整且有界的 ISBN、ISSN、PMID、PMCID 文本字段"
+
+#: plugin/i18n.js
+msgid "Bibliography keys (at most eight)"
+msgstr "文献键（最多八个）"
+
+#: plugin/i18n.js
+msgid "Bibliography keys must be unique"
+msgstr "文献引用键必须唯一"
+
+#: plugin/i18n.js
+msgid "Bibliography origins must be a JSON array of closed objects"
+msgstr "文献来源声明须为闭合对象组成的 JSON 数组"
+
+#: plugin/i18n.js
+msgid "Bibliography origins require at most 64 closed source declarations"
+msgstr "文献来源声明最多允许 64 条闭合记录"
+
+#: plugin/i18n.js
+msgid "Bibliography origins require unique existing keys and bounded opaque source versions"
+msgstr "文献来源声明须使用不重复的现有引用键及有界的不透明来源版本"
+
+#: plugin/i18n.js
+msgid "Bibliography settings"
+msgstr "参考文献设置"
+
+#: plugin/i18n.js
+msgid "Bibliography v2 entries require closed fields, a stable key, a supported type and a title"
+msgstr "文献 v2 条目需完整闭合字段、稳定引用键、支持的类型和标题"
+
+#: plugin/i18n.js
+msgid "Bibliography v2 requires a fixed supported style and 1–64 entries within 64 KiB"
+msgstr "文献 v2 需受支持的固定样式，以及总量不超过 64 KiB 的 1–64 条记录"
 
 #: plugin/i18n.js
 msgid "Block "
@@ -762,6 +1171,14 @@ msgid "Body conflict %1$s (opening line %2$s%3$s)"
 msgstr "正文冲突 %1$s（打开时第 %2$s 行%3$s）"
 
 #: plugin/i18n.js
+msgid "Book"
+msgstr "图书"
+
+#: plugin/i18n.js
+msgid "Book chapter"
+msgstr "图书章节"
+
+#: plugin/i18n.js
 msgid "Both representations match. Check the differences and confirm restoration."
 msgstr "两种格式校验一致。请检查差异，再确认恢复。"
 
@@ -772,6 +1189,10 @@ msgstr "边界 AST 超出结构上限"
 #: plugin/i18n.js
 msgid "Browser draft recovery"
 msgstr "浏览器草稿恢复"
+
+#: plugin/i18n.js
+msgid "Browser structure check completed. Reading suggestions may be ignored; the server validates again when saving."
+msgstr "浏览器结构检查已完成。阅读建议可忽略，保存时服务器会再次校验。"
 
 #: plugin/i18n.js
 msgid "Built-in content preview"
@@ -806,8 +1227,76 @@ msgid "By stage"
 msgstr "分阶段"
 
 #: plugin/i18n.js
+msgid "CSL-JSON contains a duplicate property"
+msgstr "CSL-JSON 含重复属性"
+
+#: plugin/i18n.js
+msgid "CSL-JSON contains invalid Unicode or a nonfinite number"
+msgstr "CSL-JSON 含无效 Unicode 或非有限数值"
+
+#: plugin/i18n.js
+msgid "CSL-JSON data exceeds its bounded node budget"
+msgstr "CSL-JSON 数据超过有界节点预算"
+
+#: plugin/i18n.js
+msgid "CSL-JSON file (optional)"
+msgstr "CSL-JSON 文件（可选）"
+
+#: plugin/i18n.js
+msgid "CSL-JSON has more than 256 unsupported fields; simplify the input before importing"
+msgstr "CSL-JSON 有超过 256 个不支持的字段，请先精简输入再导入"
+
+#: plugin/i18n.js
+msgid "CSL-JSON input must be UTF-8 JSON within 64 KiB"
+msgstr "CSL-JSON 输入必须是 64 KiB 以内的 UTF-8 JSON"
+
+#: plugin/i18n.js
+msgid "CSL-JSON is invalid"
+msgstr "CSL-JSON 无效"
+
+#: plugin/i18n.js
+msgid "CSL-JSON key mappings are invalid"
+msgstr "CSL-JSON 引用键映射无效"
+
+#: plugin/i18n.js
+msgid "CSL-JSON nesting exceeds sixteen levels"
+msgstr "CSL-JSON 嵌套超过 16 层"
+
+#: plugin/i18n.js
+msgid "CSL-JSON numeric fields require text or safe integers"
+msgstr "CSL-JSON 数值字段需文本或安全整数"
+
+#: plugin/i18n.js
+msgid "CSL-JSON property names are invalid or too long"
+msgstr "CSL-JSON 属性名无效或过长"
+
+#: plugin/i18n.js
+msgid "CSL-JSON record ids are duplicated"
+msgstr "CSL-JSON 记录 ID 重复"
+
+#: plugin/i18n.js
+msgid "CSL-JSON requires an array of 1–64 records"
+msgstr "CSL-JSON 需由 1–64 条记录构成的数组"
+
+#: plugin/i18n.js
+msgid "CSL-JSON source (up to 64 KiB)"
+msgstr "CSL-JSON 源码（最多 64 KiB）"
+
+#: plugin/i18n.js
+msgid "CSL-JSON supports at most eight authors"
+msgstr "CSL-JSON 最多支持 8 位作者"
+
+#: plugin/i18n.js
 msgid "Cancel"
 msgstr "取消"
+
+#: plugin/i18n.js
+msgid "Cancel BibTeX import"
+msgstr "取消 BibTeX 导入"
+
+#: plugin/i18n.js
+msgid "Cancel CSL-JSON import"
+msgstr "取消 CSL-JSON 导入"
 
 #: plugin/i18n.js
 msgid "Cancel export"
@@ -816,6 +1305,22 @@ msgstr "取消导出"
 #: plugin/i18n.js
 msgid "Cancel image import and keep the document"
 msgstr "取消图片导入，保留文稿"
+
+#: plugin/i18n.js
+msgid "Cancel remaining items and remove staging"
+msgstr "取消剩余条目并移除暂存文件"
+
+#: plugin/i18n.js
+msgid "Cancel snapshot"
+msgstr "取消快照"
+
+#: plugin/i18n.js
+msgid "Canceled"
+msgstr "已取消"
+
+#: plugin/i18n.js
+msgid "Canceled. Created drafts and their media were preserved."
+msgstr "已取消，已创建的草稿及其媒体仍保留。"
 
 #: plugin/i18n.js
 msgid "Candidate body or metadata exceeds its budget or has invalid types"
@@ -838,6 +1343,10 @@ msgid "Candidates must be valid UTF-8 text"
 msgstr "候选必须为有效 UTF-8 文本"
 
 #: plugin/i18n.js
+msgid "Caption"
+msgstr "说明文字"
+
+#: plugin/i18n.js
 msgid "Categories and tags require at most 100 unique existing term slugs"
 msgstr "分类和标签需为最多 100 个不重复的现有 term slug"
 
@@ -854,28 +1363,72 @@ msgid "Changes"
 msgstr "修改差异"
 
 #: plugin/i18n.js
+msgid "Check changed targets and readable incoming references"
+msgstr "检查变更目标及可读取入链"
+
+#: plugin/i18n.js
 msgid "Check current block conversion"
 msgstr "检查当前区块转换"
+
+#: plugin/i18n.js
+msgid "Check current content"
+msgstr "检查当前内容"
 
 #: plugin/i18n.js
 msgid "Check formula delimiters and TeX source. Each block formula delimiter $$ must occupy its own line."
 msgstr "请核对公式分隔符和 TeX 源码；块公式的 $$ 应分别独占一行。"
 
 #: plugin/i18n.js
+msgid "Check label rename"
+msgstr "检查更名影响"
+
+#: plugin/i18n.js
 msgid "Check named footnote references and definitions. Each definition must be unique, referenced, and placed at the end of the document."
 msgstr "请核对命名脚注的引用和定义；定义需唯一、被引用，并放在文末。"
+
+#: plugin/i18n.js
+msgid "Check selected articles"
+msgstr "检查所选文章"
 
 #: plugin/i18n.js
 msgid "Check the indicated position and use supported blocks and formatting. The candidate is preserved; correct it and preview again."
 msgstr "请检查标示位置，使用受支持的区块和格式；当前候选保留，请修正后重新预览。"
 
 #: plugin/i18n.js
+msgid "Check the snapshot scope"
+msgstr "检查快照范围"
+
+#: plugin/i18n.js
 msgid "Check this block's styles, attributes, and nesting. A supported block type does not imply support for all formatting. Download Markdown to preserve the candidate if needed."
 msgstr "请检查此区块的样式、属性和嵌套；支持区块类型并不表示支持全部格式。可先下载 Markdown 保留候选。"
 
 #: plugin/i18n.js
+msgid "Checking document references…"
+msgstr "正在检查文档引用…"
+
+#: plugin/i18n.js
+msgid "Checking paired backups…"
+msgstr "正在检查配对备份…"
+
+#: plugin/i18n.js
 msgid "Child slot must be empty"
 msgstr "子区块插槽必须为空"
+
+#: plugin/i18n.js
+msgid "Chinese structural reading covers a limited set of mathematical structures."
+msgstr "中文结构读法目前支持有限的数学结构。"
+
+#: plugin/i18n.js
+msgid "Choose 1 to 50 distinct article IDs."
+msgstr "请选择 1 至 50 个不同的文章 ID。"
+
+#: plugin/i18n.js
+msgid "Choose a .bib file within 64 KiB"
+msgstr "请选择不超过 64 KiB 的 .bib 文件"
+
+#: plugin/i18n.js
+msgid "Choose a batch item and a plain title of at most 200 characters."
+msgstr "请选择批次条目，并填写至多 200 字符的纯文字标题。"
 
 #: plugin/i18n.js
 msgid "Choose a different default version explicitly before deleting the default version."
@@ -886,8 +1439,16 @@ msgid "Choose a featured image in article settings before publishing, then previ
 msgstr "发布前请在文章设置中选择特色图片，再预览并保存。"
 
 #: plugin/i18n.js
+msgid "Choose a literal date or structured date parts, not both"
+msgstr "请选择原文日期或结构化年月日，不能同时使用两者"
+
+#: plugin/i18n.js
 msgid "Choose a local ZIP. Also check this site's PHP upload limits"
 msgstr "请选择本地 ZIP；请同时检查本站 PHP 上传限制"
+
+#: plugin/i18n.js
+msgid "Choose a reference target"
+msgstr "选择引用目标"
 
 #: plugin/i18n.js
 msgid "Choose a revision"
@@ -910,6 +1471,10 @@ msgid "Choose a stage"
 msgstr "选择阶段"
 
 #: plugin/i18n.js
+msgid "Choose a target to insert a reference."
+msgstr "选择目标以插入引用。"
+
+#: plugin/i18n.js
 msgid "Choose a teaching component in the sidebar"
 msgstr "请在右侧选择教学组件"
 
@@ -922,8 +1487,24 @@ msgid "Choose an existing article."
 msgstr "请选择已有文章。"
 
 #: plugin/i18n.js
+msgid "Choose an existing line."
+msgstr "请选择存在的行号。"
+
+#: plugin/i18n.js
 msgid "Choose an option"
 msgstr "请选择"
+
+#: plugin/i18n.js
+msgid "Choose between one and ten Markdown or single-document ZIP files."
+msgstr "请选择 1–10 个 Markdown 文件或单文档 ZIP 文件。"
+
+#: plugin/i18n.js
+msgid "Choose bibliography entries"
+msgstr "选择文献条目"
+
+#: plugin/i18n.js
+msgid "Choose copy or explicit identity migration."
+msgstr "请选择复制或显式身份迁移。"
 
 #: plugin/i18n.js
 msgid "Choose draft, pending review, public, or private."
@@ -938,8 +1519,44 @@ msgid "Choose every conflict explicitly"
 msgstr "请逐项选择全部冲突"
 
 #: plugin/i18n.js
+msgid "Choose explicit BibTeX merge or replacement"
+msgstr "请明确选择 BibTeX 合并或替换"
+
+#: plugin/i18n.js
+msgid "Choose explicit migration or prepare a copy for an existing identity."
+msgstr "已有身份的内容需显式迁移或准备副本。"
+
+#: plugin/i18n.js
+msgid "Choose files to scan or resume one of your active batches."
+msgstr "请选择文件进行扫描，或恢复一个活动批次。"
+
+#: plugin/i18n.js
+msgid "Choose merge or replace for CSL-JSON import"
+msgstr "请选择 CSL-JSON 的添加或替换方式"
+
+#: plugin/i18n.js
+msgid "Choose one of the registered values."
+msgstr "请选择已登记的选项。"
+
+#: plugin/i18n.js
+msgid "Choose one to ten files within the 16 MiB upload budget."
+msgstr "请选择 1–10 个文件，上传总大小不超过 16 MiB。"
+
+#: plugin/i18n.js
 msgid "Choose this conflict"
 msgstr "请选择此冲突"
+
+#: plugin/i18n.js
+msgid "Choose up to ten Markdown or single-document ZIP files. Scan first, preview each item, then create drafts one at a time. Header metadata is not applied."
+msgstr "最多选择 10 个 Markdown 或单文档 ZIP 文件。先扫描，再逐项预览并创建草稿。不会应用头部元数据。"
+
+#: plugin/i18n.js
+msgid "Citation key mappings:"
+msgstr "引用键映射："
+
+#: plugin/i18n.js
+msgid "Citation style"
+msgstr "引文样式"
 
 #: plugin/i18n.js
 msgid "Clear this account's local candidates"
@@ -1078,6 +1695,10 @@ msgid "Code versions"
 msgstr "代码版本"
 
 #: plugin/i18n.js
+msgid "Collapse diagram"
+msgstr "收起图示"
+
+#: plugin/i18n.js
 msgid "Collapsible content"
 msgstr "折叠内容"
 
@@ -1086,16 +1707,52 @@ msgid "Collapsible content is limited to three nested levels"
 msgstr "折叠内容最多嵌套三层"
 
 #: plugin/i18n.js
+msgid "Collection title"
+msgstr "文集标题"
+
+#: plugin/i18n.js
+msgid "Collections"
+msgstr "文集"
+
+#: plugin/i18n.js
+msgid "Columns"
+msgstr "列"
+
+#: plugin/i18n.js
 msgid "Comment was not saved: "
 msgstr "评论未保存："
+
+#: plugin/i18n.js
+msgid "Comments, private notes, and source paths are excluded. Unselected private reference targets remain unavailable."
+msgstr "不包含评论、私人笔记和源文件路径。未选入的私人引用目标仍不可用。"
+
+#: plugin/i18n.js
+msgid "Companion series import is unavailable or exceeds the bounded candidate list. Select articles manually."
+msgstr "Companion 系列导入不可用或超过候选列表上限，请手动选择文章。"
 
 #: plugin/i18n.js
 msgid "Compatibility and advanced runtime settings"
 msgstr "兼容与高级运行环境设置"
 
 #: plugin/i18n.js
+msgid "Compatibility details"
+msgstr "兼容详情"
+
+#: plugin/i18n.js
+msgid "Compatibility is based on installed exact versions. No extension is downloaded or enabled here."
+msgstr "兼容状态基于已安装的精确版本，此处不会下载或启用扩展。"
+
+#: plugin/i18n.js
 msgid "Completed"
 msgstr "已完成"
+
+#: plugin/i18n.js
+msgid "Component"
+msgstr "组件"
+
+#: plugin/i18n.js
+msgid "Component details"
+msgstr "组件详细信息"
 
 #: plugin/i18n.js
 msgid "Component execution completed."
@@ -1146,6 +1803,14 @@ msgid "Component version"
 msgstr "组件版本"
 
 #: plugin/i18n.js
+msgid "Conference paper"
+msgstr "会议论文"
+
+#: plugin/i18n.js
+msgid "Configuration (read only)"
+msgstr "配置（只读）"
+
+#: plugin/i18n.js
 msgid "Confirm download"
 msgstr "确认下载"
 
@@ -1178,12 +1843,48 @@ msgid "Confirm that original media URLs may be public, and preview the resource 
 msgstr "请确认原媒体 URL 可能公开的风险，并重新预览资源变换"
 
 #: plugin/i18n.js
+msgid "Confirm that uploaded image URLs may be public, including for a draft."
+msgstr "请确认上传图片的地址可能公开，即使文章仍为草稿。"
+
+#: plugin/i18n.js
+msgid "Confirm this snapshot"
+msgstr "确认此快照"
+
+#: plugin/i18n.js
+msgid "Conflict repair requires an administrator and the unchanged article identity."
+msgstr "冲突修复需要管理员权限，且文章身份须保持不变。"
+
+#: plugin/i18n.js
 msgid "Container must contain only its declared child blocks"
 msgstr "容器只能包含声明的子区块"
 
 #: plugin/i18n.js
+msgid "Content changed. Check the rename again."
+msgstr "内容已变化，请重新检查重命名。"
+
+#: plugin/i18n.js
+msgid "Content changed. Paste again to review the current selection."
+msgstr "内容已变化，请重新粘贴以检查当前选区。"
+
+#: plugin/i18n.js
+msgid "Content changed. Prepare the operation again."
+msgstr "内容已变化，请重新准备操作。"
+
+#: plugin/i18n.js
+msgid "Content navigation and checks"
+msgstr "内容导航与检查"
+
+#: plugin/i18n.js
 msgid "Content preview"
 msgstr "正文预览"
+
+#: plugin/i18n.js
+msgid "Content type"
+msgstr "内容类型"
+
+#: plugin/i18n.js
+msgid "Continue rebuild"
+msgstr "继续重建"
 
 #: plugin/i18n.js
 msgid "Conversion backend"
@@ -1264,8 +1965,76 @@ msgid "Copy TeX"
 msgstr "复制 TeX"
 
 #: plugin/i18n.js
+msgid "Copy as a new activity"
+msgstr "复制为新活动"
+
+#: plugin/i18n.js
+msgid "Copy diagnostic summary"
+msgstr "复制诊断摘要"
+
+#: plugin/i18n.js
+msgid "Copy identity metadata"
+msgstr "身份元数据"
+
+#: plugin/i18n.js
+msgid "Copy revision content into the current identity"
+msgstr "将历史正文复制为保留当前身份的候选"
+
+#: plugin/i18n.js
 msgid "Copy the original code manually"
 msgstr "请手动复制原始代码"
+
+#: plugin/i18n.js
+msgid "Copy with new identities (default)"
+msgstr "复制并分配新身份（默认）"
+
+#: plugin/i18n.js
+msgid "Correct feedback"
+msgstr "正确反馈"
+
+#: plugin/i18n.js
+msgid "Correct option"
+msgstr "正确选项"
+
+#: plugin/i18n.js
+msgid "Count"
+msgstr "数量"
+
+#: plugin/i18n.js
+msgid "Course workbench"
+msgstr "课程工作台"
+
+#: plugin/i18n.js
+msgid "Create this draft"
+msgstr "创建此草稿"
+
+#: plugin/i18n.js
+msgid "Creates an unsaved structure. Preview before saving; reader state is not stored."
+msgstr "创建未保存的结构。保存前请预览；读者状态不会写入文章。"
+
+#: plugin/i18n.js
+msgid "Creating this draft. If the connection is interrupted, refresh batch status before trying again."
+msgstr "正在创建此草稿。如连接中断，请刷新批次状态后再试。"
+
+#: plugin/i18n.js
+msgid "Cross-document identities require the core WordPress transactional database connection. Legacy editing remains available."
+msgstr "跨文档身份需要 WordPress 核心事务数据库连接，既有编辑仍可使用。"
+
+#: plugin/i18n.js
+msgid "Cross-document identities require transactional tables. No existing table was changed."
+msgstr "跨文档身份需要事务表，未修改任何既有表。"
+
+#: plugin/i18n.js
+msgid "Cross-reference"
+msgstr "交叉引用"
+
+#: plugin/i18n.js
+msgid "Cross-site Markdown and images ZIP"
+msgstr "跨站 Markdown 与图片 ZIP"
+
+#: plugin/i18n.js
+msgid "Cross-site ZIP requires every image to be a verified local attachment of this article"
+msgstr "跨站 ZIP 要求每张图片都是本文章经核验的本地附件"
 
 #: plugin/i18n.js
 msgid "Current block types have conversion mappings. Check their conversion to confirm that attributes and formatting are preserved."
@@ -1292,12 +2061,24 @@ msgid "Current metadata was written to the header candidate but has not been sav
 msgstr "当前元数据已写入头部候选，尚未保存；请重新预览，来源文章仍须经源文件写回流程。"
 
 #: plugin/i18n.js
+msgid "Current stable label"
+msgstr "当前稳定标签"
+
+#: plugin/i18n.js
+msgid "Current value is outside the registered choices"
+msgstr "当前值不在已登记的选项中"
+
+#: plugin/i18n.js
 msgid "Current: "
 msgstr "当前："
 
 #: plugin/i18n.js
 msgid "Custom more-separator attributes are not supported"
 msgstr "更多分隔符自定义属性暂不支持"
+
+#: plugin/i18n.js
+msgid "DOI identifier (without URL prefix)"
+msgstr "DOI 标识符（不含网址前缀）"
 
 #: plugin/i18n.js
 msgid "DOM and mbstring are available."
@@ -1324,16 +2105,40 @@ msgid "Database rollback failed; the save state is uncertain. Verify the article
 msgstr "数据库事务回退未成功，不能确认保存状态；请重新核对文章。"
 
 #: plugin/i18n.js
+msgid "Dataset"
+msgstr "数据集"
+
+#: plugin/i18n.js
+msgid "Day (optional)"
+msgstr "日期（可选）"
+
+#: plugin/i18n.js
 msgid "Default code version"
 msgstr "默认代码版本"
+
+#: plugin/i18n.js
+msgid "Default scope is public, password-free, editable articles. Private selection never includes unselected private reference targets."
+msgstr "默认仅包含可编辑、公开且无密码的文章。明确选入私人文章，也不会包含未选中的私人引用目标。"
 
 #: plugin/i18n.js
 msgid "Default version must reference a group member"
 msgstr "默认版本必须引用组内成员"
 
 #: plugin/i18n.js
+msgid "Definition"
+msgstr "定义"
+
+#: plugin/i18n.js
+msgid "Definition, theorem or proof"
+msgstr "定义、定理或证明"
+
+#: plugin/i18n.js
 msgid "Delete candidate"
 msgstr "删除候选"
+
+#: plugin/i18n.js
+msgid "Delete configuration"
+msgstr "删除配置"
 
 #: plugin/i18n.js
 msgid "Delete current version"
@@ -1348,12 +2153,28 @@ msgid "Delete entire code group"
 msgstr "删除整个代码组"
 
 #: plugin/i18n.js
+msgid "Deleting configuration never deletes articles. Maximum 10 chapters; verified image bytes total at most 16 MiB."
+msgstr "删除配置不会删除文章。最多 10 篇；已核验图片总计最多 16 MiB。"
+
+#: plugin/i18n.js
 msgid "Dependency loading"
 msgstr "依赖加载"
 
 #: plugin/i18n.js
+msgid "Details"
+msgstr "详细信息"
+
+#: plugin/i18n.js
 msgid "Details must contain exactly one direct summary"
 msgstr "详情必须有唯一直接摘要"
+
+#: plugin/i18n.js
+msgid "Diagnostic summary"
+msgstr "诊断摘要"
+
+#: plugin/i18n.js
+msgid "Diagnostic summary copied."
+msgstr "诊断摘要已复制。"
 
 #, php-format
 #: plugin/i18n.js
@@ -1363,6 +2184,10 @@ msgstr "差异 %1$s"
 #: plugin/i18n.js
 msgid "Differences between the latest server version and candidate"
 msgstr "服务器最新版与当前候选的差异"
+
+#: plugin/i18n.js
+msgid "Directed"
+msgstr "有向"
 
 #: plugin/i18n.js
 msgid "Directories must not contain data"
@@ -1377,8 +2202,16 @@ msgid "Disallowed URL scheme"
 msgstr "不允许的URL协议"
 
 #: plugin/i18n.js
+msgid "Discard bibliography edits"
+msgstr "放弃参考文献修改"
+
+#: plugin/i18n.js
 msgid "Discard parameter input"
 msgstr "撤销参数输入"
+
+#: plugin/i18n.js
+msgid "Discard text edits"
+msgstr "放弃文字修改"
 
 #: plugin/i18n.js
 msgid "Display formula"
@@ -1393,8 +2226,20 @@ msgid "Display math requires paired $$ delimiters"
 msgstr "行间公式需要配对的 $$ 分隔符"
 
 #: plugin/i18n.js
+msgid "Document"
+msgstr "文档"
+
+#: plugin/i18n.js
 msgid "Document containers and declarations are unsupported"
 msgstr "不支持文档容器和声明"
+
+#: plugin/i18n.js
+msgid "Document identity enabled"
+msgstr "文档身份已启用"
+
+#: plugin/i18n.js
+msgid "Document identity is not enabled"
+msgstr "文档身份尚未启用"
 
 #: plugin/i18n.js
 msgid "Document metadata proposal"
@@ -1403,6 +2248,26 @@ msgstr "文档元数据提案"
 #: plugin/i18n.js
 msgid "Document pagination"
 msgstr "文档分页"
+
+#: plugin/i18n.js
+msgid "Document references"
+msgstr "文档引用"
+
+#: plugin/i18n.js
+msgid "Documents receiving new logical identities: "
+msgstr "分配新逻辑身份的文章数："
+
+#: plugin/i18n.js
+msgid "Documents retaining their logical identities: "
+msgstr "保留原逻辑身份的文章数："
+
+#: plugin/i18n.js
+msgid "Down enters a term; Left and Right move between terms; Up returns; Home reads the whole formula; Escape leaves exploration."
+msgstr "↓ 进入子项，← → 切换相邻项，↑ 返回上层，Home 返回完整公式，Esc 退出探索。"
+
+#: plugin/i18n.js
+msgid "Download CSL-JSON subset"
+msgstr "下载 CSL-JSON 子集"
 
 #: plugin/i18n.js
 msgid "Download current candidate .md"
@@ -1421,12 +2286,41 @@ msgid "Download original code "
 msgstr "下载原代码 "
 
 #: plugin/i18n.js
+msgid "Download snapshot ZIP"
+msgstr "下载快照 ZIP"
+
+#: plugin/i18n.js
+msgid "Download web book ZIP"
+msgstr "下载网页书 ZIP"
+
+#: plugin/i18n.js
 msgid "Downloaded. The saved article, source file, and unsaved input are unchanged."
 msgstr "已下载；已保存文章、源文件和未保存输入均未修改。"
 
 #: plugin/i18n.js
 msgid "Draft"
 msgstr "草稿"
+
+#: plugin/i18n.js
+msgid "Draft created"
+msgstr "草稿已创建"
+
+#: plugin/i18n.js
+msgid "Draft recovery"
+msgstr "草稿恢复"
+
+#: plugin/i18n.js
+msgid "Draft title"
+msgstr "草稿标题"
+
+#: plugin/i18n.js
+msgid "Dropping particle"
+msgstr "可省略前缀"
+
+#, php-format
+#: plugin/i18n.js
+msgid "Duplicate bibliography key: %1$s"
+msgstr "文献键重复：%1$s"
 
 #: plugin/i18n.js
 msgid "Duplicate code group"
@@ -1443,6 +2337,11 @@ msgstr "重复的脚注定义"
 #: plugin/i18n.js
 msgid "Duplicate footnote label"
 msgstr "重复的脚注名称"
+
+#, php-format
+#: plugin/i18n.js
+msgid "Duplicate stable label: %1$s"
+msgstr "稳定标识重复：%1$s"
 
 #: plugin/i18n.js
 msgid "Duplicate teaching ID"
@@ -1477,6 +2376,10 @@ msgid "Each document may contain only one nonempty top-level stage group"
 msgstr "每篇文档只能有一个非空的顶层阶段组"
 
 #: plugin/i18n.js
+msgid "Each document must be UTF-8 text within 256 KiB."
+msgstr "每篇文档必须是 256 KiB 以内的 UTF-8 文本。"
+
+#: plugin/i18n.js
 msgid "Each image is limited to 32 MP"
 msgstr "单张图片最多 32 MP"
 
@@ -1485,8 +2388,16 @@ msgid "Each image is limited to 8 MiB"
 msgstr "单张图片最多 8 MiB"
 
 #: plugin/i18n.js
+msgid "Each item creates a separate draft after preview and confirmation. Existing articles are never overwritten."
+msgstr "每个条目在预览和确认后各自创建草稿，不会覆盖已有文章。"
+
+#: plugin/i18n.js
 msgid "Each merge source is limited to 256 KiB and 32,768 lines. Download the original candidate for manual comparison"
 msgstr "三方合并每份原文最多 256 KiB / 32,768 行，原候选可下载后手动比较"
+
+#: plugin/i18n.js
+msgid "Each operation processes at most ten articles. Continue until ready; no background job is scheduled."
+msgstr "每次最多处理十篇文章，请继续操作至就绪；不会安排后台任务。"
 
 #: plugin/i18n.js
 msgid "Each registration descriptor is limited to 16 KiB"
@@ -1499,6 +2410,10 @@ msgstr "每版最多 64 KiB，全组最多 128 KiB"
 #: plugin/i18n.js
 msgid "Each version requires a complete fence without container prefixes"
 msgstr "每个版本需要完整且不含容器前缀的围栏"
+
+#: plugin/i18n.js
+msgid "Edges"
+msgstr "边"
 
 #, php-format
 #: plugin/i18n.js
@@ -1522,16 +2437,32 @@ msgid "Empty anchors must occupy their own paragraph"
 msgstr "空锚点必须独立成段"
 
 #: plugin/i18n.js
+msgid "Enable a compatible diagram extension before inserting a diagram."
+msgstr "请先启用兼容的图示扩展，再插入节点图。"
+
+#: plugin/i18n.js
+msgid "Enable document references"
+msgstr "启用文档引用"
+
+#: plugin/i18n.js
 msgid "Enable local recovery in this browser "
 msgstr "启用此浏览器的本地恢复 "
 
 #: plugin/i18n.js
+msgid "Enable paired backups while this page is open"
+msgstr "在本页打开期间启用配对备份"
+
+#: plugin/i18n.js
 msgid "Enabled"
-msgstr "开启"
+msgstr "启用"
 
 #: plugin/i18n.js
 msgid "Enabled: candidates are stored only in this browser and expire after 7 days."
 msgstr "已启用：候选只保存在本浏览器，7 天到期。"
+
+#: plugin/i18n.js
+msgid "End date"
+msgstr "结束日期"
 
 #: plugin/i18n.js
 msgid "Enter a title without HTML, or explicitly select the header title proposal."
@@ -1546,8 +2477,28 @@ msgid "Enter single-line TeX."
 msgstr "请输入单行 TeX 源码。"
 
 #: plugin/i18n.js
+msgid "Enter term"
+msgstr "进入子项"
+
+#: plugin/i18n.js
 msgid "Entity-looking image alternative text would change under the current engine serialization"
 msgstr "看似实体的图片替代文字会被现有引擎序列化改写"
+
+#: plugin/i18n.js
+msgid "Equation"
+msgstr "公式"
+
+#: plugin/i18n.js
+msgid "Equations"
+msgstr "公式"
+
+#: plugin/i18n.js
+msgid "Every cross-site native image requires a verified association"
+msgstr "跨站副本中每张原生图片都需要经核验的关联"
+
+#: plugin/i18n.js
+msgid "Every local image must be a readable attachment of its selected article. External images remain links and are not fetched."
+msgstr "每张本地图片都必须是所选文章的可读附件。外站图片只保留链接，不联网抓取。"
 
 #: plugin/i18n.js
 msgid "Excerpt"
@@ -1572,6 +2523,14 @@ msgstr "执行失败；静态替代仍可阅读。"
 #: plugin/i18n.js
 msgid "Execution stopped."
 msgstr "执行已停止。"
+
+#: plugin/i18n.js
+msgid "Existing identities are retained only if unclaimed; occupied identities block saving."
+msgstr "仅在原身份未被占用时保留；已占用的身份会阻止保存。"
+
+#: plugin/i18n.js
+msgid "Existing image URLs are preserved; the server does not download them."
+msgstr "保留现有图片地址，服务端不会下载这些图片。"
 
 #: plugin/i18n.js
 msgid "Expected a single code element"
@@ -1604,12 +2563,40 @@ msgid "Expected table row"
 msgstr "需要表格行"
 
 #: plugin/i18n.js
+msgid "Explanation"
+msgstr "解释"
+
+#: plugin/i18n.js
 msgid "Explicit export confirmation is required"
 msgstr "需要明确确认导出"
 
 #: plugin/i18n.js
+msgid "Explicit item confirmation is required."
+msgstr "必须明确确认该条目。"
+
+#: plugin/i18n.js
+msgid "Explicit migration retaining identities"
+msgstr "显式迁移并保留身份"
+
+#: plugin/i18n.js
+msgid "Explicit person name"
+msgstr "明确拆分的人名"
+
+#: plugin/i18n.js
 msgid "Explicitly apply edits. The server validates parameters against the registered schema when saving."
 msgstr "编辑后明确应用；保存时由服务端登记 schema 校验。"
+
+#: plugin/i18n.js
+msgid "Explicitly include the selected private drafts"
+msgstr "明确包含所选私人草稿"
+
+#: plugin/i18n.js
+msgid "Explicitly selected private article"
+msgstr "明确选入的私人文章"
+
+#: plugin/i18n.js
+msgid "Explore with keyboard"
+msgstr "使用键盘探索"
 
 #: plugin/i18n.js
 msgid "Export body copy"
@@ -1648,8 +2635,16 @@ msgid "Export the article's current saved paired representations. Prepare the ma
 msgstr "导出当前服务器已保存的双格式文章。请准备清单并确认下载；编辑器未保存内容保持不变。"
 
 #: plugin/i18n.js
+msgid "Extensions"
+msgstr "扩展"
+
+#: plugin/i18n.js
 msgid "Failed"
 msgstr "失败"
+
+#: plugin/i18n.js
+msgid "Family name (explicit)"
+msgstr "姓氏（明确填写）"
 
 #: plugin/i18n.js
 msgid "Featured image"
@@ -1668,8 +2663,40 @@ msgid "Fenced code must preserve its trailing newline"
 msgstr "围栏代码必须保留结尾换行"
 
 #: plugin/i18n.js
+msgid "Figure"
+msgstr "图"
+
+#: plugin/i18n.js
+msgid "Figures"
+msgstr "图片"
+
+#: plugin/i18n.js
+msgid "File needs correction"
+msgstr "文件需要修正"
+
+#: plugin/i18n.js
+msgid "File validation failed."
+msgstr "文件校验失败。"
+
+#: plugin/i18n.js
 msgid "Final media HTML does not satisfy the save allowlist"
 msgstr "最终媒体 HTML 不符合保存允许列表"
+
+#: plugin/i18n.js
+msgid "Final publication authorization did not match. Prepare again."
+msgstr "最终出版授权不匹配，请重新准备。"
+
+#: plugin/i18n.js
+msgid "Find a reference target"
+msgstr "查找引用目标"
+
+#: plugin/i18n.js
+msgid "Find text"
+msgstr "查找文本"
+
+#: plugin/i18n.js
+msgid "Find, replace and navigate"
+msgstr "查找、替换与定位"
 
 #: plugin/i18n.js
 msgid "Footnote"
@@ -1764,6 +2791,10 @@ msgid "Formula preview (not written to the body)"
 msgstr "公式预览（不写入正文）"
 
 #: plugin/i18n.js
+msgid "Formula preview is unavailable. The original TeX is preserved."
+msgstr "公式预览暂不可用，原始 TeX 仍保留。"
+
+#: plugin/i18n.js
 msgid "Formula reader"
 msgstr "公式阅读"
 
@@ -1782,6 +2813,10 @@ msgstr "公式语法错误："
 #: plugin/i18n.js
 msgid "Formula typesetting engine"
 msgstr "公式排版引擎"
+
+#: plugin/i18n.js
+msgid "Formula typesetting failed. No incomplete HTML was downloaded"
+msgstr "公式排版失败，未下载不完整的 HTML"
 
 #: plugin/i18n.js
 msgid "Formula typesetting failed; showing TeX source"
@@ -1825,6 +2860,10 @@ msgid "FrontMatter values must be valid JSON"
 msgstr "FrontMatter 值必须是合法 JSON"
 
 #: plugin/i18n.js
+msgid "Full explanation"
+msgstr "完整解析"
+
+#: plugin/i18n.js
 msgid "Full reading entry must remain enabled"
 msgstr "全文入口必须保持启用"
 
@@ -1837,8 +2876,40 @@ msgid "Full-text mode"
 msgstr "全文模式"
 
 #: plugin/i18n.js
+msgid "Gallery columns must be an integer from 1 to 8"
+msgstr "图库列数必须是 1–8 的整数"
+
+#: plugin/i18n.js
+msgid "Gallery imageCrop must be a boolean"
+msgstr "图库 imageCrop 必须是布尔值"
+
+#: plugin/i18n.js
 msgid "General settings"
 msgstr "常规设置"
+
+#: plugin/i18n.js
+msgid "Generate a complete offline web book in your browser, inspect its static preview, then confirm and download. Articles and resources are checked again before download."
+msgstr "在浏览器中生成完整离线网页书，检查静态预览，再确认并下载。下载前会重新检查文章与资源。"
+
+#: plugin/i18n.js
+msgid "Generate and inspect the web book first."
+msgstr "请先生成并检查网页书。"
+
+#: plugin/i18n.js
+msgid "Generate web book"
+msgstr "生成网页书"
+
+#: plugin/i18n.js
+msgid "Given name"
+msgstr "名字"
+
+#: plugin/i18n.js
+msgid "Go"
+msgstr "跳转"
+
+#: plugin/i18n.js
+msgid "Go to line"
+msgstr "跳转行号"
 
 #: plugin/i18n.js
 msgid "HTML blocks cannot contain child blocks"
@@ -1881,6 +2952,10 @@ msgid "HTML span positions disagree"
 msgstr "HTML span 位置不一致"
 
 #: plugin/i18n.js
+msgid "Header metadata is retained in Markdown but is not applied by batch import."
+msgstr "头部元数据保留在 Markdown 中，但批量导入不会应用它。"
+
+#: plugin/i18n.js
 msgid "Heading level or list start is out of range"
 msgstr "标题级别或列表起始值越界"
 
@@ -1897,8 +2972,24 @@ msgid "Highlighted lines must be unique positive integers separated by commas"
 msgstr "重点行需为不重复的正整数，以逗号分隔"
 
 #: plugin/i18n.js
+msgid "Hint"
+msgstr "提示"
+
+#: plugin/i18n.js
+msgid "I reviewed and accept the listed CSL-JSON field losses"
+msgstr "我已核对并接受列出的 CSL-JSON 字段损失"
+
+#: plugin/i18n.js
+msgid "I reviewed and accept the proposed citation keys"
+msgstr "我已核对并接受候选引用键"
+
+#: plugin/i18n.js
 msgid "Image alternative text cannot contain footnote markers"
 msgstr "图片替代文字不能包含脚注标记"
+
+#: plugin/i18n.js
+msgid "Image alternative text is empty. Review whether the image needs an explanation."
+msgstr "图片替代文字为空，请判断是否需要解释图片。"
 
 #: plugin/i18n.js
 msgid "Image blocks cannot contain child blocks"
@@ -1985,6 +3076,22 @@ msgid "Images require src, alt and no children"
 msgstr "图片需要 src、alt 且不能有子节点"
 
 #: plugin/i18n.js
+msgid "Import BibTeX"
+msgstr "导入 BibTeX"
+
+#: plugin/i18n.js
+msgid "Import BibTeX bibliography"
+msgstr "导入 BibTeX 文献"
+
+#: plugin/i18n.js
+msgid "Import CSL-JSON"
+msgstr "导入 CSL-JSON"
+
+#: plugin/i18n.js
+msgid "Import Companion series"
+msgstr "导入 Companion 系列"
+
+#: plugin/i18n.js
 msgid "Import Markdown"
 msgstr "导入 Markdown"
 
@@ -1997,6 +3104,18 @@ msgid "Import Markdown first for a new document."
 msgstr "新文档请先导入Markdown。"
 
 #: plugin/i18n.js
+msgid "Import behavior"
+msgstr "导入方式"
+
+#: plugin/i18n.js
+msgid "Import bounded CSL-JSON"
+msgstr "导入受限 CSL-JSON"
+
+#: plugin/i18n.js
+msgid "Import operation"
+msgstr "导入方式"
+
+#: plugin/i18n.js
 msgid "Incomplete or unknown version fields"
 msgstr "版本字段不完整或未知"
 
@@ -2005,8 +3124,28 @@ msgid "Incomplete teaching attributes"
 msgstr "教学属性不完整"
 
 #: plugin/i18n.js
+msgid "Incorrect feedback"
+msgstr "错误反馈"
+
+#: plugin/i18n.js
 msgid "Independent body changes were combined. Unchanged metadata uses the latest server version; overlapping metadata requires an explicit choice."
 msgstr "独立正文变化已组合。未修改的元数据采用服务器最新版；重叠元数据仍须明确选择。"
+
+#: plugin/i18n.js
+msgid "Index status"
+msgstr "索引状态"
+
+#: plugin/i18n.js
+msgid "Initial values"
+msgstr "初始数值"
+
+#: plugin/i18n.js
+msgid "Initialize"
+msgstr "初始化"
+
+#: plugin/i18n.js
+msgid "Initialize or rebuild reference index"
+msgstr "初始化或重建引用索引"
 
 #: plugin/i18n.js
 msgid "Initializing the isolated component…"
@@ -2053,6 +3192,10 @@ msgid "Inline text cannot follow nested list blocks"
 msgstr "嵌套列表后不能有行内文字"
 
 #: plugin/i18n.js
+msgid "Input already delivered to your browser cannot be recalled. Final authorization checks this plugin download, not the authenticity of arbitrary client HTML."
+msgstr "已经交付浏览器的输入无法撤回。最终授权只约束本插件触发的下载，不证明任意客户端 HTML 的真实性。"
+
+#: plugin/i18n.js
 msgid "Input exceeds 256 KiB"
 msgstr "输入超过 256 KiB"
 
@@ -2069,12 +3212,56 @@ msgid "Insert a checkable task list."
 msgstr "插入可勾选的任务列表。"
 
 #: plugin/i18n.js
+msgid "Insert a teaching structure"
+msgstr "插入教学结构"
+
+#: plugin/i18n.js
+msgid "Insert activity"
+msgstr "插入活动"
+
+#: plugin/i18n.js
+msgid "Insert cross-reference"
+msgstr "插入交叉引用"
+
+#: plugin/i18n.js
+msgid "Insert example at selection"
+msgstr "在选区插入样例"
+
+#: plugin/i18n.js
+msgid "Insert literature citation"
+msgstr "插入文献引用"
+
+#: plugin/i18n.js
 msgid "Insert or edit footnote reference"
 msgstr "插入或修改脚注引用"
 
 #: plugin/i18n.js
+msgid "Insert recognized Markdown"
+msgstr "插入识别出的 Markdown"
+
+#: plugin/i18n.js
 msgid "Insert reference"
 msgstr "插入引用"
+
+#: plugin/i18n.js
+msgid "Insert self-check"
+msgstr "插入自测"
+
+#: plugin/i18n.js
+msgid "Insert writing pattern"
+msgstr "插入写作样板"
+
+#: plugin/i18n.js
+msgid "Inserts an unsaved example with new stable IDs. Playback and reader choices are never saved. Edit the explanation, then preview and confirm through the normal save workflow."
+msgstr "插入具有新稳定标识的未保存样例。播放进度和读者选择不写回文章。编辑解释后，按正常流程预览并确认保存。"
+
+#: plugin/i18n.js
+msgid "Installed extensions"
+msgstr "已安装的扩展"
+
+#: plugin/i18n.js
+msgid "Integers only"
+msgstr "仅整数"
 
 #: plugin/i18n.js
 msgid "Interactive editor preview. Edit the static fallback body below."
@@ -2097,8 +3284,20 @@ msgid "Invalid JSON property"
 msgstr "非法 JSON 属性"
 
 #: plugin/i18n.js
+msgid "Invalid MathML conversion input"
+msgstr "MathML 转换输入无效。"
+
+#: plugin/i18n.js
 msgid "Invalid Unicode"
 msgstr "Unicode 非法"
+
+#: plugin/i18n.js
+msgid "Invalid activity template"
+msgstr "活动样板无效"
+
+#: plugin/i18n.js
+msgid "Invalid author candidate patch"
+msgstr "作者候选修改无效。"
 
 #: plugin/i18n.js
 msgid "Invalid block JSON"
@@ -2129,6 +3328,10 @@ msgid "Invalid component/version"
 msgstr "组件或版本非法"
 
 #: plugin/i18n.js
+msgid "Invalid cross-site media association map"
+msgstr "跨站媒体关联映射无效"
+
+#: plugin/i18n.js
 msgid "Invalid enum declaration"
 msgstr "枚举声明非法"
 
@@ -2157,6 +3360,10 @@ msgid "Invalid link target"
 msgstr "链接 target 非法"
 
 #: plugin/i18n.js
+msgid "Invalid local author draft"
+msgstr "本地作者草稿无效"
+
+#: plugin/i18n.js
 msgid "Invalid native block nesting"
 msgstr "原生区块嵌套位置非法"
 
@@ -2173,6 +3380,10 @@ msgid "Invalid or conflicting registration identity or version"
 msgstr "登记身份/版本无效或冲突"
 
 #: plugin/i18n.js
+msgid "Invalid or duplicate author tool registration"
+msgstr "作者工具登记无效或重复。"
+
+#: plugin/i18n.js
 msgid "Invalid or duplicate version ID"
 msgstr "版本 ID 非法或重复"
 
@@ -2187,6 +3398,14 @@ msgstr "纯文字字段类型、Unicode 或长度非法"
 #: plugin/i18n.js
 msgid "Invalid stable teaching ID"
 msgstr "稳定教学 ID 非法"
+
+#: plugin/i18n.js
+msgid "Invalid static syntax class"
+msgstr "静态代码高亮样式无效"
+
+#: plugin/i18n.js
+msgid "Invalid static syntax token"
+msgstr "静态代码高亮标记无效"
 
 #: plugin/i18n.js
 msgid "Invalid table alignment"
@@ -2225,12 +3444,64 @@ msgid "Isolated conversion passed."
 msgstr "隔离转换通过。"
 
 #: plugin/i18n.js
+msgid "Issue"
+msgstr "期"
+
+#: plugin/i18n.js
+msgid "Issue date"
+msgstr "出版日期"
+
+#: plugin/i18n.js
+msgid "Issue date form"
+msgstr "出版日期形式"
+
+#: plugin/i18n.js
+msgid "Item"
+msgstr "项目"
+
+#: plugin/i18n.js
+msgid "Items"
+msgstr "项目"
+
+#: plugin/i18n.js
+msgid "Journal article"
+msgstr "期刊论文"
+
+#: plugin/i18n.js
+msgid "Keep as plain text"
+msgstr "保留为纯文本"
+
+#: plugin/i18n.js
+msgid "Keep at most two active batches. Cancel an older batch or wait for expiry; the site also has a shared staging limit."
+msgstr "最多保留两个活动批次。请取消旧批次或等待过期；站点另有共享暂存上限。"
+
+#: plugin/i18n.js
 msgid "Keep my changes and continue from the latest version"
 msgstr "保留我的修改，基于最新版继续"
 
 #: plugin/i18n.js
+msgid "Label"
+msgstr "标签"
+
+#: plugin/i18n.js
+msgid "Labels and keys must begin with an ASCII letter and contain at most 64 letters, digits, underscores or hyphens"
+msgstr "标识和文献键必须以 ASCII 字母开头，至多 64 位字母、数字、下划线或连字符"
+
+#: plugin/i18n.js
 msgid "Language"
 msgstr "语言"
+
+#: plugin/i18n.js
+msgid "Language tag"
+msgstr "语言标签"
+
+#: plugin/i18n.js
+msgid "Last formal save: "
+msgstr "最后正式保存："
+
+#: plugin/i18n.js
+msgid "Last paired backup: "
+msgstr "最后配对备份："
 
 #: plugin/i18n.js
 msgid "Latest server version"
@@ -2255,6 +3526,10 @@ msgstr "左侧原代码"
 #: plugin/i18n.js
 msgid "Left title"
 msgstr "左侧标题"
+
+#: plugin/i18n.js
+msgid "Library source declarations"
+msgstr "资料库来源声明"
 
 #: plugin/i18n.js
 msgid "Line differences: "
@@ -2289,6 +3564,42 @@ msgid "List items must start with a paragraph"
 msgstr "列表项必须以段落开始"
 
 #: plugin/i18n.js
+msgid "Listing"
+msgstr "代码清单"
+
+#: plugin/i18n.js
+msgid "Literal date"
+msgstr "原文日期"
+
+#: plugin/i18n.js
+msgid "Literal issue date"
+msgstr "原文出版日期"
+
+#: plugin/i18n.js
+msgid "Literal name or institution"
+msgstr "原文姓名或机构"
+
+#: plugin/i18n.js
+msgid "Literal names stay literal. Switching to person fields starts empty; enter the authored name parts explicitly."
+msgstr "原文姓名不会自动拆分。切换到人名字段时从空字段开始，请明确填写各部分。"
+
+#: plugin/i18n.js
+msgid "Literature citation"
+msgstr "文献引用"
+
+#: plugin/i18n.js
+msgid "Loading your active batches…"
+msgstr "正在加载你的活动批次…"
+
+#: plugin/i18n.js
+msgid "Local attachment IDs cannot be imported from a batch. Use portable images without another site's IDs."
+msgstr "批次不能导入本地附件 ID，请使用不含其他站点 ID 的便携图片。"
+
+#: plugin/i18n.js
+msgid "Local author edits are unapplied and not saved. Prepare or discard them to continue."
+msgstr "本地作者编辑尚未应用或保存，请准备或丢弃后继续。"
+
+#: plugin/i18n.js
 msgid "Local block restoration only restores a candidate. The header proposal is preserved. Use a separate bridge preview and confirmation to apply metadata."
 msgstr "本地区块恢复只还原候选，头部提案保留；需要应用元数据请通过编辑桥另行预览确认。"
 
@@ -2301,12 +3612,60 @@ msgid "Local recovery is not enabled."
 msgstr "本地恢复尚未启用。"
 
 #: plugin/i18n.js
+msgid "Locally modified snapshot"
+msgstr "快照已有本地修改"
+
+#: plugin/i18n.js
+msgid "Locate error line"
+msgstr "定位错误所在行"
+
+#: plugin/i18n.js
+msgid "Locate selection in preview"
+msgstr "在预览中定位选区"
+
+#: plugin/i18n.js
+msgid "Locate source"
+msgstr "定位源码"
+
+#: plugin/i18n.js
+msgid "Locate source object"
+msgstr "定位源码对象"
+
+#: plugin/i18n.js
+msgid "Located the containing structure."
+msgstr "已定位所属结构。"
+
+#: plugin/i18n.js
+msgid "Located the source object."
+msgstr "已定位源码对象。"
+
+#: plugin/i18n.js
+msgid "Logical document identity"
+msgstr "逻辑文档身份"
+
+#: plugin/i18n.js
+msgid "Logical identity copy mapping"
+msgstr "逻辑身份复制映射"
+
+#: plugin/i18n.js
+msgid "Logical identity handling"
+msgstr "逻辑身份处理"
+
+#: plugin/i18n.js
 msgid "Long code differences estimated by matching line positions: "
 msgstr "长代码按相同行位置估计差异："
 
 #: plugin/i18n.js
 msgid "Manual copying may normalize newlines. Download the original code to preserve bytes"
 msgstr "手动复制可能规范化换行；下载原代码保留字节"
+
+#: plugin/i18n.js
+msgid "Mapped entries are a preview. Existing unapplied edits are preserved until you choose this candidate."
+msgstr "映射条目仅为预览；选用此候选前，现有未应用修改会保留。"
+
+#: plugin/i18n.js
+msgid "Mapped publication fields"
+msgstr "已映射的出版字段"
 
 #: plugin/i18n.js
 msgid "MarkBridge image emoji"
@@ -2375,6 +3734,10 @@ msgid "Markdown must be bounded UTF-8 text"
 msgstr "Markdown 必须是有界 UTF-8 文本"
 
 #: plugin/i18n.js
+msgid "Markdown paste preview"
+msgstr "Markdown 粘贴预览"
+
+#: plugin/i18n.js
 msgid "Markdown preserves original bytes. ZIP bundles only verifiable related images and prepares a portable copy. This does not save editor input."
 msgstr "Markdown 保留原始字节；ZIP 仅打包可验证的关联图片，并准备便携副本。此操作不保存编辑器输入。"
 
@@ -2391,8 +3754,16 @@ msgid "Markdown source / preview"
 msgstr "Markdown 原文 / 预览"
 
 #: plugin/i18n.js
+msgid "Match case"
+msgstr "区分大小写"
+
+#: plugin/i18n.js
 msgid "Matches the verified WordPress 7.1 templates."
 msgstr "匹配已验证的 WordPress 7.1 模板。"
+
+#: plugin/i18n.js
+msgid "Matches: "
+msgstr "匹配数："
 
 #: plugin/i18n.js
 msgid "Math (MathJax)"
@@ -2411,8 +3782,32 @@ msgid "Math span must contain only text"
 msgstr "公式 span 只能包含文字"
 
 #: plugin/i18n.js
+msgid "MathML validator unavailable"
+msgstr "MathML 校验器不可用。"
+
+#: plugin/i18n.js
 msgid "Maximum three nested collapse containers"
 msgstr "折叠容器最多嵌套三层"
+
+#: plugin/i18n.js
+msgid "Media attachment IDs must be positive safe integers"
+msgstr "媒体附件 ID 必须是正的安全整数"
+
+#: plugin/i18n.js
+msgid "Media caption HTML must be canonical and balanced"
+msgstr "媒体图注 HTML 必须格式规范且标签闭合"
+
+#: plugin/i18n.js
+msgid "Media captions exceed their structure budget"
+msgstr "媒体图注超过结构限制"
+
+#: plugin/i18n.js
+msgid "Media captions only support text, strong, emphasis, deletion, code and line breaks"
+msgstr "媒体图注仅支持文字、加粗、强调、删除线、代码和换行"
+
+#: plugin/i18n.js
+msgid "Media captions require bounded single-line safe inline content"
+msgstr "媒体图注必须是长度受限的单行安全行内内容"
 
 #: plugin/i18n.js
 msgid "Media commit markers did not complete"
@@ -2456,6 +3851,10 @@ msgid "Merge preparation failed"
 msgstr "合并准备失败"
 
 #: plugin/i18n.js
+msgid "Merge without overwriting keys"
+msgstr "合并（不覆盖同名键）"
+
+#: plugin/i18n.js
 msgid "Metadata authorization differs after image transformation"
 msgstr "图片变换后元数据授权不再一致"
 
@@ -2472,6 +3871,14 @@ msgid "Metadata, terms, the candidate, or the identity changed. Preview again."
 msgstr "元数据、term、候选或身份已变化，请重新预览。"
 
 #: plugin/i18n.js
+msgid "Migration requires an explicit unclaimed identity candidate."
+msgstr "迁移需要显式提供尚未被占用的身份候选。"
+
+#: plugin/i18n.js
+msgid "Minimum MarkBridge"
+msgstr "最低 MarkBridge 版本"
+
+#: plugin/i18n.js
 msgid "Mismatched block closing comment"
 msgstr "区块结束注释不匹配"
 
@@ -2482,6 +3889,11 @@ msgstr "区块结束注释不匹配"
 #: plugin/i18n.js
 msgid "Mismatched code version count"
 msgstr "代码版本数量不匹配"
+
+#, php-format
+#: plugin/i18n.js
+msgid "Missing bibliography entry: %1$s"
+msgstr "缺少文献条目：%1$s"
 
 #: plugin/i18n.js
 msgid "Missing block closing comment"
@@ -2495,9 +3907,22 @@ msgstr "缺少区块结束注释"
 msgid "Missing footnote definition"
 msgstr "缺少脚注定义"
 
+#, php-format
+#: plugin/i18n.js
+msgid "Missing reference target: %1$s"
+msgstr "缺少引用目标：%1$s"
+
 #: plugin/i18n.js
 msgid "Missing table header"
 msgstr "缺少表头"
+
+#: plugin/i18n.js
+msgid "Mode"
+msgstr "模式"
+
+#: plugin/i18n.js
+msgid "Month (optional)"
+msgstr "月份（可选）"
 
 #: plugin/i18n.js
 msgid "More"
@@ -2506,6 +3931,10 @@ msgstr "更多"
 #: plugin/i18n.js
 msgid "More block must use its default exact marker"
 msgstr "more 区块必须使用默认精确标记"
+
+#: plugin/i18n.js
+msgid "More targets"
+msgstr "更多目标"
 
 #: plugin/i18n.js
 msgid "More than 128 conflicts were found. Download the candidate and resolve them manually"
@@ -2528,12 +3957,24 @@ msgid "Move current version up"
 msgstr "上移当前版本"
 
 #: plugin/i18n.js
+msgid "Move down"
+msgstr "下移"
+
+#: plugin/i18n.js
+msgid "Move up"
+msgstr "上移"
+
+#: plugin/i18n.js
 msgid "Multi-paragraph list"
 msgstr "多段落列表"
 
 #: plugin/i18n.js
 msgid "Multilingual code tabs"
 msgstr "多语言代码页签"
+
+#: plugin/i18n.js
+msgid "Must fix before saving: "
+msgstr "保存前必须修复："
 
 #: plugin/i18n.js
 msgid "My candidate"
@@ -2545,12 +3986,28 @@ msgid "My candidate: %1$s; latest server version: %2$s"
 msgstr "我的候选：%1$s；服务器最新版：%2$s"
 
 #: plugin/i18n.js
+msgid "Name"
+msgstr "名称"
+
+#: plugin/i18n.js
+msgid "Name form"
+msgstr "姓名形式"
+
+#: plugin/i18n.js
+msgid "Name suffix"
+msgstr "姓名后缀"
+
+#: plugin/i18n.js
 msgid "Named footnotes are not implemented in this prototype"
 msgstr "历史解析器尚未实现命名脚注"
 
 #: plugin/i18n.js
 msgid "Namespaced dependencies and the standalone loading map are loaded."
 msgstr "已加载命名空间隔离后的依赖与独立加载表。"
+
+#: plugin/i18n.js
+msgid "Narrow the search to at most 10000 matches."
+msgstr "请缩小查找范围，使匹配数不超过 10000。"
 
 #: plugin/i18n.js
 msgid "Native adapter serialized attributes or HTML cannot round-trip exactly"
@@ -2563,6 +4020,26 @@ msgstr "原生区块无法精确往返为 Markdown，候选未创建；请下载
 #: plugin/i18n.js
 msgid "Native details are limited to 8 nested levels"
 msgstr "原生详情最多嵌套 8 层"
+
+#: plugin/i18n.js
+msgid "Native footnotes require external post metadata and cannot be converted losslessly"
+msgstr "原生脚注依赖文章外部元数据，无法无损转换"
+
+#: plugin/i18n.js
+msgid "Native image attachment class and ID disagree"
+msgstr "原生图片的附件类名与 ID 不一致"
+
+#: plugin/i18n.js
+msgid "Native image blocks cannot contain child blocks"
+msgstr "原生图片区块不能包含子区块"
+
+#: plugin/i18n.js
+msgid "Native media attributes must be a closed object"
+msgstr "原生媒体属性必须是不含未知字段的对象"
+
+#: plugin/i18n.js
+msgid "Native media exceeds the document structure budget"
+msgstr "原生媒体超过文档结构限制"
 
 #: plugin/i18n.js
 msgid "Native saving did not complete and was rolled back."
@@ -2588,6 +4065,14 @@ msgstr "源文件和配对正文均未完成保存。"
 #: plugin/i18n.js
 msgid "New attachment ownership verification failed"
 msgstr "新附件所有权核验失败"
+
+#: plugin/i18n.js
+msgid "New collection"
+msgstr "新建文集"
+
+#: plugin/i18n.js
+msgid "New draft"
+msgstr "新草稿"
 
 #: plugin/i18n.js
 msgid "New images were not fully associated with the article"
@@ -2618,16 +4103,56 @@ msgid "New-window links must include noopener"
 msgstr "新窗口链接必须含 noopener"
 
 #: plugin/i18n.js
+msgid "Next match"
+msgstr "下一个匹配"
+
+#: plugin/i18n.js
+msgid "Next page"
+msgstr "Next page"
+
+#: plugin/i18n.js
 msgid "Next stage"
 msgstr "下一阶段"
+
+#: plugin/i18n.js
+msgid "Next term"
+msgstr "后一项"
+
+#: plugin/i18n.js
+msgid "No articles selected."
+msgstr "尚未选择文章。"
 
 #: plugin/i18n.js
 msgid "No body changes."
 msgstr "正文无变化。"
 
 #: plugin/i18n.js
+msgid "No compatible self-check templates are registered. Existing static content remains readable."
+msgstr "尚未登记兼容的自测样板；既有静态内容仍可阅读。"
+
+#: plugin/i18n.js
 msgid "No fields are applied by default. Select fields and preview again. Clearing a selection changes neither current article settings nor the header."
 msgstr "默认不应用。逐项选择后须重新预览；取消选择不会改写当前文章设置或头部。"
+
+#: plugin/i18n.js
+msgid "No indexed objects in the current content."
+msgstr "当前内容中没有可索引对象。"
+
+#: plugin/i18n.js
+msgid "No matching text."
+msgstr "未找到匹配文本。"
+
+#: plugin/i18n.js
+msgid "No proven preview range for this selection. Preview the current source again."
+msgstr "此选区没有可靠的位置映射，请重新预览当前源码。"
+
+#: plugin/i18n.js
+msgid "No readable reference targets found."
+msgstr "未找到可读取的引用目标。"
+
+#: plugin/i18n.js
+msgid "No reading is available for this term."
+msgstr "此项暂无可用读法。"
 
 #: plugin/i18n.js
 msgid "No recoverable candidate exists for the current identity and version."
@@ -2650,16 +4175,53 @@ msgid "Node (private server runtime)"
 msgstr "Node（服务器私有运行环境）"
 
 #: plugin/i18n.js
+msgid "Node diagram"
+msgstr "节点图"
+
+#: plugin/i18n.js
+msgid "Nodes"
+msgstr "节点"
+
+#: plugin/i18n.js
+msgid "Non-dropping particle"
+msgstr "不可省略前缀"
+
+#: plugin/i18n.js
 msgid "Nothing is stored by default. When enabled, drafts are stored as unencrypted text in this browser and may be accessible to other users of a shared device. At most 8 records and 1 MiB total, expiring after 7 days. This is not a substitute for saving to the site."
 msgstr "默认不保存。启用后，草稿以未加密文字保存在这个浏览器；共享设备上的其他使用者可能访问。最多 8 条、合计 1 MiB，7 天到期；不能替代站点保存。"
+
+#: plugin/i18n.js
+msgid "Numbered object"
+msgstr "编号对象"
 
 #: plugin/i18n.js
 msgid "Numbers must be finite"
 msgstr "数字必须有限"
 
 #: plugin/i18n.js
+msgid "Numeric"
+msgstr "数字编号"
+
+#, php-format
+#: plugin/i18n.js
+msgid "Object %1$s must contain exactly one matching formula, image, table or code block. The existing body has been preserved."
+msgstr "对象 %1$s 必须恰好包含一个匹配的公式、图片、表格或代码区块。现有正文已保留。"
+
+#: plugin/i18n.js
+msgid "Object or statement kind"
+msgstr "对象或声明类型"
+
+#: plugin/i18n.js
 msgid "Old line number"
 msgstr "旧行号"
+
+#: plugin/i18n.js
+msgid "Older baseline; compare and resolve conflicts before saving."
+msgstr "基线较旧；保存前请比较并解决冲突。"
+
+#: plugin/i18n.js
+msgid "One bibliography is allowed at top level before footnotes, without body blocks"
+msgstr "文章顶层至多有一个参考文献组，位于脚注前且不包含子区块"
 
 #: plugin/i18n.js
 msgid "One footnote section is allowed, at the document end"
@@ -2690,6 +4252,14 @@ msgid "Only creates an unsaved candidate. Fences, FrontMatter, and complete teac
 msgstr "仅生成未保存候选。围栏、FrontMatter 与完整教学容器按整体比较；无法定位的重复结构需明确选择。候选换行与末尾空白保持原字节。"
 
 #: plugin/i18n.js
+msgid "Only currently readable incoming references are shown. Other articles are not changed."
+msgstr "仅显示当前可读取的入链，不会修改其他文章。"
+
+#: plugin/i18n.js
+msgid "Only derived identifiers are indexed. Existing article bodies are never changed by initialization or rebuild."
+msgstr "索引仅存派生标识，初始化或重建不会修改既有文章正文。"
+
+#: plugin/i18n.js
 msgid "Only link buttons are supported, not action buttons"
 msgstr "仅支持链接按钮，不支持动作按钮"
 
@@ -2710,6 +4280,14 @@ msgid "Only steps are permitted in a steps group"
 msgstr "阶段组只能包含阶段"
 
 #: plugin/i18n.js
+msgid "Only unlinked native images are supported in this version"
+msgstr "此版本仅支持不带链接的原生图片"
+
+#: plugin/i18n.js
+msgid "Open created draft"
+msgstr "打开已创建的草稿"
+
+#: plugin/i18n.js
 msgid "Opening version"
 msgstr "打开时版本"
 
@@ -2718,8 +4296,28 @@ msgid "Operation completed."
 msgstr "操作完成。"
 
 #: plugin/i18n.js
+msgid "Option"
+msgstr "选项"
+
+#: plugin/i18n.js
 msgid "Optional ZIP dependencies are unavailable. Markdown single-file download remains available."
 msgstr "ZIP 所需可选环境不可用，Markdown 单文件仍可下载。"
+
+#: plugin/i18n.js
+msgid "Optional cover attachment ID"
+msgstr "可选封面附件 ID"
+
+#: plugin/i18n.js
+msgid "Options"
+msgstr "选项"
+
+#: plugin/i18n.js
+msgid "Order"
+msgstr "顺序"
+
+#: plugin/i18n.js
+msgid "Original Markdown"
+msgstr "原始 Markdown"
 
 #: plugin/i18n.js
 msgid "Original Markdown bytes, including header and code newlines, will be downloaded. Image URLs are preserved; images are not bundled."
@@ -2798,8 +4396,36 @@ msgid "PHP version"
 msgstr "PHP 版本"
 
 #: plugin/i18n.js
+msgid "Pages"
+msgstr "页码"
+
+#: plugin/i18n.js
+msgid "Paired backup failed. Current input remains in the editor. "
+msgstr "配对备份失败。当前输入仍在编辑器中。"
+
+#: plugin/i18n.js
+msgid "Paired backup storage failed. Current input is preserved; try again or download your candidate."
+msgstr "配对备份存储失败。当前输入已保留，请重试或下载候选以妥善保存。"
+
+#: plugin/i18n.js
+msgid "Paired backup storage is full. Delete some of your older backups or contact an administrator. Current input is preserved."
+msgstr "配对备份空间已满。请删除本账号部分旧备份或联系管理员；当前输入已保留。"
+
+#: plugin/i18n.js
+msgid "Paired backup verification failed. Current input is preserved; compare the article and try again."
+msgstr "配对备份校验失败。当前输入已保留，请比较文章后重试。"
+
+#: plugin/i18n.js
+msgid "Paired backups require the core WordPress MySQL connection. Normal editing remains available."
+msgstr "配对备份要求 WordPress 原生 MySQL 连接；常规编辑仍可使用。"
+
+#: plugin/i18n.js
 msgid "Paired body or accompanying field verification failed"
 msgstr "配对正文或附属字段核验失败"
+
+#: plugin/i18n.js
+msgid "Paper notes"
+msgstr "论文笔记"
 
 #: plugin/i18n.js
 msgid "Paragraph parsing failed"
@@ -2818,8 +4444,16 @@ msgid "Parameter JSON (data only; verified on save)"
 msgstr "参数 JSON（纯数据，保存时验证）"
 
 #: plugin/i18n.js
+msgid "Parameter form"
+msgstr "参数表单"
+
+#: plugin/i18n.js
 msgid "Parameter structure exceeds budget"
 msgstr "参数结构超出预算"
+
+#: plugin/i18n.js
+msgid "Parameters"
+msgstr "参数"
 
 #: plugin/i18n.js
 msgid "Parameters are data only. Explicitly apply or discard them. No code is executed."
@@ -2834,6 +4468,10 @@ msgid "Parameters exceed 16 KiB"
 msgstr "参数超过 16 KiB"
 
 #: plugin/i18n.js
+msgid "Parameters exceed the supported depth."
+msgstr "参数超过支持的深度。"
+
+#: plugin/i18n.js
 msgid "Parameters have not been applied. Apply or discard the parameter input before saving."
 msgstr "参数尚未应用；请应用或撤销参数输入后保存。"
 
@@ -2842,8 +4480,16 @@ msgid "Parameters must be a JSON object"
 msgstr "参数必须为 JSON 对象"
 
 #: plugin/i18n.js
+msgid "Parent term"
+msgstr "上层"
+
+#: plugin/i18n.js
 msgid "Passed"
 msgstr "通过"
+
+#: plugin/i18n.js
+msgid "Pasted source"
+msgstr "粘贴的源码"
 
 #: plugin/i18n.js
 msgid "Pending resource hint fields are invalid"
@@ -2874,8 +4520,28 @@ msgid "Permissions changed while reading merge inputs"
 msgstr "合并读取期间权限已变化"
 
 #: plugin/i18n.js
+msgid "Portable exports cannot carry local media attachment IDs"
+msgstr "便携导出不能携带本地媒体附件 ID"
+
+#: plugin/i18n.js
 msgid "Post-save content verification failed"
 msgstr "保存后内容核验失败"
+
+#: plugin/i18n.js
+msgid "Prepare a copy with a new identity"
+msgstr "准备使用新身份的副本"
+
+#: plugin/i18n.js
+msgid "Prepare bibliography v2 candidate"
+msgstr "准备文献 v2 候选"
+
+#: plugin/i18n.js
+msgid "Prepare conflict repair with a new identity"
+msgstr "准备使用新身份的冲突修复候选"
+
+#: plugin/i18n.js
+msgid "Prepare explicit identity migration"
+msgstr "准备显式保留身份的迁移候选"
 
 #: plugin/i18n.js
 msgid "Prepare export and resource manifest"
@@ -2886,6 +4552,18 @@ msgid "Prepare initial parameters"
 msgstr "准备初始参数"
 
 #: plugin/i18n.js
+msgid "Prepare or discard local author edits before applying parameters."
+msgstr "请先准备或丢弃本地作者编辑，再应用参数。"
+
+#: plugin/i18n.js
+msgid "Prepare snapshot"
+msgstr "准备快照"
+
+#: plugin/i18n.js
+msgid "Prepare the identity operation again. Current input is preserved."
+msgstr "请重新准备身份操作，当前输入已保留。"
+
+#: plugin/i18n.js
 msgid "Prepare three-way merge"
 msgstr "准备三方合并"
 
@@ -2894,12 +4572,28 @@ msgid "Preparing the export manifest…"
 msgstr "正在准备导出清单…"
 
 #: plugin/i18n.js
+msgid "Preparing this item. No article or media is created by preview."
+msgstr "正在准备此条目，预览不会创建文章或媒体。"
+
+#: plugin/i18n.js
+msgid "Preparing writing pattern…"
+msgstr "正在准备写作样板…"
+
+#: plugin/i18n.js
 msgid "Presentation resources could not be loaded"
 msgstr "展示资源暂时无法加载"
 
 #: plugin/i18n.js
 msgid "Preserve current component "
 msgstr "保留当前组件 "
+
+#: plugin/i18n.js
+msgid "Preview BibTeX mapping"
+msgstr "预览 BibTeX 映射"
+
+#: plugin/i18n.js
+msgid "Preview CSL-JSON mapping"
+msgstr "预览 CSL-JSON 映射"
 
 #: plugin/i18n.js
 msgid "Preview and explicitly confirm the write for a source-managed article."
@@ -2912,6 +4606,10 @@ msgstr "预览图片编码失败。"
 #: plugin/i18n.js
 msgid "Preview image verification failed."
 msgstr "预览图片校验失败。"
+
+#: plugin/i18n.js
+msgid "Preview images exceed their budget."
+msgstr "预览图片超过限制。"
 
 #: plugin/i18n.js
 msgid "Preview math font files are invalid. Try again."
@@ -2930,32 +4628,112 @@ msgid "Preview resources expired. Upload the ZIP again"
 msgstr "预览资源已失效，请重新上传 ZIP"
 
 #: plugin/i18n.js
+msgid "Preview the current source to enable navigation."
+msgstr "预览当前源码后可使用定位。"
+
+#: plugin/i18n.js
+msgid "Preview the mapping to the existing six bibliography fields. The entry type and original BibTeX are not stored separately. Nothing is applied until you apply bibliography edits."
+msgstr "先预览向现有六个文献字段的映射；不会另存条目类型或原始 BibTeX。应用文献修改后才会写入区块。"
+
+#: plugin/i18n.js
 msgid "Preview the metadata selection again before confirming."
 msgstr "元数据选择须重新预览后确认。"
+
+#: plugin/i18n.js
+msgid "Preview this item"
+msgstr "预览此条目"
+
+#: plugin/i18n.js
+msgid "Preview this item again before creating its draft."
+msgstr "请重新预览此条目，再创建草稿。"
 
 #: plugin/i18n.js
 msgid "Preview, then confirm the source write"
 msgstr "先预览，再确认写回"
 
 #: plugin/i18n.js
+msgid "Previewed; not saved"
+msgstr "已预览，尚未保存"
+
+#: plugin/i18n.js
+msgid "Previous match"
+msgstr "上一个匹配"
+
+#: plugin/i18n.js
 msgid "Previous stage"
 msgstr "上一阶段"
+
+#: plugin/i18n.js
+msgid "Previous term"
+msgstr "前一项"
 
 #: plugin/i18n.js
 msgid "Private Node.js is missing, outdated, or does not match the manifest."
 msgstr "私有 Node.js 缺失、版本过低或与清单不匹配。"
 
 #: plugin/i18n.js
+msgid "Private batch staging is unavailable."
+msgstr "批次私有暂存空间不可用。"
+
+#: plugin/i18n.js
+msgid "Private collection storage is unavailable. Refresh before retrying; no successful operation was reported."
+msgstr "文集私有存储不可用，请刷新后重试；当前操作未报告成功。"
+
+#: plugin/i18n.js
 msgid "Private export staging could not be created"
 msgstr "无法建立私有导出暂存"
+
+#: plugin/i18n.js
+msgid "Private input staging failed."
+msgstr "输入文件私有暂存失败。"
+
+#: plugin/i18n.js
+msgid "Private to your account. Up to 10 backups per article for 7 days; site quota 32 MiB. Restoring opens a candidate for comparison. Only an explicit save can update WordPress or a source file. New drafts and unconverted input use browser recovery."
+msgstr "备份仅本账号可访问，每篇最多 10 份、保留 7 天，全站配额 32 MiB。恢复会打开候选以供比较；只有明确保存才会更新 WordPress 或来源文件。新草稿和尚未转换的输入使用浏览器恢复。"
 
 #: plugin/i18n.js
 msgid "Process execution"
 msgstr "进程执行"
 
 #: plugin/i18n.js
+msgid "Proof"
+msgstr "证明"
+
+#: plugin/i18n.js
 msgid "Proposal: "
 msgstr "提案："
+
+#: plugin/i18n.js
+msgid "Proposed citation key"
+msgstr "候选引用键"
+
+#: plugin/i18n.js
+msgid "Proposed reference key"
+msgstr "拟使用的新文献键"
+
+#: plugin/i18n.js
+msgid "Proposed stable ID"
+msgstr "拟使用的新稳定标识"
+
+#: plugin/i18n.js
+msgid "Protocol"
+msgstr "协议"
+
+#: plugin/i18n.js
+msgid "Public"
+msgstr "公开"
+
+#: plugin/i18n.js
+msgid "Publication and source fields are limited to 512 plain characters"
+msgstr "出版与来源字段最多 512 个普通字符"
+
+#: plugin/i18n.js
+msgid "Publication or source"
+msgstr "发表刊物或出处"
+
+#: plugin/i18n.js
+msgid "Publication title"
+msgstr "刊物或会议名称"
 
 #: plugin/i18n.js
 msgid "Published privately"
@@ -2964,6 +4742,18 @@ msgstr "私密发布"
 #: plugin/i18n.js
 msgid "Published publicly"
 msgstr "公开发布"
+
+#: plugin/i18n.js
+msgid "Publisher"
+msgstr "出版者"
+
+#: plugin/i18n.js
+msgid "Question"
+msgstr "题意"
+
+#: plugin/i18n.js
+msgid "Question, hint, derivation and experiment"
+msgstr "题目、提示、推导与实验"
 
 #: plugin/i18n.js
 msgid "Raw FrontMatter header"
@@ -2990,12 +4780,20 @@ msgid "Read permissions"
 msgstr "读取权限"
 
 #: plugin/i18n.js
+msgid "Read source"
+msgstr "查看来源"
+
+#: plugin/i18n.js
 msgid "Read the latest server version again"
 msgstr "重新读取服务器最新版"
 
 #: plugin/i18n.js
 msgid "Reading ZIP data failed"
 msgstr "ZIP 数据读取失败"
+
+#: plugin/i18n.js
+msgid "Reading language"
+msgstr "读法语言"
 
 #: plugin/i18n.js
 msgid "Reading mode (full / staged)"
@@ -3006,6 +4804,10 @@ msgid "Reading revisions…"
 msgstr "正在读取历史版本……"
 
 #: plugin/i18n.js
+msgid "Reading suggestion: "
+msgstr "阅读建议："
+
+#: plugin/i18n.js
 msgid "Reading the latest server version…"
 msgstr "正在读取服务器最新版……"
 
@@ -3014,8 +4816,16 @@ msgid "Reading the server version…"
 msgstr "正在读取服务器版本……"
 
 #: plugin/i18n.js
+msgid "Ready for preview"
+msgstr "可预览"
+
+#: plugin/i18n.js
 msgid "Rechecking permissions, the article, and images…"
 msgstr "正在重新鉴权并核验当前文章与图片…"
+
+#: plugin/i18n.js
+msgid "Recognized result"
+msgstr "识别结果"
 
 #: plugin/i18n.js
 msgid "Recovery permission verification did not complete. Local recovery is paused; edited content remains on the page."
@@ -3026,16 +4836,144 @@ msgid "Recovery permissions could not be verified again. Local recovery is pause
 msgstr "无法重新校验恢复权限；本地恢复已暂停，编辑内容仍在页面中。"
 
 #: plugin/i18n.js
+msgid "Redo source change"
+msgstr "重做源码修改"
+
+#: plugin/i18n.js
 msgid "Reduce document size or nesting and use UTF-8 text without NUL."
 msgstr "请减少文档大小或嵌套层数，并使用不含 NUL 的 UTF-8 文本。"
+
+#: plugin/i18n.js
+msgid "Reference"
+msgstr "文献"
+
+#: plugin/i18n.js
+msgid "Reference URL (HTTP or HTTPS)"
+msgstr "文献链接（HTTP 或 HTTPS）"
+
+#: plugin/i18n.js
+msgid "Reference index operation completed."
+msgstr "引用索引操作已完成。"
+
+#: plugin/i18n.js
+msgid "Reference markers affected; no changes have been applied."
+msgstr "处引用标记将受影响，尚未应用更改。"
+
+#: plugin/i18n.js
+msgid "Reference permissions changed. Prepare the export again."
+msgstr "引用权限已变化，请重新准备导出。"
+
+#: plugin/i18n.js
+msgid "Reference target"
+msgstr "引用目标"
+
+#: plugin/i18n.js
+msgid "Reference title"
+msgstr "文献标题"
+
+#: plugin/i18n.js
+msgid "Reference transaction required."
+msgstr "需要引用事务保护。"
+
+#: plugin/i18n.js
+msgid "Reference type"
+msgstr "文献类型"
+
+#: plugin/i18n.js
+msgid "Reference verification failed. Current input is preserved."
+msgstr "引用校验失败，当前输入已保留。"
+
+#: plugin/i18n.js
+msgid "References within this batch point to its new drafts. References outside the batch are preserved."
+msgstr "本批文章之间的引用将指向本批新草稿，批外引用保持原目标。"
+
+#: plugin/i18n.js
+msgid "Refresh batch status"
+msgstr "刷新批次状态"
+
+#: plugin/i18n.js
+msgid "Refresh collections"
+msgstr "刷新文集"
+
+#: plugin/i18n.js
+msgid "Refresh content navigation"
+msgstr "刷新内容导航"
 
 #: plugin/i18n.js
 msgid "Refresh or sign in again to verify recovery permissions."
 msgstr "请刷新页面或重新登录后校验恢复权限。"
 
 #: plugin/i18n.js
+msgid "Refresh paired backups"
+msgstr "刷新配对备份"
+
+#: plugin/i18n.js
 msgid "Registered teaching component"
 msgstr "登记的教学组件"
+
+#: plugin/i18n.js
+msgid "Rejected registrations"
+msgstr "被拒绝的登记"
+
+#: plugin/i18n.js
+msgid "Removal count"
+msgstr "移除数量"
+
+#: plugin/i18n.js
+msgid "Remove article"
+msgstr "移除文章"
+
+#: plugin/i18n.js
+msgid "Remove author"
+msgstr "移除作者"
+
+#: plugin/i18n.js
+msgid "Remove bibliography entry"
+msgstr "删除文献条目"
+
+#: plugin/i18n.js
+msgid "Remove end date"
+msgstr "移除结束日期"
+
+#: plugin/i18n.js
+msgid "Remove field"
+msgstr "删除字段"
+
+#: plugin/i18n.js
+msgid "Remove item"
+msgstr "删除项目"
+
+#: plugin/i18n.js
+msgid "Rename label and references"
+msgstr "更名并更新引用"
+
+#: plugin/i18n.js
+msgid "Rename label or reference key"
+msgstr "重命名标签或文献键"
+
+#: plugin/i18n.js
+msgid "Replace all"
+msgstr "全部替换"
+
+#: plugin/i18n.js
+msgid "Replace bibliography entries"
+msgstr "替换文献条目"
+
+#: plugin/i18n.js
+msgid "Replace selection"
+msgstr "替换选中匹配"
+
+#: plugin/i18n.js
+msgid "Replace with"
+msgstr "替换为"
+
+#: plugin/i18n.js
+msgid "Replaced matches: "
+msgstr "已替换："
+
+#: plugin/i18n.js
+msgid "Report"
+msgstr "报告"
 
 #: plugin/i18n.js
 msgid "Request and base documentId must match"
@@ -3056,6 +4994,10 @@ msgstr "保留的内部教学标记不能作为 Markdown 输入"
 #: plugin/i18n.js
 msgid "Reset size"
 msgstr "重置大小"
+
+#: plugin/i18n.js
+msgid "Resource SHA-256"
+msgstr "资源 SHA-256"
 
 #: plugin/i18n.js
 msgid "Resource ZIP import requires PHP zip, intl, and POSIX-safe staging. Ordinary Markdown editing remains available."
@@ -3118,6 +5060,10 @@ msgid "Resources changed during preparation. Prepare again"
 msgstr "资源在准备期间变化，请重新准备"
 
 #: plugin/i18n.js
+msgid "Restart rebuild"
+msgstr "重新开始重建"
+
+#: plugin/i18n.js
 msgid "Restoration differences"
 msgstr "恢复差异"
 
@@ -3150,8 +5096,12 @@ msgid "Restoring both representations together…"
 msgstr "正在同时恢复两种格式……"
 
 #: plugin/i18n.js
+msgid "Resume batch"
+msgstr "恢复批次"
+
+#: plugin/i18n.js
 msgid "Retry formula typesetting"
-msgstr "重试公式排版"
+msgstr "重新排版公式"
 
 #: plugin/i18n.js
 msgid "Retry local recovery verification"
@@ -3177,6 +5127,26 @@ msgstr "返回页签阅读"
 #: plugin/i18n.js
 msgid "Reverse conversion requires an explicit Markdown source document"
 msgstr "只有明确Markdown来源文档允许反向转换"
+
+#: plugin/i18n.js
+msgid "Review and explicitly acknowledge the proposed citation keys before adopting the candidate"
+msgstr "采用候选前，请核对并明确确认候选引用键"
+
+#: plugin/i18n.js
+msgid "Review and explicitly acknowledge unsupported CSL-JSON fields before adopting the candidate"
+msgstr "采用候选前，请核对并明确确认不支持的 CSL-JSON 字段"
+
+#: plugin/i18n.js
+msgid "Review the conflicting article and prepare a new identity."
+msgstr "检查冲突文章并准备新身份候选。"
+
+#: plugin/i18n.js
+msgid "Review the content below, then create only this draft. A created draft remains saved if another item fails."
+msgstr "请检查下方内容，再单独创建此草稿。其他条目失败不会撤销已创建的草稿。"
+
+#: plugin/i18n.js
+msgid "Review this item"
+msgstr "检查此条目"
 
 #: plugin/i18n.js
 msgid "Revision content preview"
@@ -3223,6 +5193,14 @@ msgid "Right title"
 msgstr "右侧标题"
 
 #: plugin/i18n.js
+msgid "Rights statement"
+msgstr "版权声明"
+
+#: plugin/i18n.js
+msgid "Rows"
+msgstr "行"
+
+#: plugin/i18n.js
 msgid "Runtime dependencies"
 msgstr "运行依赖"
 
@@ -3251,6 +5229,10 @@ msgid "Save as "
 msgstr "保存为 "
 
 #: plugin/i18n.js
+msgid "Save collection configuration"
+msgstr "保存文集配置"
+
+#: plugin/i18n.js
 msgid "Save directly; both formats stay in sync"
 msgstr "可直接保存，双格式同步"
 
@@ -3259,12 +5241,20 @@ msgid "Save display settings"
 msgstr "保存显示设置"
 
 #: plugin/i18n.js
+msgid "Save needs verification; do not import again"
+msgstr "保存结果待核查，请勿再次导入"
+
+#: plugin/i18n.js
 msgid "Save status"
 msgstr "保存状态"
 
 #: plugin/i18n.js
 msgid "Save succeeded. Only this tab's candidates matching this save were cleaned; other changes are preserved."
 msgstr "成功保存；仅清理与本次保存相同的本标签页候选，其他修改保留。"
+
+#: plugin/i18n.js
+msgid "Saved collections"
+msgstr "已保存文集"
 
 #: plugin/i18n.js
 msgid "Saving both representations…"
@@ -3279,12 +5269,88 @@ msgid "Saving failed and rollback was unavailable. Contact an administrator."
 msgstr "保存失败且无法回滚，请联系管理员。"
 
 #: plugin/i18n.js
+msgid "Scan finished. Correct blocked originals or preview valid items. Duplicate warnings do not overwrite existing articles."
+msgstr "扫描完成。请修正被拒绝的原文件，或预览有效条目。重复警告不会覆盖已有文章。"
+
+#: plugin/i18n.js
+msgid "Scan selected files"
+msgstr "扫描所选文件"
+
+#: plugin/i18n.js
+msgid "Scanning files. No articles or media are created."
+msgstr "正在扫描文件，不会创建文章或媒体。"
+
+#: plugin/i18n.js
 msgid "Scroll horizontally to read long lines. Focus the code and use the arrow keys."
 msgstr "长行可横向滚动；聚焦代码后可使用方向键。"
 
 #: plugin/i18n.js
+msgid "Search"
+msgstr "搜索"
+
+#: plugin/i18n.js
+msgid "Search editable articles"
+msgstr "搜索可编辑文章"
+
+#: plugin/i18n.js
+msgid "Search for saved articles you can edit."
+msgstr "搜索当前账号可编辑的已保存文章。"
+
+#: plugin/i18n.js
+msgid "Search reference targets"
+msgstr "搜索引用目标"
+
+#: plugin/i18n.js
+msgid "Select a preview object, or use Tab and Enter, to locate its source."
+msgstr "点击预览对象，或使用 Tab 和 Enter，定位其源码。"
+
+#: plugin/i18n.js
+msgid "Select at least one article before preparing a snapshot."
+msgstr "请至少选择一篇文章再准备快照。"
+
+#: plugin/i18n.js
+msgid "Select editable public articles without passwords, or explicitly include selected private drafts. Password-protected articles are not supported."
+msgstr "请选择可编辑且无密码的公开文章，或明确包含所选私人草稿。本期不支持密码保护文章。"
+
+#: plugin/i18n.js
+msgid "Select the same bibliography block before using this candidate"
+msgstr "请先选中原文献区块再使用此候选"
+
+#: plugin/i18n.js
+msgid "Selected article usage"
+msgstr "所选文章的使用情况"
+
+#: plugin/i18n.js
+msgid "Selected files repeat a logical identity. Correct the ambiguous originals before preparing the batch."
+msgstr "所选文件含重复逻辑身份，请先修正歧义再准备批量导入。"
+
+#: plugin/i18n.js
+msgid "Selected mathematical expression"
+msgstr "当前选择的数学表达式"
+
+#: plugin/i18n.js
+msgid "Selected the containing structure."
+msgstr "已选中所属结构。"
+
+#: plugin/i18n.js
+msgid "Selected the source object."
+msgstr "已选中源码对象。"
+
+#: plugin/i18n.js
+msgid "Semantic exploration is unavailable for this formula."
+msgstr "此公式暂不支持结构探索。"
+
+#: plugin/i18n.js
 msgid "Separator must be empty"
 msgstr "分隔符必须为空"
+
+#: plugin/i18n.js
+msgid "Series"
+msgstr "序列"
+
+#: plugin/i18n.js
+msgid "Server paired backups"
+msgstr "服务端配对备份"
 
 #, php-format
 #: plugin/i18n.js
@@ -3302,6 +5368,10 @@ msgstr "显示全部代码版本"
 #: plugin/i18n.js
 msgid "Show copy buttons in frontend code toolbars. Highlighting and language labels remain available."
 msgstr "在前台代码工具栏中显示复制按钮；代码高亮与语言标签继续工作。"
+
+#: plugin/i18n.js
+msgid "Show diagram"
+msgstr "显示图示"
 
 #: plugin/i18n.js
 msgid "Show full text"
@@ -3324,6 +5394,10 @@ msgid "Sign in again with an account that can edit."
 msgstr "请重新登录有编辑权限的账号。"
 
 #: plugin/i18n.js
+msgid "Sign in with an account that can create drafts."
+msgstr "请使用有权创建草稿的账号登录。"
+
+#: plugin/i18n.js
 msgid "Sign-in or editing permission was lost. This account's local candidates were cleared. Sign in and explicitly enable recovery again."
 msgstr "登录或编辑权限已失效；本账号的本地候选已清除，请重新登录后手动启用。"
 
@@ -3336,8 +5410,32 @@ msgid "Simple task lists were unsupported by the historical parser"
 msgstr "历史解析器不支持简单任务列表"
 
 #: plugin/i18n.js
+msgid "Size"
+msgstr "规模"
+
+#: plugin/i18n.js
+msgid "Snapshot ZIP"
+msgstr "快照 ZIP"
+
+#: plugin/i18n.js
+msgid "Snapshot matches declared version"
+msgstr "快照与声明版本一致"
+
+#: plugin/i18n.js
+msgid "Software"
+msgstr "软件"
+
+#: plugin/i18n.js
 msgid "Some interrupted media could not be cleaned. Try later"
 msgstr "中断媒体未能全部清理，请稍后重试"
+
+#: plugin/i18n.js
+msgid "Some structures have only partial position hints."
+msgstr "部分结构仅提供保守的位置提示。"
+
+#: plugin/i18n.js
+msgid "Source"
+msgstr "来源"
 
 #: plugin/i18n.js
 msgid "Source and differences"
@@ -3348,8 +5446,20 @@ msgid "Source and serialized snapshot do not match"
 msgstr "原文与序列化快照不匹配"
 
 #: plugin/i18n.js
+msgid "Source beside preview"
+msgstr "源码与预览并排"
+
+#: plugin/i18n.js
 msgid "Source binding verification failed."
 msgstr "源文件绑定校验失败。"
+
+#: plugin/i18n.js
+msgid "Source comparison unavailable"
+msgstr "暂时无法比较来源"
+
+#: plugin/i18n.js
+msgid "Source declarations do not prove authenticity or grant library access. Article snapshots remain readable without the library."
+msgstr "来源声明不证明真实性，也不授予资料库权限。停用资料库后，文章快照仍可阅读。"
 
 #: plugin/i18n.js
 msgid "Source file content or its version fingerprint is missing."
@@ -3422,8 +5532,49 @@ msgid "Staging directory permissions could not be restricted"
 msgstr "无法限制暂存目录权限"
 
 #: plugin/i18n.js
+msgid "Start"
+msgstr "起点"
+
+#: plugin/i18n.js
+msgid "Start date"
+msgstr "开始日期"
+
+#: plugin/i18n.js
 msgid "Start interactive demonstration"
 msgstr "启动交互演示"
+
+#, php-format
+#: plugin/i18n.js
+msgid "Statement %1$s requires body content."
+msgstr "声明 %1$s 需要正文内容。"
+
+#: plugin/i18n.js
+msgid "Statements"
+msgstr "声明"
+
+#: plugin/i18n.js
+msgid "Static HTML embeds verified local images and typeset formulas for offline reading. External images become links and are not fetched; unverified local images are refused. All stages and code versions are included; interactive demonstrations use their static fallback."
+msgstr "静态 HTML 内嵌经核验的本地图片与排版公式，供离线阅读。外部图片转为链接且不抓取；未核验的本地图片会被拒绝。所有阶段和代码版本完整保留；交互演示使用静态替代内容。"
+
+#: plugin/i18n.js
+msgid "Static HTML embeds verified local images and typeset formulas for offline reading. External or unrelated images are refused. All stages and code versions are included; interactive demonstrations use their static fallback."
+msgstr "静态 HTML 内嵌已核验的本地图片及排版公式，供离线阅读；拒绝外部或无关联图片。包含全部阶段及代码版本，交互演示保留作者的静态替代内容。"
+
+#: plugin/i18n.js
+msgid "Static HTML for offline reading"
+msgstr "静态 HTML（离线阅读）"
+
+#: plugin/i18n.js
+msgid "Static HTML preview"
+msgstr "静态 HTML 预览"
+
+#: plugin/i18n.js
+msgid "Static HTML requires every image to be a verified local attachment of this article"
+msgstr "静态 HTML 要求每张图片都是已核验的本篇文章本地附件"
+
+#: plugin/i18n.js
+msgid "Static activity relations"
+msgstr "活动静态关系"
 
 #: plugin/i18n.js
 msgid "Static adapter "
@@ -3478,16 +5629,60 @@ msgid "Static registrations changed while rendering the preview. The candidate w
 msgstr "预览生成期间静态登记已变化，候选未写入；请重新预览。"
 
 #: plugin/i18n.js
+msgid "Static syntax engine unavailable"
+msgstr "静态代码高亮引擎不可用"
+
+#: plugin/i18n.js
+msgid "Static syntax resource timeout"
+msgstr "静态代码高亮资源加载超时"
+
+#: plugin/i18n.js
+msgid "Static syntax resource unavailable"
+msgstr "静态代码高亮资源不可用"
+
+#: plugin/i18n.js
+msgid "Static syntax token budget"
+msgstr "静态代码高亮超出标记预算"
+
+#: plugin/i18n.js
+msgid "Static view unavailable. Original content and read-only configuration are preserved."
+msgstr "静态视图不可用，原内容和只读配置已保留。"
+
+#: plugin/i18n.js
 msgid "Status"
 msgstr "状态"
+
+#: plugin/i18n.js
+msgid "Status refreshed. Preview unfinished items again before confirmation."
+msgstr "状态已刷新，请重新预览未完成的条目再确认。"
 
 #: plugin/i18n.js
 msgid "Step must be a direct child of steps"
 msgstr "阶段必须为阶段组直接子块"
 
 #: plugin/i18n.js
+msgid "Structure"
+msgstr "结构"
+
+#: plugin/i18n.js
+msgid "Structured reading and exploration"
+msgstr "结构读法与逐项探索"
+
+#: plugin/i18n.js
+msgid "Structured year, month and day"
+msgstr "结构化年月日"
+
+#: plugin/i18n.js
+msgid "Sync by content anchors"
+msgstr "按内容锚点同步滚动"
+
+#: plugin/i18n.js
 msgid "Synchronize horizontal scrolling"
 msgstr "联动横向滚动"
+
+#: plugin/i18n.js
+msgid "Table"
+msgstr "表"
 
 #: plugin/i18n.js
 msgid "Table blocks cannot contain child blocks"
@@ -3510,8 +5705,16 @@ msgid "Table width must be consistent"
 msgstr "表格宽度必须一致"
 
 #: plugin/i18n.js
+msgid "Tables"
+msgstr "表格"
+
+#: plugin/i18n.js
 msgid "Tag slugs"
 msgstr "标签 slugs"
+
+#: plugin/i18n.js
+msgid "Target"
+msgstr "目标"
 
 #: plugin/i18n.js
 msgid "Task content"
@@ -3602,6 +5805,10 @@ msgid "Teaching containers require a complete :::mbb:v1 name and JSON attributes
 msgstr "教学容器需使用完整的 :::mbb:v1 名称 JSON 属性"
 
 #: plugin/i18n.js
+msgid "Teaching example"
+msgstr "教学样例"
+
+#: plugin/i18n.js
 msgid "Teaching nesting exceeds the structural limit"
 msgstr "教学嵌套超出结构上限"
 
@@ -3618,8 +5825,49 @@ msgid "Teaching structure exceeds its depth or node budget"
 msgstr "教学结构超出深度或节点数量边界"
 
 #: plugin/i18n.js
+msgid "Teaching structures"
+msgstr "教学结构"
+
+#: plugin/i18n.js
 msgid "Teaching title must be nonempty single-line text"
 msgstr "教学标题必须为非空单行文字"
+
+#, php-format
+#: plugin/i18n.js
+msgid "Technical block %1$s has incomplete or invalid fields."
+msgstr "技术写作区块 %1$s 的字段不完整或无效。"
+
+#: plugin/i18n.js
+msgid "Technical details"
+msgstr "技术详情"
+
+#: plugin/i18n.js
+msgid "Technical object settings"
+msgstr "技术写作对象设置"
+
+#: plugin/i18n.js
+msgid "Technical objects and statements must not be inside footnotes"
+msgstr "编号对象和声明不能放在脚注定义内"
+
+#: plugin/i18n.js
+msgid "Technical objects exceed the document budget"
+msgstr "技术写作对象超过文档预算"
+
+#: plugin/i18n.js
+msgid "Technical references exceed the document budget"
+msgstr "技术写作引用超过文档预算"
+
+#: plugin/i18n.js
+msgid "Technical references must not be inside links or images"
+msgstr "交叉引用和文献引用不能放在链接或图片文字中"
+
+#: plugin/i18n.js
+msgid "Technical tutorial"
+msgstr "技术教程"
+
+#: plugin/i18n.js
+msgid "Technical writing"
+msgstr "技术写作"
 
 #: plugin/i18n.js
 msgid "Template tag nesting would change the saved structure"
@@ -3644,6 +5892,14 @@ msgstr "末尾换行必须为布尔值"
 #: plugin/i18n.js
 msgid "Text blocks cannot contain child blocks"
 msgstr "文字区块不能包含子区块"
+
+#: plugin/i18n.js
+msgid "Text edits have not been applied. Apply or discard them before saving."
+msgstr "文字修改尚未应用。请先应用或放弃，再保存。"
+
+#: plugin/i18n.js
+msgid "The BibTeX file could not be read as bounded UTF-8 text"
+msgstr "无法按规定大小的 UTF-8 文本读取 BibTeX 文件"
 
 #: plugin/i18n.js
 msgid "The FrontMatter closing delimiter is missing"
@@ -3767,6 +6023,18 @@ msgid "The article changed. Preview again before importing"
 msgstr "文章已变化，请重新预览后导入"
 
 #: plugin/i18n.js
+msgid "The article contains an unsafe HTML attribute"
+msgstr "文章包含不安全的 HTML 属性"
+
+#: plugin/i18n.js
+msgid "The article contains an unsafe inline style"
+msgstr "文章包含不安全的行内样式"
+
+#: plugin/i18n.js
+msgid "The article contains content outside the static HTML subset"
+msgstr "文章包含静态 HTML 子集以外的内容"
+
+#: plugin/i18n.js
 msgid "The article does not exist."
 msgstr "文章不存在。"
 
@@ -3803,6 +6071,10 @@ msgid "The article is trashed or not editable. Local candidates are preserved. R
 msgstr "文章已在回收站或不可编辑。本地候选保留；请先通过 WordPress 正常还原。"
 
 #: plugin/i18n.js
+msgid "The article is unavailable or changed. Reload to continue."
+msgstr "文章不可用或已变化，请刷新后继续。"
+
+#: plugin/i18n.js
 msgid "The article or source binding changed. The old baseline cannot be reused"
 msgstr "文章或来源绑定已变化，不能沿用旧基线"
 
@@ -3831,8 +6103,56 @@ msgid "The article, source identity, or version changed. Upload the ZIP again"
 msgstr "文章、来源身份或版本已变化，请重新上传 ZIP"
 
 #: plugin/i18n.js
+msgid "The author candidate changed. Preview again."
+msgstr "作者候选已变化，请重新预览。"
+
+#: plugin/i18n.js
 msgid "The author or site identity changed. Local recovery is disabled."
 msgstr "作者或站点身份已变化，本地恢复已停用。"
+
+#: plugin/i18n.js
+msgid "The batch exceeds its file type, per-file or 16 MiB upload budget."
+msgstr "批次不符合文件类型、单文件大小或总计 16 MiB 的上传限制。"
+
+#: plugin/i18n.js
+msgid "The batch exceeds the 128 MP image processing budget."
+msgstr "批次超过总计 1.28 亿像素的图片处理限制。"
+
+#: plugin/i18n.js
+msgid "The batch exceeds the 32 MiB expanded budget."
+msgstr "批次超过总计 32 MiB 的展开大小限制。"
+
+#: plugin/i18n.js
+msgid "The batch expired or is unavailable. Prepare the files again."
+msgstr "批次已过期或不可用，请重新准备文件。"
+
+#: plugin/i18n.js
+msgid "The batch expired. Saved drafts remain; prepare the remaining files again."
+msgstr "批次已过期。已保存的草稿仍保留，请重新准备其余文件。"
+
+#: plugin/i18n.js
+msgid "The batch identity is invalid."
+msgstr "批次标识无效。"
+
+#: plugin/i18n.js
+msgid "The batch lock could not be opened."
+msgstr "无法打开批次锁。"
+
+#: plugin/i18n.js
+msgid "The batch operation did not complete. Refresh its status before trying again."
+msgstr "批量操作未完成，请刷新状态后再试。"
+
+#: plugin/i18n.js
+msgid "The batch preview is incomplete. Refresh its status."
+msgstr "批次预览不完整，请刷新状态。"
+
+#: plugin/i18n.js
+msgid "The batch staging directory could not be created."
+msgstr "无法创建批次暂存目录。"
+
+#: plugin/i18n.js
+msgid "The bibliography must precede footnote definitions"
+msgstr "参考文献组必须位于脚注定义之前"
 
 #: plugin/i18n.js
 msgid "The block attribute JSON is invalid"
@@ -3939,6 +6259,10 @@ msgid "The candidate body exceeds 256 KiB or has an unsupported format. Edited c
 msgstr "候选正文超过 256 KiB 或格式不受支持；编辑内容仍在页面中，可下载保留。"
 
 #: plugin/i18n.js
+msgid "The candidate changed. Preview the differences again before saving."
+msgstr "候选已修改。保存前请重新预览差异。"
+
+#: plugin/i18n.js
 msgid "The candidate could not be restored as blocks."
 msgstr "候选无法恢复为区块。"
 
@@ -3967,12 +6291,32 @@ msgid "The code language must be a safe ASCII token of at most 64 characters"
 msgstr "代码语言需为最长 64 位安全 ASCII 标记"
 
 #: plugin/i18n.js
+msgid "The collection budget is full. Cancel an unused candidate or reduce the selected articles or images. Saved articles are unchanged."
+msgstr "文集预算已满，请取消未使用的候选，或减少所选文章和图片；已保存文章保持不变。"
+
+#: plugin/i18n.js
+msgid "The collection input is invalid. Current fields are preserved."
+msgstr "文集输入无效，当前字段已保留。"
+
+#: plugin/i18n.js
+msgid "The collection operation failed. Current fields are preserved."
+msgstr "文集操作未完成，当前字段已保留。"
+
+#: plugin/i18n.js
+msgid "The collection, article, permissions, or resources changed. Prepare a new snapshot; saved articles are unchanged."
+msgstr "文集、文章、权限或资源已变化，请重新准备快照；已保存文章保持不变。"
+
+#: plugin/i18n.js
 msgid "The commit result could not be reliably confirmed. Current source, media, and import records are preserved. Verify the article before importing again."
 msgstr "提交结果无法可靠确认；已保留当前源稿、媒体和导入记录，请重新核对文章，勿重复导入。"
 
 #: plugin/i18n.js
 msgid "The commit result could not be reliably confirmed. Verify the article before saving again."
 msgstr "提交结果无法可靠确认，请重新核对文章，勿直接重复保存。"
+
+#: plugin/i18n.js
+msgid "The component changed while this candidate was open. Review or discard the candidate."
+msgstr "候选打开后组件已变化，请核对或放弃该候选。"
 
 #: plugin/i18n.js
 msgid "The component could not be loaded."
@@ -4009,6 +6353,10 @@ msgstr "组件消息格式无效。"
 #: plugin/i18n.js
 msgid "The component resource digest does not match"
 msgstr "组件资源摘要不匹配"
+
+#: plugin/i18n.js
+msgid "The component resource has an unexpected content type."
+msgstr "组件资源的内容类型不正确。"
 
 #: plugin/i18n.js
 msgid "The component resource is too large"
@@ -4150,6 +6498,10 @@ msgstr "缺少当前文档版本，请重新载入后保存。"
 #: plugin/i18n.js
 msgid "The current formula could not be located. Select it again."
 msgstr "无法定位当前公式，请重新选择。"
+
+#: plugin/i18n.js
+msgid "The current logical identity must be retained. Prepare an explicit copy candidate instead."
+msgstr "必须保留当前逻辑身份；如需副本，请显式准备复制候选。"
 
 #: plugin/i18n.js
 msgid "The current user's staging directory could not be prepared"
@@ -4340,6 +6692,10 @@ msgid "The featured image must be a nonnegative safe integer"
 msgstr "特色图片需为非负安全整数"
 
 #: plugin/i18n.js
+msgid "The field has an invalid type."
+msgstr "字段类型无效。"
+
+#: plugin/i18n.js
 msgid "The file is too large."
 msgstr "文件过大。"
 
@@ -4404,12 +6760,28 @@ msgid "The formula is too long"
 msgstr "公式过长"
 
 #: plugin/i18n.js
+msgid "The formula preview engine is unavailable for static export"
+msgstr "静态导出所需的公式预览引擎不可用"
+
+#: plugin/i18n.js
 msgid "The formula syntax cannot be typeset"
 msgstr "公式语法无法排版"
 
 #: plugin/i18n.js
 msgid "The header proposal changed. Previous metadata selections were reset; choose them again."
 msgstr "头部提案已变化，原元数据选择已重置，请重新选择。"
+
+#: plugin/i18n.js
+msgid "The historical identity differs. Compare the exact revision without changing the current identity."
+msgstr "历史身份不同，请比较原始历史版本；当前身份不会改变。"
+
+#: plugin/i18n.js
+msgid "The history candidate provenance could not be saved."
+msgstr "历史候选来源记录无法保存。"
+
+#: plugin/i18n.js
+msgid "The image URL does not match its local attachment"
+msgstr "图片地址与本地附件不匹配"
 
 #: plugin/i18n.js
 msgid "The image digest could not be read"
@@ -4432,8 +6804,16 @@ msgid "The image path must not contain symbolic links"
 msgstr "图片路径不能包含符号链接"
 
 #: plugin/i18n.js
+msgid "The image pixels exceed the remaining batch budget"
+msgstr "图片像素数超过批次剩余预算"
+
+#: plugin/i18n.js
 msgid "The import commit state is uncertain. Media and private records are preserved. Verify the article before trying again"
 msgstr "导入提交状态不确定；已保留媒体与私有记录，请核对文章后重试"
+
+#: plugin/i18n.js
+msgid "The installed extension catalog exceeds its display budget."
+msgstr "已安装扩展目录超过显示预算。"
 
 #: plugin/i18n.js
 msgid "The integer exceeds its registered budget"
@@ -4450,6 +6830,10 @@ msgstr "隔离组件发生未授权导航。"
 #: plugin/i18n.js
 msgid "The isolated component is ready."
 msgstr "隔离组件已就绪。"
+
+#: plugin/i18n.js
+msgid "The item count is outside the registered bounds."
+msgstr "项目数量超出已登记的范围。"
 
 #: plugin/i18n.js
 msgid "The latest server signature is incomplete"
@@ -4475,6 +6859,10 @@ msgstr "本地候选已更新；尚未保存到站点。"
 #: plugin/i18n.js
 msgid "The local difference exceeds 12,000 cells. Compare manually"
 msgstr "局部差异超过 12,000 单元，请手动比较"
+
+#: plugin/i18n.js
+msgid "The local image attachment is missing or is not available to this author"
+msgstr "本地图片附件缺失，或当前作者无权使用"
 
 #: plugin/i18n.js
 msgid "The manifest format is valid."
@@ -4613,6 +7001,10 @@ msgid "The new media directory contains links or objects outside its boundary"
 msgstr "新媒体目录包含链接或越界对象"
 
 #: plugin/i18n.js
+msgid "The number is outside the registered bounds."
+msgstr "数值超出已登记的范围。"
+
+#: plugin/i18n.js
 msgid "The opening baseline expired. Preserve the candidate and reconcile again"
 msgstr "打开基线已过期，请保留候选并重新协调"
 
@@ -4625,6 +7017,10 @@ msgid "The opening version is missing"
 msgstr "缺少打开时版本"
 
 #: plugin/i18n.js
+msgid "The original English reading is available, but this expression cannot be explored structurally."
+msgstr "可显示原始英文读法，但此表达式暂不支持逐项探索。"
+
+#: plugin/i18n.js
 msgid "The original categories or tags could not be read"
 msgstr "无法读取原分类或标签"
 
@@ -4635,6 +7031,10 @@ msgstr "原代码含 CR/CRLF；显示框可能以 LF 显示。切换与重开保
 #: plugin/i18n.js
 msgid "The original component pair is damaged and cannot authorize preservation of unregistered configuration."
 msgstr "原组件配对已损坏，不能据此保留未登记配置。"
+
+#: plugin/i18n.js
+msgid "The original label or key is missing or duplicated"
+msgstr "原标识或文献键缺失或重复"
 
 #: plugin/i18n.js
 msgid "The page is suspended. Explicitly restart the interactive preview after returning."
@@ -4685,12 +7085,64 @@ msgid "The proposed conversion backend failed verification. Original settings ar
 msgstr "候选转换方案未通过验证，原设置保持不变。"
 
 #: plugin/i18n.js
+msgid "The proposed label or key already exists"
+msgstr "拟使用的标识或文献键已存在"
+
+#: plugin/i18n.js
+msgid "The publication client is unavailable. Enable its matching version and prepare again."
+msgstr "出版客户端不可用，请启用匹配版本并重新准备。"
+
+#: plugin/i18n.js
+msgid "The publication output is invalid or exceeds its budget."
+msgstr "出版产物无效或超过预算，请减少内容后重试。"
+
+#: plugin/i18n.js
 msgid "The recovery session changed."
 msgstr "恢复会话已变化。"
 
 #: plugin/i18n.js
 msgid "The recovery session or current account changed."
 msgstr "恢复会话或当前账号已变化。"
+
+#: plugin/i18n.js
+msgid "The reference database connection is unavailable. Current input is preserved."
+msgstr "引用数据库连接不可用，当前输入已保留。"
+
+#: plugin/i18n.js
+msgid "The reference index could not be verified. Current input is preserved."
+msgstr "引用索引无法验证，当前输入已保留。"
+
+#: plugin/i18n.js
+msgid "The reference index has not been initialized."
+msgstr "引用索引尚未初始化。"
+
+#: plugin/i18n.js
+msgid "The reference index is not ready. An administrator can initialize or rebuild it."
+msgstr "引用索引尚未就绪，管理员可初始化或重建。"
+
+#: plugin/i18n.js
+msgid "The reference index is stale. Ask an administrator to rebuild it."
+msgstr "引用索引已过期，请管理员重建。"
+
+#: plugin/i18n.js
+msgid "The reference operation input is invalid."
+msgstr "引用操作输入无效。"
+
+#: plugin/i18n.js
+msgid "The remaining expanded batch budget is exhausted"
+msgstr "批次剩余展开大小预算已耗尽"
+
+#: plugin/i18n.js
+msgid "The replacement exceeds the source size limit."
+msgstr "替换后超过源码大小限制。"
+
+#: plugin/i18n.js
+msgid "The replacement would remove currently cited keys"
+msgstr "此替换会移除当前已引用的键"
+
+#: plugin/i18n.js
+msgid "The request failed. Sign in again if necessary, then refresh batch status."
+msgstr "请求失败。如有需要，请重新登录，再刷新批次状态。"
 
 #: plugin/i18n.js
 msgid "The request is too large."
@@ -4773,6 +7225,10 @@ msgid "The runtime does not match the current WordPress version."
 msgstr "运行环境与当前 WordPress 版本不匹配。"
 
 #: plugin/i18n.js
+msgid "The save result needs verification. Do not import this item again."
+msgstr "保存结果需要核查，请勿再次导入此条目。"
+
+#: plugin/i18n.js
 msgid "The save transaction could not be started"
 msgstr "无法开启保存事务"
 
@@ -4789,6 +7245,10 @@ msgid "The saved article changed. Prepare the export again"
 msgstr "已保存文章已变化，请重新准备导出"
 
 #: plugin/i18n.js
+msgid "The saved document changed. The reference index was not committed."
+msgstr "已保存文档发生变化，引用索引未提交。"
+
+#: plugin/i18n.js
 msgid "The saved document identity is invalid"
 msgstr "已保存文档身份无效"
 
@@ -4797,8 +7257,40 @@ msgid "The saved representations do not match and cannot be exported"
 msgstr "已保存双格式不匹配，不能导出"
 
 #: plugin/i18n.js
+msgid "The selected publication adapter is unavailable."
+msgstr "所选出版适配器不可用。"
+
+#: plugin/i18n.js
+msgid "The selected reference target no longer exists."
+msgstr "所选引用目标已不存在。"
+
+#: plugin/i18n.js
+msgid "The selected scope exceeds the usage report limit. Choose fewer articles."
+msgstr "所选范围超过使用报告上限，请减少文章数量。"
+
+#: plugin/i18n.js
 msgid "The selection contains other formatting or objects. Select plain text first."
 msgstr "选区含其他格式或对象，请先选择纯文本。"
+
+#: plugin/i18n.js
+msgid "The semantic reading exceeds its budget."
+msgstr "公式结构读法超过长度上限。"
+
+#: plugin/i18n.js
+msgid "The semantic tree contains an ambiguous identity."
+msgstr "公式语义树存在不明确的标识。"
+
+#: plugin/i18n.js
+msgid "The semantic tree contains an invalid relationship."
+msgstr "公式语义树含无效关系。"
+
+#: plugin/i18n.js
+msgid "The semantic tree exceeds its depth budget."
+msgstr "公式语义树超过层级上限。"
+
+#: plugin/i18n.js
+msgid "The semantic tree is missing or exceeds the exploration budget."
+msgstr "公式语义树缺失或超过探索上限。"
 
 #: plugin/i18n.js
 msgid "The server did not return a complete trusted opening baseline"
@@ -4913,6 +7405,18 @@ msgid "The staged archive digest does not match"
 msgstr "暂存包摘要不匹配"
 
 #: plugin/i18n.js
+msgid "The staged document changed. Prepare that file again."
+msgstr "暂存文档已变化，请重新准备该文件。"
+
+#: plugin/i18n.js
+msgid "The staged document is unavailable."
+msgstr "暂存文档不可用。"
+
+#: plugin/i18n.js
+msgid "The staged source could not be written."
+msgstr "无法写入暂存源稿。"
+
+#: plugin/i18n.js
 msgid "The staging directory contains unknown objects and was not cleaned"
 msgstr "暂存目录出现未知对象，未清理"
 
@@ -4949,6 +7453,50 @@ msgid "The startup snapshot matches."
 msgstr "启动快照匹配。"
 
 #: plugin/i18n.js
+msgid "The static HTML contains a forbidden attribute"
+msgstr "静态 HTML 包含禁止的属性"
+
+#: plugin/i18n.js
+msgid "The static HTML contains a forbidden element"
+msgstr "静态 HTML 包含禁止的元素"
+
+#: plugin/i18n.js
+msgid "The static HTML contains a forbidden node"
+msgstr "静态 HTML 包含禁止的节点"
+
+#: plugin/i18n.js
+msgid "The static HTML contains an unsafe inline style"
+msgstr "静态 HTML 包含不安全的行内样式"
+
+#: plugin/i18n.js
+msgid "The static HTML contains an unsafe link"
+msgstr "静态 HTML 包含不安全链接"
+
+#: plugin/i18n.js
+msgid "The static HTML contains an unverified image"
+msgstr "静态 HTML 包含未经核验的图片"
+
+#: plugin/i18n.js
+msgid "The static HTML descriptor exceeds 32 MiB. Content was not truncated"
+msgstr "静态 HTML 描述超过 32 MiB，未截断内容"
+
+#: plugin/i18n.js
+msgid "The static HTML exceeds 32 MiB. Content was not truncated"
+msgstr "静态 HTML 超过 32 MiB，未截断内容"
+
+#: plugin/i18n.js
+msgid "The static HTML exceeds its structure budget"
+msgstr "静态 HTML 超过结构限制"
+
+#: plugin/i18n.js
+msgid "The static HTML exporter is unavailable. Prepare again."
+msgstr "静态 HTML 导出器不可用，请重新准备。"
+
+#: plugin/i18n.js
+msgid "The static HTML preview could not be loaded. Prepare the export again."
+msgstr "静态 HTML 预览未能加载，请重新准备导出。"
+
+#: plugin/i18n.js
 msgid "The static adapter is missing or incompatible"
 msgstr "静态适配器缺失或版本不兼容"
 
@@ -4957,12 +7505,68 @@ msgid "The static adapter is missing or incompatible. Original configuration was
 msgstr "静态适配器缺失或版本不兼容；原配置未删除"
 
 #: plugin/i18n.js
+msgid "The static article contains an unresolved footnote"
+msgstr "静态文章包含无法解析的脚注"
+
+#: plugin/i18n.js
+msgid "The static article could not be parsed"
+msgstr "无法解析静态文章"
+
+#: plugin/i18n.js
+msgid "The static export descriptor exceeds its budget"
+msgstr "静态导出描述超过限制"
+
+#: plugin/i18n.js
+msgid "The static export descriptor is invalid or exceeds its budget"
+msgstr "静态导出描述无效或超过限制"
+
+#: plugin/i18n.js
+msgid "The static export was canceled"
+msgstr "静态导出已取消"
+
+#: plugin/i18n.js
+msgid "The static image descriptor is invalid"
+msgstr "静态图片描述无效"
+
+#: plugin/i18n.js
+msgid "The static image digest or type does not match"
+msgstr "静态图片摘要或类型不匹配"
+
+#: plugin/i18n.js
+msgid "The static image encoding is invalid"
+msgstr "静态图片编码无效"
+
+#: plugin/i18n.js
+msgid "The static math font is invalid"
+msgstr "静态公式字体无效"
+
+#: plugin/i18n.js
+msgid "The static math stylesheet is invalid"
+msgstr "静态公式样式表无效"
+
+#: plugin/i18n.js
+msgid "The static stylesheet contains an external resource"
+msgstr "静态样式表包含外部资源"
+
+#: plugin/i18n.js
+msgid "The static stylesheet is unsafe"
+msgstr "静态样式表不安全"
+
+#: plugin/i18n.js
+msgid "The structured issue date is invalid"
+msgstr "结构化出版日期无效"
+
+#: plugin/i18n.js
 msgid "The teaching block version must be 1"
 msgstr "教学区块版本需为 1"
 
 #: plugin/i18n.js
 msgid "The teaching closing marker has no corresponding opening marker"
 msgstr "教学结束标记没有对应开始"
+
+#: plugin/i18n.js
+msgid "The teaching component needs static content before saving."
+msgstr "保存前请为教学组件添加静态正文。"
 
 #: plugin/i18n.js
 msgid "The teaching container closing marker is missing"
@@ -4985,12 +7589,32 @@ msgid "The terminal newline marker must be boolean"
 msgstr "末尾换行标记需为布尔值"
 
 #: plugin/i18n.js
+msgid "The text length is outside the registered bounds."
+msgstr "文本长度超出已登记的范围。"
+
+#: plugin/i18n.js
+msgid "The title changed. Preview this item again."
+msgstr "标题已变化，请重新预览此条目。"
+
+#: plugin/i18n.js
 msgid "The title must be single-line text of 1–200 characters"
 msgstr "标题需为 1–200 字符的单行文字"
 
 #: plugin/i18n.js
+msgid "The transformed reference candidate exceeds the existing document budget."
+msgstr "引用转换候选超过既有正文预算。"
+
+#: plugin/i18n.js
 msgid "The uncompressed export exceeds its budget. Content was not truncated"
 msgstr "导出展开体积超限，未截断内容"
+
+#: plugin/i18n.js
+msgid "The upgrade target is no longer registered. Discard the candidate or restore the extension."
+msgstr "升级目标已不再登记。请放弃候选，或恢复相应扩展。"
+
+#: plugin/i18n.js
+msgid "The uploaded batch is incomplete."
+msgstr "上传的批次不完整。"
 
 #: plugin/i18n.js
 msgid "The uploaded file is a known older version and cannot overwrite the current edits."
@@ -5013,8 +7637,24 @@ msgid "The version, source, or permissions changed. Reopen the article. The cand
 msgstr "版本、来源或权限已变化，请重新打开文章，候选未应用。"
 
 #: plugin/i18n.js
+msgid "The versioned reference marker is malformed or its text differs from its identity"
+msgstr "版本化引用标记格式有误，或文字与标识不一致"
+
+#: plugin/i18n.js
+msgid "Theorem"
+msgstr "定理"
+
+#: plugin/i18n.js
 msgid "There are unsaved changes. Save before restoring."
 msgstr "有未保存修改，请先保存后再恢复。"
+
+#: plugin/i18n.js
+msgid "These parameters use the JSON editor. All fields are preserved; the server verifies them when saving."
+msgstr "这些参数使用 JSON 编辑，保留所有字段，由服务器在保存时校验。"
+
+#: plugin/i18n.js
+msgid "Thesis"
+msgstr "学位论文"
 
 #: plugin/i18n.js
 msgid "This Markdown cannot be represented without a block roundtrip change"
@@ -5025,12 +7665,24 @@ msgid "This URL was not verified as a readable local attachment related to this 
 msgstr "未验证为本文章可读的本地关联附件；保留原 URL，不抓取"
 
 #: plugin/i18n.js
+msgid "This ZIP is a fixed publication snapshot for an export adapter, not yet a complete reading website. Articles and resource bytes are checked again before confirmation and download."
+msgstr "此 ZIP 是供出版适配器使用的固定快照，尚不是完整阅读网站。确认与下载前会再次核验文章和资源字节。"
+
+#: plugin/i18n.js
 msgid "This account cannot publish articles. Save a draft or submit for review."
 msgstr "当前账号没有发布文章的权限，可保存草稿或提交审核。"
 
 #: plugin/i18n.js
 msgid "This account's local candidates were cleared and recovery was disabled."
 msgstr "此账号的本地候选已清除并停用。"
+
+#: plugin/i18n.js
+msgid "This article already has a logical identity."
+msgstr "此文章已有逻辑身份。"
+
+#: plugin/i18n.js
+msgid "This article has no current logical identity."
+msgstr "此文章当前没有逻辑身份。"
 
 #: plugin/i18n.js
 msgid "This article has no source file binding."
@@ -5051,6 +7703,30 @@ msgstr "此文章由源文件同步；请修改原文后运行同步工具，后
 #: plugin/i18n.js
 msgid "This article is synchronized from a source file. Use the controlled source write workflow."
 msgstr "此文章由源文件同步；请使用受控的源文件写回流程。"
+
+#: plugin/i18n.js
+msgid "This article is unavailable."
+msgstr "此文章不可用。"
+
+#: plugin/i18n.js
+msgid "This backup has an older baseline. Compare it with the current article before explicitly saving."
+msgstr "此备份的基线较旧，请先与当前文章比较，再明确保存。"
+
+#: plugin/i18n.js
+msgid "This batch belongs to another account."
+msgstr "此批次属于其他账号。"
+
+#: plugin/i18n.js
+msgid "This batch expired. Verify pending saves; prepare other files again."
+msgstr "此批次已过期。请核查待确认的保存结果，并重新准备其他文件。"
+
+#: plugin/i18n.js
+msgid "This batch was canceled. Saved drafts are preserved."
+msgstr "此批次已取消，已保存的草稿仍保留。"
+
+#: plugin/i18n.js
+msgid "This bibliography uses the original six-field format. It stays unchanged until you explicitly upgrade or adopt a CSL-JSON candidate."
+msgstr "此文献使用原六字段格式；在明确升级或采用 CSL-JSON 候选前保持原样。"
 
 #: plugin/i18n.js
 msgid "This block cannot yet be converted to Markdown"
@@ -5077,6 +7753,22 @@ msgid "This candidate still references pending images. Upload the ZIP again or r
 msgstr "此候选仍引用待上传图片；请重新上传 ZIP 或移除这些图片，正文仍保留"
 
 #: plugin/i18n.js
+msgid "This collection candidate is busy. Try again shortly."
+msgstr "此文集候选正在处理，请稍后重试。"
+
+#: plugin/i18n.js
+msgid "This collection operation is unavailable. Sign in again or refresh your collection list."
+msgstr "此文集操作不可用，请重新登录或刷新文集列表。"
+
+#: plugin/i18n.js
+msgid "This cross-site ZIP creates new local attachment IDs; IDs from the source site are never reused."
+msgstr "此跨站 ZIP 将创建新的本地附件 ID，不会复用源站 ID。"
+
+#: plugin/i18n.js
+msgid "This document failed conversion. Correct the original file and prepare it again."
+msgstr "此文档转换失败，请修正原文件后重新准备。"
+
+#: plugin/i18n.js
 msgid "This document must be saved through the native article update route."
 msgstr "此文档只能通过原生文章更新保存。"
 
@@ -5085,16 +7777,56 @@ msgid "This entry cannot import new ZIP media. Body and source save rules remain
 msgstr "此入口不能导入 ZIP 新媒体；正文和来源保存规则保持不变。"
 
 #: plugin/i18n.js
+msgid "This entry is cited. Remove its citations before deleting it."
+msgstr "此条目仍被引用，请先移除对应引用再删除。"
+
+#: plugin/i18n.js
+msgid "This extension information is unavailable."
+msgstr "此扩展信息不可用。"
+
+#: plugin/i18n.js
+msgid "This field is not in the registered schema."
+msgstr "此字段不在已登记的结构中。"
+
+#: plugin/i18n.js
+msgid "This finite subset imports up to 64 records within 64 KiB. Review unsupported fields and key mappings explicitly. The original JSON is not stored, and import does not save the article."
+msgstr "此有限子集最多导入 64 条记录，总输入不超过 64 KiB。请明确核对不支持的字段和引用键映射；原始 JSON 不会另存，导入也不会保存文章。"
+
+#: plugin/i18n.js
 msgid "This image does not belong to the resource candidate"
 msgstr "此图片不属于资源候选"
+
+#: plugin/i18n.js
+msgid "This item cannot be previewed. Refresh its status or correct its original file."
+msgstr "此条目无法预览，请刷新状态或修正原文件。"
 
 #: plugin/i18n.js
 msgid "This local recovery record has no trusted signed opening baseline. Compare manually; it cannot serve as a three-way merge baseline."
 msgstr "本地恢复记录没有可信的打开时签名基线，需手动比较，不能冒充三方合并基线。"
 
 #: plugin/i18n.js
+msgid "This logical identity is unavailable or already claimed. Prepare a copy with a new identity."
+msgstr "该逻辑身份不可用或已被占用，请准备使用新身份的副本。"
+
+#: plugin/i18n.js
 msgid "This new article already has unsaved content. Save or clear it before importing Markdown."
 msgstr "当前新文章已有未保存内容，请先保存或清空后再导入 Markdown。"
+
+#: plugin/i18n.js
+msgid "This paired backup is unavailable or expired. Current input is preserved."
+msgstr "此配对备份不可用或已到期，当前输入已保留。"
+
+#: plugin/i18n.js
+msgid "This preview creates a normalized cross-site copy without old attachment IDs. Import creates new local attachments and associations. The saved original is unchanged."
+msgstr "此预览生成规范化的跨站副本，并解除旧附件 ID；导入时会创建新本地附件及关联。已保存的原文章保持不变。"
+
+#: plugin/i18n.js
+msgid "This registered field is required."
+msgstr "此字段为必填项。"
+
+#: plugin/i18n.js
+msgid "This report covers only the article IDs you select, not a site-wide inventory. Every article requires current editing permission."
+msgstr "报告仅覆盖你选择的文章 ID，不代表全站清单。每篇文章都需当前编辑权限。"
 
 #: plugin/i18n.js
 msgid "This resource import was canceled. The document is preserved. Upload the ZIP again or remove pending images."
@@ -5109,8 +7841,20 @@ msgid "This revision cannot be used for this article."
 msgstr "该修订不可用于此文章。"
 
 #: plugin/i18n.js
+msgid "This revision predates document identity. The exact historical pair is read-only; prepare an explicit candidate to retain the current identity."
+msgstr "此版本早于文档身份启用。原始历史配对仅供比较，请显式准备保留当前身份的候选。"
+
+#: plugin/i18n.js
 msgid "This save request could not be verified. Reopen the editor and try again."
 msgstr "无法验证此保存请求，请重新打开编辑器后重试。"
+
+#: plugin/i18n.js
+msgid "This structure has no Chinese reading yet. The original English semantics are shown."
+msgstr "此结构暂无中文读法，现显示原始英文语义。"
+
+#: plugin/i18n.js
+msgid "This summary contains versions, error codes and timings only."
+msgstr "摘要仅包含版本、错误码与耗时。"
 
 #: plugin/i18n.js
 msgid "This tab's draft identity could not be isolated. Local recovery is disabled."
@@ -5130,6 +7874,10 @@ msgid "Title: %1$s → %2$s"
 msgstr "标题：%1$s → %2$s"
 
 #: plugin/i18n.js
+msgid "Tolerance"
+msgstr "容差"
+
+#: plugin/i18n.js
 msgid "Too many media files were generated"
 msgstr "生成的媒体文件数超限"
 
@@ -5138,8 +7886,36 @@ msgid "Transaction commit failed"
 msgstr "事务提交失败"
 
 #: plugin/i18n.js
+msgid "Two selected articles declare the same logical identity. Resolve the identity conflict before preparing."
+msgstr "两篇所选文章声明了相同逻辑身份，请先解决身份冲突再准备。"
+
+#: plugin/i18n.js
+msgid "Typesetting the complete offline article…"
+msgstr "正在排版完整的离线文章…"
+
+#: plugin/i18n.js
+msgid "Unapplied component version change:"
+msgstr "尚未应用的组件版本变化："
+
+#: plugin/i18n.js
+msgid "Unavailable"
+msgstr "不可用"
+
+#: plugin/i18n.js
+msgid "Unavailable article"
+msgstr "文章不可用"
+
+#: plugin/i18n.js
 msgid "Unclosed teaching container"
 msgstr "教学容器未闭合"
+
+#: plugin/i18n.js
+msgid "Undated"
+msgstr "未注明年份"
+
+#: plugin/i18n.js
+msgid "Undo source change"
+msgstr "撤销源码修改"
 
 #: plugin/i18n.js
 msgid "Unexpected DOM node"
@@ -5164,6 +7940,10 @@ msgstr "未知表格单元格"
 #: plugin/i18n.js
 msgid "Unexpected teaching closing marker"
 msgstr "未知教学结束标记"
+
+#: plugin/i18n.js
+msgid "Unit"
+msgstr "单位"
 
 #: plugin/i18n.js
 msgid "Unknown conflict choice"
@@ -5194,6 +7974,10 @@ msgid "Unknown or invalid teaching attribute"
 msgstr "未知或非法的教学属性"
 
 #: plugin/i18n.js
+msgid "Unknown staging objects were preserved for review."
+msgstr "已保留无法识别的暂存对象，等待核查。"
+
+#: plugin/i18n.js
 msgid "Unreferenced footnote definition"
 msgstr "未引用的脚注定义"
 
@@ -5212,6 +7996,10 @@ msgstr "不安全的图片尺寸"
 #: plugin/i18n.js
 msgid "Unsafe links, duplicate HTML attributes, and image inputs that would lose alternative text are explicitly rejected."
 msgstr "危险链接、重复 HTML 属性及会丢失替代文字的图片输入明确拒绝。"
+
+#: plugin/i18n.js
+msgid "Unsafe or malformed Presentation MathML"
+msgstr "Presentation MathML 结构无效或含不安全内容。"
 
 #: plugin/i18n.js
 msgid "Unsafe or overlong code language"
@@ -5261,6 +8049,14 @@ msgstr "不支持Markdown节点 %1$s"
 msgid "Unsupported Markdown syntax"
 msgstr "不支持的 Markdown 语法"
 
+#: plugin/i18n.js
+msgid "Unsupported Presentation MathML"
+msgstr "此公式超出支持的 Presentation MathML 子集。"
+
+#: plugin/i18n.js
+msgid "Unsupported TeX command or math in BibTeX"
+msgstr "BibTeX 中包含不支持的 TeX 命令或数学公式"
+
 #, php-format
 #: plugin/i18n.js
 msgid "Unsupported attribute %1$s.%2$s"
@@ -5282,6 +8078,10 @@ msgstr "不支持的区块：%1$s"
 #: plugin/i18n.js
 msgid "Unsupported display class"
 msgstr "不支持的显示类名"
+
+#: plugin/i18n.js
+msgid "Unsupported fields that will not be stored:"
+msgstr "以下不支持的字段不会保存："
 
 #: plugin/i18n.js
 msgid "Unsupported footnote definition structure"
@@ -5315,6 +8115,14 @@ msgid "Unsupported list item structure"
 msgstr "列表项结构不受支持"
 
 #: plugin/i18n.js
+msgid "Unsupported native image size"
+msgstr "不支持的原生图片尺寸"
+
+#: plugin/i18n.js
+msgid "Unsupported native media attribute"
+msgstr "不支持的原生媒体属性"
+
+#: plugin/i18n.js
 msgid "Unsupported or inconsistent HTML attributes on "
 msgstr "标签的 HTML 属性不受支持或不一致："
 
@@ -5340,8 +8148,36 @@ msgid "Unsupported teaching block version"
 msgstr "不支持的教学区块版本"
 
 #: plugin/i18n.js
+msgid "Untitled draft"
+msgstr "未命名草稿"
+
+#: plugin/i18n.js
+msgid "Untitled reference"
+msgstr "未命名文献"
+
+#: plugin/i18n.js
+msgid "Upgrade diagram to use the visual editor"
+msgstr "升级图示以使用可视化编辑"
+
+#: plugin/i18n.js
 msgid "Upload Markdown or an image resource ZIP "
 msgstr "上传 Markdown 或图片资源 ZIP "
+
+#: plugin/i18n.js
+msgid "Upload a .bib file"
+msgstr "上传 .bib 文件"
+
+#: plugin/i18n.js
+msgid "Uploaded image URLs may become public, including for a draft."
+msgstr "上传图片的地址可能公开，即使文章仍为草稿。"
+
+#: plugin/i18n.js
+msgid "Use bibliography candidate"
+msgstr "使用文献候选"
+
+#: plugin/i18n.js
+msgid "Use label for rename"
+msgstr "使用此标签重命名"
 
 #: plugin/i18n.js
 msgid "Use my candidate"
@@ -5354,6 +8190,10 @@ msgstr "请使用受支持的文本格式和安全链接；不要包含脚本、
 #: plugin/i18n.js
 msgid "Use the editor's Save / Update action to save both representations together"
 msgstr "可直接使用编辑器保存／更新，两种格式同步保存"
+
+#: plugin/i18n.js
+msgid "Use the exact revision workflow when its logical identity is unchanged."
+msgstr "历史逻辑身份未变时，请使用原始版本恢复流程。"
 
 #: plugin/i18n.js
 msgid "Use the latest server version"
@@ -5380,6 +8220,18 @@ msgid "Validation passed; target status: "
 msgstr "校验通过；目标状态："
 
 #: plugin/i18n.js
+msgid "Value"
+msgstr "值"
+
+#: plugin/i18n.js
+msgid "Values"
+msgstr "数值"
+
+#: plugin/i18n.js
+msgid "Verified image resources: "
+msgstr "已核验图片资源："
+
+#: plugin/i18n.js
 msgid "Verify and apply conversion backend"
 msgstr "验证并应用转换方案"
 
@@ -5396,6 +8248,10 @@ msgid "Verifying component resources…"
 msgstr "正在验证组件资源…"
 
 #: plugin/i18n.js
+msgid "Verifying save result"
+msgstr "正在核查保存结果"
+
+#: plugin/i18n.js
 msgid "Verifying the ZIP in private staging. No media has been uploaded. The document remains editable."
 msgstr "正在私有暂存中校验 ZIP；尚未上传媒体。文稿仍可编辑。"
 
@@ -5406,6 +8262,10 @@ msgstr "正在核对公式…"
 #: plugin/i18n.js
 msgid "Verifying the saved article. Unsaved input is not included in the export."
 msgstr "正在核对已保存文章；未保存输入不会进入导出。"
+
+#: plugin/i18n.js
+msgid "Version"
+msgstr "版本"
 
 #: plugin/i18n.js
 msgid "Version conflict: compare the server and candidate"
@@ -5440,6 +8300,10 @@ msgid "View differences first. Restoration requires successful verification."
 msgstr "请选择查看差异，校验通过后才能恢复。"
 
 #: plugin/i18n.js
+msgid "View external image"
+msgstr "查看外部图片"
+
+#: plugin/i18n.js
 msgid "View formula: "
 msgstr "查看公式："
 
@@ -5448,8 +8312,32 @@ msgid "View restoration differences and preview"
 msgstr "查看恢复差异与预览"
 
 #: plugin/i18n.js
+msgid "Visual editor"
+msgstr "可视化编辑"
+
+#: plugin/i18n.js
+msgid "Volume"
+msgstr "卷"
+
+#: plugin/i18n.js
+msgid "Volume, issue and pages are limited to 128 plain characters"
+msgstr "卷、期、页码最多 128 个普通字符"
+
+#: plugin/i18n.js
 msgid "Wait for successful typesetting before applying the formula."
 msgstr "请等待公式排版成功后再应用。"
+
+#: plugin/i18n.js
+msgid "Web book preview"
+msgstr "网页书预览"
+
+#: plugin/i18n.js
+msgid "Web page"
+msgstr "网页"
+
+#: plugin/i18n.js
+msgid "Whole formula"
+msgstr "完整公式"
 
 #: plugin/i18n.js
 msgid "WordPress cannot safely decode this image. No media was created"
@@ -5492,8 +8380,24 @@ msgid "WordPress would rewrite this title. Correct the proposal."
 msgstr "标题会被 WordPress 改写，请修改提案。"
 
 #: plugin/i18n.js
+msgid "Working…"
+msgstr "正在处理…"
+
+#: plugin/i18n.js
 msgid "Write current metadata into the header"
 msgstr "将当前元数据写入头部"
+
+#: plugin/i18n.js
+msgid "Write the explanation and static fallback here."
+msgstr "在此填写解释和静态替代内容。"
+
+#: plugin/i18n.js
+msgid "Writing pattern"
+msgstr "写作样板"
+
+#: plugin/i18n.js
+msgid "Year"
+msgstr "年份"
 
 #: plugin/i18n.js
 msgid "You cannot assign categories or tags to this article."
@@ -5523,10 +8427,18 @@ msgstr "无权写回这篇文章的源文件。"
 msgid "Your changes are preserved against the latest server baseline. Preview all differences and explicitly save again."
 msgstr "已保留你的修改并以服务器最新版继续；请重新预览全部差异，再明确保存。"
 
+#: plugin/i18n.js
+msgid "Your sign-in expired. Sign in again before using paired backups. Current input is preserved."
+msgstr "登录已过期。请重新登录后使用配对备份；当前输入已保留。"
+
 #, php-format
 #: plugin/i18n.js
 msgid "Your title: %1$s; status: %2$s."
 msgstr "你的标题：%1$s；状态：%2$s。"
+
+#: plugin/i18n.js
+msgid "ZIP batches require image upload permission and the existing ZIP dependencies."
+msgstr "ZIP 批次需要图片上传权限及现有 ZIP 依赖。"
 
 #: plugin/i18n.js
 msgid "ZIP entry CRC verification failed"
@@ -5590,5 +8502,5 @@ msgid "worker.cjs differs from the plugin or manifest."
 msgstr "worker.cjs 与插件或清单不匹配。"
 
 #: plugin/i18n.js
-msgid "− left-side deletions or changes; + right-side additions or changes. Outlines mark author highlights."
-msgstr "− 左侧删除或修改；+ 右侧新增或修改；框线标记作者重点。"
+msgid "− left-side deletions or changes; + right-side additions or changes. Leading marks indicate author highlights."
+msgstr "− 左侧删除或修改；+ 右侧新增或修改；左侧标记表示作者重点。"

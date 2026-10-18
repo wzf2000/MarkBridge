@@ -1,0 +1,120 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>SDK bounded sum</title><main><h1>Bounded sum</h1><p>Temporary result; original explanation remains in the article.</p><button id="run">Run</button> <button id="stop">Stop</button><p><output aria-live="polite">Waiting for host</output></p></main><script>(() => {
+  'use strict';
+  const protocol = 'mbb-component/v1',
+    output = document.querySelector('output'),
+    run = document.querySelector('#run'),
+    stop = document.querySelector('#stop');
+  const startupDeadline = performance.now() + 5000;
+  let session = null,
+    params = null,
+    runId = null,
+    worker = null,
+    url = null,
+    deadline = 0,
+    epoch = 0,
+    timer = null;
+  const send = (type, extra = {}) => parent.postMessage({ protocol, session, type, ...extra }, '*');
+  const valid = (p) =>
+    p &&
+    Object.keys(p).join(',') === 'values' &&
+    Array.isArray(p.values) &&
+    p.values.length >= 1 &&
+    p.values.length <= 32 &&
+    p.values.every((n) => Number.isInteger(n) && n >= -1000 && n <= 1000);
+  const release = () => {
+    worker?.terminate();
+    worker = null;
+    if (url) URL.revokeObjectURL(url);
+    url = null;
+    clearTimeout(timer);
+  };
+  const terminal = (type, extra = {}) => {
+    const id = runId;
+    release();
+    runId = null;
+    run.disabled = false;
+    if (type === 'complete' && performance.now() > deadline) {
+      type = 'error';
+      extra = { code: 'RUN_LIMIT' };
+      output.textContent = 'Execution exceeded its time budget.';
+    }
+    if (id) send(type, { runId: id, ...extra });
+  };
+  const expired = () => performance.now() > deadline;
+  const limit = () => {
+    output.textContent = 'Execution exceeded its time budget.';
+    terminal('error', { code: 'RUN_LIMIT' });
+  };
+  run.onclick = () => {
+    if (runId || !session) return;
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    runId = [...bytes].map((x) => x.toString(16).padStart(2, '0')).join('');
+    run.disabled = true;
+    send('run-request', { runId });
+  };
+  stop.onclick = () => {
+    epoch++;
+    terminal('stopped');
+  };
+  addEventListener('message', (e) => {
+    const d = e.data;
+    if (e.source !== parent || d?.protocol !== protocol) return;
+    if (d.type === 'init' && !session) {
+      if (typeof d.session !== 'string') return;
+      session = d.session;
+      if (performance.now() > startupDeadline || !valid(d.params)) {
+        send('error', { code: 'INITIALIZATION' });
+        return;
+      }
+      params = structuredClone(d.params);
+      if (performance.now() > startupDeadline) {
+        send('error', { code: 'INITIALIZATION' });
+        return;
+      }
+      output.textContent = 'Ready. Results are temporary.';
+      send('ready');
+      send('resize', { height: 180 });
+      return;
+    }
+    if (d.session !== session || d.runId !== runId || !runId) return;
+    if (d.type === 'denied') {
+      terminal('stopped');
+      return;
+    }
+    if (d.type !== 'grant' || worker) return;
+    deadline = performance.now() + 2000;
+    const generation = ++epoch;
+    if (expired()) return limit();
+    if (!valid(params)) {
+      terminal('error', { code: 'PARAMS' });
+      return;
+    }
+    if (expired()) return limit();
+    url = URL.createObjectURL(
+      new Blob(['onmessage=e=>postMessage(e.data.reduce((sum,n)=>sum+n,0));'], {
+        type: 'text/javascript',
+      }),
+    );
+    worker = new Worker(url);
+    timer = setTimeout(limit, 2000);
+    worker.onmessage = (e) => {
+      if (generation !== epoch || !runId) return;
+      if (expired()) return limit();
+      const sum = e.data;
+      if (!Number.isInteger(sum) || Math.abs(sum) > 32000) {
+        terminal('error', { code: 'RESULT' });
+        return;
+      }
+      if (expired()) return limit();
+      const text = String(sum);
+      if (expired()) return limit();
+      output.textContent = text;
+      terminal('complete', { frameCount: 1, outputBytes: new TextEncoder().encode(text).length });
+    };
+    worker.onerror = () => {
+      if (generation === epoch) terminal('error', { code: 'WORKER' });
+    };
+    worker.postMessage(params.values);
+  });
+})();
+</script></html>

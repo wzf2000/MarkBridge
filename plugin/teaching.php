@@ -13,7 +13,21 @@ add_action('init', static function () {
         file_get_contents(__DIR__ . '/includes/php-converter/block-capabilities.json'),
         true,
     );
-    foreach (['collapse', 'steps', 'step', 'code-compare', 'component', 'code-tabs'] as $kind) {
+    foreach (
+        [
+            'identity',
+            'collapse',
+            'steps',
+            'step',
+            'code-compare',
+            'component',
+            'code-tabs',
+            'object',
+            'statement',
+            'bibliography',
+        ]
+        as $kind
+    ) {
         $attrs = [];
         foreach ($schemas['mbb/' . $kind] as $key => $type) {
             $attrs[$key] = ['type' => $type === 'integer' ? 'number' : $type];
@@ -23,10 +37,13 @@ add_action('init', static function () {
 });
 function mbb_enqueue_teaching_assets()
 {
+    if (function_exists('mbb_enqueue_diagnostics')) {
+        mbb_enqueue_diagnostics();
+    }
     wp_enqueue_script(
         'mbb-components',
         plugins_url(mbb_asset('components.js'), __FILE__),
-        [],
+        function_exists('mbb_enqueue_diagnostics') ? ['mbb-diagnostics'] : [],
         substr(hash_file('sha256', __DIR__ . '/components.js'), 0, 12),
         true,
     );
@@ -40,6 +57,8 @@ function mbb_enqueue_teaching_assets()
                     mbb_component_available(),
                     JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT,
                 ) .
+                ';window.MBB_COMPONENTS_READER=' .
+                (!is_admin() ? 'true' : 'false') .
                 ';',
             'before',
         );
@@ -50,6 +69,12 @@ function mbb_enqueue_teaching_assets()
         [],
         substr(hash_file('sha256', __DIR__ . '/teaching.js'), 0, 12),
         true,
+    );
+    wp_enqueue_style(
+        'mbb-reader-diagrams',
+        plugins_url(mbb_asset('reader-diagrams.css'), __FILE__),
+        [],
+        substr(hash_file('sha256', __DIR__ . '/reader-diagrams.css'), 0, 12),
     );
     wp_enqueue_style(
         'mbb-teaching',
@@ -123,11 +148,15 @@ add_filter(
                     $attrs['params'] = $params;
                 }
             }
-            $p = mbb_component_registry()[$attrs['component'] ?? ''] ?? null;
+            $p = mbb_component_provider(
+                $attrs['component'] ?? '',
+                $attrs['componentVersion'] ?? '',
+            );
             $config = [
                 'component' => $attrs['component'] ?? '',
                 'componentVersion' => $attrs['componentVersion'] ?? '',
                 'params' => $attrs['params'] ?? (object) [],
+                ...isset($attrs['activity']) ? ['activity' => $attrs['activity']] : [],
                 'status' => !$p
                     ? 'missing'
                     : ($p['version'] !== ($attrs['componentVersion'] ?? '')
@@ -136,9 +165,18 @@ add_filter(
             ];
             if (
                 $config['status'] === 'available' &&
-                (!$paramsConsistent ||
+                ((isset($attrs['activity']) && ($p['activityVersion'] ?? null) !== 1) ||
+                    !$paramsConsistent ||
                     !mbb_component_pure_params($config['params']) ||
-                    !mbb_component_schema($config['params'], $p['schema']))
+                    !mbb_component_schema($config['params'], $p['schema']) ||
+                    !mbb_component_domain_valid(
+                        $attrs['component'],
+                        $attrs['componentVersion'],
+                        $config['params'],
+                        isset($attrs['activity'])
+                            ? json_decode(mbb_component_json($attrs['activity']))
+                            : null,
+                    ))
             ) {
                 $config['status'] = 'invalid-params';
             }

@@ -90,6 +90,9 @@ test('real Prism highlights long code without line number drift', async ({ page 
       }
     }
     return {
+      gutterEm:
+        parseFloat(getComputedStyle(pre).paddingLeft) / parseFloat(getComputedStyle(pre).fontSize),
+      gutterInset: rows.getBoundingClientRect().left - pre.getBoundingClientRect().left,
       codeLineHeight: lineHeight,
       rowLineHeight: parseFloat(rowStyle.lineHeight),
       accumulatedDrift: Math.abs(last.top - first.top - (starts[119] - starts[0])),
@@ -104,6 +107,8 @@ test('real Prism highlights long code without line number drift', async ({ page 
     };
   });
   expect(measured.textLines).toBe(120);
+  expect(measured.gutterEm).toBeLessThan(3.3);
+  expect(measured.gutterInset).toBeGreaterThanOrEqual(-1);
   expect(measured.rowLineHeight).toBeCloseTo(measured.codeLineHeight, 0);
   expect(measured.accumulatedDrift).toBeLessThan(3);
   expect(measured.codeFontSize).toBe(measured.rowFontSize);

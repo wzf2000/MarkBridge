@@ -52,6 +52,12 @@ function mbb_revisions($r)
             'expected_revision' => mbb_revision_token($v),
             'paired' => !!get_metadata('post', $v->ID, '_mbb_revision_pair', true),
             'restored_from' => (int) get_metadata('post', $v->ID, '_mbb_restored_from', true),
+            'copied_from_revision' => (int) get_metadata(
+                'post',
+                $v->ID,
+                '_mbb_copied_from_revision',
+                true,
+            ),
         ];
     }
     return ['revisions' => $rows, 'limit' => 100];

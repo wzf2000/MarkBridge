@@ -1,0 +1,205 @@
+{
+  "schema": 1,
+  "cases": [
+    {
+      "name": "ordinary-historical",
+      "source": "![Alt](https://example.invalid/image.png \"Title\")\n",
+      "valid": true
+    },
+    {
+      "name": "image-empty",
+      "source": ":::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n",
+      "valid": true
+    },
+    {
+      "name": "image-caption",
+      "source": ":::mbb:v1 image {\"caption\":\"说明 😀 <strong>bold</strong> &amp; <code>x</code><br>line\"}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n",
+      "valid": true
+    },
+    {
+      "name": "image-local",
+      "source": ":::mbb:v1 image {\"id\":42,\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"caption\":\"Caption\"}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n",
+      "valid": true
+    },
+    {
+      "name": "image-full",
+      "source": ":::mbb:v1 image {\"sizeSlug\":\"full\"}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n",
+      "valid": true
+    },
+    {
+      "name": "image-empty-caption",
+      "source": ":::mbb:v1 image {\"caption\":\"\"}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n",
+      "valid": true
+    },
+    {
+      "name": "gallery-default",
+      "source": ":::mbb:v1 gallery {}\n\n:::mbb:v1 image {\"id\":42,\"caption\":\"First\"}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {\"id\":42,\"sizeSlug\":\"medium\",\"caption\":\"Second\"}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n\n:::mbb:end\n",
+      "valid": true
+    },
+    {
+      "name": "gallery-two-columns",
+      "source": ":::mbb:v1 gallery {\"columns\":2,\"imageCrop\":false}\n\n:::mbb:v1 image {\"id\":42,\"caption\":\"First\"}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {\"id\":42,\"sizeSlug\":\"medium\",\"caption\":\"Second\"}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n\n:::mbb:end\n",
+      "valid": true
+    },
+    {
+      "name": "gallery-crop-default",
+      "source": ":::mbb:v1 gallery {\"imageCrop\":true}\n\n:::mbb:v1 image {\"id\":42,\"caption\":\"First\"}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {\"id\":42,\"sizeSlug\":\"medium\",\"caption\":\"Second\"}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n\n:::mbb:end\n",
+      "valid": true
+    },
+    {
+      "name": "nested-stage",
+      "source": ":::mbb:v1 collapse {\"id\":\"fold\",\"title\":\"Fold\",\"open\":false}\n\n:::mbb:v1 gallery {\"columns\":1}\n\n:::mbb:v1 image {\"caption\":\"Image\"}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n\n:::mbb:end\n\n:::mbb:end\n",
+      "valid": true
+    },
+    {
+      "name": "literal-fence",
+      "source": "```md\n:::mbb:v1 image {\"caption\":\"Literal $$ <code>\"}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n```\n",
+      "valid": true
+    },
+    {
+      "name": "caption-json-delimiters",
+      "source": ":::mbb:v1 image {\"caption\":\"$$<code>`x`</code> 😀\"}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n",
+      "valid": true
+    },
+    {
+      "name": "reject-zero-id",
+      "source": ":::mbb:v1 image {\"id\":0}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "reject-string-id",
+      "source": ":::mbb:v1 image {\"id\":\"42\"}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "reject-fraction-id",
+      "source": ":::mbb:v1 image {\"id\":1.5}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "reject-big-id",
+      "source": ":::mbb:v1 image {\"id\":9007199254740992}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "reject-media-link",
+      "source": ":::mbb:v1 image {\"linkDestination\":\"media\"}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "reject-custom-link",
+      "source": ":::mbb:v1 image {\"linkDestination\":\"custom\"}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "reject-style",
+      "source": ":::mbb:v1 image {\"style\":{\"color\":\"red\"}}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "reject-size",
+      "source": ":::mbb:v1 image {\"sizeSlug\":\"custom-size\"}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "reject-width",
+      "source": ":::mbb:v1 image {\"width\":\"20px\"}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "reject-caption-link",
+      "source": ":::mbb:v1 image {\"caption\":\"<a href=\\\"https://example.invalid\\\">Link</a>\"}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "reject-caption-image",
+      "source": ":::mbb:v1 image {\"caption\":\"<img src=\\\"x\\\">\"}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "reject-caption-invalid",
+      "source": ":::mbb:v1 image {\"caption\":\"<strong>broken\"}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "reject-caption-duplicate",
+      "source": ":::mbb:v1 image {\"caption\":\"<strong x=\\\"a\\\" x=\\\"b\\\">bad</strong>\"}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "reject-caption-comment",
+      "source": ":::mbb:v1 image {\"caption\":\"<!--x-->\"}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "reject-caption-newline",
+      "source": ":::mbb:v1 image {\"caption\":\"a\\nb\"}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "reject-gallery-empty",
+      "source": ":::mbb:v1 gallery {}\n\n\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "reject-gallery-columns",
+      "source": ":::mbb:v1 gallery {\"columns\":9}\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "reject-gallery-crop",
+      "source": ":::mbb:v1 gallery {\"imageCrop\":\"false\"}\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "reject-gallery-layout",
+      "source": ":::mbb:v1 gallery {\"layout\":{\"type\":\"flex\"}}\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "reject-gallery-old-ids",
+      "source": ":::mbb:v1 gallery {\"ids\":[42]}\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "reject-gallery-caption",
+      "source": ":::mbb:v1 gallery {\"caption\":\"Gallery\"}\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "reject-gallery-nested",
+      "source": ":::mbb:v1 gallery {}\n\n:::mbb:v1 gallery {}\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n\n:::mbb:end\n\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "reject-gallery-paragraph",
+      "source": ":::mbb:v1 gallery {}\n\nText\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "reject-gallery-too-many",
+      "source": ":::mbb:v1 gallery {}\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n:::mbb:v1 image {}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "reject-image-paragraph",
+      "source": ":::mbb:v1 image {}\n\nText\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "reject-image-two",
+      "source": ":::mbb:v1 image {}\n\n![A](a.png)\n\n![B](b.png)\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "crlf-frontmatter-emoji",
+      "source": "---\r\nmarkbridge: 1\r\ntitle: \"Native 😀\"\r\n---\r\n\r\n:::mbb:v1 image {\"id\":42,\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"caption\":\"Caption\"}\r\n\r\n![Alt](https://example.invalid/image.png \"Title\")\r\n\r\n:::mbb:end\r\n",
+      "valid": true
+    },
+    {
+      "name": "caption-byte-limit",
+      "source": ":::mbb:v1 image {\"id\":42,\"sizeSlug\":\"large\",\"linkDestination\":\"none\",\"caption\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}\n\n![Alt](https://example.invalid/image.png \"Title\")\n\n:::mbb:end\n",
+      "valid": false
+    }
+  ]
+}

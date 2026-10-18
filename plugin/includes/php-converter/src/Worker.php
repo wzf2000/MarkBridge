@@ -101,6 +101,8 @@ final class Worker
             case 'blocks':
             case 'resource_images':
             case 'portable_images':
+            case 'portable_detach':
+            case 'media_bind':
                 $base = $request['base'] ?? null;
                 if (
                     !is_array($base) ||
@@ -124,9 +126,23 @@ final class Worker
                     self::string($base, 'serialized'),
                     $documentId,
                 );
-                if (in_array($request['mode'], ['resource_images', 'portable_images'], true)) {
+                if (
+                    in_array(
+                        $request['mode'],
+                        ['resource_images', 'portable_images', 'portable_detach', 'media_bind'],
+                        true,
+                    )
+                ) {
                     if (!is_array($request['mappings'] ?? null)) {
                         throw new ConversionError('RESOURCE_MAP', 'Image mapping must be a list');
+                    }
+                    if (in_array($request['mode'], ['portable_detach', 'media_bind'], true)) {
+                        $result = $converter->relocateImages(
+                            $base,
+                            $request['mappings'],
+                            $request['mode'] === 'portable_detach',
+                        );
+                        break;
                     }
                     $result =
                         $request['mode'] === 'portable_images'

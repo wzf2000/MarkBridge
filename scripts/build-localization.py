@@ -165,6 +165,7 @@ handles = [
     "mbb-i18n",
     "mbb-kernel",
     "mbb-math",
+    "mbb-math-explorer",
     "mbb-teaching",
     "mbb-components",
     "mbb-presentation",
@@ -174,6 +175,9 @@ handles = [
     "mbb-local-recovery",
     "mbb-resource-ui",
     "mbb-export-ui",
+    "mbb-static-export",
+    "mbb-batch-ui",
+    "mbb-collections",
     "mbb-emoji",
 ]
 for handle in handles:

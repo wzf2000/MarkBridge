@@ -1,4 +1,12 @@
 const { test, expect } = require('@playwright/test');
+let pageErrors;
+test.beforeEach(async ({ page }) => {
+  pageErrors = [];
+  page.on('pageerror', (error) => pageErrors.push(error.message));
+});
+test.afterEach(() => {
+  expect(pageErrors).toEqual([]);
+});
 test('native save is enabled and only successful saves advance the paired baseline', async ({
   page,
 }) => {

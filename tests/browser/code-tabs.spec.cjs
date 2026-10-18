@@ -64,7 +64,7 @@ async function highlight(page) {
 async function load(page, enhance = true, body = markup()) {
   await page.goto('/health');
   await page.setContent(
-    `<meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:16px;font:16px/1.6 sans-serif}${fs.readFileSync(path.join(plugin, 'teaching.css'), 'utf8')}</style><article>${body}</article>`,
+    `<meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:16px;font:16px/1.6 sans-serif}${fs.readFileSync(path.join(plugin, 'teaching.css'), 'utf8')}${fs.readFileSync(path.join(plugin, 'code-display.css'), 'utf8')}${fs.readFileSync(path.join(plugin, 'vendor/prism/plugins/line-numbers/prism-line-numbers.css'), 'utf8')}</style><article>${body}</article>`,
   );
   await page.addScriptTag({ url: '/fixture-localization.js?locale=zh_CN' });
   if (enhance)
@@ -274,4 +274,80 @@ test('full article view and old history entries preserve the selected language',
   await page.emulateMedia({ media: 'print' });
   await expect(page.locator('#javascript')).toBeVisible();
   await expect(page.locator('#python')).toBeVisible();
+});
+
+test('language tabs retain visible full-height line-number gutters after theme highlighting', async ({
+  page,
+}, info) => {
+  const values = tabs.map((tab) => ({
+    ...tab,
+    code: Array.from({ length: 18 }, (_, i) => `const value${i} = ${i};`).join('\n'),
+  }));
+  await load(page, true, markup('examples', values));
+  await highlight(page);
+  await expect(page.locator('#javascript .line-numbers-rows > span')).toHaveCount(18);
+  await page.evaluate(() => Prism.highlightAll());
+  await page.getByRole('tab', { name: 'Python', exact: true }).click();
+  await expect(page.locator('#python .line-numbers-rows > span')).toHaveCount(18);
+  // A theme's generic pre padding must not clip the separately positioned gutter.
+  await page.addStyleTag({
+    content: 'article pre:not(.wp-block-mbb-math){padding:20px!important}',
+  });
+  const gutter = await page.locator('#python pre').evaluate((pre) => {
+    const code = pre.querySelector('code').getBoundingClientRect();
+    const rows = pre.querySelector('.line-numbers-rows').getBoundingClientRect();
+    return {
+      codeHeight: code.height,
+      rowHeight: rows.height,
+      codeLeft: code.left,
+      rowLeft: rows.left,
+      preLeft: pre.getBoundingClientRect().left,
+    };
+  });
+  expect(gutter.rowHeight).toBeCloseTo(gutter.codeHeight, 0);
+  expect(gutter.rowLeft).toBeGreaterThanOrEqual(gutter.preLeft - 1);
+  expect(gutter.codeLeft - gutter.rowLeft).toBeGreaterThan(30);
+  await page.screenshot({ path: `test-results/code-gutter-${info.project.name}.png` });
+});
+
+test('compact gutters fit three and five digit line numbers without covering source', async ({
+  page,
+}, info) => {
+  const values = tabs.map((tab) => ({
+    ...tab,
+    code: Array.from({ length: 130 }, (_, i) => `const value${i} = ${i};`).join('\n'),
+  }));
+  await load(page, true, markup('examples', values));
+  await page.locator('#javascript pre').evaluate((pre) => (pre.dataset.start = '10000'));
+  await highlight(page);
+  const measure = (locator) =>
+    locator.evaluate((pre) => {
+      const rows = pre.querySelector('.line-numbers-rows');
+      const rowStyle = getComputedStyle(rows.firstElementChild, '::before');
+      const canvas = document.createElement('canvas').getContext('2d');
+      canvas.font = rowStyle.font;
+      const digits = pre.dataset.start ? '10129' : '130';
+      return {
+        padding: parseFloat(getComputedStyle(pre).paddingLeft),
+        fontSize: parseFloat(getComputedStyle(pre).fontSize),
+        numberFits:
+          canvas.measureText(digits).width + parseFloat(rowStyle.paddingRight) <=
+          rows.getBoundingClientRect().width,
+        inset: rows.getBoundingClientRect().left - pre.getBoundingClientRect().left,
+        separation:
+          pre.querySelector('code').getBoundingClientRect().left -
+          rows.getBoundingClientRect().right,
+      };
+    });
+  const five = await measure(page.locator('#javascript pre'));
+  expect(five.numberFits).toBe(true);
+  expect(five.inset).toBeGreaterThanOrEqual(-1);
+  expect(five.separation).toBeGreaterThan(0);
+  await page.getByRole('tab', { name: 'Python', exact: true }).click();
+  const three = await measure(page.locator('#python pre'));
+  expect(three.padding / three.fontSize).toBeLessThan(3.3);
+  expect(three.numberFits).toBe(true);
+  expect(three.inset).toBeGreaterThanOrEqual(-1);
+  expect(five.padding).toBeGreaterThan(three.padding);
+  await page.screenshot({ path: `test-results/compact-code-gutter-${info.project.name}.png` });
 });

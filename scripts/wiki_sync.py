@@ -26,6 +26,16 @@ def digest(data):
     return hashlib.sha256(data).hexdigest()
 
 
+def should_publish(version, event, ref, requested=False):
+    """Keep prerelease main preview-only unless a maintainer explicitly publishes it."""
+    stable = isinstance(version, str) and re.fullmatch(
+        r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)", version
+    )
+    return ref == "refs/heads/main" and (
+        (event == "push" and bool(stable)) or (event == "workflow_dispatch" and requested is True)
+    )
+
+
 def rewrite_markdown(text, source, repository, sha):
     """Rewrite destinations, leaving fenced/inline code and absolute URLs intact."""
     wiki = f"https://github.com/{repository}/wiki"
@@ -224,12 +234,23 @@ def main():
     sync.add_argument("--staging", type=Path, required=True)
     sync.add_argument("--wiki", type=Path, required=True)
     sync.add_argument("--bootstrap-home", action="store_true")
+    policy = sub.add_parser("publication-policy")
+    policy.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
+    policy.add_argument("--event", required=True)
+    policy.add_argument("--ref", required=True)
+    policy.add_argument("--publish", choices=["true", "false"], default="false")
     args = parser.parse_args()
     try:
         if args.command == "generate":
             generate(args.root, args.output, args.repository, args.sha)
-        else:
+        elif args.command == "apply":
             apply(args.staging, args.wiki, args.bootstrap_home)
+        else:
+            version = json.loads((args.root / "package.json").read_text(encoding="utf-8"))[
+                "version"
+            ]
+            allowed = should_publish(version, args.event, args.ref, args.publish == "true")
+            print("publish=" + ("true" if allowed else "false"))
     except (ValueError, OSError) as error:
         parser.exit(1, f"Wiki sync failed: {error}\n")
 

@@ -139,6 +139,13 @@ try {
         'comment_approved' => 1,
     ]);
     $before = ex_snapshot($post);
+    $linkedHtml = ex_prepare($post, 'html');
+    $linkedDescriptor = json_decode($linkedHtml['projectedSource'], true, 64, JSON_THROW_ON_ERROR);
+    ex_assert(
+        str_contains($linkedDescriptor['body'], 'mbb-external-image-link') &&
+            !str_contains($linkedDescriptor['body'], '<img src="https://example.invalid'),
+        'External image was fetched or omitted instead of linked',
+    );
     $md = ex_prepare($post, 'markdown');
     ex_assert($md['projectedSource'] === $source, 'MD preparation changed raw bytes');
     $response = ex_download($md);
@@ -342,6 +349,44 @@ try {
             $after[3] == $before[3],
         'Export changed article/private identities',
     );
+    // Actual static export uses the same saved-pair/CAS path and never mutates it.
+    $params['post_id'] = $post;
+    $params['documentId'] = mbb_id($post);
+    $params['expected'] = mbb_token(get_post($post));
+    $params['source'] =
+        str_replace("![external](https://example.invalid/not-fetched.png)\r\n\r\n", '', $source) .
+        "\r\nFormula \$a=b\$.\r\n";
+    ex_ok(ex_request('/mbb/v1/save', $params), 'Static paired fixture save failed');
+    $staticBefore = ex_snapshot($post);
+    $html = ex_prepare($post, 'html');
+    $denied = ex_prepare($post, 'html');
+    wp_set_current_user($actors[1]);
+    ex_assert(ex_download($denied)->get_status() >= 400, 'Static owner check bypassed');
+    wp_set_current_user($actors[0]);
+    $descriptor = json_decode(
+        ex_ok(ex_download($html), 'Static download failed'),
+        true,
+        512,
+        JSON_THROW_ON_ERROR,
+    );
+    ex_assert(
+        $descriptor['kind'] === 'markbridge-static' && count($descriptor['images']) === 1,
+        'Static descriptor omitted local image',
+    );
+    ex_assert(
+        str_contains($descriptor['body'], 'mbb-static:') &&
+            !str_contains(wp_json_encode($descriptor), '_export_private_note'),
+        'Static privacy/projection failed',
+    );
+    ex_assert(ex_download($html)->get_status() >= 400, 'Static claim reused');
+    ex_assert(
+        ex_snapshot($post) == $staticBefore,
+        'Static export changed saved pair or private data',
+    );
+    $changedHTML = ex_prepare($post, 'html');
+    file_put_contents($upload['file'], $original . 'changed');
+    ex_assert(ex_download($changedHTML)->get_status() >= 400, 'Changed static image accepted');
+    file_put_contents($upload['file'], $original);
     wp_set_current_user(0);
     ex_assert(
         ex_request('/mbb/v1/export/prepare', [
@@ -352,7 +397,7 @@ try {
         ])->get_status() === 403,
         'Anonymous export accepted',
     );
-    echo "Real WordPress export: paired exact MD/ZIP, parent media, reimport, owner/TTL/receipt/conflict, resource SHA, source isolation and no writes passed\n";
+    echo "Real WordPress export: paired exact MD/ZIP/static HTML, parent media, reimport, owner/TTL/receipt/conflict, resource SHA, source isolation and no writes passed\n";
 } finally {
     if ($sourceTarget) {
         remove_filter('mbb_source_write_target', $sourceTarget, 10);

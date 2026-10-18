@@ -71,6 +71,22 @@ window.mbbRender = (tex, display) => {
   return result;
 };
 
+const mathmlOne = async (tex, display) => {
+  if (typeof tex !== 'string' || tex.length > 20000) throw Error(T('The formula is too long'));
+  await MathJax.startup.promise;
+  if (typeof MathJax.tex2mmlPromise !== 'function')
+    throw Error(T('The formula interface is not ready'));
+  const mathml = await MathJax.tex2mmlPromise(tex, { display });
+  if (typeof mathml !== 'string' || new TextEncoder().encode(mathml).length > 131072)
+    throw Error(T('The formula is too long'));
+  return { mathml };
+};
+window.mbbMathML = (tex, display) => {
+  const result = renderQueue.then(() => mathmlOne(tex, display));
+  renderQueue = result.catch(() => {});
+  return result;
+};
+
 // No direct parent/child DOM access: browsers can isolate frame Window objects.
 let mbbChannel,
   mbbBooting = false,
@@ -126,8 +142,8 @@ window.addEventListener('message', (event) => {
         reply({ action: 'load-error', error: e.message });
       });
   }
-  if (m.action === 'render' && mbbReady && Number.isSafeInteger(m.id))
-    mbbRender(m.tex, !!m.display).then(
+  if (['render', 'mathml'].includes(m.action) && mbbReady && Number.isSafeInteger(m.id))
+    (m.action === 'mathml' ? mbbMathML : mbbRender)(m.tex, !!m.display).then(
       (result) => reply({ action: 'result', id: m.id, ...result }),
       (e) => reply({ action: 'result', id: m.id, error: e.message }),
     );

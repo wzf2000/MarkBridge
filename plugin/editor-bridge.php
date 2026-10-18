@@ -16,6 +16,7 @@ require_once __DIR__ . '/resource-import.php';
 require_once __DIR__ . '/save-commit.php';
 require_once __DIR__ . '/export.php';
 require_once __DIR__ . '/merge.php';
+require_once __DIR__ . '/preview-navigation.php';
 function mbb_managed($id)
 {
     return get_post_meta($id, '_mbb_origin', true) === 'markdown_import' &&
@@ -252,6 +253,7 @@ function mbb_html_allowed($blocks)
             'core/list-item',
             'core/table',
             'core/image',
+            'core/gallery',
             'core/html',
             'core/more',
             'core/details',
@@ -266,12 +268,16 @@ function mbb_html_allowed($blocks)
             'mbb/math',
             'mbb/code',
             'mbb/frontmatter',
+            'mbb/identity',
             'mbb/component',
             'mbb/collapse',
             'mbb/steps',
             'mbb/step',
             'mbb/code-compare',
             'mbb/code-tabs',
+            'mbb/object',
+            'mbb/statement',
+            'mbb/bibliography',
         ];
         foreach ($blocks as $b) {
             if ($b['blockName'] === null && trim($b['innerHTML']) === '') {
@@ -297,6 +303,12 @@ function mbb_candidate($r)
 {
     $digest = mbb_block_adapter_digest();
     $candidate = mbb_candidate_current($r);
+    if (!is_wp_error($candidate)) {
+        $media = mbb_native_media_validate_candidate($candidate['document']['serialized']);
+        if (is_wp_error($media)) {
+            return $media;
+        }
+    }
     if (!is_wp_error($candidate)) {
         // Dependency inspection can invoke the real block_parser_class filter.
         // Keep the entry snapshot and compare only after every preparation/parse step.
@@ -468,6 +480,16 @@ function mbb_preview($r)
         return $c;
     }
     $p = $c['post_id'] ? get_post($c['post_id']) : null;
+    if ($p && isset($c['revision_id']) && function_exists('mbb_references_projection')) {
+        $currentIdentity = mbb_references_projection($p->post_content)['identity'];
+        $historyIdentity = mbb_references_projection($c['document']['serialized'])['identity'];
+        $c['identity_restore'] =
+            $currentIdentity !== $historyIdentity
+                ? ($currentIdentity && !$historyIdentity
+                    ? 'adopt-history'
+                    : 'incompatible')
+                : 'exact';
+    }
     $c['before'] = $p ? $p->post_content_filtered : '';
     $c['before_title'] = $p ? $p->post_title : '';
     $c['frontmatter_receipt'] = isset($c['frontmatter_binding'])
@@ -477,9 +499,12 @@ function mbb_preview($r)
     $receipt_request = clone $r;
     $receipt_request['frontmatter_receipt'] = $c['frontmatter_receipt'];
     $c['resource_receipt'] = mbb_resource_receipt($receipt_request, $c);
-    $c['html'] = mbb_render_footnotes(
-        do_blocks(($c['resource_plan']['projectedDocument'] ?? $c['document'])['serialized']),
+    $rendered = mbb_preview_navigation(
+        $c['document'],
+        $c['resource_plan']['projectedDocument'] ?? $c['document'],
     );
+    $c['html'] = $rendered['html'];
+    $c['navigation'] = $rendered['navigation'];
     if (!hash_equals($c['_adapter_registry_digest'], mbb_block_adapter_digest())) {
         return mbb_error(
             'adapter_conflict',
@@ -518,6 +543,9 @@ function mbb_kses_plain_block_sources($text, $allowed = 'post', $protocols = [])
                     'mbb/collapse' => ['title'],
                     'mbb/steps' => ['title'],
                     'mbb/step' => ['title'],
+                    'mbb/object' => ['caption'],
+                    'mbb/statement' => ['title'],
+                    'mbb/bibliography' => ['entries'],
                 ][$b['blockName']] ?? [];
             if (in_array($b['blockName'], mbb_block_adapter_names(), true)) {
                 $fields = array_keys($b['attrs']);
@@ -529,6 +557,9 @@ function mbb_kses_plain_block_sources($text, $allowed = 'post', $protocols = [])
                     isset($attrs[$field]) &&
                     (is_string($attrs[$field]) ||
                         ($b['blockName'] === 'mbb/component' && $field === 'params') ||
+                        ($b['blockName'] === 'mbb/bibliography' &&
+                            $field === 'entries' &&
+                            is_array($attrs[$field])) ||
                         ($b['blockName'] === 'mbb/code-tabs' &&
                             $field === 'tabs' &&
                             is_array($attrs[$field])))
@@ -611,9 +642,37 @@ function mbb_restore_source_filters($saved)
         }
     }
 }
-function mbb_save($r, $cli_source_path = null)
+function mbb_save($r, $cli_source_path = null, ?callable $new_document_provenance = null)
+{
+    if (
+        !empty($GLOBALS['mbb_reference_transaction']) ||
+        !empty($GLOBALS['mbb_reference_lifecycle'])
+    ) {
+        return mbb_error(
+            'nested_save',
+            mbb_t('A paired save cannot start inside a native save transaction.'),
+            409,
+        );
+    }
+    $result = mbb_save_core($r, $cli_source_path, $new_document_provenance);
+    if (is_wp_error($result) && $result->get_error_code() === 'reference_connection_required') {
+        return mbb_references_connection(
+            fn() => mbb_save_core($r, $cli_source_path, $new_document_provenance),
+        );
+    }
+    return $result;
+}
+function mbb_save_core($r, $cli_source_path = null, ?callable $new_document_provenance = null)
 {
     global $wpdb;
+    if (
+        function_exists('mbb_references_request_touched') &&
+        mbb_references_request_touched($r, absint($r['post_id']))
+    ) {
+        return mbb_references_connection(
+            fn() => mbb_save_core($r, $cli_source_path, $new_document_provenance),
+        );
+    }
     if (!empty($GLOBALS['mbb_native_pair'])) {
         return mbb_error(
             'nested_save',
@@ -681,6 +740,16 @@ function mbb_save($r, $cli_source_path = null)
         if (is_wp_error($c)) {
             return $c;
         }
+        if (
+            function_exists('mbb_references_requires_connection') &&
+            mbb_references_requires_connection($c['document'])
+        ) {
+            return mbb_error(
+                'reference_connection_required',
+                'Reference transaction required.',
+                409,
+            );
+        }
         $adapter_confirm = mbb_block_adapter_confirm($r, $c);
         if (is_wp_error($adapter_confirm)) {
             return $adapter_confirm;
@@ -722,6 +791,13 @@ function mbb_save($r, $cli_source_path = null)
                 ),
                 500,
             );
+        }
+        if (
+            function_exists('mbb_references_begin') &&
+            !empty($GLOBALS['mbb_reference_connection'])
+        ) {
+            mbb_references_begin((int) $id, $doc, $r);
+            $p = $id ? mbb_references_fresh_post($id) : null;
         }
         if ($p && get_post_meta($id, '_mbb_source_managed', true) === 'file') {
             if ($cli_source_sync) {
@@ -793,7 +869,11 @@ function mbb_save($r, $cli_source_path = null)
                 return array_merge(mbb_state($id), ['noop' => true]);
             }
             $transaction_attempted = true;
-            if ($wpdb->query('START TRANSACTION') === false) {
+            if (
+                (function_exists('mbb_references_start_sql')
+                    ? mbb_references_start_sql()
+                    : $wpdb->query('START TRANSACTION')) === false
+            ) {
                 throw new RuntimeException(mbb_t('The save transaction could not be started'));
             }
             $transaction_started = true;
@@ -886,6 +966,11 @@ function mbb_save($r, $cli_source_path = null)
             }
             update_post_meta($id, '_mbb_origin', 'markdown_import');
             update_post_meta($id, '_mbb_document_id', $docId);
+            // Internal new-document provenance participates in the same transaction;
+            // it is never supplied by REST fields or run for an existing article.
+            if (!$p && $new_document_provenance !== null) {
+                $new_document_provenance($id, $docId);
+            }
             $history = get_post_meta($id, '_mbb_source_history', true);
             if (!is_array($history)) {
                 $history = [];
@@ -938,6 +1023,12 @@ function mbb_save($r, $cli_source_path = null)
                 throw new RuntimeException(
                     mbb_t('Static block registrations changed during saving'),
                 );
+            }
+            if (function_exists('mbb_references_provenance')) {
+                mbb_references_provenance($r, (int) $id, $doc, (int) $after_revision);
+            }
+            if (function_exists('mbb_references_finish')) {
+                mbb_references_finish((int) $id, $doc);
             }
             $commit_attempted = true;
             if ($wpdb->query('COMMIT') === false) {
@@ -1032,6 +1123,11 @@ function mbb_save($r, $cli_source_path = null)
                     ),
                     500,
                 );
+            }
+            // A rejected claim is a normal conflict once every write has rolled back.
+            // Uncertain commit or failed compensation above must retain their stronger errors.
+            if ($e instanceof MBB_Reference_Failure) {
+                return mbb_references_error($e);
             }
             return $transaction_started
                 ? mbb_error(
@@ -1260,9 +1356,21 @@ add_action('admin_menu', function () {
         'edit_posts',
         'mbb-editor',
         function () {
+            if (($_GET['view'] ?? '') === 'collections') {
+                mbb_collections_page();
+                return;
+            }
+            echo '<p><a class="button" href="' .
+                esc_url(admin_url('tools.php?page=mbb-editor&view=collections')) .
+                '">' .
+                esc_html(mbb_t('Collections')) .
+                '</a></p>';
             echo mbb_t(
                 '<div class="wrap"><h1>Markdown editing bridge</h1><p>Upload Markdown for editing in both representations. Preview differences before saving, publishing, or submitting for review. Set a featured image before publishing.</p><p><button class="button button-primary" id="mbb-new">Upload a new document</button></p><ul>',
             );
+            echo '<li><button class="button" id="mbb-batch-new">' .
+                esc_html(mbb_t('Batch import drafts')) .
+                '</button></li>';
             $page = max(1, absint($_GET['mbb_page'] ?? 1));
             $posts = get_posts([
                 'post_type' => 'post',
@@ -1330,6 +1438,19 @@ function mbb_enqueue_ui()
     }
     if ($tool) {
         mbb_enqueue_kernel(true);
+        wp_enqueue_style(
+            'mbb-batch-ui',
+            plugins_url(mbb_asset('batch-ui.css'), __FILE__),
+            [],
+            substr(hash_file('sha256', __DIR__ . '/batch-ui.css'), 0, 12),
+        );
+        wp_enqueue_script(
+            'mbb-batch-ui',
+            plugins_url(mbb_asset('batch-ui.js'), __FILE__),
+            ['mbb-editor-ui', 'mbb-source-tools', 'mbb-math'],
+            substr(hash_file('sha256', __DIR__ . '/batch-ui.js'), 0, 12),
+            true,
+        );
     }
     wp_enqueue_script(
         'mbb-resource-ui',
@@ -1339,9 +1460,32 @@ function mbb_enqueue_ui()
         true,
     );
     wp_enqueue_script(
+        'mbb-source-tools',
+        plugins_url(mbb_asset('source-tools.js'), __FILE__),
+        [],
+        substr(hash_file('sha256', __DIR__ . '/source-tools.js'), 0, 12),
+        true,
+    );
+    wp_enqueue_script(
+        'mbb-writing-ui',
+        plugins_url(mbb_asset('writing-ui.js'), __FILE__),
+        ['mbb-kernel', 'mbb-references-ui'],
+        substr(hash_file('sha256', __DIR__ . '/writing-ui.js'), 0, 12),
+        true,
+    );
+    wp_enqueue_script(
         'mbb-editor-ui',
         plugins_url(mbb_asset('editor-ui.js'), __FILE__),
-        ['wp-data', 'wp-blocks', 'wp-api-fetch', 'mbb-math', 'mbb-resource-ui', 'mbb-kernel'],
+        [
+            'wp-data',
+            'wp-blocks',
+            'wp-api-fetch',
+            'mbb-math',
+            'mbb-resource-ui',
+            'mbb-kernel',
+            'mbb-source-tools',
+            'mbb-writing-ui',
+        ],
         substr(hash_file('sha256', __DIR__ . '/editor-ui.js'), 0, 12),
         true,
     );
@@ -1363,7 +1507,15 @@ function mbb_enqueue_ui()
         'state' => $tool || $new_post ? null : mbb_state($id),
         'footnoteStyle' => file_get_contents(__DIR__ . '/footnotes.css'),
         'teachingStyle' => file_get_contents(__DIR__ . '/teaching.css'),
+        'technicalStyle' => file_get_contents(__DIR__ . '/technical.css'),
+        'nativeMediaStyle' => file_get_contents(__DIR__ . '/media-presentation.css'),
         'codeDisplayStyle' => file_get_contents(__DIR__ . '/code-display.css'),
+        'navigationBridge' => [
+            'script' => file_get_contents(__DIR__ . '/preview-navigation.js'),
+            'sha256' => base64_encode(
+                hash_file('sha256', __DIR__ . '/preview-navigation.js', true),
+            ),
+        ],
         'supportedBlocks' => array_merge(
             array_keys(
                 json_decode(
@@ -1379,9 +1531,38 @@ function mbb_enqueue_ui()
         'exports' => mbb_export_config(),
     ]);
     wp_enqueue_script(
+        'mbb-static-code',
+        plugins_url(mbb_asset('static-code.js'), __FILE__),
+        [],
+        substr(hash_file('sha256', __DIR__ . '/static-code.js'), 0, 12),
+        true,
+    );
+    wp_add_inline_script(
+        'mbb-static-code',
+        'window.MBB_STATIC_CODE=' .
+            wp_json_encode([
+                'core' => plugins_url('vendor/prism/components/prism-core.min.js', __FILE__),
+                'autoloader' => plugins_url(
+                    'vendor/prism/plugins/autoloader/prism-autoloader.min.js',
+                    __FILE__,
+                ),
+                'languages' => plugins_url('vendor/prism/components/', __FILE__),
+                'known' => mbb_code_languages(),
+            ]) .
+            ';',
+        'before',
+    );
+    wp_enqueue_script(
+        'mbb-static-export',
+        plugins_url(mbb_asset('static-export.js'), __FILE__),
+        ['mbb-math', 'mbb-static-code'],
+        substr(hash_file('sha256', __DIR__ . '/static-export.js'), 0, 12),
+        true,
+    );
+    wp_enqueue_script(
         'mbb-export-ui',
         plugins_url(mbb_asset('export-ui.js'), __FILE__),
-        ['mbb-editor-ui'],
+        ['mbb-editor-ui', 'mbb-static-export'],
         substr(hash_file('sha256', __DIR__ . '/export-ui.js'), 0, 12),
         true,
     );
@@ -1390,6 +1571,13 @@ function mbb_enqueue_ui()
         plugins_url(mbb_asset('local-recovery.js'), __FILE__),
         ['mbb-editor-ui'],
         substr(hash_file('sha256', __DIR__ . '/local-recovery.js'), 0, 12),
+        true,
+    );
+    wp_enqueue_script(
+        'mbb-paired-backups',
+        plugins_url(mbb_asset('paired-backups.js'), __FILE__),
+        ['mbb-local-recovery'],
+        substr(hash_file('sha256', __DIR__ . '/paired-backups.js'), 0, 12),
         true,
     );
     wp_enqueue_style(
@@ -1410,4 +1598,5 @@ add_action('enqueue_block_editor_assets', 'mbb_enqueue_ui');
 add_action('admin_footer-post-new.php', 'mbb_enqueue_ui');
 
 require_once __DIR__ . '/local-recovery.php';
+require_once __DIR__ . '/paired-backups.php';
 require_once __DIR__ . '/lifecycle.php';

@@ -1,6 +1,6 @@
 # 用户文档 Wiki 维护
 
-[MarkBridge Wiki](https://github.com/wzf2000/MarkBridge/wiki) 是用户阅读入口，仓库 Markdown 是唯一维护源。Wiki 跟随 `main`，可能早于已发布版本；安装已有 Release 时使用该版本固定源码提交中的文档。每页显示源码提交链接。
+[MarkBridge Wiki](https://github.com/wzf2000/MarkBridge/wiki) 是用户阅读入口，仓库 Markdown 是唯一维护源。稳定版本的 `main` 可自动同步；预发行版本默认只生成审核预览，不覆盖现有 Wiki。安装已有 Release 时使用该版本固定源码提交中的文档。每页显示源码提交链接。
 
 ## 同步范围
 
@@ -26,7 +26,7 @@
 ## 初始化与权限
 
 1. 在仓库 Settings 启用 Wiki，在网页保存首个 Home 页。初始化占位正文应精确为 `初始化`（无末尾换行）。已有人工 Home 应先保存并人工迁移，再采用此占位；同步器不会覆盖任意现存页面。
-2. `User documentation Wiki` workflow 可手动运行。默认 `publish=false` 只生成供下载审核的 artifact；在 `main` 选择 `publish=true` 才发布。精选正文或同步代码合并到 `main` 会自动发布。
+2. `User documentation Wiki` workflow 可手动运行。默认 `publish=false` 只生成供下载审核的 artifact；在 `main` 选择 `publish=true` 才发布。精选正文或同步代码合并到 `main` 时始终生成 artifact；仅 `package.json` 为无后缀的稳定版本（如 `3.0.0`）才自动发布。`-rc.N`／`-dev.N` 等预发行版本保持预览，等待审核；维护者仍可在 `main` 手动明确选择 `publish=true` 覆盖这项默认限制。其他分支不能发布。
 3. 预览任务仅有 `contents: read`；仅主分支发布任务有 `contents: write`。workflow 优先使用仓库 secret `WIKI_TOKEN`，否则尝试本次 `GITHUB_TOKEN`。内置 token 能否写入 Wiki 必须以实际运行结果为准；`contents: write` 不构成成功证据。如失败，应配置具有该仓库 Wiki 写权限的凭据并重新运行。凭据只通过临时 Git askpass 的环境变量读取，不放入远端 URL、提交或日志。
 
 Wiki 未初始化或凭据不足会使 clone/push 明确失败。先检查首个页面已保存，再检查凭据权限；不需要强制推送。同步工作串行运行且不取消已排队工作，发布时读取当前 `main`，推送前再核对源码 SHA，检测更新则失败并要求重新运行。

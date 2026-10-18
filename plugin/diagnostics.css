@@ -1,0 +1,48 @@
+.mbb-diagnostic {
+  margin-block: 0.65rem;
+  color: inherit;
+  font: inherit;
+  font-size: 0.875em;
+}
+.mbb-diagnostic summary {
+  cursor: pointer;
+  width: fit-content;
+  padding-block: 0.35rem;
+}
+.mbb-diagnostic textarea {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 38rem;
+  margin-block: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid var(--mbb-border-color, #c8ced3);
+  background: var(--mbb-code-surface, #f6f7f8);
+  color: inherit;
+  font: 0.85em/1.5 monospace;
+}
+.mbb-diagnostic button {
+  margin-inline-end: 0.75rem;
+  padding: 0.45rem 0.65rem;
+  border: 1px solid var(--mbb-border-color, #c8ced3);
+  border-radius: 0.35rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.mbb-diagnostic :is(summary, button, textarea):focus-visible {
+  outline: 2px solid var(--mbb-focus-color, #27669d);
+  outline-offset: 3px;
+}
+@media print {
+  .mbb-diagnostic {
+    display: none !important;
+  }
+}
+
+@media (any-pointer: coarse) {
+  .mbb-diagnostic :is(button, summary) {
+    min-height: 44px;
+  }
+}

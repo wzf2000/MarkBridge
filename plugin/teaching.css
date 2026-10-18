@@ -2,14 +2,14 @@
 .wp-block-mbb-steps,
 .wp-block-mbb-step,
 .wp-block-mbb-code-compare {
-  margin-block: 1.25rem;
+  margin-block: var(--mbb-block-space, 1.25rem);
   scroll-margin-top: 5rem;
 }
 .wp-block-mbb-code-tabs {
-  margin-block: 1.25rem;
+  margin-block: var(--mbb-block-space, 1.25rem);
   padding: 0;
-  border: 1px solid #8884;
-  border-radius: 8px;
+  border: 1px solid var(--mbb-border-color, #8884);
+  border-radius: var(--mbb-border-radius, 8px);
   min-width: 0;
 }
 .mbb-code-tab {
@@ -83,7 +83,7 @@
 }
 .mbb-teaching-controls button:focus-visible,
 .mbb-teaching-controls select:focus-visible {
-  outline: 3px solid currentColor;
+  outline: 3px solid var(--mbb-focus-color, currentColor);
   outline-offset: 3px;
 }
 .wp-block-mbb-collapse {
@@ -124,15 +124,12 @@
 }
 .mbb-compare-line[data-mbb-diff='removed'] {
   background: #d3363620;
-  border-left: 3px solid #b22;
 }
 .mbb-compare-line[data-mbb-diff='added'] {
   background: #21873b20;
-  border-left: 3px solid #18732f;
 }
 .mbb-compare-line[data-mbb-highlight] {
-  outline: 1px solid currentColor;
-  outline-offset: -1px;
+  box-shadow: inset 3px 0 currentColor;
 }
 @media (max-width: 700px) {
   .wp-block-mbb-code-compare {
@@ -165,7 +162,7 @@
 
 .mbb-teaching-editor {
   border: 1px solid #8c8f9460;
-  border-radius: 8px;
+  border-radius: var(--mbb-border-radius, 8px);
   padding: 16px !important;
   background: #f6f7f780;
 }
@@ -182,7 +179,7 @@
   gap: 16px;
 }
 .mbb-teaching-editor textarea {
-  font-family: ui-monospace, monospace;
+  font-family: var(--mbb-font-code, ui-monospace, monospace);
   tab-size: 4;
   min-height: 150px;
 }
@@ -190,7 +187,7 @@
   flex-basis: 100%;
   max-width: 100%;
   min-height: 8rem;
-  font-family: ui-monospace, monospace;
+  font-family: var(--mbb-font-code, ui-monospace, monospace);
 }
 .mbb-teaching-controls button {
   border: 1px solid #8888;
@@ -211,32 +208,61 @@
   }
 }
 .mbb-component-controls {
-  border: 1px solid #cbd5e1;
-  background: #f8fafc;
-  border-radius: 8px;
-  padding: 12px;
+  border: 1px solid var(--mbb-border-color, #8884);
+  border-radius: var(--mbb-border-radius, 8px);
+  padding: 0;
   margin-block: 16px;
-  color: #243447;
-}
-.mbb-component-controls > button {
-  font: inherit;
-  padding: 6px 12px;
-  margin-right: 8px;
-  background: white;
+  overflow: hidden;
   color: inherit;
-  border: 1px solid #9daec2;
-  border-radius: 6px;
+}
+.mbb-component-controls > .mbb-component-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  font: inherit;
+  font-weight: 600;
+  text-align: start;
+  padding: 0.85rem 1rem;
+  margin: 0;
+  background: transparent;
+  color: inherit;
+  border: 0;
+  border-radius: 0;
   cursor: pointer;
 }
+.mbb-component-toggle::before {
+  content: '';
+  width: 0.45rem;
+  height: 0.45rem;
+  flex: 0 0 auto;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+}
+.mbb-component-toggle[aria-expanded='true']::before {
+  transform: rotate(45deg);
+}
+.mbb-component-toggle:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
 .mbb-component-controls > button:focus-visible {
-  outline: 3px solid #1674c5;
-  outline-offset: 2px;
+  outline: 3px solid var(--mbb-focus-color, #1674c5);
+  outline-offset: -3px;
+}
+.mbb-component-status:not(:empty) {
+  display: block;
+  padding: 0 1rem 0.85rem;
+}
+.mbb-component-status:empty {
+  display: none;
 }
 .mbb-component-frame {
   display: block;
   width: 100%;
-  border: 1px solid #d4dce8;
-  border-radius: 8px;
+  border: 0;
+  border-top: 1px solid var(--mbb-border-color, #8884);
   min-height: 280px;
 }
 .wp-block-mbb-component > .mbb-teaching-body {
@@ -264,9 +290,10 @@
 
 /* Reading controls inherit the article palette and form a compact, consistent toolbar. */
 [data-mbb-teaching='steps'][data-mbb-enhanced] {
-  --mbb-teaching-effective-offset: max(
-    var(--mbb-teaching-sticky-offset, 0px),
-    var(--mbb-teaching-measured-offset, 0px)
+  --mbb-teaching-toolbar-gap: 12px;
+  --mbb-teaching-effective-offset: calc(
+    max(var(--mbb-teaching-sticky-offset, 0px), var(--mbb-teaching-measured-offset, 0px)) +
+      var(--mbb-teaching-toolbar-gap)
   );
   scroll-margin-top: calc(var(--mbb-teaching-effective-offset) + 0.75rem);
 }
@@ -280,9 +307,10 @@
   top: var(--mbb-teaching-effective-offset, 0px);
   z-index: 10;
   padding: 0.65rem 0.8rem;
-  border: 1px solid #8883;
+  border: 1px solid var(--mbb-border-color, #8883);
   border-radius: 10px;
   background: var(--mbb-teaching-sticky-background, Canvas);
+  box-shadow: 0 3px 12px #0000000d;
   gap: 0.65rem 1rem;
 }
 .mbb-stage-modes,
@@ -294,7 +322,7 @@
 }
 .mbb-stage-modes {
   padding: 3px;
-  border-radius: 8px;
+  border-radius: var(--mbb-border-radius, 8px);
   background: #88812;
 }
 .mbb-stage-controls .mbb-stage-modes button {
@@ -322,7 +350,7 @@
 .mbb-stage-navigation select {
   max-width: 16rem;
   min-width: 0;
-  border: 1px solid #8884;
+  border: 1px solid var(--mbb-border-color, #8884);
   border-radius: 6px;
   background: transparent;
   color: inherit;
@@ -332,7 +360,7 @@
 }
 .wp-block-mbb-collapse {
   border-radius: 9px;
-  border-color: #8883;
+  border-color: var(--mbb-border-color, #8883);
   padding: 0;
   overflow: clip;
 }
@@ -377,7 +405,7 @@
 }
 .wp-block-mbb-code-tabs > .mbb-teaching-controls {
   margin: 0;
-  border-bottom: 1px solid #8883;
+  border-bottom: 1px solid var(--mbb-border-color, #8883);
   padding: 0 0.65rem;
 }
 .mbb-code-tabs-list {
@@ -393,7 +421,7 @@
 }
 .mbb-code-tabs-list [aria-selected='true'] {
   background: transparent;
-  border-bottom: 2px solid #2271b1;
+  border-bottom: 2px solid var(--mbb-focus-color, #2271b1);
   font-weight: 600;
 }
 .mbb-code-tab,
@@ -417,10 +445,10 @@
   margin: 0 !important;
   border: 0;
   border-radius: 0 0 8px 8px;
-  padding: 1rem;
-  font-size: 0.85em;
-  line-height: 1.7;
-  background: #f5f6f8;
+  padding: var(--mbb-panel-padding, 1rem);
+  font-size: var(--mbb-code-size, 0.85em);
+  line-height: var(--mbb-code-line-height, 1.7);
+  background: var(--mbb-code-surface, #f5f6f8);
 }
 .mbb-code-tab-title[hidden] + .mbb-code-panel-tools + pre,
 .mbb-code-tab-title[hidden] + .mbb-code-panel-tools + .code-toolbar > pre {
@@ -484,20 +512,27 @@
 }
 .mbb-compare-left,
 .mbb-compare-right {
-  border: 1px solid #8883;
+  border: 1px solid var(--mbb-border-color, #8883);
   border-radius: 9px;
   overflow: hidden;
 }
-.mbb-compare-line {
-  border-inline-start: 3px solid transparent;
-  margin-inline: -1rem;
+/* Every diff row stretches to the longest source line, including offscreen text. */
+.wp-block-mbb-code-compare pre > code {
+  display: grid;
+  inline-size: max-content;
+  min-inline-size: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  white-space: pre;
+}
+.wp-block-mbb-code-compare .mbb-compare-line {
+  box-sizing: border-box;
+  margin: 0;
   padding-inline: 0.25rem 0.75rem;
+  border: 0;
 }
-.mbb-compare-line[data-mbb-diff='removed'] {
-  border-inline-start-color: #b22;
-}
-.mbb-compare-line[data-mbb-diff='added'] {
-  border-inline-start-color: #18732f;
+.wp-block-mbb-code-compare :is(.mbb-compare-left, .mbb-compare-right) pre.mbb-code-display {
+  padding-inline: 0 !important;
 }
 .mbb-compare-legend {
   font-size: 0.8em;
@@ -520,6 +555,12 @@
   }
 }
 @media print {
+  .wp-block-mbb-code-compare pre > code {
+    display: block;
+    inline-size: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
   .mbb-code-tab-title[hidden] {
     display: block !important;
   }
@@ -679,4 +720,86 @@
   .mbb-stage-navigation select {
     min-height: 44px;
   }
+}
+
+/* Scoped author controls reuse WordPress inputs and keep nested data readable. */
+.mbb-parameter-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-block: 0.75rem;
+}
+.mbb-parameter-form fieldset {
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  margin-block: 1rem;
+}
+.mbb-parameter-form fieldset fieldset {
+  padding-inline-start: 0.75rem;
+  border-inline-start: 1px solid var(--mbb-border-color, #8884);
+}
+.mbb-parameter-form legend {
+  font-weight: 600;
+  padding: 0;
+  margin-block-end: 0.5rem;
+  overflow-wrap: anywhere;
+}
+.mbb-parameter-array-item {
+  margin-block: 0.75rem;
+}
+.mbb-parameter-editor :is(input, textarea, select) {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.mbb-parameter-editor [role='alert'] {
+  color: #b32d2e;
+  overflow-wrap: anywhere;
+}
+@media (pointer: coarse) {
+  .mbb-parameter-editor button {
+    min-height: 44px;
+  }
+}
+
+/* Author inspector stays usable in a narrow sidebar without changing the parameter data. */
+.mbb-parameter-editor {
+  min-width: 0;
+}
+.mbb-parameter-editor .components-base-control {
+  min-width: 0;
+  margin-block-end: 0.75rem;
+}
+.mbb-parameter-editor :is(input, textarea, select) {
+  width: 100%;
+  min-width: 0;
+  font-size: 16px;
+}
+.mbb-parameter-editor :is(label, legend, button, summary) {
+  overflow-wrap: anywhere;
+}
+.mbb-parameter-technical {
+  margin-block: 0.75rem;
+  color: var(--mbb-muted-color, #59656c);
+}
+.mbb-parameter-technical :is(pre, p) {
+  max-width: 100%;
+  overflow: auto;
+  font-size: 0.8rem;
+}
+.mbb-parameter-array-item {
+  padding-block-end: 0.5rem;
+  border-block-end: 1px solid var(--mbb-border-color, #8883);
+}
+
+.mbb-component-status.mbb-component-complete {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

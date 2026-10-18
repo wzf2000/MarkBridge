@@ -1,0 +1,335 @@
+{
+  "schema": 1,
+  "cases": [
+    {
+      "name": "equation-and-atomic-reference",
+      "source": ":::mbb:v1 object {\"id\":\"eq-one\",\"kind\":\"equation\",\"caption\":\"说明 😀 <literal>\"}\n\n$$\nx^2\n$$\n\n:::mbb:end\n\nSee <span class=\"mbb-xref\" data-mbb-target=\"eq-one\" data-mbb-version=\"1\">[eq-one]</span>.\n\n[eq-one]: https://example.invalid/not-a-reference\n",
+      "valid": true
+    },
+    {
+      "name": "four-object-kinds",
+      "source": ":::mbb:v1 object {\"id\":\"eq-one\",\"kind\":\"equation\",\"caption\":\"说明 😀 <literal>\"}\n\n$$\nx^2\n$$\n\n:::mbb:end\n:::mbb:v1 object {\"id\":\"fig-one\",\"kind\":\"figure\",\"caption\":\"说明 😀 <literal>\"}\n\n![图](https://example.invalid/image.png)\n\n:::mbb:end\n:::mbb:v1 object {\"id\":\"tab-one\",\"kind\":\"table\",\"caption\":\"说明 😀 <literal>\"}\n\n| A | B |\n| - | - |\n| 1 | 2 |\n\n:::mbb:end\n:::mbb:v1 object {\"id\":\"list-one\",\"kind\":\"listing\",\"caption\":\"说明 😀 <literal>\"}\n\n```python\nprint(1)\n```\n\n:::mbb:end\n",
+      "valid": true
+    },
+    {
+      "name": "three-independent-statement-kinds",
+      "source": ":::mbb:v1 statement {\"id\":\"definition-one\",\"kind\":\"definition\",\"title\":\"标题 😀\",\"open\":true}\n\nThe statement.\n\n:::mbb:end\n:::mbb:v1 statement {\"id\":\"theorem-one\",\"kind\":\"theorem\",\"title\":\"标题 😀\",\"open\":true}\n\nThe statement.\n\n:::mbb:end\n:::mbb:v1 statement {\"id\":\"proof-one\",\"kind\":\"proof\",\"title\":\"标题 😀\",\"open\":false}\n\nThe statement.\n\n:::mbb:end\n",
+      "valid": true
+    },
+    {
+      "name": "nested-stage-collapse",
+      "source": ":::mbb:v1 steps {\"id\":\"course\",\"title\":\"Course\",\"mode\":\"staged\",\"previous\":true,\"next\":true,\"full\":true}\n\n:::mbb:v1 step {\"id\":\"stage-one\",\"title\":\"One\"}\n\n:::mbb:v1 collapse {\"id\":\"fold-one\",\"title\":\"Fold\",\"open\":false}\n\n:::mbb:v1 object {\"id\":\"eq-one\",\"kind\":\"equation\",\"caption\":\"说明 😀 <literal>\"}\n\n$$\nx^2\n$$\n\n:::mbb:end\n:::mbb:v1 statement {\"id\":\"theorem-one\",\"kind\":\"theorem\",\"title\":\"标题 😀\",\"open\":true}\n\nThe statement.\n\n:::mbb:end\n\n\n:::mbb:end\n\n\n:::mbb:end\n\n\n:::mbb:end\n",
+      "valid": true
+    },
+    {
+      "name": "bibliography-and-atomic-cite",
+      "source": "<span class=\"mbb-cite\" data-mbb-keys=\"paper-a\" data-mbb-version=\"1\">[paper-a]</span>\n\n:::mbb:v1 bibliography {\"id\":\"references\",\"entries\":[{\"key\":\"paper-a\",\"authors\":[\"A. 作者😀\"],\"title\":\"Title <literal>\",\"year\":\"2026\",\"source\":\"Journal\",\"url\":\"https://example.invalid/paper\"}]}\n\n\n\n:::mbb:end\n\n[paper-a]: https://example.invalid/not-a-cite\n",
+      "valid": true
+    },
+    {
+      "name": "citation-order-and-unreferenced-entry",
+      "source": "<span class=\"mbb-cite\" data-mbb-keys=\"paper-b,paper-a\" data-mbb-version=\"1\">[paper-b,paper-a]</span>\n\n:::mbb:v1 bibliography {\"id\":\"references\",\"entries\":[{\"key\":\"paper-a\",\"authors\":[\"A. 作者😀\"],\"title\":\"Title <literal>\",\"year\":\"2026\",\"source\":\"Journal\",\"url\":\"https://example.invalid/paper\"},{\"key\":\"paper-b\",\"authors\":[\"A. 作者😀\"],\"title\":\"Title <literal>\",\"year\":\"2026\",\"source\":\"Journal\",\"url\":\"https://example.invalid/paper\"},{\"key\":\"paper-c\",\"authors\":[\"A. 作者😀\"],\"title\":\"Title <literal>\",\"year\":\"2026\",\"source\":\"Journal\",\"url\":\"https://example.invalid/paper\"}]}\n\n\n\n:::mbb:end\n",
+      "valid": true
+    },
+    {
+      "name": "footnote-inline-references",
+      "source": ":::mbb:v1 object {\"id\":\"eq-one\",\"kind\":\"equation\",\"caption\":\"说明 😀 <literal>\"}\n\n$$\nx^2\n$$\n\n:::mbb:end\n\nA note[^note].\n\n:::mbb:v1 bibliography {\"id\":\"references\",\"entries\":[{\"key\":\"paper-a\",\"authors\":[\"A. 作者😀\"],\"title\":\"Title <literal>\",\"year\":\"2026\",\"source\":\"Journal\",\"url\":\"https://example.invalid/paper\"}]}\n\n\n\n:::mbb:end\n\n[^note]: <span class=\"mbb-xref\" data-mbb-target=\"eq-one\" data-mbb-version=\"1\">[eq-one]</span> and <span class=\"mbb-cite\" data-mbb-keys=\"paper-a\" data-mbb-version=\"1\">[paper-a]</span>.\n",
+      "valid": true
+    },
+    {
+      "name": "crlf-unicode",
+      "source": ":::mbb:v1 object {\"id\":\"eq-one\",\"kind\":\"equation\",\"caption\":\"说明 😀 <literal>\"}\r\n\r\n$$\r\nx^2\r\n$$\r\n\r\n:::mbb:end\r\n\r\n<span class=\"mbb-xref\" data-mbb-target=\"eq-one\" data-mbb-version=\"1\">[eq-one]</span>\r\n",
+      "valid": true
+    },
+    {
+      "name": "code-literal-markers",
+      "source": "```html\n<span class=\"mbb-xref\" data-mbb-target=\"missing\" data-mbb-version=\"1\">[missing]</span>\n<span class=\"mbb-cite\" data-mbb-keys=\"missing\" data-mbb-version=\"1\">[missing]</span>\n```\n\n`<span class=\"mbb-xref\" data-mbb-target=\"missing\" data-mbb-version=\"1\">[missing]</span>`\n",
+      "valid": true
+    },
+    {
+      "name": "ordinary-at-and-legacy-text",
+      "source": "Ordinary @eq-one, [eq-one] and repeated text.\n\nRepeated text.\n",
+      "valid": true
+    },
+    {
+      "name": "duplicate-object-label",
+      "source": ":::mbb:v1 object {\"id\":\"eq-one\",\"kind\":\"equation\",\"caption\":\"说明 😀 <literal>\"}\n\n$$\nx^2\n$$\n\n:::mbb:end\n:::mbb:v1 object {\"id\":\"eq-one\",\"kind\":\"equation\",\"caption\":\"说明 😀 <literal>\"}\n\n$$\nx^2\n$$\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "shared-teaching-label",
+      "source": ":::mbb:v1 object {\"id\":\"eq-one\",\"kind\":\"equation\",\"caption\":\"说明 😀 <literal>\"}\n\n$$\nx^2\n$$\n\n:::mbb:end\n:::mbb:v1 collapse {\"id\":\"eq-one\",\"title\":\"Fold\",\"open\":false}\n\nBody.\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "shared-html-anchor",
+      "source": ":::mbb:v1 object {\"id\":\"eq-one\",\"kind\":\"equation\",\"caption\":\"说明 😀 <literal>\"}\n\n$$\nx^2\n$$\n\n:::mbb:end\n\n<a id=\"eq-one\"></a>\n",
+      "valid": false
+    },
+    {
+      "name": "missing-xref",
+      "source": "<span class=\"mbb-xref\" data-mbb-target=\"missing\" data-mbb-version=\"1\">[missing]</span>",
+      "valid": false
+    },
+    {
+      "name": "wrong-object-body",
+      "source": ":::mbb:v1 object {\"id\":\"eq-one\",\"kind\":\"equation\",\"caption\":\"说明 😀 <literal>\"}\n\nOrdinary paragraph.\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "multiple-object-bodies",
+      "source": ":::mbb:v1 object {\"id\":\"eq-one\",\"kind\":\"equation\",\"caption\":\"说明 😀 <literal>\"}\n\n$$\nx\n$$\n\n$$\ny\n$$\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "listing-code-tabs-rejected",
+      "source": ":::mbb:v1 object {\"id\":\"eq-one\",\"kind\":\"listing\",\"caption\":\"说明 😀 <literal>\"}\n\n:::mbb:v1 code-tabs {\"id\":\"tabs-one\",\"defaultTab\":\"tab-a\",\"tabs\":[{\"id\":\"tab-a\",\"title\":\"A\"}]}\n\n```js\nx\n```\n\n:::mbb:end\n\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "nonproof-closed",
+      "source": ":::mbb:v1 statement {\"id\":\"theorem-one\",\"kind\":\"theorem\",\"title\":\"标题 😀\",\"open\":false}\n\nThe statement.\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "empty-statement",
+      "source": ":::mbb:v1 statement {\"id\":\"theorem-one\",\"kind\":\"theorem\",\"title\":\"标题 😀\",\"open\":true}\n\n\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "object-inside-footnote",
+      "source": "A[^n].\n\n[^n]: :::mbb:v1 object {\"id\":\"eq-one\",\"kind\":\"equation\",\"caption\":\"说明 😀 <literal>\"}\n    \n    $$\n    x^2\n    $$\n    \n    :::mbb:end\n    ",
+      "valid": false
+    },
+    {
+      "name": "statement-inside-footnote",
+      "source": "A[^n].\n\n[^n]: :::mbb:v1 statement {\"id\":\"theorem-one\",\"kind\":\"theorem\",\"title\":\"标题 😀\",\"open\":true}\n    \n    The statement.\n    \n    :::mbb:end\n    ",
+      "valid": false
+    },
+    {
+      "name": "bibliography-nested",
+      "source": ":::mbb:v1 collapse {\"id\":\"fold-one\",\"title\":\"Fold\",\"open\":false}\n\n:::mbb:v1 bibliography {\"id\":\"references\",\"entries\":[{\"key\":\"paper-a\",\"authors\":[\"A. 作者😀\"],\"title\":\"Title <literal>\",\"year\":\"2026\",\"source\":\"Journal\",\"url\":\"https://example.invalid/paper\"}]}\n\n\n\n:::mbb:end\n\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "bibliography-duplicate",
+      "source": ":::mbb:v1 bibliography {\"id\":\"references\",\"entries\":[{\"key\":\"paper-a\",\"authors\":[\"A. 作者😀\"],\"title\":\"Title <literal>\",\"year\":\"2026\",\"source\":\"Journal\",\"url\":\"https://example.invalid/paper\"}]}\n\n\n\n:::mbb:end\n:::mbb:v1 bibliography {\"id\":\"references-two\",\"entries\":[{\"key\":\"paper-a\",\"authors\":[\"A. 作者😀\"],\"title\":\"Title <literal>\",\"year\":\"2026\",\"source\":\"Journal\",\"url\":\"https://example.invalid/paper\"}]}\n\n\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "bibliography-body",
+      "source": ":::mbb:v1 bibliography {\"id\":\"references\",\"entries\":[{\"key\":\"paper-a\",\"authors\":[\"A. 作者😀\"],\"title\":\"Title <literal>\",\"year\":\"2026\",\"source\":\"Journal\",\"url\":\"https://example.invalid/paper\"}]}\n\nUnexpected paragraph.\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "bibliography-after-footnote",
+      "source": "A[^n].\n\n[^n]: note\n\n:::mbb:v1 bibliography {\"id\":\"references\",\"entries\":[{\"key\":\"paper-a\",\"authors\":[\"A. 作者😀\"],\"title\":\"Title <literal>\",\"year\":\"2026\",\"source\":\"Journal\",\"url\":\"https://example.invalid/paper\"}]}\n\n\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "missing-cite",
+      "source": "<span class=\"mbb-cite\" data-mbb-keys=\"missing\" data-mbb-version=\"1\">[missing]</span>\n\n:::mbb:v1 bibliography {\"id\":\"references\",\"entries\":[{\"key\":\"paper-a\",\"authors\":[\"A. 作者😀\"],\"title\":\"Title <literal>\",\"year\":\"2026\",\"source\":\"Journal\",\"url\":\"https://example.invalid/paper\"}]}\n\n\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "duplicate-bibliography-key",
+      "source": ":::mbb:v1 bibliography {\"id\":\"references\",\"entries\":[{\"key\":\"paper-a\",\"authors\":[\"A. 作者😀\"],\"title\":\"Title <literal>\",\"year\":\"2026\",\"source\":\"Journal\",\"url\":\"https://example.invalid/paper\"},{\"key\":\"paper-a\",\"authors\":[\"A. 作者😀\"],\"title\":\"Title <literal>\",\"year\":\"2026\",\"source\":\"Journal\",\"url\":\"https://example.invalid/paper\"}]}\n\n\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "unsafe-bibliography-url",
+      "source": ":::mbb:v1 bibliography {\"id\":\"references\",\"entries\":[{\"key\":\"paper-a\",\"authors\":[\"A. 作者😀\"],\"title\":\"Title <literal>\",\"year\":\"2026\",\"source\":\"Journal\",\"url\":\"javascript:alert(1)\"}]}\n\n\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "unknown-bibliography-field",
+      "source": ":::mbb:v1 bibliography {\"id\":\"references\",\"entries\":[{\"key\":\"paper-a\",\"authors\":[\"A. 作者😀\"],\"title\":\"Title <literal>\",\"year\":\"2026\",\"source\":\"Journal\",\"url\":\"https://example.invalid/paper\",\"extra\":\"not supported\"}]}\n\n\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "duplicate-inline-attribute",
+      "source": ":::mbb:v1 object {\"id\":\"eq-one\",\"kind\":\"equation\",\"caption\":\"说明 😀 <literal>\"}\n\n$$\nx^2\n$$\n\n:::mbb:end\n\n<span class=\"mbb-xref\" data-mbb-target=\"eq-one\" data-mbb-version=\"1\" data-mbb-version=\"1\">[eq-one]</span>",
+      "valid": false
+    },
+    {
+      "name": "mismatched-inline-text",
+      "source": ":::mbb:v1 object {\"id\":\"eq-one\",\"kind\":\"equation\",\"caption\":\"说明 😀 <literal>\"}\n\n$$\nx^2\n$$\n\n:::mbb:end\n\n<span class=\"mbb-xref\" data-mbb-target=\"eq-one\" data-mbb-version=\"1\">[different]</span>",
+      "valid": false
+    },
+    {
+      "name": "nested-inline-marker",
+      "source": ":::mbb:v1 object {\"id\":\"eq-one\",\"kind\":\"equation\",\"caption\":\"说明 😀 <literal>\"}\n\n$$\nx^2\n$$\n\n:::mbb:end\n\n<span class=\"mbb-xref\" data-mbb-target=\"eq-one\" data-mbb-version=\"1\"><em>[eq-one]</em></span>",
+      "valid": false
+    },
+    {
+      "name": "reference-in-link",
+      "source": ":::mbb:v1 object {\"id\":\"eq-one\",\"kind\":\"equation\",\"caption\":\"说明 😀 <literal>\"}\n\n$$\nx^2\n$$\n\n:::mbb:end\n\n[<span class=\"mbb-xref\" data-mbb-target=\"eq-one\" data-mbb-version=\"1\">[eq-one]</span>](https://example.invalid/)\n",
+      "valid": false
+    },
+    {
+      "name": "reference-in-image",
+      "source": ":::mbb:v1 object {\"id\":\"eq-one\",\"kind\":\"equation\",\"caption\":\"说明 😀 <literal>\"}\n\n$$\nx^2\n$$\n\n:::mbb:end\n\n![<span class=\"mbb-xref\" data-mbb-target=\"eq-one\" data-mbb-version=\"1\">[eq-one]</span>](https://example.invalid/image.png)\n",
+      "valid": false
+    },
+    {
+      "name": "duplicate-cite-key",
+      "source": "<span class=\"mbb-cite\" data-mbb-keys=\"paper-a,paper-a\" data-mbb-version=\"1\">[paper-a,paper-a]</span>\n\n:::mbb:v1 bibliography {\"id\":\"references\",\"entries\":[{\"key\":\"paper-a\",\"authors\":[\"A. 作者😀\"],\"title\":\"Title <literal>\",\"year\":\"2026\",\"source\":\"Journal\",\"url\":\"https://example.invalid/paper\"}]}\n\n\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "invalid-id",
+      "source": ":::mbb:v1 object {\"id\":\"1-invalid\",\"kind\":\"equation\",\"caption\":\"说明 😀 <literal>\"}\n\n$$\nx^2\n$$\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "html-code-literal-reference",
+      "source": "<pre><code><span class=\"mbb-xref\" data-mbb-target=\"missing\" data-mbb-version=\"1\">[missing]</span></code></pre>\n",
+      "valid": true
+    },
+    {
+      "name": "escaped-literal-reference",
+      "source": "\\<span class=\"mbb-xref\" data-mbb-target=\"missing\" data-mbb-version=\"1\">[missing]\\</span>\n",
+      "valid": true
+    },
+    {
+      "name": "footnote-escaped-directive",
+      "source": "A[^n].\n\n[^n]: \\:::mbb:v1 statement {\"id\":\"literal\",\"kind\":\"proof\",\"title\":\"Literal\",\"open\":false}\n",
+      "valid": true
+    },
+    {
+      "name": "proof-initially-open",
+      "source": ":::mbb:v1 statement {\"id\":\"definition-one\",\"kind\":\"definition\",\"title\":\"标题 😀\",\"open\":true}\n\nThe statement.\n\n:::mbb:end\n:::mbb:v1 statement {\"id\":\"theorem-one\",\"kind\":\"theorem\",\"title\":\"标题 😀\",\"open\":true}\n\nThe statement.\n\n:::mbb:end\n:::mbb:v1 statement {\"id\":\"proof-one\",\"kind\":\"proof\",\"title\":\"Proof\",\"open\":true}\n\nBody.\n\n:::mbb:end\n",
+      "valid": true
+    },
+    {
+      "name": "richtext-marker-attribute-order",
+      "source": ":::mbb:v1 object {\"id\":\"eq-one\",\"kind\":\"equation\",\"caption\":\"说明 😀 <literal>\"}\n\n$$\nx^2\n$$\n\n:::mbb:end\n\nSee <span data-mbb-target=\"eq-one\" data-mbb-version=\"1\" class=\"mbb-xref\">[eq-one]</span>.\n\n[eq-one]: https://example.invalid/not-a-reference\n",
+      "valid": true
+    },
+    {
+      "name": "missing-xref-in-table",
+      "source": "| A | B |\n| - | - |\n| <span class=\"mbb-xref\" data-mbb-target=\"missing\" data-mbb-version=\"1\">[missing]</span> | 2 |\n",
+      "valid": false
+    },
+    {
+      "name": "missing-xref-in-image-caption",
+      "source": "![image](https://example.invalid/image.png)\n",
+      "valid": true
+    },
+    {
+      "name": "unsafe-bibliography-userinfo",
+      "source": "<span class=\"mbb-cite\" data-mbb-keys=\"paper-a\" data-mbb-version=\"1\">[paper-a]</span>\n\n:::mbb:v1 bibliography {\"id\":\"references\",\"entries\":[{\"key\":\"paper-a\",\"authors\":[\"A. 作者😀\"],\"title\":\"Title <literal>\",\"year\":\"2026\",\"source\":\"Journal\",\"url\":\"https://user:secret@example.invalid/paper\"}]}\n\n\n\n:::mbb:end\n\n[paper-a]: https://example.invalid/not-a-cite\n",
+      "valid": false
+    },
+    {
+      "name": "unsafe-bibliography-del",
+      "source": "<span class=\"mbb-cite\" data-mbb-keys=\"paper-a\" data-mbb-version=\"1\">[paper-a]</span>\n\n:::mbb:v1 bibliography {\"id\":\"references\",\"entries\":[{\"key\":\"paper-a\",\"authors\":[\"A. 作者😀\"],\"title\":\"Title <literal>\",\"year\":\"2026\",\"source\":\"Journal\",\"url\":\"https://example.invalid/\\u007f\"}]}\n\n\n\n:::mbb:end\n\n[paper-a]: https://example.invalid/not-a-cite\n",
+      "valid": false
+    },
+    {
+      "name": "caption-unicode-bound",
+      "source": ":::mbb:v1 object {\"id\":\"eq-one\",\"kind\":\"equation\",\"caption\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}\n\n$$\nx^2\n$$\n\n:::mbb:end\n",
+      "valid": true
+    },
+    {
+      "name": "caption-over-unicode-bound",
+      "source": ":::mbb:v1 object {\"id\":\"eq-one\",\"kind\":\"equation\",\"caption\":\"😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀\"}\n\n$$\nx^2\n$$\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "unsupported-reference-version",
+      "source": "<span class=\"mbb-xref\" data-mbb-target=\"missing\" data-mbb-version=\"2\">[missing]</span>",
+      "valid": false
+    },
+    {
+      "name": "unknown-reference-attribute",
+      "source": "<span class=\"mbb-xref\" data-mbb-target=\"missing\" data-mbb-version=\"1\" title=\"extra\">[missing]</span>",
+      "valid": false
+    },
+    {
+      "name": "single-reference-duplicate-target",
+      "source": "<span class=\"mbb-xref\" data-mbb-target=\"missing\" data-mbb-version=\"1\" data-mbb-target=\"missing\">[missing]</span>",
+      "valid": false
+    },
+    {
+      "name": "reference-with-entity-identity",
+      "source": "<span class=\"mbb-xref\" data-mbb-target=\"miss&#105;ng\" data-mbb-version=\"1\">[missing]</span>",
+      "valid": false
+    },
+    {
+      "name": "adjacent-identical-reference-markers",
+      "source": ":::mbb:v1 object {\"id\":\"eq-one\",\"kind\":\"equation\",\"caption\":\"说明 😀 <literal>\"}\n\n$$\nx^2\n$$\n\n:::mbb:end\n\nSee <span class=\"mbb-xref\" data-mbb-target=\"eq-one\" data-mbb-version=\"1\">[eq-one]</span><span class=\"mbb-xref\" data-mbb-target=\"eq-one\" data-mbb-version=\"1\">[eq-one]</span>.\n\n[eq-one]: https://example.invalid/not-a-reference\n",
+      "valid": true
+    },
+    {
+      "name": "nonempty-caption-nel",
+      "source": ":::mbb:v1 object {\"id\":\"eq-one\",\"kind\":\"equation\",\"caption\":\"\"}\n\n$$\nx^2\n$$\n\n:::mbb:end\n\nSee <span class=\"mbb-xref\" data-mbb-target=\"eq-one\" data-mbb-version=\"1\">[eq-one]</span>.\n\n[eq-one]: https://example.invalid/not-a-reference\n",
+      "valid": false
+    },
+    {
+      "name": "nonempty-statement-title-nel",
+      "source": ":::mbb:v1 statement {\"id\":\"definition-one\",\"kind\":\"definition\",\"title\":\"\",\"open\":true}\n\nThe statement.\n\n:::mbb:end\n:::mbb:v1 statement {\"id\":\"theorem-one\",\"kind\":\"theorem\",\"title\":\"\",\"open\":true}\n\nThe statement.\n\n:::mbb:end\n:::mbb:v1 statement {\"id\":\"proof-one\",\"kind\":\"proof\",\"title\":\"\",\"open\":false}\n\nThe statement.\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "nonempty-reference-title-nel",
+      "source": "<span class=\"mbb-cite\" data-mbb-keys=\"paper-a\" data-mbb-version=\"1\">[paper-a]</span>\n\n:::mbb:v1 bibliography {\"id\":\"references\",\"entries\":[{\"key\":\"paper-a\",\"authors\":[\"A. 作者😀\"],\"title\":\"\",\"year\":\"2026\",\"source\":\"Journal\",\"url\":\"https://example.invalid/paper\"}]}\n\n\n\n:::mbb:end\n\n[paper-a]: https://example.invalid/not-a-cite\n",
+      "valid": false
+    },
+    {
+      "name": "nonempty-author-nel",
+      "source": "<span class=\"mbb-cite\" data-mbb-keys=\"paper-a\" data-mbb-version=\"1\">[paper-a]</span>\n\n:::mbb:v1 bibliography {\"id\":\"references\",\"entries\":[{\"key\":\"paper-a\",\"authors\":[\"\"],\"title\":\"Title <literal>\",\"year\":\"2026\",\"source\":\"Journal\",\"url\":\"https://example.invalid/paper\"}]}\n\n\n\n:::mbb:end\n\n[paper-a]: https://example.invalid/not-a-cite\n",
+      "valid": false
+    },
+    {
+      "name": "nonempty-caption-bom",
+      "source": ":::mbb:v1 object {\"id\":\"eq-one\",\"kind\":\"equation\",\"caption\":\"﻿\"}\n\n$$\nx^2\n$$\n\n:::mbb:end\n\nSee <span class=\"mbb-xref\" data-mbb-target=\"eq-one\" data-mbb-version=\"1\">[eq-one]</span>.\n\n[eq-one]: https://example.invalid/not-a-reference\n",
+      "valid": false
+    },
+    {
+      "name": "nonempty-statement-title-bom",
+      "source": ":::mbb:v1 statement {\"id\":\"definition-one\",\"kind\":\"definition\",\"title\":\"﻿\",\"open\":true}\n\nThe statement.\n\n:::mbb:end\n:::mbb:v1 statement {\"id\":\"theorem-one\",\"kind\":\"theorem\",\"title\":\"﻿\",\"open\":true}\n\nThe statement.\n\n:::mbb:end\n:::mbb:v1 statement {\"id\":\"proof-one\",\"kind\":\"proof\",\"title\":\"﻿\",\"open\":false}\n\nThe statement.\n\n:::mbb:end\n",
+      "valid": false
+    },
+    {
+      "name": "nonempty-reference-title-bom",
+      "source": "<span class=\"mbb-cite\" data-mbb-keys=\"paper-a\" data-mbb-version=\"1\">[paper-a]</span>\n\n:::mbb:v1 bibliography {\"id\":\"references\",\"entries\":[{\"key\":\"paper-a\",\"authors\":[\"A. 作者😀\"],\"title\":\"﻿\",\"year\":\"2026\",\"source\":\"Journal\",\"url\":\"https://example.invalid/paper\"}]}\n\n\n\n:::mbb:end\n\n[paper-a]: https://example.invalid/not-a-cite\n",
+      "valid": false
+    },
+    {
+      "name": "nonempty-author-bom",
+      "source": "<span class=\"mbb-cite\" data-mbb-keys=\"paper-a\" data-mbb-version=\"1\">[paper-a]</span>\n\n:::mbb:v1 bibliography {\"id\":\"references\",\"entries\":[{\"key\":\"paper-a\",\"authors\":[\"﻿\"],\"title\":\"Title <literal>\",\"year\":\"2026\",\"source\":\"Journal\",\"url\":\"https://example.invalid/paper\"}]}\n\n\n\n:::mbb:end\n\n[paper-a]: https://example.invalid/not-a-cite\n",
+      "valid": false
+    },
+    {
+      "name": "url-no-slashes",
+      "source": "<span class=\"mbb-cite\" data-mbb-keys=\"paper-a\" data-mbb-version=\"1\">[paper-a]</span>\n\n:::mbb:v1 bibliography {\"id\":\"references\",\"entries\":[{\"key\":\"paper-a\",\"authors\":[\"Author\"],\"title\":\"Title <literal>\",\"year\":\"2026\",\"source\":\"Journal\",\"url\":\"http:example.com\"}]}\n\n\n\n:::mbb:end\n\n[paper-a]: https://example.invalid/not-a-cite\n",
+      "valid": false
+    },
+    {
+      "name": "url-single-slash",
+      "source": "<span class=\"mbb-cite\" data-mbb-keys=\"paper-a\" data-mbb-version=\"1\">[paper-a]</span>\n\n:::mbb:v1 bibliography {\"id\":\"references\",\"entries\":[{\"key\":\"paper-a\",\"authors\":[\"Author\"],\"title\":\"Title <literal>\",\"year\":\"2026\",\"source\":\"Journal\",\"url\":\"https:/one\"}]}\n\n\n\n:::mbb:end\n\n[paper-a]: https://example.invalid/not-a-cite\n",
+      "valid": false
+    },
+    {
+      "name": "url-triple-slash",
+      "source": "<span class=\"mbb-cite\" data-mbb-keys=\"paper-a\" data-mbb-version=\"1\">[paper-a]</span>\n\n:::mbb:v1 bibliography {\"id\":\"references\",\"entries\":[{\"key\":\"paper-a\",\"authors\":[\"Author\"],\"title\":\"Title <literal>\",\"year\":\"2026\",\"source\":\"Journal\",\"url\":\"http:///one\"}]}\n\n\n\n:::mbb:end\n\n[paper-a]: https://example.invalid/not-a-cite\n",
+      "valid": false
+    },
+    {
+      "name": "url-unicode-nel",
+      "source": "<span class=\"mbb-cite\" data-mbb-keys=\"paper-a\" data-mbb-version=\"1\">[paper-a]</span>\n\n:::mbb:v1 bibliography {\"id\":\"references\",\"entries\":[{\"key\":\"paper-a\",\"authors\":[\"Author\"],\"title\":\"Title <literal>\",\"year\":\"2026\",\"source\":\"Journal\",\"url\":\"https://example.invalid/\"}]}\n\n\n\n:::mbb:end\n\n[paper-a]: https://example.invalid/not-a-cite\n",
+      "valid": false
+    },
+    {
+      "name": "url-unicode-bom",
+      "source": "<span class=\"mbb-cite\" data-mbb-keys=\"paper-a\" data-mbb-version=\"1\">[paper-a]</span>\n\n:::mbb:v1 bibliography {\"id\":\"references\",\"entries\":[{\"key\":\"paper-a\",\"authors\":[\"Author\"],\"title\":\"Title <literal>\",\"year\":\"2026\",\"source\":\"Journal\",\"url\":\"https://example.invalid/﻿\"}]}\n\n\n\n:::mbb:end\n\n[paper-a]: https://example.invalid/not-a-cite\n",
+      "valid": false
+    },
+    {
+      "name": "url-unicode-nbsp",
+      "source": "<span class=\"mbb-cite\" data-mbb-keys=\"paper-a\" data-mbb-version=\"1\">[paper-a]</span>\n\n:::mbb:v1 bibliography {\"id\":\"references\",\"entries\":[{\"key\":\"paper-a\",\"authors\":[\"Author\"],\"title\":\"Title <literal>\",\"year\":\"2026\",\"source\":\"Journal\",\"url\":\"https://example.invalid/ \"}]}\n\n\n\n:::mbb:end\n\n[paper-a]: https://example.invalid/not-a-cite\n",
+      "valid": false
+    }
+  ]
+}

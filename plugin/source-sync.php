@@ -39,8 +39,14 @@ function mbb_cli_source_matches($id, $source_path, $source)
         get_post_meta($id, '_mbb_source_path_hash', true) === hash('sha256', $real) &&
         file_get_contents($source_path) === $source;
 }
-function mbb_sync_write($id, $source, $title = null, $source_path = null, $status = null)
-{
+function mbb_sync_write(
+    $id,
+    $source,
+    $title = null,
+    $source_path = null,
+    $status = null,
+    $identity_receipt = null,
+) {
     if (!defined('WP_CLI') || !WP_CLI) {
         throw new RuntimeException('CLI source sync only');
     }
@@ -66,6 +72,7 @@ function mbb_sync_write($id, $source, $title = null, $source_path = null, $statu
             'title' => $title ?? $p->post_title,
             'post_status' => $status ?? $p->post_status,
             'adapter_digest' => mbb_block_adapter_digest(),
+            'identity_receipt' => $identity_receipt,
         ]),
     );
     $r->set_header('Content-Type', 'application/json');

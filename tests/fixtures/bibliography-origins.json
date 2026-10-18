@@ -1,0 +1,38 @@
+{
+  "entry": {
+    "key": "Paper",
+    "type": "article-journal",
+    "authors": [
+      {
+        "family": "杜",
+        "given": "若",
+        "droppingParticle": "",
+        "nonDroppingParticle": "",
+        "suffix": ""
+      },
+      {
+        "literal": "研究/机构"
+      }
+    ],
+    "issued": {
+      "date-parts": [[2024, 2, 29]]
+    },
+    "title": "中文 / U+2028:  & <literal>",
+    "containerTitle": "期刊",
+    "publisher": "",
+    "volume": "1",
+    "issue": "2",
+    "page": "1–9",
+    "doi": "10.1234/test",
+    "url": "https://example.test/a?x=%2F",
+    "identifiers": {
+      "ISBN": "",
+      "ISSN": "",
+      "PMID": "",
+      "PMCID": ""
+    },
+    "source": "U+2029: "
+  },
+  "canonical": "{\"authors\":[{\"droppingParticle\":\"\",\"family\":\"杜\",\"given\":\"若\",\"nonDroppingParticle\":\"\",\"suffix\":\"\"},{\"literal\":\"研究/机构\"}],\"containerTitle\":\"期刊\",\"doi\":\"10.1234/test\",\"identifiers\":{\"ISBN\":\"\",\"ISSN\":\"\",\"PMCID\":\"\",\"PMID\":\"\"},\"issue\":\"2\",\"issued\":{\"date-parts\":[[2024,2,29]]},\"page\":\"1–9\",\"publisher\":\"\",\"source\":\"U+2029: \",\"title\":\"中文 / U+2028:  & <literal>\",\"type\":\"article-journal\",\"url\":\"https://example.test/a?x=%2F\",\"volume\":\"1\"}",
+  "hash": "1a3ad1aa2ff56b991632555cf2ad016e747f4da0cd1a34f379ea9b373cd14413"
+}

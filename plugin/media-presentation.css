@@ -1,0 +1,189 @@
+/* Shared native image/gallery presentation for managed reading, preview and export.
+ * The scope deliberately excludes unrelated theme content and editor block controls. */
+[data-mbb-content-view] .wp-block-image {
+  max-width: 100%;
+}
+[data-mbb-content-view] .wp-block-image > img,
+[data-mbb-content-view] .wp-block-image > a > img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+[data-mbb-content-view] .wp-block-image > figcaption,
+[data-mbb-content-view] .wp-block-gallery.has-nested-images > figcaption,
+[data-mbb-content-view] .wp-block-gallery > figcaption,
+[data-mbb-content-view] .wp-block-gallery.has-nested-images figure.wp-block-image > figcaption {
+  position: static;
+  inset: auto;
+  box-sizing: border-box;
+  width: auto;
+  height: auto;
+  max-height: none;
+  margin: 0.55em 0 0;
+  padding: 0;
+  overflow: visible;
+  color: var(--mbb-caption-color, color-mix(in srgb, currentColor 76%, transparent));
+  background: none;
+  text-shadow: none;
+  font-family: var(--mbb-font-body, inherit);
+  font-size: var(--mbb-caption-size, 0.875em);
+  font-weight: 400;
+  line-height: 1.6;
+  text-align: start;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  flex: none;
+  will-change: auto;
+}
+[data-mbb-content-view] .wp-block-image > figcaption:empty,
+[data-mbb-content-view] .wp-block-gallery > figcaption:empty {
+  display: none;
+}
+[data-mbb-content-view] .wp-block-image > figcaption a {
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+[data-mbb-content-view] .wp-block-image > a:focus-visible,
+[data-mbb-content-view] .wp-block-image > figcaption a:focus-visible {
+  outline: 2px solid var(--mbb-focus-color, currentColor);
+  outline-offset: 3px;
+}
+[data-mbb-content-view] .wp-block-gallery {
+  --mbb-gallery-columns: 2;
+  display: grid;
+  grid-template-columns: repeat(var(--mbb-gallery-columns), minmax(0, 1fr));
+  gap: var(--mbb-gallery-gap, 1rem);
+  align-items: start;
+  margin-block: var(--mbb-block-space, 1.25rem);
+  margin-inline: 0;
+}
+[data-mbb-content-view] .wp-block-gallery.columns-1 {
+  --mbb-gallery-columns: 1;
+}
+[data-mbb-content-view] .wp-block-gallery.columns-2 {
+  --mbb-gallery-columns: 2;
+}
+[data-mbb-content-view] .wp-block-gallery.columns-3 {
+  --mbb-gallery-columns: 3;
+}
+[data-mbb-content-view] .wp-block-gallery.columns-4 {
+  --mbb-gallery-columns: 4;
+}
+[data-mbb-content-view] .wp-block-gallery.columns-5 {
+  --mbb-gallery-columns: 5;
+}
+[data-mbb-content-view] .wp-block-gallery.columns-6 {
+  --mbb-gallery-columns: 6;
+}
+[data-mbb-content-view] .wp-block-gallery.columns-7 {
+  --mbb-gallery-columns: 7;
+}
+[data-mbb-content-view] .wp-block-gallery.columns-8 {
+  --mbb-gallery-columns: 8;
+}
+/* Match the core image selector's ID specificity so core can load in either order. */
+[data-mbb-content-view]
+  .wp-block-gallery.has-nested-images.is-cropped
+  > figure.wp-block-image:not(#individual-image),
+[data-mbb-content-view]
+  .wp-block-gallery.has-nested-images:not(.is-cropped)
+  > figure.wp-block-image:not(#individual-image),
+[data-mbb-content-view] .wp-block-gallery > .wp-block-image {
+  display: block;
+  align-self: start;
+  min-width: 0;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+}
+[data-mbb-content-view] .wp-block-gallery > .wp-block-image:only-of-type,
+[data-mbb-content-view] .wp-block-gallery > figcaption {
+  grid-column: 1 / -1;
+}
+[data-mbb-content-view] .wp-block-gallery.has-nested-images figure.wp-block-image::before {
+  content: none;
+  display: none;
+}
+[data-mbb-content-view]
+  .wp-block-gallery.has-nested-images
+  > figure.wp-block-image:not(#individual-image)
+  > a,
+[data-mbb-content-view]
+  .wp-block-gallery.has-nested-images.is-cropped
+  > figure.wp-block-image:not(#individual-image)
+  > a,
+[data-mbb-content-view] .wp-block-gallery > .wp-block-image > a {
+  display: block;
+  width: auto;
+  height: auto;
+}
+[data-mbb-content-view]
+  .wp-block-gallery.has-nested-images
+  > figure.wp-block-image:not(#individual-image)
+  img,
+[data-mbb-content-view] .wp-block-gallery > .wp-block-image img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  object-fit: contain;
+}
+/* Keep the authored crop choice, without extending a crop behind the caption. */
+[data-mbb-content-view]
+  .wp-block-gallery.has-nested-images.is-cropped
+  > figure.wp-block-image:not(#individual-image)
+  img,
+[data-mbb-content-view] .wp-block-gallery.is-cropped > .wp-block-image img {
+  height: auto;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+/* Inline caption images (e.g. emoji) are text, not gallery tiles. */
+[data-mbb-content-view]
+  .wp-block-gallery.has-nested-images
+  > figure.wp-block-image:not(#individual-image)
+  > figcaption
+  img,
+[data-mbb-content-view]
+  .wp-block-gallery.has-nested-images.is-cropped
+  > figure.wp-block-image:not(#individual-image)
+  > figcaption
+  img,
+[data-mbb-content-view] .wp-block-image > figcaption img {
+  display: inline;
+  width: auto;
+  height: 1em;
+  aspect-ratio: auto;
+  vertical-align: -0.1em;
+}
+@media (max-width: 700px) {
+  [data-mbb-content-view] .wp-block-gallery {
+    grid-template-columns: repeat(min(2, var(--mbb-gallery-columns)), minmax(0, 1fr));
+  }
+}
+@media (max-width: 480px) {
+  [data-mbb-content-view] .wp-block-gallery {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media print {
+  [data-mbb-content-view] .wp-block-gallery {
+    display: block;
+  }
+  [data-mbb-content-view]
+    .wp-block-gallery.has-nested-images.is-cropped
+    > figure.wp-block-image:not(#individual-image),
+  [data-mbb-content-view]
+    .wp-block-gallery.has-nested-images:not(.is-cropped)
+    > figure.wp-block-image:not(#individual-image),
+  [data-mbb-content-view] .wp-block-gallery > .wp-block-image {
+    margin-block-end: var(--mbb-block-space, 1.25rem);
+    break-inside: avoid;
+  }
+  [data-mbb-content-view] .wp-block-image > figcaption,
+  [data-mbb-content-view] .wp-block-gallery.has-nested-images figure.wp-block-image > figcaption {
+    color: inherit;
+  }
+}

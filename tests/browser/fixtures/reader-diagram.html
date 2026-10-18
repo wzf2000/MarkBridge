@@ -1,0 +1,54 @@
+<!doctype html>
+<meta charset="utf-8">
+<p id="status">Waiting</p>
+<pre id="init" hidden></pre><button id="run">Render fixed diagram</button>
+<script>
+  (() => {
+    'use strict';
+    const protocol = 'mbb-component/v1';
+    let session = null,
+      runId = null;
+    const send = (type, extra = {}) => parent.postMessage({
+      protocol,
+      session,
+      type,
+      ...extra
+    }, '*');
+    const run = () => {
+      if (!session || runId) return;
+      runId = Array.from(crypto.getRandomValues(new Uint8Array(16)), v => v.toString(16)
+        .padStart(2, '0')).join('');
+      send('run-request', {
+        runId
+      });
+    };
+    addEventListener('message', e => {
+      const d = e.data;
+      if (e.source !== parent || d?.protocol !== protocol || !/^[a-f0-9]{32}$/.test(d
+          .session || '')) return;
+      if (d.type === 'init' && session === null) {
+        session = d.session;
+        document.querySelector('#init').textContent = JSON.stringify(d);
+        document.querySelector('#status').textContent = 'Ready';
+        send('ready');
+        send('resize', {
+          height: 320
+        });
+        if (d.presentation === 'diagram') setTimeout(run, 0);
+      } else if (d.session === session && d.type === 'grant' && d.runId === runId) {
+        send('complete', {
+          runId,
+          frameCount: 1,
+          outputBytes: 4
+        });
+        runId = null;
+        document.querySelector('#status').textContent = 'Complete';
+      } else if (d.session === session && d.type === 'cancel') {
+        runId = null;
+        document.querySelector('#status').textContent = 'Stopped';
+      }
+    });
+    document.querySelector('#run').onclick = run;
+  })();
+
+</script>

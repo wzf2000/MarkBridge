@@ -4,7 +4,7 @@
  * Plugin URI: https://github.com/wzf2000/MarkBridge
  * Author: wzf2000
  * Author URI: https://github.com/wzf2000
- * Version: 2.0.1
+ * Version: 3.0.0-rc.6
  * License: GPL-3.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  * Requires at least: 7.1
@@ -21,8 +21,10 @@ mbb_i18n_register();
 require_once __DIR__ . '/includes/runtime-settings.php';
 require_once __DIR__ . '/includes/admin-settings.php';
 require_once __DIR__ . '/block-adapters.php';
+require_once __DIR__ . '/native-media.php';
 require_once __DIR__ . '/components.php';
 require_once __DIR__ . '/teaching.php';
+require_once __DIR__ . '/diagnostics.php';
 
 function mbb_is_lab()
 {
@@ -37,10 +39,18 @@ function mbb_asset($file)
     return $map[$file] ?? $file;
 }
 add_action('init', function () {
+    mbb_register_diagnostics();
+    wp_register_script(
+        'mbb-math-explorer',
+        plugins_url(mbb_asset('math-explorer.js'), __FILE__),
+        ['mbb-i18n'],
+        substr(hash_file('sha256', __DIR__ . '/math-explorer.js'), 0, 12),
+        true,
+    );
     wp_register_script(
         'mbb-math',
         plugins_url(mbb_asset('math.js'), __FILE__),
-        [],
+        ['mbb-diagnostics', 'mbb-math-explorer'],
         substr(hash_file('sha256', __DIR__ . '/math.js'), 0, 12),
         true,
     );
@@ -55,11 +65,13 @@ add_action('wp_enqueue_scripts', function () {
         is_singular() &&
         get_post_meta(get_queried_object_id(), '_mbb_origin', true) === 'markdown_import'
     ) {
+        mbb_enqueue_diagnostics();
         wp_enqueue_script('mbb-math');
     }
 });
 function mbb_enqueue_kernel(bool $converterOnly = false): void
 {
+    mbb_enqueue_diagnostics();
     $file = __DIR__ . '/kernel.js';
     wp_enqueue_script(
         'mbb-kernel',
@@ -107,6 +119,13 @@ add_filter(
     2,
 );
 add_action('init', function () {
+    // Editor-only instance factory: PHP registration keeps the managed inserter allowlist exact.
+    // The converter deliberately rejects this block until the editor has expanded it.
+    register_block_type('mbb/writing-pattern', [
+        'api_version' => 3,
+        'attributes' => ['pattern' => ['type' => 'string']],
+        'supports' => ['inserter' => false, 'html' => false, 'reusable' => false],
+    ]);
     register_block_type('mbb/list', [
         'api_version' => 3,
         'attributes' => [
@@ -155,6 +174,13 @@ require_once __DIR__ . '/source-sync.php';
 require_once __DIR__ . '/publication.php';
 require_once __DIR__ . '/editor-bridge.php';
 require_once __DIR__ . '/footnotes.php';
+require_once __DIR__ . '/technical.php';
+require_once __DIR__ . '/references.php';
+require_once __DIR__ . '/collections.php';
+require_once __DIR__ . '/extensions.php';
+require_once __DIR__ . '/bibtex.php';
+require_once __DIR__ . '/csl.php';
+require_once __DIR__ . '/batch-import.php';
 
 require_once __DIR__ . '/revisions.php';
 
@@ -172,13 +198,19 @@ add_filter(
     'the_content',
     function ($html) {
         return is_singular() && mbb_managed(get_the_ID())
-            ? '<div class="mbb-document tex2jax_ignore">' . $html . '</div>'
+            ? '<div class="mbb-document tex2jax_ignore" data-mbb-content-view>' . $html . '</div>'
             : $html;
     },
     30,
 );
 add_action('enqueue_block_assets', function () {
     if (is_admin() || mbb_managed(get_queried_object_id())) {
+        wp_enqueue_style(
+            'mbb-media-presentation',
+            plugins_url(mbb_asset('media-presentation.css'), __FILE__),
+            [],
+            substr(hash_file('sha256', __DIR__ . '/media-presentation.css'), 0, 12),
+        );
         wp_enqueue_style(
             'mbb-math',
             plugins_url(mbb_asset('math.css'), __FILE__),
@@ -193,3 +225,20 @@ if (!in_array('wp-editormd/wp-editormd.php', get_option('active_plugins', []), t
     require_once __DIR__ . '/presentation.php';
     require_once __DIR__ . '/comments.php';
 }
+
+add_action('init', static function () {
+    if (!function_exists('register_block_pattern')) {
+        return;
+    }
+    register_block_pattern_category('markbridge-writing', ['label' => mbb_t('Technical writing')]);
+    foreach (json_decode(file_get_contents(__DIR__ . '/writing-patterns.json'), true) as $pattern) {
+        register_block_pattern('markbridge/' . $pattern['id'], [
+            'title' => mbb_t($pattern['title']),
+            'categories' => ['markbridge-writing'],
+            'content' => $pattern['content'],
+            'inserter' => true,
+        ]);
+    }
+});
+
+require_once __DIR__ . '/writing-patterns.php';

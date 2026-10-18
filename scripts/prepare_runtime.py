@@ -63,7 +63,7 @@ def main():
         shutil.copy2(worker, staging / "worker.cjs")
         scripts = []
         hashes = {}
-        for name in manifest["scripts"]:
+        for name in [*manifest["scripts"], *manifest.get("browser_assets", [])]:
             source = (wordpress / name.lstrip("/")).resolve()
             if wordpress not in source.parents:
                 raise RuntimeError("Core source escapes WordPress root")
@@ -74,7 +74,8 @@ def main():
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, target)
             hashes[name] = digest
-            scripts.append('<script src="http://markbridge.invalid' + name + '"></script>')
+            if name in manifest["scripts"]:
+                scripts.append('<script src="http://markbridge.invalid' + name + '"></script>')
         scripts.append("<script>wp.blockLibrary.registerCoreBlocks();</script>")
         kernel = "wp-content/plugins/markdown-block-bridge/kernel.js"
         target = staging / "site" / kernel

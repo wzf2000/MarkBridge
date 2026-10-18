@@ -4,7 +4,7 @@ README 说明产品范围和最短开发入口；本页按用途区分持续有�
 
 ## 使用手册
 
-本页包含 **2.0.1** 的手册与接口说明；其他版本请查看对应 Release 源码中的文档。第一次使用按“快速开始 → 编辑与发布”阅读，管理员先完成安装与服务器配置。在线阅读入口为 [GitHub Wiki](https://github.com/wzf2000/MarkBridge/wiki)。
+本分支是 **2.9.0-rc.1 候选开发文档**，尚未正式发行；在线 Wiki 继续对应已公开稳定版。此处包含候选的手册与接口说明；其他版本请查看对应 Release 源码中的文档。第一次使用按“快速开始 → 编辑与发布”阅读，管理员先完成安装与服务器配置。在线阅读入口为 [GitHub Wiki](https://github.com/wzf2000/MarkBridge/wiki)。
 
 | 阅读顺序   | 文档                           | 内容                                                 |
 | ---------- | ------------------------------ | ---------------------------------------------------- |
@@ -17,8 +17,17 @@ README 说明产品范围和最短开发入口；本页按用途区分持续有�
 | 可选资源   | [图片表情](EMOJI-PACKS.md)     | 导入、启用和制作图片表情包                           |
 | 查看变化   | [更新记录](../CHANGELOG.md)    | 各版本变化                                           |
 
+- [私有配对备份](PAIRED-BACKUPS.md)：身份、恢复 CAS、私有存储、配额与失败边界。
+- [长文编辑与预览定位](SOURCE-NAVIGATION.md)：查找、替换、双向定位、并排预览和插入样例。
+- [原生图片与画廊](NATIVE-MEDIA.md)：可保存的图注、媒体关联和明确拒绝的样式。
+- [批量准备草稿](BATCH-IMPORT.md)：扫描、逐篇确认、恢复与取消。
+- [静态 HTML 导出](STATIC-EXPORT.md)：完整离线阅读、图片限制与打印。
+- [编号与技术写作](TECHNICAL-WRITING.md)：对象、同篇与跨文档引用、可携带身份、定义／定理／证明和基础参考文献。
+
 ## 开发与维护
 
+- [主题适配](THEME-INTEGRATION.md)：可继承的样式变量与跨包资源句柄。
+- [浏览器与性能检查](TESTING.md)：代表引擎、合成夹具、资源探针和可复用测量入口。
 - [工作原理](ARCHITECTURE.md)：双格式存储、转换沙箱、公式和文件来源契约。
 - [教学扩展接口](TEACHING-EXTENSIONS.md)：v1 登记、资源、参数与执行协议。
 - [原生区块与静态适配接口](BLOCK-ADAPTERS.md)：详情、链接按钮及受信静态叶子合同。
@@ -51,3 +60,12 @@ README 说明产品范围和最短开发入口；本页按用途区分持续有�
 - [统一发行与正式版原计划](plans/completed/ROADMAP.md)：保留原 R07/R10 完成标准；不作当前状态入口。
 - [0.7.0 候选验证记录](archive/VALIDATION-0.7.0-RC.md)：已运行检查及当时未覆盖范围。
 - [更新记录](../CHANGELOG.md)：按版本记录已交付变更。
+
+- [公式结构读法与探索](MATH-READING.md)
+- [受限 BibTeX 导入](BIBTEX.md)
+- [跨站图片携带](CROSS-SITE-MEDIA.md)
+- [独立 Mermaid 图示](MERMAID.md)
+
+- [文集与不可变快照](COLLECTIONS.md)：编排文章引用、范围确认、私有快照与受信出版适配接口。
+
+- [Trusted extension SDK](SDK.md): author candidates, typed static projection, catalog/scoped usage and runnable conformance samples.

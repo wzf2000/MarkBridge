@@ -45,7 +45,7 @@ test('managed long code exposes keyboard scrolling and readable comments without
   await page.screenshot({ path: `test-results/code-scroll-${testInfo.project.name}.png` });
 });
 
-test('comparison scroll synchronization is opt-in and stops at the shorter side', async ({
+test('comparison scrolling synchronizes by default without a selection control and stops at the shorter side', async ({
   page,
 }) => {
   await page.goto('/front');
@@ -61,7 +61,8 @@ test('comparison scroll synchronization is opt-in and stops at the shorter side'
   const left = group.locator('.mbb-compare-left pre'),
     right = group.locator('.mbb-compare-right pre');
   await expect(left).toHaveClass(/mbb-code-display/);
-  await expect(group.locator('input[type=checkbox]')).toBeVisible();
+  await expect(group.locator('input[type=checkbox], [role=checkbox]')).toHaveCount(0);
+  await expect(group).toHaveAttribute('data-mbb-sync-scroll', 'true');
   const hint = group.locator('.mbb-code-scroll-hint').first();
   await expect(hint).toBeVisible();
   expect(await hint.evaluate((node) => getComputedStyle(node).fontWeight)).toBe('400');
@@ -69,8 +70,7 @@ test('comparison scroll synchronization is opt-in and stops at the shorter side'
   await left.evaluate((node) => {
     node.scrollLeft = 80;
   });
-  expect(await right.evaluate((node) => node.scrollLeft)).toBe(0);
-  await group.locator('input[type=checkbox]').check();
+  await expect.poll(() => right.evaluate((node) => node.scrollLeft)).toBe(80);
   await left.evaluate((node) => {
     node.scrollLeft = 160;
   });
@@ -84,6 +84,11 @@ test('comparison scroll synchronization is opt-in and stops at the shorter side'
   expect(await left.evaluate((node) => node.scrollLeft)).toBeGreaterThan(
     await right.evaluate((node) => node.scrollLeft),
   );
+  await right.evaluate((node) => {
+    node.scrollLeft = 80;
+  });
+  await expect.poll(() => left.evaluate((node) => node.scrollLeft)).toBe(80);
+  expect(await right.evaluate((node) => node.scrollLeft)).toBe(80);
 });
 
 test('Node directory follows the selected engine while remaining a successful form field', async ({

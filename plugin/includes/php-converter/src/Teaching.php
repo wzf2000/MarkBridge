@@ -1,5 +1,7 @@
 <?php
 namespace MarkBridge\Probe;
+require_once __DIR__ . '/Bibliography.php';
+require_once __DIR__ . '/Activity.php';
 
 // Standalone CLI conversion and model tests remain supported; direct web access requires WordPress.
 if (!defined('ABSPATH')) {
@@ -8,10 +10,709 @@ if (!defined('ABSPATH')) {
     }
 }
 
+/** Pure fixed native-media v1 contract; attachment authorization is a host concern. */
+final class NativeMedia
+{
+    private static function fail(string $code, string $message): never
+    {
+        throw new ConversionError($code, $message);
+    }
+    public static function caption(mixed $value): string
+    {
+        if (
+            !is_string($value) ||
+            !mb_check_encoding($value, 'UTF-8') ||
+            strlen($value) > 4096 ||
+            preg_match('/[\x00\r\n]/', $value)
+        ) {
+            self::fail(
+                'MEDIA_CAPTION',
+                'Media captions require bounded single-line safe inline content',
+            );
+        }
+        $doc = new \DOMDocument();
+        $old = libxml_use_internal_errors(true);
+        try {
+            $doc->loadHTML(
+                '<!doctype html><html><head><meta charset="UTF-8"></head><body><div>' .
+                    $value .
+                    '</div></body></html>',
+                LIBXML_NONET,
+            );
+            $errors = libxml_get_errors();
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($old);
+        }
+        $body = $doc->getElementsByTagName('body')->item(0);
+        $root = $body?->firstChild;
+        if (!$root || $root->nodeName !== 'div' || $body->childNodes->length !== 1 || $errors) {
+            self::fail('MEDIA_CAPTION', 'Media caption HTML must be canonical and balanced');
+        }
+        $walk = function ($n, $depth = 0) use (&$walk) {
+            if ($depth > 16) {
+                self::fail('MEDIA_CAPTION', 'Media captions exceed their structure budget');
+            }
+            if ($n->nodeType === XML_TEXT_NODE) {
+                return;
+            }
+            if (
+                !($n instanceof \DOMElement) ||
+                !in_array($n->tagName, ['strong', 'em', 'del', 'code', 'br'], true) ||
+                $n->attributes->length
+            ) {
+                self::fail(
+                    'MEDIA_CAPTION',
+                    'Media captions only support text, strong, emphasis, deletion, code and line breaks',
+                );
+            }
+            foreach ($n->childNodes as $c) {
+                $walk($c, $depth + 1);
+            }
+        };
+        foreach ($root->childNodes as $n) {
+            $walk($n);
+        }
+        $out = '';
+        foreach ($root->childNodes as $n) {
+            $out .= $doc->saveHTML($n);
+        }
+        if (
+            preg_replace('~<br\s*/?\s*>~', '<br>', $out) !==
+            preg_replace('~<br\s*/?\s*>~', '<br>', $value)
+        ) {
+            self::fail('MEDIA_CAPTION', 'Media caption HTML must be canonical and balanced');
+        }
+        return $value;
+    }
+    public static function attrs(string $kind, mixed $input, bool $source = true): array
+    {
+        if ($input instanceof \stdClass) {
+            $input = get_object_vars($input);
+        }
+        if (!is_array($input) || (array_is_list($input) && $input !== [])) {
+            self::fail('MEDIA_ATTRIBUTES', 'Native media attributes must be a closed object');
+        }
+        // Only native editor input may carry Gutenberg's equivalent gallery default.
+        if (!$source && $kind === 'gallery' && ($input['linkTo'] ?? null) === 'none') {
+            unset($input['linkTo']);
+        }
+        $allowed =
+            $kind === 'image'
+                ? ['caption', 'id', 'sizeSlug', 'linkDestination']
+                : ['columns', 'imageCrop'];
+        if (array_diff(array_keys($input), $allowed)) {
+            self::fail('MEDIA_ATTRIBUTES', 'Unsupported native media attribute');
+        }
+        $a = [];
+        foreach ($allowed as $k) {
+            if (array_key_exists($k, $input)) {
+                $a[$k] = $input[$k];
+            }
+        }
+        if ($kind === 'image') {
+            if (array_key_exists('caption', $a)) {
+                self::caption($a['caption']);
+            }
+            if (
+                array_key_exists('id', $a) &&
+                (!is_numeric($a['id']) ||
+                    (!is_int($a['id']) && !is_float($a['id'])) ||
+                    !is_finite((float) $a['id']) ||
+                    floor($a['id']) != $a['id'] ||
+                    $a['id'] < 1 ||
+                    $a['id'] > 9007199254740991)
+            ) {
+                self::fail('MEDIA_ID', 'Media attachment IDs must be positive safe integers');
+            }
+            if (isset($a['id'])) {
+                $a['id'] = (int) $a['id'];
+            }
+            if (
+                array_key_exists('sizeSlug', $a) &&
+                !in_array($a['sizeSlug'], ['thumbnail', 'medium', 'large', 'full'], true)
+            ) {
+                self::fail('MEDIA_ATTRIBUTES', 'Unsupported native image size');
+            }
+            if (array_key_exists('linkDestination', $a) && $a['linkDestination'] !== 'none') {
+                self::fail(
+                    'MEDIA_LINK',
+                    'Only unlinked native images are supported in this version',
+                );
+            }
+            if (($a['caption'] ?? null) === '') {
+                unset($a['caption']);
+            }
+        } else {
+            if (
+                array_key_exists('columns', $a) &&
+                ((!is_int($a['columns']) && !is_float($a['columns'])) ||
+                    floor($a['columns']) != $a['columns'] ||
+                    $a['columns'] < 1 ||
+                    $a['columns'] > 8)
+            ) {
+                self::fail('MEDIA_ATTRIBUTES', 'Gallery columns must be an integer from 1 to 8');
+            }
+            if (isset($a['columns'])) {
+                $a['columns'] = (int) $a['columns'];
+            }
+            if (array_key_exists('imageCrop', $a) && !is_bool($a['imageCrop'])) {
+                self::fail('MEDIA_ATTRIBUTES', 'Gallery imageCrop must be a boolean');
+            }
+        }
+        return $a;
+    }
+    public static function assertPortable(string $serialized): void
+    {
+        preg_match_all('~<!-- wp:image(?: (\{[\s\S]*?\}))? -->~', $serialized, $matches);
+        foreach ($matches[1] as $raw) {
+            $a = json_decode($raw ?: '{}', true, 32, JSON_THROW_ON_ERROR);
+            if (isset($a['id'])) {
+                self::fail(
+                    'MEDIA_LOCAL_ID',
+                    'Portable exports cannot carry local media attachment IDs',
+                );
+            }
+        }
+    }
+    public static function directive(string $kind, array $a, string $body): string
+    {
+        return ':::mbb:v1 ' .
+            $kind .
+            ' ' .
+            Teaching::encode($a ?: new \stdClass()) .
+            "\n\n" .
+            rtrim($body) .
+            "\n\n:::mbb:end";
+    }
+    public static function assemble(array $item): array
+    {
+        $kind = $item['kind'];
+        $a = self::attrs($kind, $item['attrs']);
+        $children = $item['children'];
+        if ($kind === 'image') {
+            if (
+                count($children) !== 1 ||
+                $children[0]['name'] !== 'core/image' ||
+                ($children[0]['children'] ?? []) ||
+                $children[0]['attrs']
+            ) {
+                self::fail(
+                    'MEDIA_STRUCTURE',
+                    'An image directive requires exactly one ordinary Markdown image',
+                );
+            }
+            return [
+                'name' => 'core/image',
+                'attrs' => $a,
+                'children' => [],
+                'content' => $children[0]['content'],
+            ];
+        }
+        if (
+            !$children ||
+            count($children) > 32 ||
+            array_filter($children, fn($b) => $b['name'] !== 'core/image')
+        ) {
+            self::fail('MEDIA_STRUCTURE', 'A gallery requires 1 to 32 direct native images');
+        }
+        return ['name' => 'core/gallery', 'attrs' => $a, 'children' => $children, 'content' => ''];
+    }
+}
+
+final class TechnicalReference extends \League\CommonMark\Node\Inline\AbstractStringContainer {}
+final class TechnicalInlineParser implements \League\CommonMark\Parser\Inline\InlineParserInterface
+{
+    public function getMatchDefinition(): \League\CommonMark\Parser\Inline\InlineParserMatch
+    {
+        return \League\CommonMark\Parser\Inline\InlineParserMatch::string('<span');
+    }
+    public function parse(\League\CommonMark\Parser\InlineParserContext $context): bool
+    {
+        $cursor = $context->getCursor();
+        $raw = $cursor->getRemainder();
+        if (!Technical::opening($raw)) {
+            return false;
+        }
+        $depth = 0;
+        foreach ($context->getContainer()->children() as $node) {
+            if (
+                !($node instanceof \League\CommonMark\Extension\CommonMark\Node\Inline\HtmlInline)
+            ) {
+                continue;
+            }
+            if (preg_match('/^<(?:code|pre)(?:\s|>)/i', $node->getLiteral())) {
+                $depth++;
+            } elseif (preg_match('/^<\/(?:code|pre)\s*>/i', $node->getLiteral())) {
+                $depth = max(0, $depth - 1);
+            }
+        }
+        if ($depth) {
+            return false;
+        }
+        $reference = Technical::reference($raw, false);
+        $context->getContainer()->appendChild(new TechnicalReference($reference['raw']));
+        $cursor->advanceBy(mb_strlen($reference['raw'], 'UTF-8'));
+        return true;
+    }
+}
+
+final class Technical
+{
+    public const SCHEMAS = [
+        'object' => ['id' => 'string', 'kind' => 'string', 'caption' => 'string'],
+        'statement' => [
+            'id' => 'string',
+            'kind' => 'string',
+            'title' => 'string',
+            'open' => 'boolean',
+        ],
+        'bibliography' => ['id' => 'string', 'entries' => 'array'],
+    ];
+    public static function fail(string $code, string $message): never
+    {
+        throw new ConversionError($code, $message);
+    }
+    public static function id(mixed $value): bool
+    {
+        return is_string($value) && preg_match('/^[A-Za-z][A-Za-z0-9_-]{0,63}$/D', $value);
+    }
+    private static function plain(mixed $value, int $limit, bool $required = false): bool
+    {
+        return is_string($value) &&
+            mb_strlen($value, 'UTF-8') <= $limit &&
+            !preg_match('/[\r\n\x00]/', $value) &&
+            (!$required ||
+                preg_replace(
+                    '/[ \t\r\n\f\v\x{0085}\x{00a0}\x{1680}\x{2000}-\x{200a}\x{2028}\x{2029}\x{202f}\x{205f}\x{3000}\x{feff}]/u',
+                    '',
+                    $value,
+                ) !== '');
+    }
+    public static function attrs(string $kind, array $a): array
+    {
+        if (
+            $kind === 'object' &&
+            (!in_array($a['kind'], ['equation', 'figure', 'table', 'listing'], true) ||
+                !self::plain($a['caption'], 512, true))
+        ) {
+            self::fail(
+                'TECHNICAL_ATTRIBUTES',
+                'An object requires a supported kind and a plain caption of 1–512 characters',
+            );
+        }
+        if (
+            $kind === 'statement' &&
+            (!in_array($a['kind'], ['definition', 'theorem', 'proof'], true) ||
+                !self::plain($a['title'], 200, true) ||
+                ($a['kind'] !== 'proof' && $a['open'] !== true))
+        ) {
+            self::fail(
+                'TECHNICAL_ATTRIBUTES',
+                'A statement requires a supported kind and title; only proofs may be closed',
+            );
+        }
+        if ($kind === 'bibliography') {
+            if (($a['version'] ?? 1) === 2 || array_key_exists('style', $a)) {
+                return Bibliography::attrs($a);
+            }
+            $entries = $a['entries'];
+            if (
+                !is_array($entries) ||
+                !count($entries) ||
+                count($entries) > 64 ||
+                strlen(Teaching::encode($entries)) > 65536
+            ) {
+                self::fail(
+                    'TECHNICAL_ATTRIBUTES',
+                    'A bibliography requires 1–64 entries within 64 KiB',
+                );
+            }
+            $keys = [];
+            foreach ($entries as $entry) {
+                $e =
+                    $entry instanceof \stdClass
+                        ? get_object_vars($entry)
+                        : (is_array($entry)
+                            ? $entry
+                            : []);
+                $fields = array_keys($e);
+                sort($fields);
+                if (
+                    $fields !== ['authors', 'key', 'source', 'title', 'url', 'year'] ||
+                    !self::id($e['key']) ||
+                    isset($keys[$e['key']]) ||
+                    !is_array($e['authors']) ||
+                    count($e['authors']) > 8 ||
+                    !self::plain($e['title'], 512, true) ||
+                    !self::plain($e['source'], 512) ||
+                    !self::plain($e['year'], 32) ||
+                    !self::plain($e['url'], 2048)
+                ) {
+                    self::fail(
+                        'TECHNICAL_ATTRIBUTES',
+                        'Bibliography fields are incomplete, duplicated, or outside their bounds',
+                    );
+                }
+                foreach ($e['authors'] as $name) {
+                    if (!self::plain($name, 120, true)) {
+                        self::fail(
+                            'TECHNICAL_ATTRIBUTES',
+                            'Bibliography author names are outside their bounds',
+                        );
+                    }
+                }
+                $keys[$e['key']] = true;
+                if ($e['url'] !== '') {
+                    $url = parse_url($e['url']);
+                    if (
+                        !$url ||
+                        !preg_match('~^https?://[^/?#]+~i', $e['url']) ||
+                        !in_array(strtolower($url['scheme'] ?? ''), ['http', 'https'], true) ||
+                        empty($url['host']) ||
+                        isset($url['user']) ||
+                        isset($url['pass']) ||
+                        preg_match(
+                            '/[\x00-\x20\x7f\\\\\x{0085}\x{00a0}\x{1680}\x{2000}-\x{200a}\x{2028}\x{2029}\x{202f}\x{205f}\x{3000}\x{feff}]/u',
+                            $e['url'],
+                        )
+                    ) {
+                        self::fail(
+                            'TECHNICAL_ATTRIBUTES',
+                            'Bibliography URLs must use absolute HTTP or HTTPS without credentials',
+                        );
+                    }
+                }
+            }
+        }
+        return $a;
+    }
+    public static function opening(string $raw): bool
+    {
+        return (bool) preg_match(
+            '/^<span\b[^>]*(?:mbb-(?:xref|cite)|data-mbb-(?:target|keys|version))/i',
+            $raw,
+        );
+    }
+    public static function reference(string $raw, bool $complete = true): array
+    {
+        $bad = static fn() => self::fail(
+            'TECHNICAL_REFERENCE',
+            'The versioned reference marker is malformed or its text differs from its identity',
+        );
+        if (
+            !preg_match(
+                '/^<span((?:\s+[a-z][a-z0-9-]*="[^"<>]*")+)>([^<>\r\n]*)<\/span>/',
+                $raw,
+                $m,
+            ) ||
+            ($complete && strlen($m[0]) !== strlen($raw))
+        ) {
+            $bad();
+        }
+        preg_match_all('/\s+([a-z][a-z0-9-]*)="([^"<>]*)"/', $m[1], $matches, PREG_SET_ORDER);
+        $attrs = [];
+        foreach ($matches as $item) {
+            if (array_key_exists($item[1], $attrs)) {
+                $bad();
+            }
+            $attrs[$item[1]] = $item[2];
+        }
+        $kind =
+            ($attrs['class'] ?? '') === 'mbb-xref'
+                ? 'xref'
+                : (($attrs['class'] ?? '') === 'mbb-cite'
+                    ? 'cite'
+                    : null);
+        $identity = $attrs[$kind === 'xref' ? 'data-mbb-target' : 'data-mbb-keys'] ?? null;
+        if ($kind === 'xref' && ($attrs['data-mbb-version'] ?? '') === '2') {
+            if (
+                count($attrs) !== 6 ||
+                array_diff(array_keys($attrs), [
+                    'class',
+                    'data-mbb-version',
+                    'data-mbb-namespace',
+                    'data-mbb-document',
+                    'data-mbb-target',
+                    'data-mbb-kind',
+                ]) ||
+                !preg_match('/^S_[a-f0-9]{32}$/D', $attrs['data-mbb-namespace'] ?? '') ||
+                !preg_match('/^D_[a-f0-9]{32}$/D', $attrs['data-mbb-document'] ?? '') ||
+                !is_string($identity) ||
+                !preg_match('/^[A-Za-z][A-Za-z0-9_-]{0,63}$/D', $identity) ||
+                !in_array(
+                    $attrs['data-mbb-kind'] ?? '',
+                    ['equation', 'figure', 'table', 'listing', 'statement', 'step', 'activity'],
+                    true,
+                ) ||
+                $m[2] !== '[' . $identity . ']'
+            ) {
+                $bad();
+            }
+            return [
+                'raw' => $m[0],
+                'kind' => 'xref',
+                'keys' => [$identity],
+                'version' => 2,
+                'namespace' => $attrs['data-mbb-namespace'],
+                'document' => $attrs['data-mbb-document'],
+                'targetKind' => $attrs['data-mbb-kind'],
+            ];
+        }
+        if (
+            !$kind ||
+            count($attrs) !== 3 ||
+            ($attrs['data-mbb-version'] ?? '') !== '1' ||
+            !is_string($identity) ||
+            !preg_match(
+                '/^[A-Za-z][A-Za-z0-9_-]{0,63}(?:,[A-Za-z][A-Za-z0-9_-]{0,63}){0,7}$/D',
+                $identity,
+            ) ||
+            ($kind === 'xref' && str_contains($identity, ',')) ||
+            $m[2] !== '[' . $identity . ']'
+        ) {
+            $bad();
+        }
+        $keys = explode(',', $identity);
+        if (count(array_unique($keys)) !== count($keys)) {
+            $bad();
+        }
+        return ['raw' => $m[0], 'kind' => $kind, 'keys' => $keys];
+    }
+    public static function storedReference(string $raw): string
+    {
+        $ref = self::reference($raw);
+        if (($ref['version'] ?? 1) === 2) {
+            return '<span data-mbb-target="' .
+                $ref['keys'][0] .
+                '" data-mbb-version="2" data-mbb-namespace="' .
+                $ref['namespace'] .
+                '" data-mbb-document="' .
+                $ref['document'] .
+                '" data-mbb-kind="' .
+                $ref['targetKind'] .
+                '" class="mbb-xref">[' .
+                $ref['keys'][0] .
+                ']</span>';
+        }
+        $identity = implode(',', $ref['keys']);
+        return '<span data-mbb-' .
+            ($ref['kind'] === 'xref' ? 'target' : 'keys') .
+            '="' .
+            $identity .
+            '" data-mbb-version="1" class="mbb-' .
+            $ref['kind'] .
+            '">[' .
+            $identity .
+            ']</span>';
+    }
+    public static function raw(string $html): array
+    {
+        $raw = preg_replace('/<(pre|code)\b[^>]*>[\s\S]*?<\/\1\s*>/i', '', $html);
+        preg_match_all('/<span\b[^>]*>/i', $raw, $matches, PREG_OFFSET_CAPTURE);
+        $refs = [];
+        foreach ($matches[0] as [$tag, $offset]) {
+            if (self::opening($tag)) {
+                $refs[] = self::reference(substr($raw, $offset), false);
+            }
+        }
+        return $refs;
+    }
+    public static function validate(array $blocks): void
+    {
+        $objects = [];
+        $keys = [];
+        $refs = [];
+        $groups = 0;
+        $count = 0;
+        $walk = function (array $list, int $depth = 0, bool $footnote = false) use (
+            &$walk,
+            &$objects,
+            &$keys,
+            &$refs,
+            &$groups,
+            &$count,
+        ): void {
+            $seenFootnotes = false;
+            foreach ($list as $b) {
+                $name = $b['name'];
+                $a = $b['attrs'] ?? [];
+                $inner = $b['children'] ?? [];
+                $kind = str_starts_with($name, 'mbb/') ? substr($name, 4) : '';
+                if ($name === 'mbb/footnotes') {
+                    $seenFootnotes = true;
+                }
+                if (isset(self::SCHEMAS[$kind])) {
+                    if (++$count > 2048) {
+                        self::fail(
+                            'STRUCTURE_LIMIT',
+                            'Technical objects exceed the document budget',
+                        );
+                    }
+                    self::attrs($kind, $a);
+                    if ($kind !== 'bibliography') {
+                        if ($footnote) {
+                            self::fail(
+                                'TECHNICAL_STRUCTURE',
+                                'Technical objects and statements must not be inside footnotes',
+                            );
+                        }
+                        $objects[$a['id']] = true;
+                    }
+                    if (
+                        $kind === 'object' &&
+                        (count($inner) !== 1 ||
+                            $inner[0]['name'] !==
+                                [
+                                    'equation' => 'mbb/math',
+                                    'figure' => 'core/image',
+                                    'table' => 'core/table',
+                                    'listing' => 'mbb/code',
+                                ][$a['kind']])
+                    ) {
+                        self::fail(
+                            'TECHNICAL_STRUCTURE',
+                            'An object must contain exactly one matching supported block',
+                        );
+                    }
+                    if ($kind === 'statement' && !$inner) {
+                        self::fail('TECHNICAL_STRUCTURE', 'A statement body must not be empty');
+                    }
+                    if ($kind === 'bibliography') {
+                        if (++$groups > 1 || $depth || $inner || $seenFootnotes) {
+                            self::fail(
+                                'TECHNICAL_STRUCTURE',
+                                'One bibliography is allowed at top level before footnotes, without body blocks',
+                            );
+                        }
+                        foreach ($a['entries'] as $e) {
+                            $keys[is_array($e) ? $e['key'] : $e->key] = true;
+                        }
+                    }
+                }
+                if (
+                    !in_array(
+                        $name,
+                        ['mbb/code', 'mbb/math', 'core/code', 'core/preformatted'],
+                        true,
+                    )
+                ) {
+                    foreach (self::raw($b['content'] ?? '') as $ref) {
+                        $refs[] = $ref;
+                    }
+                    if (count($refs) > 4096) {
+                        self::fail(
+                            'STRUCTURE_LIMIT',
+                            'Technical references exceed the document budget',
+                        );
+                    }
+                }
+                $walk($inner, $depth + 1, $footnote || $name === 'mbb/footnote');
+            }
+        };
+        $walk($blocks);
+        foreach ($refs as $ref) {
+            if (($ref['version'] ?? 1) === 2) {
+                continue;
+            }
+            foreach ($ref['keys'] as $key) {
+                if (!isset(($ref['kind'] === 'xref' ? $objects : $keys)[$key])) {
+                    self::fail(
+                        'TECHNICAL_MISSING',
+                        'A technical reference has no matching object or bibliography entry',
+                    );
+                }
+            }
+        }
+    }
+    public static function html(string $kind, array $a, string $children): string
+    {
+        $esc = static fn($v) => str_replace(
+            '<',
+            '&lt;',
+            preg_replace('/&(?!([a-z0-9]+|#[0-9]+|#x[a-f0-9]+);)/i', '&amp;', $v),
+        );
+        $attr = static fn($v) => htmlspecialchars($v, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $id = $attr($a['id']);
+        if ($kind === 'object') {
+            return '<figure id="' .
+                $id .
+                '" class="mbb-technical-object" data-mbb-object-kind="' .
+                $a['kind'] .
+                '"><div class="mbb-technical-body">' .
+                $children .
+                '</div><figcaption class="mbb-technical-caption">' .
+                $esc($a['caption']) .
+                '</figcaption></figure>';
+        }
+        if ($kind === 'statement') {
+            $proof = $a['kind'] === 'proof';
+            $tag = $proof ? 'details' : 'section';
+            $heading = $proof ? 'summary' : 'p';
+            return '<' .
+                $tag .
+                ' id="' .
+                $id .
+                '" class="mbb-technical-statement" data-mbb-statement-kind="' .
+                $a['kind'] .
+                '"' .
+                ($proof && $a['open'] ? ' open' : '') .
+                '><' .
+                $heading .
+                ' class="mbb-technical-heading">' .
+                $esc($a['title']) .
+                '</' .
+                $heading .
+                '><div class="mbb-technical-body">' .
+                $children .
+                '</div></' .
+                $tag .
+                '>';
+        }
+        $html =
+            '<section id="' .
+            $id .
+            '" class="mbb-bibliography"' .
+            (($a['version'] ?? 1) === 2
+                ? ' data-mbb-bibliography-version="2" data-mbb-citation-style="' . $a['style'] . '"'
+                : '') .
+            '><p class="mbb-bibliography-title">Bibliography</p><ol>';
+        foreach ($a['entries'] as $entry) {
+            if (($a['version'] ?? 1) === 2) {
+                $entry = Bibliography::projection($entry);
+            }
+            $html .=
+                '<li data-mbb-bib-key="' .
+                $attr(is_array($entry) ? $entry['key'] : $entry->key) .
+                '">';
+            foreach (['authors', 'title', 'year', 'source', 'url'] as $field) {
+                $html .=
+                    '<span class="mbb-bib-' .
+                    $field .
+                    '">' .
+                    $esc(
+                        $field === 'authors'
+                            ? implode(', ', is_array($entry) ? $entry['authors'] : $entry->authors)
+                            : (is_array($entry)
+                                ? $entry[$field]
+                                : $entry->$field),
+                    ) .
+                    '</span>';
+            }
+            $html .= '</li>';
+        }
+        return $html . '</ol></section>';
+    }
+}
+
 /** Closed v1 teaching grammar, shared semantics with src/teaching.js. */
 final class Teaching
 {
     public const SCHEMAS = [
+        ...Technical::SCHEMAS,
+        'identity' => ['namespace' => 'string', 'document' => 'string'],
+        'image' => [],
+        'gallery' => [],
         'details' => [],
         'buttons' => [],
         'button' => [],
@@ -68,6 +769,9 @@ final class Teaching
         bool $source = false,
         ?string $blockName = null,
     ): array {
+        if (in_array($kind, ['image', 'gallery'], true)) {
+            return NativeMedia::attrs($kind, $attrs);
+        }
         if (isset(BlockAdapters::NATIVE[$kind])) {
             return BlockAdapters::nativeAttrs($kind, $attrs, $source);
         }
@@ -89,8 +793,20 @@ final class Teaching
             }
             return BlockAdapters::leafAttrs($d, $attrs);
         }
+        if (!is_array($attrs)) {
+            self::fail('TEACHING_ATTRIBUTES', 'Incomplete teaching attributes');
+        }
         $schema =
             self::SCHEMAS[$kind] +
+            ($kind === 'component' &&
+            (($attrs['version'] ?? 1) === 2 || ($source && array_key_exists('activity', $attrs)))
+                ? ['activity' => 'object']
+                : []) +
+            ($kind === 'bibliography' &&
+            (($attrs['version'] ?? 1) === 2 || ($source && array_key_exists('style', $attrs)))
+                ? ['style' => 'string'] +
+                    (array_key_exists('origins', $attrs) ? ['origins' => 'array'] : [])
+                : []) +
             (!$source ? ['version' => 'integer'] : []) +
             ($kind === 'code-compare' && !$source ? self::SOURCE_FIELDS : []);
         if (!is_array($attrs) || count($schema) !== count($attrs)) {
@@ -101,12 +817,31 @@ final class Teaching
                 self::fail('TEACHING_ATTRIBUTES', 'Unknown or invalid teaching attribute');
             }
         }
-        if (!$source && $attrs['version'] !== 1) {
+        if (
+            !$source &&
+            $attrs['version'] !== 1 &&
+            !(in_array($kind, ['bibliography', 'component'], true) && $attrs['version'] === 2)
+        ) {
             self::fail('TEACHING_VERSION', 'Unsupported teaching block version');
         }
         $out = [];
         foreach ($schema as $key => $type) {
             $out[$key] = $attrs[$key];
+        }
+        if ($kind === 'identity') {
+            if (
+                !preg_match('/^S_[a-f0-9]{32}$/D', $out['namespace']) ||
+                !preg_match('/^D_[a-f0-9]{32}$/D', $out['document'])
+            ) {
+                self::fail(
+                    'DOCUMENT_IDENTITY',
+                    'A logical identity requires a closed namespace and document tuple',
+                );
+            }
+            return $out;
+        }
+        if (isset(Technical::SCHEMAS[$kind])) {
+            Technical::attrs($kind, $out);
         }
         if ($kind === 'code-tabs') {
             $out['tabs'] = self::tabs($out, $source);
@@ -129,6 +864,9 @@ final class Teaching
             }
         }
         if ($kind === 'component') {
+            if (array_key_exists('activity', $out)) {
+                Activity::relations($out['activity']);
+            }
             if (
                 !preg_match('/^[a-z][a-z0-9-]{0,63}$/D', $out['component']) ||
                 !preg_match('/^\d+\.\d+\.\d+$/D', $out['componentVersion'])
@@ -369,6 +1107,20 @@ final class Teaching
 
         $object = json_decode($raw, false, 32, JSON_THROW_ON_ERROR);
         $tabObject = is_object($object) && isset($object->attrs) ? $object->attrs : $object;
+        if (
+            is_object($tabObject) &&
+            property_exists($tabObject, 'origins') &&
+            (!is_array($tabObject->origins) ||
+                array_filter(
+                    $tabObject->origins,
+                    static fn($origin) => !($origin instanceof \stdClass),
+                ))
+        ) {
+            self::fail(
+                'BIBLIOGRAPHY_V2',
+                'Bibliography origins must be a JSON array of closed objects',
+            );
+        }
         if (is_object($tabObject) && property_exists($tabObject, 'tabs')) {
             if (
                 !is_array($tabObject->tabs) ||
@@ -388,6 +1140,17 @@ final class Teaching
         }
         if (is_object($object) && property_exists($object, 'params')) {
             $attrs['params'] = $object->params;
+        }
+        if (is_object($object) && property_exists($object, 'activity')) {
+            $attrs['activity'] = $object->activity;
+        }
+        if (
+            is_object($object) &&
+            isset($object->attrs) &&
+            is_object($object->attrs) &&
+            property_exists($object->attrs, 'activity')
+        ) {
+            $attrs['attrs']['activity'] = $object->attrs->activity;
         }
         return $attrs;
     }
@@ -669,6 +1432,29 @@ final class Teaching
             if (preg_match('/^ {0,3}<!--mbb-teaching/', $line)) {
                 self::fail('TEACHING_SYNTAX', 'Reserved internal marker');
             }
+            if (
+                preg_match(
+                    '/^ {0,3}\[\^[^\]\r\n]+\]:[ \t]*:::mbb:v1 (?:object|statement) \{/',
+                    $line,
+                )
+            ) {
+                self::fail(
+                    'TECHNICAL_STRUCTURE',
+                    'Technical objects and statements must not be inside footnotes',
+                );
+            }
+            if (preg_match('/^ {0,3}\[\^[^\]\r\n]+\]:/', $line)) {
+                $definitionBeforeBibliography = true;
+            }
+            if (
+                ($definitionBeforeBibliography ?? false) &&
+                preg_match('/^:::mbb:v[12] bibliography /', $line)
+            ) {
+                self::fail(
+                    'TECHNICAL_STRUCTURE',
+                    'The bibliography must precede footnote definitions',
+                );
+            }
             if (!str_starts_with($line, ':::mbb:')) {
                 continue;
             }
@@ -677,7 +1463,7 @@ final class Teaching
             } else {
                 if (
                     !preg_match(
-                        '/^:::mbb:v1 (collapse|steps|step|code-compare|component|code-tabs|details|buttons|button|adapter) (\{.*\})$/D',
+                        '/^:::mbb:v([12]) (identity|collapse|steps|step|code-compare|component|code-tabs|details|buttons|button|adapter|object|statement|bibliography|image|gallery) (\{.*\})$/D',
                         $line,
                         $m,
                     )
@@ -685,11 +1471,27 @@ final class Teaching
                     self::fail('TEACHING_SYNTAX', 'Invalid versioned teaching directive');
                 }
                 try {
-                    $a = self::json($m[2]);
+                    $a = self::json($m[3]);
                 } catch (\JsonException $e) {
                     self::fail('TEACHING_ATTRIBUTES', 'Invalid JSON attributes');
                 }
-                $data = ['kind' => $m[1], 'attrs' => self::attrs($m[1], $a, true)];
+                if ($m[1] === '2' && !in_array($m[2], ['bibliography', 'component'], true)) {
+                    self::fail('TEACHING_VERSION', 'Unsupported teaching block version');
+                }
+                if ($m[2] === 'component' && ($m[1] === '2') !== array_key_exists('activity', $a)) {
+                    self::fail(
+                        'ACTIVITY_RELATION',
+                        'Activity relations require a closed map of unique local static targets',
+                    );
+                }
+                if ($m[2] === 'bibliography' && ($m[1] === '2') !== array_key_exists('style', $a)) {
+                    self::fail('TEACHING_ATTRIBUTES', 'Incomplete teaching attributes');
+                }
+                $data = [
+                    'kind' => $m[2],
+                    'version' => (int) $m[1],
+                    'attrs' => self::attrs($m[2], $a, true),
+                ];
             }
             $line =
                 '<!--mbb-teaching ' .
@@ -750,6 +1552,10 @@ final class Teaching
                 self::fail('TEACHING_STRUCTURE', 'Unexpected teaching closing marker');
             }
             $item = array_pop($stack);
+            if (in_array($item['kind'], ['image', 'gallery'], true)) {
+                $stack[count($stack) - 1]['children'][] = NativeMedia::assemble($item);
+                continue;
+            }
             if (isset(BlockAdapters::NATIVE[$item['kind']])) {
                 $a = BlockAdapters::nativeAttrs($item['kind'], $item['attrs'], true);
                 if ($item['kind'] === 'details') {
@@ -800,7 +1606,7 @@ final class Teaching
                 ];
                 continue;
             }
-            $item['attrs']['version'] = 1;
+            $item['attrs']['version'] = $item['version'] ?? 1;
             if ($item['kind'] === 'code-tabs') {
                 if (count($item['children']) !== count($item['attrs']['tabs'])) {
                     self::fail('CODE_TABS_STRUCTURE', 'Mismatched code version count');
@@ -857,6 +1663,7 @@ final class Teaching
     {
         $ids = [];
         $groups = 0;
+        $identities = 0;
         $count = 0;
         $walk = function (
             array $list,
@@ -864,7 +1671,7 @@ final class Teaching
             int $depth = 0,
             int $collapse = 0,
             int $details = 0,
-        ) use (&$walk, &$ids, &$groups, &$count): void {
+        ) use (&$walk, &$ids, &$groups, &$identities, &$count): void {
             foreach ($list as $b) {
                 if ($depth > 32 || ++$count > 10000) {
                     self::fail(
@@ -879,6 +1686,22 @@ final class Teaching
                 }
                 if ($kind !== null) {
                     $a = self::attrs($kind, $b['attrs'], false, $b['name']);
+                    if ($kind === 'component') {
+                        Activity::validate([
+                            'name' => $b['name'],
+                            'attrs' => $a,
+                            'children' => $inner,
+                        ]);
+                    }
+                    if ($kind === 'identity') {
+                        if ($depth || ++$identities > 1 || $inner) {
+                            self::fail(
+                                'DOCUMENT_IDENTITY',
+                                'A document permits one empty top-level logical identity',
+                            );
+                        }
+                        continue;
+                    }
                     if (isset(BlockAdapters::NATIVE[$kind]) || $kind === 'adapter') {
                         if ($kind === 'details' && $details >= 8) {
                             self::fail(
@@ -1017,6 +1840,7 @@ final class Teaching
             }
         };
         $anchors($blocks);
+        Technical::validate($blocks);
     }
     public static function markdown(array $block, string $body): string
     {
@@ -1080,6 +1904,15 @@ final class Teaching
         foreach (self::SCHEMAS[$kind] as $key => $type) {
             $attrs[$key] = $a[$key];
         }
+        if ($kind === 'component' && $a['version'] === 2) {
+            $attrs['activity'] = $a['activity'];
+        }
+        if ($kind === 'bibliography' && $a['version'] === 2) {
+            $attrs['style'] = $a['style'];
+            if (array_key_exists('origins', $a)) {
+                $attrs['origins'] = $a['origins'];
+            }
+        }
         $codes = '';
         if ($kind === 'code-compare') {
             foreach (['Left', 'Right'] as $side) {
@@ -1093,7 +1926,9 @@ final class Teaching
                 $codes .= $f . $a['language' . $side] . "\n" . $code . $f . "\n\n";
             }
         }
-        return ':::mbb:v1 ' .
+        return ':::mbb:v' .
+            (in_array($kind, ['bibliography', 'component'], true) ? $a['version'] : 1) .
+            ' ' .
             $kind .
             ' ' .
             self::encode($attrs) .

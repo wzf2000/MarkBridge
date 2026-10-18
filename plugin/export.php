@@ -10,6 +10,7 @@ if (!defined('ABSPATH')) {
 require_once __DIR__ . '/includes/i18n.php';
 // Read-only saved-document export. No source-file reads and no article writes.
 require_once __DIR__ . '/includes/php-converter/ResourceImages.php';
+require_once __DIR__ . '/static-export.php';
 use MarkBridge\Probe\ResourceImages;
 
 function mbb_export_config(): array
@@ -141,7 +142,7 @@ function mbb_export_drop(string $key, array $record): bool
         ),
     );
     wp_cache_delete($key, 'options');
-    if ($deleted && ($record['format'] ?? '') === 'zip') {
+    if ($deleted && in_array($record['format'] ?? '', ['zip', 'portable-zip'], true)) {
         try {
             mbb_export_remove($record['token']);
         } catch (Throwable $error) {
@@ -298,10 +299,18 @@ function mbb_export_media_file(string $file): string
     }
     return $real;
 }
-function mbb_export_plan(array $snapshot, string $format): array
-{
+function mbb_export_plan(
+    array $snapshot,
+    string $format,
+    ?array $referenceMap = null,
+    bool $freshMedia = false,
+): array {
     $document = $snapshot['document'];
     $p = $snapshot['post'];
+    $referenceMap ??= function_exists('mbb_references_export_map')
+        ? mbb_references_export_map($document['serialized'])
+        : [];
+    $snapshot['referenceMap'] = $referenceMap;
     if ($format === 'markdown') {
         return [
             'source' => $document['source'],
@@ -314,6 +323,7 @@ function mbb_export_plan(array $snapshot, string $format): array
             'mappings' => [],
             'files' => [],
             'sidecar' => '',
+            'referenceMap' => $referenceMap,
         ];
     }
     $images = ResourceImages::urls($document['serialized']);
@@ -327,8 +337,17 @@ function mbb_export_plan(array $snapshot, string $format): array
     $retained = [];
     $files = [];
     $mappings = [];
-    if ($format === 'zip') {
-        if (!mbb_export_config()['zipAvailable']) {
+    if (in_array($format, ['zip', 'portable-zip', 'html', 'collection-media'], true)) {
+        if ($format === 'zip' && function_exists('mbb_native_media_portable_admission')) {
+            $admission = mbb_native_media_portable_admission($document['serialized']);
+            if (is_wp_error($admission)) {
+                mbb_export_throw('export_images', $admission->get_error_message());
+            }
+        }
+        if (
+            in_array($format, ['zip', 'portable-zip'], true) &&
+            !mbb_export_config()['zipAvailable']
+        ) {
             mbb_export_throw(
                 'export_unavailable',
                 mbb_t(
@@ -340,6 +359,7 @@ function mbb_export_plan(array $snapshot, string $format): array
             'post_type' => 'attachment',
             'post_status' => 'inherit',
             'post_parent' => $p->ID,
+            'cache_results' => !$freshMedia,
             'post_mime_type' => ['image/png', 'image/jpeg', 'image/gif', 'image/webp'],
             'posts_per_page' => 33,
             'fields' => 'ids',
@@ -364,7 +384,15 @@ function mbb_export_plan(array $snapshot, string $format): array
         }
         $known = [];
         foreach ($ids as $id) {
-            if (!current_user_can('read_post', $id) || get_post_type($id) !== 'attachment') {
+            if ($freshMedia) {
+                clean_post_cache($id);
+                wp_cache_delete($id, 'post_meta');
+            }
+            if (
+                ($freshMedia && (int) get_post_field('post_parent', $id) !== (int) $p->ID) ||
+                !current_user_can('read_post', $id) ||
+                get_post_type($id) !== 'attachment'
+            ) {
                 continue;
             }
             $file = get_attached_file($id, true);
@@ -433,8 +461,54 @@ function mbb_export_plan(array $snapshot, string $format): array
         if (count($resources) > 32) {
             mbb_export_throw('export_images', mbb_t('At most 32 actual images may be exported'));
         }
+        // Internal read-only publication planning: render the saved native body later, rather
+        // than admitting it as Markdown ZIP input or detaching its local media relationships.
+        // Public export requests cannot select this mode. Collections validate retained URLs
+        // and recheck every attachment before emitting any artifact bytes.
+        if ($format === 'collection-media') {
+            return [
+                'resources' => $resources,
+                'retainedImages' => $retained,
+                'mappings' => $mappings,
+                'files' => $files,
+            ];
+        }
+        if ($format === 'html') {
+            if (
+                array_filter(
+                    $retained,
+                    static fn($item) => !mbb_static_export_external_url($item['url']),
+                )
+            ) {
+                mbb_export_throw(
+                    'export_images',
+                    mbb_t(
+                        'Static HTML requires every image to be a verified local attachment of this article',
+                    ),
+                );
+            }
+            $descriptor = mbb_static_export_descriptor(
+                $snapshot,
+                $files,
+                $resources,
+                $mappings,
+                $retained,
+            );
+            $json = mbb_component_json($descriptor);
+            return [
+                'source' => $json,
+                'preview' => $json,
+                'document' => ['bytes' => strlen($json), 'sha256' => hash('sha256', $json)],
+                'resources' => $resources,
+                'retainedImages' => $retained,
+                'mappings' => $mappings,
+                'files' => $files,
+                'sidecar' => '',
+                'referenceMap' => $referenceMap,
+            ];
+        }
         $projected = mbb_convert([
-            'mode' => 'portable_images',
+            'mode' => $format === 'portable-zip' ? 'portable_detach' : 'portable_images',
             'documentId' => $document['documentId'],
             'base' => $document,
             'mappings' => $mappings,
@@ -447,6 +521,14 @@ function mbb_export_plan(array $snapshot, string $format): array
                 ),
             );
         }
+        if ($format === 'portable-zip' && $retained) {
+            mbb_export_throw(
+                'export_images',
+                mbb_t(
+                    'Cross-site ZIP requires every image to be a verified local attachment of this article',
+                ),
+            );
+        }
         $source = $projected['source'];
     } else {
         $source = $document['source'];
@@ -454,7 +536,7 @@ function mbb_export_plan(array $snapshot, string $format): array
     $digest = ['bytes' => strlen($source), 'sha256' => hash('sha256', $source)];
     $metadata = mbb_frontmatter_current($p);
     $sidecar = [
-        'schema' => 1,
+        'schema' => $format === 'portable-zip' ? 2 : 1,
         'kind' => 'markbridge-portable',
         'document' => array_merge(
             [
@@ -470,6 +552,9 @@ function mbb_export_plan(array $snapshot, string $format): array
             array_flip(['title', 'excerpt', 'slug', 'categories', 'tags']),
         ),
     ];
+    if ($format === 'portable-zip') {
+        $sidecar['mediaAssociation'] = 'create-new';
+    }
     $json = mbb_component_json($sidecar);
     mbb_resource_export_sidecar($json, ['path' => 'document.md'] + $digest, $resources);
     if (
@@ -490,6 +575,7 @@ function mbb_export_plan(array $snapshot, string $format): array
         'mappings' => $mappings,
         'files' => $files,
         'sidecar' => $json,
+        'referenceMap' => $referenceMap,
     ];
 }
 function mbb_export_plan_digest(array $plan): string
@@ -501,6 +587,7 @@ function mbb_export_plan_digest(array $plan): string
             $plan['resources'],
             $plan['mappings'],
             $plan['sidecar'],
+            $plan['referenceMap'] ?? [],
             array_map(static fn($file) => array_diff_key($file, ['file' => true]), $plan['files']),
         ]),
     );
@@ -521,7 +608,7 @@ function mbb_export_prepare($r)
             $data['schema'] !== 1 ||
             !is_int($data['post_id']) ||
             !is_string($data['expected']) ||
-            !in_array($data['format'], ['markdown', 'zip'], true)
+            !in_array($data['format'], ['markdown', 'zip', 'portable-zip', 'html'], true)
         ) {
             mbb_export_throw('export_request', mbb_t('The export request has invalid field types'));
         }
@@ -541,7 +628,7 @@ function mbb_export_prepare($r)
             'digest' => mbb_export_plan_digest($plan),
             'state' => 'ready',
         ];
-        if ($data['format'] === 'zip') {
+        if (in_array($data['format'], ['zip', 'portable-zip'], true)) {
             $reservation = $record;
             $reservation['state'] = 'preparing';
             $slotKey = mbb_export_store($reservation);
@@ -621,7 +708,7 @@ function mbb_export_prepare($r)
             'document' => $plan['document'],
             'resources' => $plan['resources'],
             'retainedImages' => $plan['retainedImages'],
-            'projectedSource' => $plan['source'],
+            'projectedSource' => $plan['preview'] ?? $plan['source'],
             'changes' => $plan['mappings'],
             'receipt' => mbb_export_receipt($record),
             'limits' => mbb_export_config(),
@@ -703,7 +790,7 @@ function mbb_export_download($r)
             );
         }
         $body = $plan['source'];
-        if ($record['format'] === 'zip') {
+        if (in_array($record['format'], ['zip', 'portable-zip'], true)) {
             $file = mbb_export_directory($record['token']) . '/export.zip';
             mbb_resource_private_owner($file);
             if (!is_file($file) || filesize($file) !== $record['archive']['bytes']) {
@@ -739,12 +826,19 @@ function mbb_export_download($r)
             );
         }
         return new WP_REST_Response($body, 200, [
-            'Content-Type' =>
-                $record['format'] === 'zip' ? 'application/zip' : 'text/markdown; charset=UTF-8',
+            'Content-Type' => in_array($record['format'], ['zip', 'portable-zip'], true)
+                ? 'application/zip'
+                : ($record['format'] === 'html'
+                    ? 'application/json; charset=UTF-8'
+                    : 'text/markdown; charset=UTF-8'),
             'Content-Disposition' =>
                 'attachment; filename="markbridge-' .
                 $record['documentId'] .
-                ($record['format'] === 'zip' ? '.zip' : '.md') .
+                (in_array($record['format'], ['zip', 'portable-zip'], true)
+                    ? '.zip'
+                    : ($record['format'] === 'html'
+                        ? '.json'
+                        : '.md')) .
                 '"',
             'Cache-Control' => 'private, no-store',
             'X-Content-Type-Options' => 'nosniff',

@@ -51,6 +51,14 @@ function get_post_type($id)
 {
     return $id === 34 ? 'attachment' : 'post';
 }
+function get_post_field($key, $id)
+{
+    return $id === 34 && $key === 'post_parent'
+        ? ($GLOBALS['unrelatedMedia'] ?? false
+            ? 99
+            : 12)
+        : null;
+}
 function mbb_token($p)
 {
     return hash('sha256', serialize($p));
@@ -91,7 +99,7 @@ function wp_get_attachment_image_src($id, $size)
 }
 function parse_blocks($content)
 {
-    return [];
+    return class_exists('WP_Block_Parser') ? (new WP_Block_Parser())->parse($content) : [];
 }
 function mbb_frontmatter_current($post)
 {
@@ -269,6 +277,7 @@ file_put_contents(
     ),
 );
 $GLOBALS['imageURL'] = 'http://export-model.invalid/uploads/image.png';
+$validImageBytes = file_get_contents($imageFile);
 $source =
     "---\nmarkbridge: 1\ntitle: \"Proposal\"\n---\n\n![image](" .
     $GLOBALS['imageURL'] .
@@ -361,6 +370,56 @@ try {
     foreach ($GLOBALS['options'] as $key => $record) {
         mbb_export_drop($key, $record);
     }
+    // HTML uses the same receipt, snapshot and final claim flow as existing formats.
+    $html = prepareExport('html');
+    check(is_array($html), 'HTML descriptor preparation failed');
+    check(
+        !str_contains(serialize($GLOBALS['options']), 'data:image/'),
+        'Static image bytes leaked into options',
+    );
+    check(
+        downloadExport($html, str_repeat('0', 64))->code === 'export_receipt',
+        'HTML receipt tamper accepted',
+    );
+    $response = downloadExport($html);
+    check($response instanceof WP_REST_Response, 'HTML descriptor download failed');
+    $descriptor = json_decode($response->data, true, 64, JSON_THROW_ON_ERROR);
+    check(
+        $descriptor['kind'] === 'markbridge-static' && count($descriptor['images']) === 1,
+        'Static image descriptor missing',
+    );
+    check(!str_contains($response->data, $imageFile), 'Static descriptor leaked local file path');
+    check(downloadExport($html)->code === 'export_expired', 'HTML candidate claim reused');
+    $html = prepareExport('html');
+    $GLOBALS['post']->post_title = 'Concurrent static title';
+    check(downloadExport($html)->code === 'export_conflict', 'HTML snapshot change accepted');
+    $GLOBALS['post']->post_title = 'Saved title';
+    mbb_export_cancel(new ExportRequest(['token' => $html['token']]));
+    $originalContent = $GLOBALS['post']->post_content;
+    $originalSource = $GLOBALS['post']->post_content_filtered;
+    $external = mbb_convert([
+        'mode' => 'markdown',
+        'source' => '![external](https://external.invalid/image.png)\n',
+        'documentId' => 'EXPORT-MODEL',
+    ]);
+    $GLOBALS['post']->post_content = $external['serialized'];
+    $GLOBALS['post']->post_content_filtered = $external['source'];
+    $externalHtml = prepareExport('html');
+    check(is_array($externalHtml), 'External static image link preparation failed');
+    $externalDescriptor = json_decode(
+        $externalHtml['projectedSource'],
+        true,
+        64,
+        JSON_THROW_ON_ERROR,
+    );
+    check(
+        str_contains($externalDescriptor['body'], 'mbb-external-image-link') &&
+            !str_contains($externalDescriptor['body'], '<img'),
+        'External image was not explicitly linked',
+    );
+    mbb_export_cancel(new ExportRequest(['token' => $externalHtml['token']]));
+    $GLOBALS['post']->post_content = $originalContent;
+    $GLOBALS['post']->post_content_filtered = $originalSource;
     if (mbb_export_config()['zipAvailable']) {
         $other = prepareExport();
         $unrelated = $GLOBALS['options'];
@@ -491,6 +550,109 @@ try {
         }
         rmdir($private);
         unlink($file);
+    }
+    $core = getenv('MARKBRIDGE_TEST_WORDPRESS_ROOT');
+    if ($core && is_file($core . '/wp-includes/class-wp-block-parser.php')) {
+        foreach (['block', 'frame'] as $name) {
+            require_once $core . '/wp-includes/class-wp-block-parser-' . $name . '.php';
+        }
+        require_once $core . '/wp-includes/class-wp-block-parser.php';
+        require_once __DIR__ . '/../plugin/native-media.php';
+        require_once __DIR__ . '/../plugin/collections-snapshot.php';
+        file_put_contents($imageFile, $validImageBytes);
+        // Exercise the real collection media entry and export planner with core's actual
+        // nested gallery parser, not the collection model's resource-plan substitute.
+        $image =
+            ':::mbb:v1 image {"id":34,"sizeSlug":"full"}' .
+            "\n\n![Native](" .
+            $GLOBALS['imageURL'] .
+            ")\n\n:::mbb:end\n";
+        foreach (
+            [
+                $image,
+                ":::mbb:v1 gallery {\"columns\":2}\n\n" . $image . "\n" . $image . "\n:::mbb:end\n",
+            ]
+            as $native
+        ) {
+            $native .= "\n![External](https://external.invalid/image.png)\n";
+            $d = mbb_convert([
+                'mode' => 'markdown',
+                'source' => $native,
+                'documentId' => 'EXPORT-MODEL',
+            ]);
+            check(!is_wp_error($d), 'Native collection fixture conversion failed');
+            check(
+                str_contains($d['serialized'], '"id":34'),
+                'Native attachment ID fixture missing',
+            );
+            $snapshot = ['document' => $d, 'post' => $GLOBALS['post']];
+            $savedDocument = $d;
+            $plan = mbb_collections_media($snapshot);
+            check(
+                count($plan['resources']) === 1 && count($plan['files']) === 1,
+                'Native image/gallery was not deduplicated',
+            );
+            check(
+                count($plan['mappings']) === 1 && count($plan['retainedImages']) === 1,
+                'Mixed local/external image plan changed',
+            );
+            check(
+                $plan['retainedImages'][0]['url'] === 'https://external.invalid/image.png',
+                'External image link lost',
+            );
+            check(
+                !array_key_exists('source', $plan) && !array_key_exists('sidecar', $plan),
+                'Collection media planning projected another body',
+            );
+            check(
+                $d['source'] === $native,
+                'Collection changed native source or attachment relationship',
+            );
+            check($d === $savedDocument, 'Collection changed serialized native body');
+            try {
+                mbb_export_plan($snapshot, 'zip', [], true);
+                throw new RuntimeException('Markdown ZIP accepted native attachment ID');
+            } catch (RuntimeException $e) {
+                check(
+                    str_starts_with($e->getMessage(), 'export_images:'),
+                    'Wrong native ZIP rejection',
+                );
+            }
+            if (mbb_export_config()['zipAvailable']) {
+                try {
+                    mbb_export_plan($snapshot, 'portable-zip', [], true);
+                    throw new RuntimeException('Portable ZIP accepted an external image');
+                } catch (RuntimeException $e) {
+                    check(
+                        preg_match('/^export_(?:images|projection):/', $e->getMessage()) === 1,
+                        'Wrong portable ZIP rejection: ' . $e->getMessage(),
+                    );
+                }
+            }
+            foreach ([['read_post:34'], ['parent']] as $deny) {
+                $GLOBALS['denied'] = $deny;
+                $GLOBALS['unrelatedMedia'] = $deny === ['parent'];
+                try {
+                    mbb_collections_media($snapshot);
+                    throw new RuntimeException(
+                        'Collection accepted unreadable/unrelated local image',
+                    );
+                } catch (RuntimeException $e) {
+                    check(
+                        $e->getMessage() === 'collection_media:422',
+                        'Wrong media authorization rejection',
+                    );
+                } finally {
+                    $GLOBALS['denied'] = [];
+                    $GLOBALS['unrelatedMedia'] = false;
+                }
+            }
+        }
+        check(
+            prepareExport('collection-media')->code === 'export_request',
+            'Internal media plan became a public export format',
+        );
+        echo "Collection native media: real core image/gallery IDs, mixed external links, attachment permission/parent, unchanged ZIP boundaries passed\n";
     }
     check($GLOBALS['post'] == $before, 'Export modified saved article');
     echo "Export models: bytes, owner/site/permission, receipt/CAS/quota/TTL, ZIP reimport and closed sidecar passed\n";

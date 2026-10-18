@@ -5,6 +5,16 @@ mkdir($directory);
 mkdir($directory . '/fixture');
 define('WP_PLUGIN_DIR', $directory);
 function add_action(...$args) {}
+function apply_filters($name, $value, ...$args)
+{
+    if ($name === 'markbridge_validate_component_params') {
+        if (($GLOBALS['domain_result'] ?? null) === 'throw') {
+            throw new RuntimeException('Synthetic validator failure');
+        }
+        return $GLOBALS['domain_result'] ?? $value;
+    }
+    return $value;
+}
 function wp_normalize_path($path)
 {
     return str_replace('\\', '/', $path);
@@ -84,7 +94,36 @@ try {
         mbb_component_registry()['fixture']['defaults']->n === 3,
         'Duplicate changed defaults',
     );
+    $next_provider = $provider;
+    $next_provider['version'] = '0.2.0';
+    registry_assert(
+        markbridge_register_teaching_component('fixture', $next_provider),
+        'A distinct exact version was rejected',
+    );
+    registry_assert(
+        !markbridge_register_teaching_component('fixture', $next_provider),
+        'Duplicate exact version replaced its provider',
+    );
+    registry_assert(
+        mbb_component_provider('fixture', '0.1.0')['version'] === '0.1.0' &&
+            mbb_component_provider('fixture', '0.2.0')['version'] === '0.2.0' &&
+            mbb_component_provider('fixture', '0.3.0') === null &&
+            mbb_component_registry()['fixture']['version'] === '0.1.0',
+        'Exact-version resolution changed the legacy default or guessed a version',
+    );
     registry_assert(markbridge_teaching_supports_ui_locale(), 'Locale capability probe missing');
+    foreach ([false, 1, 'throw'] as $domainResult) {
+        $GLOBALS['domain_result'] = $domainResult;
+        registry_assert(
+            !mbb_component_domain_valid('fixture', '0.1.0', (object) ['n' => 3]),
+            'Domain validator failure was not closed',
+        );
+    }
+    unset($GLOBALS['domain_result']);
+    registry_assert(
+        mbb_component_domain_valid('fixture', '0.1.0', (object) ['n' => 3]),
+        'Default domain admission failed',
+    );
     registry_assert(
         !array_key_exists(
             'supportsUiLocale',
@@ -109,6 +148,27 @@ try {
         registry_assert(
             !markbridge_register_teaching_component('bad-locale', $localeProvider),
             'Nonboolean locale capability accepted',
+        );
+    }
+    registry_assert(markbridge_teaching_supports_reader_diagrams(), 'Reader diagram probe missing');
+    $diagramProvider = $provider;
+    $diagramProvider['readerMode'] = 'diagram';
+    registry_assert(
+        markbridge_register_teaching_component('reader-diagram', $diagramProvider) &&
+            mbb_component_public(mbb_component_registry()['reader-diagram'])['readerMode'] ===
+                'diagram',
+        'Trusted reader diagram capability missing',
+    );
+    registry_assert(
+        !array_key_exists('readerMode', mbb_component_public(mbb_component_registry()['fixture'])),
+        'Legacy provider gained automatic presentation',
+    );
+    foreach ([null, true, 'auto', 'algorithm', []] as $badMode) {
+        $badDiagram = $provider;
+        $badDiagram['readerMode'] = $badMode;
+        registry_assert(
+            !markbridge_register_teaching_component('bad-reader', $badDiagram),
+            'Unrecognized automatic presentation accepted',
         );
     }
     $numeric = $provider;
@@ -161,6 +221,58 @@ try {
             'Bad defaults accepted or interrupted the page',
         );
     }
+    $textFile = $directory . '/fixture/frame-123456789abc.html.txt';
+    copy($file, $textFile);
+    $textProvider = $provider;
+    $textProvider['minMarkBridge'] = '2.0.3';
+    $textProvider['resource']['file'] = $textFile;
+    $textProvider['resource']['url'] = plugins_url(basename($textFile), $textFile);
+    registry_assert(
+        markbridge_register_teaching_component('text-payload', $textProvider) &&
+            mbb_component_registry()['text-payload']['status'] === 'available',
+        'Exact HTML text payload rejected',
+    );
+    $wrongText = $textProvider;
+    $wrongText['resource']['sha256'] = str_repeat('0', 64);
+    registry_assert(
+        markbridge_register_teaching_component('text-integrity', $wrongText) &&
+            mbb_component_registry()['text-integrity']['status'] === 'resource-integrity',
+        'Text payload digest mismatch became available',
+    );
+    $limitedText = $textProvider;
+    $limitedText['budgets']['resourceBytes'] = 1;
+    registry_assert(
+        markbridge_register_teaching_component('text-limit', $limitedText) &&
+            mbb_component_registry()['text-limit']['status'] === 'resource-limit',
+        'Text payload bypassed resource budget',
+    );
+    foreach (['frame.txt', 'frame.html.txt.js', 'frame.HTML.txt'] as $name) {
+        $invalidText = $textProvider;
+        $invalidText['resource']['file'] = $directory . '/fixture/' . $name;
+        $invalidText['resource']['url'] = plugins_url($name, $invalidText['resource']['file']);
+        registry_assert(
+            !markbridge_register_teaching_component('invalid-text', $invalidText),
+            'Arbitrary text suffix accepted',
+        );
+    }
+    $escapedText = $textProvider;
+    $escapedText['resource']['file'] = $directory . '/outside.html.txt';
+    copy($file, $escapedText['resource']['file']);
+    $escapedText['resource']['url'] = plugins_url(
+        'outside.html.txt',
+        $escapedText['resource']['file'],
+    );
+    registry_assert(
+        !markbridge_register_teaching_component('outside-text', $escapedText),
+        'Text payload escaped plugin directory',
+    );
+    unlink($escapedText['resource']['file']);
+    $remoteText = $textProvider;
+    $remoteText['resource']['url'] = 'https://invalid.example/frame.html.txt';
+    registry_assert(
+        !markbridge_register_teaching_component('remote-text', $remoteText),
+        'Text payload accepted a remote URL',
+    );
     $bad = $provider;
     $bad['resource']['url'] = 'https://invalid.example/frame.html';
     registry_assert(
@@ -210,6 +322,52 @@ try {
     registry_assert(
         mbb_component_admit($candidate, $base) instanceof WP_Error,
         'Missing provider accepted distinct near floats',
+    );
+    $activity = (object) [
+        'schema' => 1,
+        'prompt' => 'question',
+        'options' => [
+            (object) ['key' => 'a', 'target' => 'a'],
+            (object) ['key' => 'b', 'target' => 'b'],
+        ],
+        'hints' => [],
+        'feedback' => (object) ['correct' => 'yes', 'incorrect' => 'no'],
+        'explanation' => 'solution',
+    ];
+    $attrs = (object) [
+        'id' => 'check',
+        'component' => 'fixture',
+        'componentVersion' => '0.1.0',
+        'version' => 2,
+        'params' => (object) ['n' => 3],
+        'activity' => $activity,
+    ];
+    $comment = static fn($a) => '<!-- wp:mbb/component ' . json_encode($a) . ' -->';
+    $activityBase = $comment($attrs);
+    registry_assert(
+        mbb_component_admit($activityBase . '<p>edited static text</p>', $activityBase) === true,
+        'Missing provider blocked unchanged activity text',
+    );
+    $attrs->activity->options[0]->key = 'changed';
+    registry_assert(
+        mbb_component_admit($comment($attrs), $activityBase) instanceof WP_Error,
+        'Missing provider accepted relation-only semantic change',
+    );
+    $GLOBALS['mbb_components'] = $original;
+    registry_assert(
+        mbb_component_admit($comment($attrs), $activityBase) instanceof WP_Error,
+        'Non-opt-in provider accepted activity semantics',
+    );
+    $GLOBALS['mbb_components']['fixture']['activityVersion'] = 1;
+    $GLOBALS['domain_result'] = false;
+    registry_assert(
+        mbb_component_admit($comment($attrs), $activityBase) instanceof WP_Error,
+        'Activity-only change skipped provider domain validation',
+    );
+    unset($GLOBALS['domain_result']);
+    registry_assert(
+        mbb_component_admit($comment($attrs), $activityBase) === true,
+        'Opt-in provider domain could not admit activity semantics',
     );
     $GLOBALS['mbb_components'] = $original;
     registry_assert(
@@ -301,6 +459,63 @@ try {
             mbb_component_registry()['lower-stable']['status'] === 'available',
         'Current core rejected the supported lower stable version',
     );
+    $savedRegistry = mbb_component_registry();
+    $rc = (int) substr(strrchr($currentVersion, '.'), 1);
+    foreach (
+        [
+            [$baseVersion . '-dev.1', 'available'],
+            ['1.9.0', 'available'],
+            [
+                $baseVersion . '-rc.' . max(1, $rc - 1),
+                str_contains($currentVersion, '-dev.') ? 'version-incompatible' : 'available',
+            ],
+            [$currentVersion, 'available'],
+            [
+                $baseVersion . '-rc.' . ($rc + 1),
+                str_contains($currentVersion, '-') ? 'version-incompatible' : 'available',
+            ],
+            [
+                $baseVersion,
+                str_contains($currentVersion, '-') ? 'version-incompatible' : 'available',
+            ],
+            ['99.0.0-rc.1', 'version-incompatible'],
+        ]
+        as [$floor, $status]
+    ) {
+        $floorProvider = $provider;
+        $floorProvider['minMarkBridge'] = $floor;
+        registry_assert(
+            markbridge_register_teaching_component('rc-floor', $floorProvider) &&
+                mbb_component_provider('rc-floor', '0.1.0')['status'] === $status,
+            'Incorrect RC floor compatibility: ' . $floor,
+        );
+        $GLOBALS['mbb_components'] = $savedRegistry;
+    }
+    foreach (
+        [
+            '2.9.0-rc',
+            '2.9.0-rc.x',
+            '2.9.0-rc.1.extra',
+            '2.9.0-beta.1',
+            '2.9.0-RC.1',
+            '2.9.0+meta',
+            "2.9.0-rc.1\n",
+        ]
+        as $floor
+    ) {
+        $floorProvider = $provider;
+        $floorProvider['minMarkBridge'] = $floor;
+        registry_assert(
+            !markbridge_register_teaching_component('invalid-floor', $floorProvider),
+            'Invalid RC minimum accepted',
+        );
+    }
+    $floorProvider = $provider;
+    $floorProvider['version'] = '0.1.0-rc.1';
+    registry_assert(
+        !markbridge_register_teaching_component('rc-implementation', $floorProvider),
+        'RC minimum widened exact component implementation versions',
+    );
     foreach (mbb_component_budget_limits() as $key => $max) {
         foreach ([0, -1, $max + 1, '1', 1.0] as $badValue) {
             $bad = $provider;
@@ -373,6 +588,9 @@ try {
     );
     echo "Registry closed schemas, strong types, bounded local resources, conflicts and registration failure recovery passed.\n";
 } finally {
+    if (isset($textFile) && is_file($textFile)) {
+        unlink($textFile);
+    }
     unlink($file);
     rmdir($directory . '/fixture');
     rmdir($directory);

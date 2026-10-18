@@ -13,6 +13,16 @@ function mbb_component_registry(): array
 {
     return $GLOBALS['mbb_components'] ?? [];
 }
+/** Resolve authored versions exactly; first registration remains the legacy/default entry. */
+function mbb_component_provider(string $id, string $version): ?array
+{
+    foreach (mbb_component_registry() as $provider) {
+        if ($provider['id'] === $id && $provider['version'] === $version) {
+            return $provider;
+        }
+    }
+    return null;
+}
 function mbb_component_json(mixed $value, int $flags = 0): string|false
 {
     $precision = ini_get('serialize_precision');
@@ -317,10 +327,48 @@ function markbridge_teaching_supports_ui_locale(): bool
 {
     return true;
 }
+function markbridge_teaching_supports_component_versions(): bool
+{
+    return true;
+}
+function markbridge_teaching_supports_activities(): bool
+{
+    return true;
+}
+
+/** Installed providers can add data-only domain checks after the strict generic schema. */
+/** Trusted providers may opt passive diagrams into automatic frontend presentation. */
+function markbridge_teaching_supports_reader_diagrams(): bool
+{
+    return true;
+}
+function mbb_component_domain_valid(
+    string $id,
+    string $version,
+    mixed $params,
+    mixed $activity = null,
+): bool {
+    try {
+        return !function_exists('apply_filters') ||
+            apply_filters(
+                'markbridge_validate_component_params',
+                true,
+                $id,
+                $version,
+                $params,
+                $activity,
+            ) === true;
+    } catch (Throwable) {
+        return false;
+    }
+}
 function mbb_component_register_checked(string $id, array $provider): bool
 {
     $registry = mbb_component_registry();
-    if (isset($registry[$id])) {
+    if (
+        is_string($provider['version'] ?? null) &&
+        mbb_component_provider($id, $provider['version'])
+    ) {
         return mbb_component_reject($id, 'duplicate-provider');
     }
     $fields = [
@@ -335,9 +383,16 @@ function mbb_component_register_checked(string $id, array $provider): bool
     ];
     if (
         count($registry) >= 32 ||
-        array_diff(array_keys($provider), [...$fields, 'supportsUiLocale']) ||
+        array_diff(array_keys($provider), [
+            ...$fields,
+            'supportsUiLocale',
+            'readerMode',
+            'activityVersion',
+        ]) ||
         (array_key_exists('supportsUiLocale', $provider) &&
             !is_bool($provider['supportsUiLocale'])) ||
+        (array_key_exists('readerMode', $provider) && $provider['readerMode'] !== 'diagram') ||
+        (array_key_exists('activityVersion', $provider) && $provider['activityVersion'] !== 1) ||
         array_diff($fields, array_keys($provider)) ||
         !preg_match('/^[a-z][a-z0-9-]{0,63}$/D', $id) ||
         !is_string($provider['version']) ||
@@ -345,7 +400,7 @@ function mbb_component_register_checked(string $id, array $provider): bool
         !is_int($provider['protocolVersion']) ||
         $provider['protocolVersion'] < 1 ||
         !is_string($provider['minMarkBridge']) ||
-        !preg_match('/^\d+\.\d+\.\d+(?:-dev\.\d+)?$/D', $provider['minMarkBridge']) ||
+        !preg_match('/^\d+\.\d+\.\d+(?:-(?:dev|rc)\.\d+)?$/D', $provider['minMarkBridge']) ||
         !is_string($provider['title']) ||
         trim($provider['title']) === '' ||
         strlen($provider['title']) > 800 ||
@@ -392,7 +447,7 @@ function mbb_component_register_checked(string $id, array $provider): bool
     }
     if (
         !$inside ||
-        !preg_match('/\.html$/D', $file) ||
+        !preg_match('/\.html(?:\.txt)?$/D', $file) ||
         !is_string($provider['resource']['sha256'] ?? null) ||
         !preg_match('/^[a-f0-9]{64}$/D', $provider['resource']['sha256'])
     ) {
@@ -436,7 +491,9 @@ function mbb_component_register_checked(string $id, array $provider): bool
                         : (hash_equals($provider['resource']['sha256'], hash_file('sha256', $path))
                             ? 'available'
                             : 'resource-integrity'))));
-    $GLOBALS['mbb_components'][$id] = $provider;
+    $GLOBALS['mbb_components'][
+        isset($registry[$id]) ? $id . '@' . $provider['version'] : $id
+    ] = $provider;
     return true;
 }
 add_action(
@@ -466,11 +523,12 @@ function mbb_component_admit(string $serialized, string $base)
             $old &&
             $old->component === $a->component &&
             $old->componentVersion === $a->componentVersion &&
-            mbb_component_equal($old->params, $a->params)
+            mbb_component_equal($old->params, $a->params) &&
+            mbb_component_equal($old->activity ?? null, $a->activity ?? null)
         ) {
             continue;
         }
-        $p = mbb_component_registry()[$a->component] ?? null;
+        $p = mbb_component_provider($a->component, $a->componentVersion);
         if (!$p || $p['status'] !== 'available' || $p['version'] !== $a->componentVersion) {
             return mbb_error(
                 'component_unavailable',
@@ -480,7 +538,16 @@ function mbb_component_admit(string $serialized, string $base)
                 422,
             );
         }
-        if (!mbb_component_schema($a->params, $p['schema'])) {
+        if (
+            !mbb_component_schema($a->params, $p['schema']) ||
+            (isset($a->activity) && ($p['activityVersion'] ?? null) !== 1) ||
+            !mbb_component_domain_valid(
+                $a->component,
+                $a->componentVersion,
+                $a->params,
+                $a->activity ?? null,
+            )
+        ) {
             return mbb_error(
                 'component_params',
                 mbb_t('Component parameters do not satisfy the registered strict schema.'),
@@ -504,6 +571,8 @@ function mbb_component_public(array $p): array
             'minMarkBridge',
             'budgets',
             'supportsUiLocale',
+            'readerMode',
+            'activityVersion',
         ]),
     ) + [
         'resource' => ['url' => $p['resource']['url'], 'sha256' => $p['resource']['sha256']],
@@ -540,3 +609,5 @@ add_action('enqueue_block_editor_assets', static function () {
 });
 
 require_once __DIR__ . '/component-diagnostics.php';
+
+require_once __DIR__ . '/projections.php';

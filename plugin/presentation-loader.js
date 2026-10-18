@@ -74,6 +74,10 @@
     )
       return;
     pre.classList.add('mbb-code-display');
+    const lineCount = (code.textContent.match(/\n(?!$)/g) || []).length + 1;
+    const start = Number.parseInt(pre.dataset.start || '1', 10) || 1;
+    const digits = String(Math.max(Math.abs(start), Math.abs(start + lineCount - 1))).length;
+    pre.style.setProperty('--mbb-code-gutter', Math.max(3.25, digits * 0.65 + 0.9) + 'em');
     if (!codeDisplays.has(pre)) {
       const hint = document.createElement('p');
       hint.className = 'mbb-code-scroll-hint';
@@ -165,6 +169,11 @@
         Prism.plugins.autoloader.languages_path = config.languages;
         if (!Prism.mbbCodeTabsHook) {
           Prism.mbbCodeTabsHook = true;
+          // A theme may run highlightAll again after our renderer. Comparison rows are
+          // already highlighted as a whole source and must retain their annotations.
+          Prism.hooks.add('before-sanity-check', (env) => {
+            if (env.element.closest('.wp-block-mbb-code-compare')) env.code = '';
+          });
           Prism.hooks.add('complete', ({ element }) => {
             if (!element.closest('.wp-block-mbb-code-tabs,.wp-block-mbb-code-compare')) return;
             const wrapper = element.closest('.code-toolbar');
@@ -226,9 +235,21 @@
       config.teachingScript &&
       within(root, '[data-mbb-teaching],details.wp-block-details').length
     ) {
-      load(config.teachingStyle, true).catch(() => {});
+      Promise.all([
+        load(config.teachingStyle, true),
+        ...(config.diagramStyle ? [load(config.diagramStyle, true)] : []),
+      ]).catch(() => {});
       load(config.teachingScript).catch(() => {});
-      if (config.componentScript) load(config.componentScript).catch(() => {});
+      if (config.componentScript) {
+        const diagnostics = config.diagnosticsScript
+          ? Promise.all([load(config.diagnosticsScript), load(config.diagnosticsStyle, true)])
+          : Promise.resolve();
+        window.MBB_DIAGNOSTICS_CONFIG = config.diagnosticsConfig || { canCopy: false };
+        diagnostics
+          .catch(() => {})
+          .then(() => load(config.componentScript))
+          .catch(() => {});
+      }
     }
     if (within(root, '.mbb-footnote-ref,.mbb-footnotes').length)
       load(config.footnotes, true).catch(() => {});

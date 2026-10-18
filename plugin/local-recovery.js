@@ -737,6 +737,7 @@
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
   function changed(type, capture) {
+    window.MarkBridgePairedBackups?.changed(type, capture);
     if (!enabled || !currentUser()) return;
     pending.set(type, capture);
     const revision = (revisions.get(type) || 0) + 1;
@@ -796,6 +797,7 @@
       ticket.kind !== savedRecord?.kind
     )
       return;
+    window.MarkBridgePairedBackups?.saved(ticket.paired);
     const unsaved =
       (ordinary || Number(cfg.postId)) && savedRecord?.kind === 'blocks'
         ? nativeCapture(true)
@@ -870,7 +872,15 @@
         try {
           snapshot = nativeCapture(true);
           sent = structuredClone(options.data);
-          if (snapshot) ticket = { owner, epoch, postId, newKey, kind: 'blocks' };
+          if (snapshot)
+            ticket = {
+              owner,
+              epoch,
+              postId,
+              newKey,
+              kind: 'blocks',
+              paired: window.MarkBridgePairedBackups?.ticket(),
+            };
         } catch {
           /* Ordinary WordPress saving must proceed even if a snapshot is unavailable. */
         }
@@ -1093,7 +1103,14 @@
     saved,
     ticket(id = postId, kind = null) {
       return currentUser() && Number(id) === postId
-        ? { owner, epoch, postId, newKey: postId ? null : newKey, kind }
+        ? {
+            owner,
+            epoch,
+            postId,
+            newKey: postId ? null : newKey,
+            kind,
+            paired: window.MarkBridgePairedBackups?.ticket(),
+          }
         : null;
     },
     denied(code, status, id = postId, ticket) {

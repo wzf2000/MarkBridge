@@ -5,7 +5,11 @@
   },
   "core/quote": {},
   "core/separator": {},
-  "core/image": {},
+  "core/image": {
+    "id": "integer",
+    "sizeSlug": "string",
+    "linkDestination": "string"
+  },
   "core/table": {},
   "core/html": {},
   "core/more": {},
@@ -71,7 +75,8 @@
     "component": "string",
     "componentVersion": "string",
     "params": "object",
-    "version": "integer"
+    "version": "integer",
+    "activity": "object"
   },
   "mbb/frontmatter": {
     "version": "integer",
@@ -102,5 +107,34 @@
     "rel": "string",
     "tagName": "string",
     "type": "string"
+  },
+  "mbb/object": {
+    "id": "string",
+    "kind": "string",
+    "caption": "string",
+    "version": "integer"
+  },
+  "mbb/statement": {
+    "id": "string",
+    "kind": "string",
+    "title": "string",
+    "open": "boolean",
+    "version": "integer"
+  },
+  "mbb/bibliography": {
+    "id": "string",
+    "style": "string",
+    "origins": "array",
+    "entries": "array",
+    "version": "integer"
+  },
+  "core/gallery": {
+    "columns": "integer",
+    "imageCrop": "boolean"
+  },
+  "mbb/identity": {
+    "namespace": "string",
+    "document": "string",
+    "version": "integer"
   }
 }

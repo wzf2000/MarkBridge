@@ -1,3 +1,36 @@
+import { cloneActivity } from './activity-copy.js';
+export {
+  parseCSL,
+  cslCandidate,
+  exportCSL,
+  migrateBibliography,
+  bibliographyEntryCanonical,
+  bibliographyEntryHash,
+} from './bibliography.js';
+export {
+  markdownSnippet,
+  writingPatterns,
+  instantiateWritingPattern,
+  writingIndex,
+  writingAdvice,
+} from './writing-tools.js';
+import { registerWritingPatterns } from './writing-tools.js';
+import {
+  mediaImageAttributes,
+  mediaGalleryAttributes,
+  mediaDirective,
+  validateMediaSerialized,
+  validateMedia,
+} from './native-media.js';
+export {
+  technicalIndex,
+  technicalDiagnostics,
+  technicalRenamePlan,
+  technicalReferenceSelection,
+  referenceHTML,
+} from './technical.js';
+import { installTechnicalInline, technicalRawHTML, technicalReference } from './technical.js';
+export { sourceNavigation } from './source-navigation.js';
 import { describeDiagnostic } from './diagnostics.js';
 import { translate as T, format as F } from './i18n.js';
 import {
@@ -89,6 +122,21 @@ const atLocation = (location, action) => {
 const canonical = (s) => {
   const t = document.createElement('template');
   t.innerHTML = s;
+  // Only Gutenberg's equivalent native-gallery default may disappear in comparison.
+  // Requiring canonical JSON keeps duplicate keys and all other comment differences visible.
+  const comments = document.createTreeWalker(t.content, 128);
+  for (let n; (n = comments.nextNode());) {
+    const match = /^ wp:gallery (\{[\s\S]*\}) $/.exec(n.data);
+    if (!match) continue;
+    try {
+      const attrs = JSON.parse(match[1]);
+      if (attrs.linkTo !== 'none' || JSON.stringify(attrs) !== match[1]) continue;
+      delete attrs.linkTo;
+      n.data = ' wp:gallery' + (Object.keys(attrs).length ? ' ' + JSON.stringify(attrs) : '') + ' ';
+    } catch (_error) {
+      // Invalid comments remain unequal and are rejected by the normal strict guards.
+    }
+  }
   for (const n of t.content.querySelectorAll('*')) {
     const attrs = [...n.attributes]
       .map((a) => [a.name, a.value])
@@ -186,6 +234,8 @@ const validFootnoteLabel = (label, location = '') => {
   return label;
 };
 md.use(footnotePlugin);
+installTechnicalInline(md, fail);
+installTechnicalInline(legacyMD, fail);
 md.inline.ruler.before('footnote_ref', 'mbb_literal_html_code_ref', (state, silent) => {
   const match = state.src.slice(state.pos, state.posMax).match(/^\[\^[^\]\n]+\]/u);
   if (!match) return false;
@@ -277,6 +327,7 @@ const attrs = {
   ol: ['start'],
 };
 function safeHTML(html, allowMath = false) {
+  technicalRawHTML(html, fail);
   if (/<!|<\/?(?:html|head|body)\b/i.test(html))
     fail('UNSAFE_HTML', 'HTML document containers are not allowed');
   const doc = new DOMParser().parseFromString('<body>' + html + '</body>', 'text/html');
@@ -294,15 +345,27 @@ function safeHTML(html, allowMath = false) {
       tag === 'span' &&
       node.className === 'mbb-footnote-ref' &&
       node.hasAttribute('data-mbb-footnote');
+    const technical = tag === 'span' && ['mbb-xref', 'mbb-cite'].includes(node.className);
+    if (technical) technicalReference(node.outerHTML, fail);
     if (!tags.has(tag) && !math) fail('UNSUPPORTED_HTML', F('Unsupported HTML tag %1$s', tag));
     for (const a of node.attributes) {
       if (
         !(
-          math
-            ? ['class', 'data-mbb-tex']
-            : footnote
-              ? ['class', 'data-mbb-footnote']
-              : attrs[tag] || []
+          technical
+            ? [
+                'class',
+                'data-mbb-target',
+                'data-mbb-keys',
+                'data-mbb-version',
+                'data-mbb-namespace',
+                'data-mbb-document',
+                'data-mbb-kind',
+              ]
+            : math
+              ? ['class', 'data-mbb-tex']
+              : footnote
+                ? ['class', 'data-mbb-footnote']
+                : attrs[tag] || []
         ).includes(a.name)
       )
         fail('UNSAFE_HTML_ATTRIBUTE', F('Unsupported attribute %1$s.%2$s', tag, a.name));
@@ -323,7 +386,7 @@ function safeHTML(html, allowMath = false) {
           if (parts.length !== 2 || !values[key]?.test(value))
             fail('UNSAFE_STYLE', 'Unsupported or unsafe style');
         }
-      if (a.name === 'class' && !math && !footnote && a.value !== 'wzf-exercise-hint')
+      if (a.name === 'class' && !math && !footnote && !technical && a.value !== 'wzf-exercise-hint')
         fail('UNSAFE_HTML_ATTRIBUTE', 'Unsupported display class');
       if (a.name === 'color' && !/^(?:[a-z]+|#[0-9a-f]{3,8})$/i.test(a.value))
         fail('UNSAFE_STYLE', 'Unsafe color');
@@ -402,6 +465,7 @@ function inline(token) {
     'link_close',
     'image',
     'html_inline',
+    'mbb_technical_reference',
     'mbb_inline_math',
     'footnote_ref',
   ]);
@@ -409,6 +473,8 @@ function inline(token) {
     if (!allowed.has(t.type))
       fail('UNSUPPORTED_INLINE', F('Unsupported inline syntax %1$s', t.type), loc({ token }));
 
+    if (t.type === 'image' && t.children?.some((child) => child.type === 'mbb_technical_reference'))
+      fail('TECHNICAL_REFERENCE', 'Technical references must not be inside links or images');
     for (const [key, value] of t.attrs || []) if (['href', 'src'].includes(key)) safeURL(value);
     if (
       t.type === 'html_inline' &&
@@ -600,12 +666,28 @@ function checkSource(source) {
   if (source.includes('\0')) fail('INVALID_INPUT', 'The source contains NUL');
 }
 // Normalize legacy display delimiters without scanning fenced or inline code.
+function directiveDataProjection(source) {
+  return source.replace(
+    /(^|[\r\n])(:::mbb:v1 [a-z][a-z0-9-]* (\{[^\r\n]*\}))(?=[\r\n]|$)/g,
+    (whole, prefix, header, raw) => {
+      try {
+        const value = JSON.parse(raw);
+        if (!value || typeof value !== 'object' || Array.isArray(value)) return whole;
+        return prefix + ' '.repeat(header.length);
+      } catch {
+        return whole;
+      }
+    },
+  );
+}
 function displayBoundaries(source) {
+  // All scanners see the same data-only projection; slicing still uses source.
+  const projection = directiveDataProjection(source);
   const ignored = new Set();
-  for (const t of boundaryMD.parse(source, {}))
+  for (const t of boundaryMD.parse(projection, {}))
     if (['fence', 'code_block'].includes(t.type) && t.map)
       for (let i = t.map[0]; i < t.map[1]; i++) ignored.add(i);
-  const htmlCode = [...source.matchAll(/<(pre|code)\b[^>]*>[\s\S]*?<\/\1>/gi)].map((m) => [
+  const htmlCode = [...projection.matchAll(/<(pre|code)\b[^>]*>[\s\S]*?<\/\1>/gi)].map((m) => [
     m.index,
     m.index + m[0].length,
   ]);
@@ -614,11 +696,19 @@ function displayBoundaries(source) {
     fence = null,
     code = 0,
     lineIndex = 0;
-  for (const line of source.split('\n')) {
+  for (const line of projection.split('\n')) {
     if (ignored.has(lineIndex++)) {
       offset += line.length + 1;
       continue;
     }
+    // Malformed reserved directives belong to Teaching's grammar diagnostics.
+    // Do not let their data (or later normalization) replace that error with math.
+    if (
+      line.startsWith(':::mbb:') &&
+      line.replace(/\r$/, '') !== ':::mbb:end' &&
+      !htmlCode.some(([a, b]) => offset >= a && offset < b)
+    )
+      return source;
     const f = line.match(/^\s*(`{3,}|~{3,})/);
     if (f && !code) {
       if (!fence) fence = f[1];
@@ -689,7 +779,9 @@ function parseSource(
     // The legacy link parser would treat [^id]: as an ordinary link target,
     // changing the nesting of [link[^id]](url). Mask only that definition
     // prefix while preserving other reference-style link definitions.
-    const linkProbe = normalized.replace(/^([ \t]{0,3})\[\^[^\]\n]+\]:/gm, '$1MBBFOOTNOTE:');
+    const linkProbe = directiveDataProjection(normalized)
+      .replace(/^:::mbb:[^\r\n]*/gm, (header) => ' '.repeat(header.length))
+      .replace(/^([ \t]{0,3})\[\^[^\]\n]+\]:/gm, '$1MBBFOOTNOTE:');
     for (const token of legacyMD.parse(linkProbe, {})) {
       if (token.type !== 'inline') continue;
       let linkDepth = 0;
@@ -712,7 +804,7 @@ function parseSource(
     }
   }
   const ignoredTeaching = new Set();
-  const teachingFences = boundaryMD.parse(normalized, {});
+  const teachingFences = boundaryMD.parse(directiveDataProjection(normalized), {});
   for (const token of teachingFences)
     if (['fence', 'code_block'].includes(token.type) && token.map)
       for (let line = token.map[0]; line < token.map[1]; line++) ignoredTeaching.add(line);
@@ -839,6 +931,8 @@ function inlineMD(html) {
       case 'font':
         return rawTag();
       case 'span':
+        if (['mbb-xref', 'mbb-cite'].includes(n.className))
+          return technicalReference(n.outerHTML, fail).raw;
         return n.hasAttribute('data-mbb-tex')
           ? '$' + n.getAttribute('data-mbb-tex') + '$'
           : n.hasAttribute('data-mbb-footnote')
@@ -939,8 +1033,15 @@ function rawMarkdown(blocks, path = 'blocks') {
               );
             case 'core/paragraph':
               return inlineMD(a.content);
-            case 'core/image':
-              return inlineMD(
+            case 'core/gallery':
+              return mediaDirective(
+                'gallery',
+                mediaGalleryAttributes(a, fail),
+                rawMarkdown(inner, at),
+              );
+            case 'core/image': {
+              const metadata = mediaImageAttributes(a, fail);
+              const imageSource = inlineMD(
                 '<img src="' +
                   esc(a.url) +
                   '" alt="' +
@@ -949,6 +1050,10 @@ function rawMarkdown(blocks, path = 'blocks') {
                   (a.title ? ' title="' + esc(a.title) + '"' : '') +
                   '>',
               );
+              return Object.keys(metadata).length
+                ? mediaDirective('image', metadata, imageSource)
+                : imageSource;
+            }
             case 'core/heading':
               return '#'.repeat(a.level || 2) + ' ' + inlineMD(a.content);
             case 'core/separator':
@@ -1125,6 +1230,7 @@ export function rewriteDocumentImages(base, mappings) {
   return importDocument(exportDocument(verified, serialized), base.documentId);
 }
 export function portableDocumentImages(base, mappings) {
+  validateMedia(api().parse(base?.serialized || ''), fail, true);
   exportDocument(base, base?.serialized);
   const verified = importPairedDocument(base.source, base.serialized, base.documentId);
   const expected = rewriteSerializedImageURLs(verified.serialized, mappings, fail, true);
@@ -1137,6 +1243,79 @@ export function portableDocumentImages(base, mappings) {
       'Image references cannot be reliably projected while preserving the remaining body bytes',
     );
   return result;
+}
+// Explicit cross-site copy: normalization is previewed; the saved original is untouched.
+export function relocateDocumentImages(base, mappings, portable = false) {
+  exportDocument(base, base?.serialized);
+  const verified = importPairedDocument(base.source, base.serialized, base.documentId);
+  const map = new Map();
+  if (!Array.isArray(mappings) || mappings.length > 256)
+    fail('MEDIA_RELOCATION', 'Invalid cross-site media association map');
+  for (const item of mappings) {
+    const keys = Object.keys(item || {})
+      .sort()
+      .join(',');
+    if (
+      keys !== (portable ? 'from,to' : 'from,id,to') ||
+      typeof item.from !== 'string' ||
+      typeof item.to !== 'string' ||
+      (!portable && (!Number.isSafeInteger(item.id) || item.id < 1)) ||
+      map.has(item.from)
+    )
+      fail('MEDIA_RELOCATION', 'Invalid cross-site media association map');
+    map.set(item.from, item);
+  }
+  // Validate URLs/counts and require every mapping to address a real image.
+  rewriteSerializedImageURLs(
+    verified.serialized,
+    mappings.map(({ from, to }) => ({ from, to })),
+    fail,
+    portable,
+  );
+  const walk = (blocks) =>
+    blocks.map((block) => {
+      if (block.name === 'core/image') {
+        const mapping = map.get(block.attributes.url);
+        if (!mapping) {
+          if (portable || block.attributes.id)
+            fail(
+              'MEDIA_RELOCATION',
+              'Every cross-site native image requires a verified association',
+            );
+          return block;
+        }
+        const attrs = { ...block.attributes };
+        if (portable) delete attrs.id;
+        else attrs.id = mapping.id;
+        return api().createBlock(block.name, attrs);
+      }
+      return block.innerBlocks.length
+        ? api().cloneBlock(block, {}, walk(block.innerBlocks))
+        : block;
+    });
+  const serialized = rewriteSerializedImageURLs(
+    api().serialize(walk(api().parse(verified.serialized))),
+    mappings.map(({ from, to }) => ({ from, to })),
+    fail,
+    portable,
+  );
+  // Canonical copy, shared with PHP. Full source is shown before download/save.
+  const copyBlocks = (blocks) =>
+    blocks.map((block) => {
+      if (block.name === 'core/html') {
+        // Match PHP parseBlocks' ASCII wrapper-whitespace normalization in this explicit copy only.
+        const content = (block.innerContent?.join('') ?? block.attributes.content).replace(
+          /^[ \t\r\n\v\0]+|[ \t\r\n\v\0]+$/g,
+          '',
+        );
+        return { ...block, attributes: { ...block.attributes, content }, innerContent: [content] };
+      }
+      return { ...block, innerBlocks: copyBlocks(block.innerBlocks || []) };
+    });
+  return importDocument(
+    toMarkdown(copyBlocks(api().parse(serialized)), { origin: 'markdown_import' }),
+    base.documentId,
+  );
 }
 function snapshotKind(source, serialized) {
   for (const legacyFrontmatter of [false, true])
@@ -1192,6 +1371,7 @@ export function exportDocument(document, serialized) {
   if (!kind) fail('SNAPSHOT_MISMATCH', 'The source and block snapshots do not match');
   if (kind === 'legacy' && canonical(serialized) === canonical(document.serialized))
     return document.source;
+  validateMediaSerialized(serialized, fail);
   validateTeachingSerialized(serialized, fail);
   validateAdaptersSerialized(serialized, fail, teachingJSON);
   validateFrontmatterSerialized(serialized, fail);
@@ -1481,7 +1661,52 @@ export function register() {
   });
   installInlineMathDecorations();
   registerNativeMathConversion();
+  registerWritingPatterns(toBlocks);
 }
 const converterOnly = typeof window !== 'undefined' && window.MBB_CONVERTER_ONLY === true;
 if (!converterOnly) register();
 configureBlockAdapters(globalThis.MBB_ADAPTERS || [], !converterOnly);
+
+export { parseBibTeX, bibtexCandidate } from './bibtex.js';
+
+export { activityParts, activityRelations, validateActivity } from './activities.js';
+
+export function copyActivity(blocks, clientId) {
+  validateTeaching(blocks, fail);
+  let selected, identity;
+  const walk = (list) => {
+    for (const b of list) {
+      if (b.clientId === clientId) selected = b;
+      if (b.name === 'mbb/identity') identity = b.attributes;
+      walk(b.innerBlocks || []);
+    }
+  };
+  walk(blocks);
+  const copy = cloneActivity(selected, identity, api().createBlock, fail);
+  validateTeaching([...blocks, copy], fail);
+  const source = rawMarkdown([copy]);
+  checkSource(source);
+  return { source, blocks: [copy] };
+}
+export function createActivity(component, version) {
+  const id =
+    'activity-' +
+    [...crypto.getRandomValues(new Uint8Array(12))]
+      .map((n) => n.toString(16).padStart(2, '0'))
+      .join('');
+  const source = globalThis.MarkBridgeComponentAuthors.create(component, version, id),
+    blocks = toBlocks(source);
+  if (
+    blocks.length !== 1 ||
+    blocks[0].name !== 'mbb/component' ||
+    blocks[0].attributes.id !== id ||
+    blocks[0].attributes.component !== component ||
+    blocks[0].attributes.componentVersion !== version ||
+    blocks[0].attributes.version !== 2
+  )
+    fail(
+      'ACTIVITY_RELATION',
+      'Activity relations require a closed map of unique local static targets',
+    );
+  return source;
+}

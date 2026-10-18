@@ -5,7 +5,7 @@ if (!defined('ABSPATH')) {
 // Independent, pinned presentation assets. This module does not load the former editor.
 function mbb_code_line_number_css()
 {
-    return '.mbb-reading .mbb-document pre.wp-block-mbb-code.line-numbers{padding-left:5em!important}' .
+    return '.mbb-reading .mbb-document pre.wp-block-mbb-code.line-numbers{padding-left:var(--mbb-code-gutter,3.25em)!important}' .
         'pre.wp-block-mbb-code.line-numbers>code{display:block;font-size:inherit;line-height:inherit}';
 }
 function mbb_enqueue_code_assets()
@@ -79,7 +79,7 @@ function mbb_enqueue_code_assets()
             'copy-clipboard',
             $base . 'clipboard/clipboard.min.js',
             [],
-            '2.0.1',
+            '2.0.2',
             true,
         );
     }
@@ -229,11 +229,22 @@ add_action(
                     'emoji' => plugins_url(mbb_asset('emoji.js'), __FILE__),
                     'images' => mbb_emoji_config(),
                     'footnotes' => plugins_url(mbb_asset('footnotes.css'), __FILE__),
+                    'diagnosticsScript' => plugins_url(mbb_asset('diagnostics.js'), __FILE__),
+                    'diagnosticsStyle' => plugins_url(mbb_asset('diagnostics.css'), __FILE__),
+                    'diagnosticsConfig' => function_exists('mbb_diagnostics_configuration')
+                        ? mbb_diagnostics_configuration()
+                        : ['canCopy' => false],
                     'componentScript' => plugins_url(mbb_asset('components.js'), __FILE__),
                     'teachingScript' => plugins_url(mbb_asset('teaching.js'), __FILE__),
                     'teachingStyle' => plugins_url(mbb_asset('teaching.css'), __FILE__),
+                    'diagramStyle' => plugins_url(mbb_asset('reader-diagrams.css'), __FILE__),
                 ]) .
                 ';',
+            'before',
+        );
+        wp_add_inline_script(
+            'mbb-presentation-loader',
+            'window.MBB_COMPONENTS_READER=true;',
             'before',
         );
         // Archive and query-loop posts are all considered, not only the singular ID.
@@ -257,6 +268,7 @@ add_action(
             'prism-plugin-line-numbers',
             'mbb-footnotes',
             'mbb-teaching',
+            'mbb-diagnostics',
         ]);
     },
     5,

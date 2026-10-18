@@ -37,6 +37,18 @@ Black 默认位于 `.venv`；可用 `MARKBRIDGE_PYTHON` 指定另一个已安装
 
 CI 使用固定 Node 24.15.0 基线及 PHP 8.2／8.3／8.4／8.5 转换、Worker／后端选择和管理员设置契约矩阵。主检查在 WordPress 7.1.3 合成站安装最终 ZIP，用 PHP 8.2 执行 PHP／Node 原生 REST 保存链、PHP 文件写回和禁子进程保存，并在真实核心资源上运行浏览器套件，拒绝跳过、失败及重试通过。四 PHP 契约版本不等同四版本真实保存链；内部 REST 保存检查和浏览器模拟不等同实际 HTTP 认证。
 
+## 作者保存链与扩展集成
+
+默认 `tests/authoring-save.php` 不要求安装外部扩展。它通过正式登记 API 临时注册独立合成组件的两个精确版本，在真实 WordPress REST 保存链验证 CRLF／源映射、版本变更、区块保存／重开、通用 schema 拒写和精确修订恢复；最后删除临时资源、文章和账号并恢复登记表。CI 的 PHP → Node → PHP 三轮均执行它；这不代表 Teacher 图算法或专有域规则验证。
+
+真实 Teacher `node-diagram@0.1.0` → `0.2.0` 的原有保存用例保留于 `tests/integration/authoring-extension-save.php`。在明确拥有的独立本地 WordPress 合成站安装固定 Main 与包含这两个版本的 Teacher，配置 `MARKBRIDGE_TEST_WORDPRESS_ROOT`、`MARKBRIDGE_TEST_HOME` 及所选后端的运行环境后，从 Main 源码目录显式运行：
+
+```sh
+wp --path="$MARKBRIDGE_TEST_WORDPRESS_ROOT" eval-file tests/integration/authoring-extension-save.php
+```
+
+入口会检查回环地址、WordPress 根目录及 `local` 环境，并在缺少任一精确组件版本时直接失败，不跳过。它保留真实图域错误拒绝等扩展断言；不得在已有审阅站或生产站随意运行这些会创建并删除合成数据的保存检查。
+
 ## 本地化维护
 
 插件的界面消息使用英文 msgid，中文翻译统一维护于 `plugin/languages/messages.json`。构建需要 gettext 的 `msgfmt`；`npm run build:localization` 生成 POT、PO、MO、稳定脚本句柄对应的 JSON 和摘要清单，`python3 scripts/build-localization.py --check` 检查生成物是否与源目录一致。固定时间元数据用于可重复构建，不能从本机日期生成翻译时间。可选 WP-CLI 检查必须显式指定独立 phar 和 PHP，不调用站点命令包装器。
@@ -73,6 +85,21 @@ npm run test:browser
 不要提交生产域名配置、登录材料、文章副本、源文件映射、数据库或运维快照。外部专用同步器不属于插件源码。
 
 Markdown 中同一组简单列表项之间不插入空行，避免意外渲染为松散列表；列表与标题、正文之间保留必要空行。列表项包含多个段落、代码块或其他块级内容时，按其结构保留空行，不做全局删除。
+
+## 显式出版客户端集成检查
+
+默认 Chromium／跨浏览器配置只登记可由主仓库准备的用例，CI 仍要求全部已登记检查无失败、无跳过、无重试。静态公式／安全边界留在默认套件；依赖另一仓库和保留输入 ZIP 的两类出版检查使用独立入口，不再从 `static-export-math.spec.cjs` 触发跳过。
+
+完成正常构建后，保留固定组合的相邻目录布局：`<fixed-combination>/main` 与 `<fixed-combination>/publisher-extension`，在前者执行命令。第二项用例复用 Publisher 的 `tests/browser/fixtures.cjs`，后者从 `../main` 读取核心 JS／PHP，须确认它就是本次固定核心，而不是另一工作树；仅提供 Publisher 安装目录并不足够。显式提供 Publisher 完整源码和合成、已获授权的 publication inputs ZIP：
+
+```sh
+cd /path/to/fixed-combination/main
+MARKBRIDGE_TEST_PUBLISHER_ROOT=/path/to/fixed-combination/publisher-extension \
+MARKBRIDGE_TEST_PUBLICATION_INPUTS=/path/to/synthetic-inputs.zip \
+npm run test:publication -- --retries=0
+```
+
+入口缺少任一前提会直接失败，不静默跳过。它加载真实核心静态 builder 与固定 Publisher，验证作者端投影和离线文件；不代表服务端下载授权。此前只设置 Publisher 目录并在默认文件中筛选用例的本地调用，须改用此入口并补齐显式输入。固定版本历史浏览器记录不改写，后续按新入口复现。
 
 ## 提交变更
 

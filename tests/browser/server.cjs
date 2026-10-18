@@ -45,6 +45,9 @@ const front = (
   settings = presentation,
 ) => `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="stylesheet" href="${mapped('math.css')}">
+<link rel="stylesheet" href="${mapped('diagnostics.css')}">
+<script>window.MBB_DIAGNOSTICS_CONFIG={version:"2.1.0-rc.1",canCopy:false};</script>
+<script defer src="${mapped('diagnostics.js')}"></script>
 ${settings.styles.map((url) => `<link rel="stylesheet" href="${url}">`).join('\n')}
 <style>
 body{margin:0;font:16px/1.7 Arial,sans-serif}.mbb-reading{padding:20px;max-width:800px;margin:auto}
@@ -52,7 +55,7 @@ body{margin:0;font:16px/1.7 Arial,sans-serif}.mbb-reading{padding:20px;max-width
 </style>
 <style>${settings.inline.join('\n')}</style>
 <script>window.MBB_MATH_CONFIG=${settings.math_config}</script>
-<script defer src="${mapped('math.js')}"></script>
+<script defer src="${mapped('math-explorer.js')}"></script><script defer src="${mapped('math.js')}"></script>
 ${frontScripts(settings)}
 </head><body><main class="mbb-reading"><article class="mbb-document">
 <p id="inline-line">文字在前 <span class="mbb-math" data-mbb-tex="x^2+y^2=z^2">x^2+y^2=z^2</span> 文字在后</p>
@@ -66,9 +69,52 @@ const editor = `<!doctype html><html><head><meta charset="utf-8"><meta name="vie
 <link rel="stylesheet" href="${mapped('editor-ui.css')}">
 <script>window.MBB_MATH_CONFIG={front:false};window.MBB_EDITOR={root:location.origin+'/wp-json/mbb/v1/',nonce:'fixture',postId:0,canPublish:true,sourceFontSize:'14',state:null,footnoteStyle:${JSON.stringify(fs.readFileSync(path.join(plugin, 'footnotes.css'), 'utf8'))}};
 window.wp={blocks:{serialize:()=>''},data:{select:()=>({getEditedPostAttribute:()=>0,getEditedPostContent:()=>'',getBlocks:()=>[]})}};
-window.MBB_REVISIONS={open(){}};</script>
-<script defer src="${mapped('math.js')}"></script><script defer src="${mapped('resource-ui.js')}"></script><script defer src="${mapped('editor-ui.js')}"></script>
+window.MBB_REVISIONS={open(){}};window.MBB_EDITOR.navigationBridge=${JSON.stringify({
+  script: fs.readFileSync(path.join(plugin, 'preview-navigation.js'), 'utf8'),
+  sha256: require('node:crypto')
+    .createHash('sha256')
+    .update(fs.readFileSync(path.join(plugin, 'preview-navigation.js')))
+    .digest('base64'),
+})};</script>
+<script defer src="${mapped('math-explorer.js')}"></script><script defer src="${mapped('math.js')}"></script><script defer src="${mapped('resource-ui.js')}"></script><script defer src="${mapped('source-tools.js')}"></script><script defer src="${mapped('writing-ui.js')}"></script><script defer src="${mapped('editor-ui.js')}"></script>
 </head><body><button id="mbb-new" type="button">上传新文档</button><button class="mbb-open" data-post="12" type="button">编辑现有文档</button></body></html>`;
+
+// HTTP-only synthetic navigation API. Keeping this off Playwright routing lets
+// WebKit load the real sandboxed MathJax engine's blob scripts normally.
+const navigationRaw =
+  '# 中文😀\r\n\r\n重复段落。\r\n\r\n重复段落。\r\n\r\n```python\r\nprint(1)\r\n```\r\n\r\n$$\r\n\\frac{a}{d}\r\n$$\r\n';
+function navigationResponse(source) {
+  const starts = [
+    0,
+    source.indexOf('重复'),
+    source.lastIndexOf('重复'),
+    source.indexOf('```'),
+    source.indexOf('$$'),
+  ];
+  const ends = [source.indexOf('\r\n'), starts[1] + 5, starts[2] + 5, starts[4], source.length];
+  return {
+    before: navigationRaw,
+    document: { source },
+    post_status: 'draft',
+    html: '<h1 data-mbb-preview-range="r0">中文😀</h1><p data-mbb-preview-range="r1">重复段落。</p><p data-mbb-preview-range="r2">重复段落。</p><pre tabindex="0" data-mbb-preview-range="r3"><code>print(1)</code></pre><pre class="wp-block-mbb-math" data-mbb-preview-range="r4"><code>\\frac{a}{d}</code></pre><script>parent.document.body.dataset.previewInjection="yes"</script>',
+    navigation: {
+      schema: 1,
+      offsetUnit: 'utf16',
+      sourceSha256: require('node:crypto').createHash('sha256').update(source).digest('hex'),
+      ranges: starts.map((start, i) => ({
+        id: 'r' + i,
+        blockPath: [i],
+        kind: i === 0 ? 'heading' : i === 3 ? 'code' : i === 4 ? 'math' : 'paragraph',
+        start,
+        end: ends[i],
+        startLine: source.slice(0, start).split('\n').length,
+        endLine: source.slice(0, ends[i]).split('\n').length,
+        precision: 'exact',
+      })),
+      unmapped: [],
+    },
+  };
+}
 
 // Optional real WordPress block editor fixture, using only a sanitized core-script runtime.
 const wpRuntime = process.env.MARKBRIDGE_TEST_RUNTIME;
@@ -83,24 +129,40 @@ const taskEditor = (source = '- [ ] Browser task\n- ordinary\n', options = {}) =
     );
   html = html.replace(
     '</head>',
-    '<link rel="stylesheet" href="' +
+    '<script src="' +
+      mapped('writing-ui.js') +
+      '"></script><link rel="stylesheet" href="' +
       mapped('teaching.css') +
-      '"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/wp-includes/css/dashicons.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/components/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-editor/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-library/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-library/editor.min.css"><style>#task-editor{padding:90px 24px 24px;max-width:850px;margin:auto}#task-export{white-space:pre-wrap;overflow-wrap:anywhere;max-width:100%}</style></head>',
+      '"><link rel="stylesheet" href="' +
+      mapped('technical.css') +
+      '"><script type="importmap">{"imports":{"@wordpress/latex-to-mathml":"/wp-includes/js/dist/script-modules/latex-to-mathml/index.js"}}</script><script>window.MBB_MATH_CONFIG={front:false}</script><script src="' +
+      mapped('math.js') +
+      '"></script><link rel="stylesheet" href="' +
+      mapped('editor-ui.css') +
+      '"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/wp-includes/css/dashicons.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/components/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-editor/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-library/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-library/editor.min.css"><style>#task-editor{padding:90px 24px 24px;max-width:850px;margin:auto}#task-export{white-space:pre-wrap;overflow-wrap:anywhere;max-width:100%;max-height:12rem;overflow:auto}</style></head>',
   );
   return html.replace(
     '</body>',
-    `<div id="task-editor"></div><button id="export-tasks">Export</button><pre id="task-export"></pre>
+    () => `<div id="task-editor"></div><button id="export-tasks">Export</button><pre id="task-export"></pre>
 <script>
 const e = wp.element.createElement;
+// Stable resolved assets keep attribute edits from navigating the canvas iframe.
+const taskEditorSettings = {allowedBlockTypes:true,__unstableResolvedAssets:{styles:'<link rel="stylesheet" href="/wp-includes/css/dist/block-editor/style.min.css">',scripts:''}};
+${
+  options.history
+    ? `wp.data.dispatch('core').addEntities([{kind:'postType',name:'mbb-activity-fixture',baseURL:'/fixture/entities',key:'id',rawAttributes:['content'],transientEdits:{blocks:true,selection:true},mergedEdits:{meta:true}}]);
+wp.data.dispatch('core').receiveEntityRecords('postType','mbb-activity-fixture',{id:901,content:{raw:wp.blocks.serialize(MBB.toBlocks(${JSON.stringify(source)}))},blocks:MBB.toBlocks(${JSON.stringify(source)}),meta:{footnotes:'[]'}});`
+    : ''
+}
 function EditorBody() {
   window.taskRegistry = wp.data.useRegistry();
   return e(wp.blockEditor.BlockTools, {}, ${options.iframe ? `e(wp.blockEditor.__unstableIframe,{name:'editor-canvas',title:'Editor canvas',style:{width:'100%',height:'500px'}},e(wp.blockEditor.BlockList)),e(wp.components.Panel,{},e(wp.blockEditor.InspectorControls.Slot))` : 'e(wp.blockEditor.BlockList), e(wp.blockEditor.ButtonBlockAppender)'});
 }
 function TaskEditorApp() {
-  const [blocks,setBlocks] = wp.element.useState(() => MBB.toBlocks(${JSON.stringify(source)}));
+  ${options.history ? `const [blocks,taskOnInput,taskOnChange] = wp.coreData.useEntityBlockEditor('postType','mbb-activity-fixture',{id:901});` : `const [blocks,setBlocks] = wp.element.useState(() => MBB.toBlocks(${JSON.stringify(source)}));`}
   window.taskBlocks = blocks;
   return e(wp.components.SlotFillProvider, {}, e(wp.blockEditor.BlockEditorProvider, {
-    value:blocks,onInput:setBlocks,onChange:setBlocks,settings:{allowedBlockTypes:true,__unstableResolvedAssets:{styles:'<link rel="stylesheet" href="/wp-includes/css/dist/block-editor/style.min.css">',scripts:''}},
+    value:blocks,onInput:${options.history ? 'taskOnInput' : 'setBlocks'},onChange:${options.history ? 'taskOnChange' : 'setBlocks'},settings:taskEditorSettings,
   }, e(EditorBody)));
 }
 wp.element.createRoot(document.getElementById('task-editor')).render(e(TaskEditorApp));
@@ -119,6 +181,206 @@ const mime = {
   '.woff2': 'font/woff2',
   '.json': 'application/json',
 };
+// Isolated HTTP mocks for the real batch UI; no WordPress writes or routed blob requests.
+const batchFixtures = new Map();
+const batchPNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ/pLvAAAAAElFTkSuQmCC',
+  'base64',
+);
+const batchImageKey = require('node:crypto').createHash('sha256').update(batchPNG).digest('hex');
+function batchTools(scenario) {
+  const id = require('node:crypto').randomBytes(12).toString('hex');
+  while (batchFixtures.size >= 32) batchFixtures.delete(batchFixtures.keys().next().value);
+  batchFixtures.set(id, {
+    scenario,
+    job: null,
+    holdNextList: false,
+    held: null,
+    confirms: [],
+    listCount: 0,
+  });
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="/plugin/editor-ui.css"><link rel="stylesheet" href="/plugin/batch-ui.css"><link rel="stylesheet" href="/plugin/math.css">
+<style>body{font:16px/1.6 system-ui,sans-serif;margin:24px}button,input{font:inherit}input{box-sizing:border-box}</style>
+<script>window.MBB_MATH_CONFIG={front:false};window.MBB_EDITOR={root:location.origin+'/batch-fixture/${id}/',nonce:'synthetic-only',postId:0};window.batchFixtureRoot='/batch-fixture/${id}/';</script>
+<script defer src="/plugin/math.js"></script><script defer src="/plugin/source-tools.js"></script><script defer src="/plugin/batch-ui.js"></script>
+</head><body><h1>Synthetic batch tools</h1><button id="mbb-batch-new" type="button">Batch import drafts</button></body></html>`;
+}
+function batchFixture(request, response, pathname) {
+  const match = /^\/batch-fixture\/([a-f0-9]{24})\/(.*)$/.exec(pathname);
+  if (!match) return false;
+  const fixture = batchFixtures.get(match[1]),
+    route = match[2];
+  const json = (status, value, headers = {}) =>
+    response
+      .writeHead(status, { 'Content-Type': 'application/json', ...headers })
+      .end(JSON.stringify(value));
+  if (!fixture) {
+    json(404, { message: 'Synthetic session expired' });
+    return true;
+  }
+  let raw = '',
+    length = 0;
+  request.on('data', (chunk) => {
+    length += chunk.length;
+    if (length <= 1048576) raw += chunk;
+  });
+  request.on('end', () => {
+    if (length > 1048576) return json(413, { message: 'Synthetic upload limit' });
+    let data = {};
+    if ((request.headers['content-type'] || '').startsWith('application/json')) {
+      try {
+        data = JSON.parse(raw || '{}');
+      } catch {
+        return json(400, { message: 'Synthetic JSON required' });
+      }
+    }
+    if (route === 'control') {
+      if (data.holdNextList) fixture.holdNextList = true;
+      if (data.conflict) fixture.conflict = true;
+      if (data.release && fixture.held) {
+        fixture.held();
+        fixture.held = null;
+      }
+      return json(200, {
+        held: !!fixture.held,
+        confirms: fixture.confirms,
+        listCount: fixture.listCount,
+      });
+    }
+    if (fixture.scenario === 'forbidden')
+      return json(403, {
+        code: 'batch_forbidden',
+        message: 'Sign in with an account that can create drafts.',
+      });
+    if (route === 'batch' && request.method === 'GET') {
+      fixture.listCount++;
+      const result = {
+        schema: 1,
+        batches: fixture.job ? [fixture.job] : [],
+        limits: { maxItems: 10 },
+      };
+      if (fixture.holdNextList) {
+        fixture.holdNextList = false;
+        // Flush no-store headers so Chromium does not serialize the new identical GET
+        // behind its pending HTTP cache entry. Only the old JSON body remains gated.
+        response.writeHead(200, {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store',
+          'X-Batch-Fixture-Held': 'yes',
+        });
+        response.flushHeaders();
+        fixture.held = () => response.end(JSON.stringify(result));
+        return;
+      }
+      return json(200, result);
+    }
+    if (route === 'batch/prepare') {
+      fixture.job = {
+        schema: 1,
+        token: 'a'.repeat(64),
+        expiresAt: 2000000000,
+        state: 'open',
+        items: [
+          {
+            index: 0,
+            name: 'formula.md',
+            title: 'formula',
+            bytes: 48,
+            state: 'ready',
+            images: 0,
+            warnings: ['duplicate-title'],
+          },
+          {
+            index: 1,
+            name: 'images.zip',
+            title: 'images',
+            bytes: 120,
+            state: 'ready',
+            images: 1,
+            warnings: [],
+          },
+          {
+            index: 2,
+            name: 'blocked.md',
+            title: 'blocked',
+            bytes: 10,
+            state: 'blocked',
+            reason: 'Synthetic invalid document',
+            images: 0,
+            warnings: [],
+          },
+        ],
+      };
+      return json(200, fixture.job);
+    }
+    if (route.startsWith('resource-import/') && route.includes('/image/'))
+      return response.writeHead(200, { 'Content-Type': 'image/png' }).end(batchPNG);
+    if (!fixture.job || !route.startsWith('batch/' + fixture.job.token))
+      return json(404, { message: 'Synthetic batch missing' });
+    const job = fixture.job;
+    if (route.endsWith('/preview')) {
+      const item = job.items[data.index];
+      if (!item || item.state === 'blocked')
+        return json(409, { message: 'Synthetic blocked item' });
+      item.title = data.title;
+      item.state = 'previewed';
+      return json(200, {
+        schema: 1,
+        item,
+        html:
+          '<h2>' +
+          data.title.replaceAll('&', '&amp;').replaceAll('<', '&lt;') +
+          '</h2><pre class="wp-block-mbb-math"><code>\\frac{a}{d}</code></pre>' +
+          (item.images ? '<img alt="Bundled pixel" src="mbb-import/' + batchImageKey + '">' : ''),
+        source: '$$\n\\frac{a}{d}\n$$\n',
+        receipt: 'b'.repeat(64),
+        documentId: 'BatchFixtureDocument',
+        identityStrategy: 'copy',
+        identityMappings: [1, 2].map((i) => ({
+          before: { namespace: 'S_' + 'a'.repeat(32), document: 'D_' + String(i).repeat(32) },
+          after: { namespace: 'S_' + 'b'.repeat(32), document: 'D_' + String(i + 2).repeat(32) },
+        })),
+        resourceToken: 'c'.repeat(64),
+        images: item.images
+          ? [
+              {
+                key: batchImageKey,
+                sha256: batchImageKey,
+                mime: 'image/png',
+                bytes: batchPNG.length,
+                width: 1,
+                height: 1,
+              },
+            ]
+          : [],
+        expiresAt: 2000000000,
+      });
+    }
+    if (route.endsWith('/confirm')) {
+      fixture.confirms.push(data);
+      if (fixture.conflict) {
+        fixture.conflict = false;
+        return json(409, {
+          code: 'batch_preview',
+          message: 'Preview this item again before creating its draft.',
+        });
+      }
+      const item = job.items[data.index];
+      item.state = 'saved';
+      item.post_id = 90 + item.index;
+      item.editUrl = '/wp-admin/post.php?post=' + item.post_id + '&action=edit';
+      return json(200, item);
+    }
+    if (request.method === 'DELETE') {
+      job.state = 'cancelled';
+      for (const item of job.items) if (item.state !== 'saved') item.state = 'cancelled';
+    }
+    return json(200, job);
+  });
+  return true;
+}
+
 http
   .createServer((request, response) => {
     const pathname = new URL(request.url, 'http://localhost').pathname;
@@ -148,7 +410,130 @@ http
         .end(boot + '\n' + fs.readFileSync(path.join(plugin, 'i18n.js'), 'utf8'));
     }
 
+    if (pathname === '/navigation-editor')
+      return response
+        .writeHead(200, { 'Content-Type': 'text/html' })
+        .end(
+          editor.replace(
+            "root:location.origin+'/wp-json/mbb/v1/'",
+            "root:location.origin+'/navigation-fixture/'",
+          ),
+        );
+    if (pathname.startsWith('/navigation-fixture/')) {
+      const json = (status, value) =>
+        response
+          .writeHead(status, { 'Content-Type': 'application/json' })
+          .end(JSON.stringify(value));
+      if (pathname === '/navigation-fixture/document' && request.method === 'GET')
+        return json(200, {
+          post_id: 12,
+          expected: 'one',
+          title: 'Navigation',
+          post_status: 'draft',
+          featured_media: 0,
+          document: { source: navigationRaw, documentId: 'Navigation' },
+        });
+      if (pathname !== '/navigation-fixture/preview' || request.method !== 'POST')
+        return json(404, { code: 'fixture_only' });
+      let body = '',
+        size = 0;
+      request.setEncoding('utf8');
+      request.on('data', (chunk) => {
+        size += Buffer.byteLength(chunk);
+        if (size <= 65536) body += chunk;
+      });
+      request.on('end', () => {
+        if (size > 65536) return json(413, { code: 'fixture_limit' });
+        try {
+          const data = JSON.parse(body);
+          if (typeof data.source !== 'string') return json(400, { code: 'fixture_source' });
+          json(200, navigationResponse(data.source));
+        } catch {
+          json(400, { code: 'fixture_json' });
+        }
+      });
+      return;
+    }
+    if (pathname === '/batch-tools')
+      return response
+        .writeHead(200, { 'Content-Type': 'text/html' })
+        .end(batchTools(new URL(request.url, 'http://localhost').searchParams.get('case')));
+    if (batchFixture(request, response, pathname)) return;
+    if (pathname.startsWith('/static-export-fixture/export')) {
+      const value = JSON.parse(
+        execFileSync('php', [path.resolve(__dirname, '../static-export.php'), '--descriptor'], {
+          encoding: 'utf8',
+        }),
+      );
+      value.body =
+        '<h2 id="preview-code">离线阅读示例</h2><pre><code class="language-python"># Python\ndef welcome(name):\n    return "你好 " + name\n\nwelcome("reader")\n</code></pre><table><thead><tr><th>语言</th><th>结果</th></tr></thead><tbody><tr><td>Python</td><td>保留全部代码</td></tr><tr><td>JavaScript</td><td>完整离线阅读</td></tr></tbody></table><p><a href="#preview-code">Internal anchor</a> · <a href="https://example.invalid/external" title="External reference">External reference</a></p>' +
+        value.body;
+      let raw = '';
+      request.on('data', (chunk) => {
+        raw += chunk;
+      });
+      request.on('end', () => {
+        const input = raw ? JSON.parse(raw) : {};
+        const markdown = input.format && input.format !== 'html';
+        let data;
+        if (pathname.endsWith('/context'))
+          data = { schema: 1, post_id: 12, expected: 'a'.repeat(64), documentId: 'STATIC' };
+        else if (request.method === 'DELETE') data = { schema: 1, cancelled: true };
+        else if (pathname.endsWith('/prepare'))
+          data = {
+            schema: 1,
+            format: markdown ? input.format : 'html',
+            token: (markdown ? 'e' : 'c').repeat(64),
+            receipt: (markdown ? 'f' : 'd').repeat(64),
+            projectedSource: markdown ? '# Original Markdown\r\n' : JSON.stringify(value),
+            resources: [],
+            retainedImages: [],
+            changes: [],
+          };
+        else if (pathname.endsWith('/download')) data = value;
+        else data = { code: 'fixture_unknown' };
+        response.writeHead(200, {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store',
+        });
+        response.end(JSON.stringify(data));
+      });
+      return;
+    }
+    if (pathname === '/static-export-descriptor') {
+      response.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+      return response.end(
+        execFileSync('php', [path.resolve(__dirname, '../static-export.php'), '--descriptor'], {
+          encoding: 'utf8',
+        }),
+      );
+    }
+    if (pathname === '/collections-editor') {
+      const plain = new URL(request.url, 'http://localhost').searchParams.has('plain');
+      const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="${mapped('collections-ui.css')}"><style>body{margin:0;padding:20px;background:#f0f0f1;color:#1d2327;font:14px/1.6 Arial,sans-serif}.button{border:1px solid #8c8f94;border-radius:4px;background:#f6f7f7;color:#2c3338;padding:6px 12px;cursor:pointer}input,textarea,select{font:inherit;border:1px solid #8c8f94;border-radius:4px;padding:8px;max-width:100%}h1{font-size:26px}h2{font-weight:600}</style></head><body><main class="wrap mbb-collections"><h1>Collections</h1><p>Arrange references to saved articles, then prepare an immutable snapshot. Collection configuration is not a second article body.</p><div id="mbb-collections"></div></main><script>window.MBB_COLLECTIONS={url:location.origin+${JSON.stringify(plain ? '/index.php?rest_route=/mbb/v1/collections' : '/wp-json/mbb/v1/collections')},nonce:'synthetic',lang:'en-US'};</script><script src="${mapped('collections-ui.js')}"></script></body></html>`;
+      return response.writeHead(200, { 'Content-Type': 'text/html; charset=UTF-8' }).end(html);
+    }
     if (pathname === '/health') return response.writeHead(200).end('ok');
+    if (pathname === '/technical-presentation') {
+      const html = execFileSync('php', [path.join(__dirname, 'technical-presentation.php')], {
+        encoding: 'utf8',
+      });
+      return response.writeHead(200, { 'Content-Type': 'text/html; charset=UTF-8' }).end(html);
+    }
+    if (pathname === '/bibliography-presentation') {
+      const query = new URL(request.url, 'http://localhost').searchParams;
+      const style = query.get('style') === 'numeric' ? 'numeric' : 'author-year';
+      const html = execFileSync(
+        'php',
+        [
+          path.join(__dirname, 'technical-presentation.php'),
+          style,
+          query.has('static') ? 'static' : 'front',
+        ],
+        { encoding: 'utf8' },
+      );
+      return response.writeHead(200, { 'Content-Type': 'text/html; charset=UTF-8' }).end(html);
+    }
     if (pathname === '/wp/v2/types')
       return response.writeHead(200, { 'Content-Type': 'application/json' }).end('{}');
     if (pathname === '/front') {
@@ -169,17 +554,26 @@ http
     }
     if (pathname === '/native-editor') {
       const sourceManaged = new URL(request.url, 'http://localhost').searchParams.has('source');
+      // This API-middleware fixture uses the real converter exports, not a Gutenberg registry.
       const setup = `<script>
+      window.MBB_CONVERTER_ONLY=true;
       MBB_EDITOR.postId=12;MBB_EDITOR.state={expected:'baseline-1',source_managed:${sourceManaged}};
       const middlewares=[];window.nativeLocks=[];window.nativeRequests=[];
-      const post={getCurrentPostId:()=>12,getEditedPostContent:()=>'<p>draft</p>',getEditedPostAttribute:()=>''};
+      const post={getCurrentPostId:()=>12,getEditedPostContent:()=>'<p>draft</p>',getEditedPostAttribute:()=>'',getBlocks:()=>[],getSelectedBlockClientId:()=>null};
       wp.data={select:()=>post,subscribe:()=>()=>{},dispatch:()=>({lockPostSaving:key=>nativeLocks.push(key),lockPostAutosaving:key=>nativeLocks.push('autosave:'+key)})};
       wp.apiFetch=options=>middlewares.reduceRight((next,fn)=>opts=>fn(opts,next),opts=>{nativeRequests.push(opts);return window.nativeResult?window.nativeResult(opts):Promise.resolve({id:12,mbb_expected:'baseline-2'});})(options);
       wp.apiFetch.use=fn=>middlewares.push(fn);
       </script>`;
       return response
         .writeHead(200, { 'Content-Type': 'text/html' })
-        .end(editor.replace('</head>', setup + '</head>'));
+        .end(
+          editor
+            .replace(
+              '<script defer src=',
+              `<script defer src="${mapped('kernel.js')}"></script><script defer src=`,
+            )
+            .replace('</head>', setup + '</head>'),
+        );
     }
     if (pathname === '/recovery-editor' || pathname === '/wp-admin/post-new.php') {
       const query = new URL(request.url, 'http://localhost').searchParams;
@@ -187,6 +581,8 @@ http
         sourceManaged = query.has('source');
       let html = taskEditor('# Original\n\nOriginal body.\n', { converterOnly: isNew });
       if (!html) return response.writeHead(404).end();
+      if (query.has('serverBackups'))
+        html = html.replace('</body>', '<script src="/plugin/paired-backups.js"></script></body>');
       if (query.has('header'))
         html = html.replace(
           '</body>',
@@ -205,7 +601,7 @@ http
       html = html.replace(
         'const e = wp.element.createElement;',
         `
-window.MBB_EDITOR={root:location.origin+'/wp-json/mbb/v1/',nonce:'synthetic-nonce-not-for-storage',postId:${isNew ? 0 : 12},newPost:${isNew},canPublish:true,
+window.MBB_EDITOR={root:location.origin+${JSON.stringify(query.has('staticExport') ? '/static-export-fixture/' : query.has('plainRest') ? '/index.php?rest_route=/mbb/v1/' : '/wp-json/mbb/v1/')},nonce:'synthetic-nonce-not-for-storage',postId:${isNew ? 0 : 12},newPost:${isNew},canPublish:true,
 recovery:{schema:1,siteKey:'a'.repeat(64),userKey:'b'.repeat(64)},
 state:${isNew ? 'null' : `{post_id:12,expected:'baseline-1',title:'Original',post_status:'draft',featured_media:0,source_managed:${sourceManaged},source_write_available:false,source_sha256:${sourceManaged ? "'f'.repeat(64)" : 'null'},document:{documentId:'RECOVERY',source:'# Original\\n\\nOriginal body.\\n',serialized:wp.blocks.serialize(MBB.toBlocks('# Original\\n\\nOriginal body.\\n'))}}`}};
 window.MBB_REVISIONS={open(){}};window.MBB_MATH_CONFIG={front:false};
@@ -227,7 +623,7 @@ const e = wp.element.createElement;`,
       html = html.replace(
         '</body>',
         `<style>#mbb-new,#fixture-native-save{position:fixed;top:12px;z-index:60;padding:8px}#mbb-new{left:12px}#fixture-native-save{right:12px}</style><div style="position:relative;z-index:30"><button id="mbb-new">新 Markdown 草稿</button><button id="fixture-native-save">Fixture native save</button></div>
-<link rel="stylesheet" href="${mapped('editor-ui.css')}"><script src="${mapped('math.js')}"></script><script src="${mapped('resource-ui.js')}"></script><script src="${mapped('editor-ui.js')}"></script><script src="${mapped('local-recovery.js')}"></script><script src="${mapped('export-ui.js')}"></script>
+<link rel="stylesheet" href="${mapped('editor-ui.css')}"><script src="${mapped('math.js')}"></script><script src="${mapped('resource-ui.js')}"></script><script src="${mapped('source-tools.js')}"></script><script src="${mapped('references-ui.js')}"></script><script src="${mapped('writing-ui.js')}"></script><script src="${mapped('editor-ui.js')}"></script><script src="${mapped('local-recovery.js')}"></script><script src="${mapped('export-ui.js')}"></script>
 <script>document.getElementById('fixture-native-save').onclick=async()=>{await wp.apiFetch({path:'/wp/v2/posts/12',method:'POST',data:{content:wp.blocks.serialize(taskBlocks),title:recoveryFields.title,status:recoveryFields.status==='auto-draft'?'draft':recoveryFields.status}});window.nativeDirty=false;recoveryNotify();};</script></body>`,
       );
       return response.writeHead(200, { 'Content-Type': 'text/html' }).end(html);
@@ -268,6 +664,25 @@ const e = wp.element.createElement;`,
       return response
         .writeHead(200, { 'Content-Type': 'text/html' })
         .end(fs.readFileSync(path.join(__dirname, 'fixtures/component.html'), 'utf8'));
+    if (pathname === '/technical-editor') {
+      const examples = JSON.parse(
+        fs.readFileSync(path.join(__dirname, '../fixtures/technical-writing.json'), 'utf8'),
+      ).cases;
+      const example = (name) => examples.find((item) => item.name === name).source;
+      const source =
+        example('equation-and-atomic-reference') +
+        '\n' +
+        example('three-independent-statement-kinds') +
+        '\n' +
+        example('bibliography-and-atomic-cite');
+      const html = taskEditor(source, {
+        iframe: true,
+        history: new URL(request.url, 'http://localhost').searchParams.has('history'),
+      });
+      return response
+        .writeHead(html ? 200 : 404, { 'Content-Type': 'text/html' })
+        .end(html || 'Core runtime required');
+    }
     if (pathname === '/component-editor') {
       const raw = fs.readFileSync(path.join(__dirname, 'fixtures/component.html'), 'utf8');
       const provider = {
@@ -291,7 +706,10 @@ const e = wp.element.createElement;`,
       };
       const source =
         ':::mbb:v1 component {"id":"editor-component","component":"fixture","componentVersion":"0.1.0","params":{"value":42,"behavior":"complete"}}\n\nEditable static fallback.\n\n:::mbb:end\n';
-      let html = taskEditor(source, { iframe: true });
+      let html = taskEditor(source, {
+        iframe: true,
+        history: new URL(request.url, 'http://localhost').searchParams.has('history'),
+      });
       if (html)
         html = html
           .replace(

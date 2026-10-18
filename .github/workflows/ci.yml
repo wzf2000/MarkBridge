@@ -133,6 +133,13 @@ jobs:
           wp_test eval-file tests/merge-save.php
           wp_test eval-file tests/block-adapters-save.php
           wp_test eval-file tests/localization-save.php
+          wp_test eval-file tests/authoring-save.php
+          wp_test eval-file tests/technical-writing-save.php
+          wp_test eval-file tests/native-media-save.php
+          wp_test eval-file tests/batch-save.php
+          wp_test eval-file tests/paired-backups-save.php
+          wp_test eval-file tests/references-save.php
+          wp_test eval-file tests/collections-save.php
           php -d disable_functions=exec,shell_exec,system,passthru,proc_open,popen,pcntl_exec \
             "$RUNNER_TEMP/markbridge-downloads/wp-cli-2.12.0.phar" --path="$MARKBRIDGE_TEST_WORDPRESS_ROOT" eval-file tests/native-rest-save.php
           wp_test eval-file tests/ci-backend.php node
@@ -147,6 +154,13 @@ jobs:
           wp_test eval-file tests/merge-save.php
           wp_test eval-file tests/block-adapters-save.php
           wp_test eval-file tests/localization-save.php
+          wp_test eval-file tests/authoring-save.php
+          wp_test eval-file tests/technical-writing-save.php
+          wp_test eval-file tests/native-media-save.php
+          wp_test eval-file tests/batch-save.php
+          wp_test eval-file tests/paired-backups-save.php
+          wp_test eval-file tests/references-save.php
+          wp_test eval-file tests/collections-save.php
           wp_test eval-file tests/ci-backend.php php
           wp_test eval-file tests/native-rest-save.php
           wp_test eval-file tests/teaching-save.php
@@ -159,6 +173,13 @@ jobs:
           wp_test eval-file tests/merge-save.php
           wp_test eval-file tests/block-adapters-save.php
           wp_test eval-file tests/localization-save.php
+          wp_test eval-file tests/authoring-save.php
+          wp_test eval-file tests/technical-writing-save.php
+          wp_test eval-file tests/native-media-save.php
+          wp_test eval-file tests/batch-save.php
+          wp_test eval-file tests/paired-backups-save.php
+          wp_test eval-file tests/references-save.php
+          wp_test eval-file tests/collections-save.php
 
       - name: Check formatting
         env:
@@ -180,6 +201,17 @@ jobs:
           npx playwright test --retries=0 --reporter=line,json
           python3 scripts/check_browser_report.py "$RUNNER_TEMP/browser-results.json"
 
+      - name: Install pinned Firefox and WebKit for targeted compatibility
+        run: npx playwright install --with-deps firefox webkit
+
+      - name: Run targeted Firefox and WebKit regressions
+        env:
+          MARKBRIDGE_CROSS_BROWSER: '1'
+          PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ runner.temp }}/cross-browser-results.json
+        run: |
+          npx playwright test --project=desktop-firefox --project=mobile-firefox --project=desktop-webkit --project=mobile-webkit --retries=0 --reporter=line,json
+          python3 scripts/check_browser_report.py "$RUNNER_TEMP/cross-browser-results.json"
+
       - name: Upload browser failure screenshots and traces
         if: failure()
         uses: actions/upload-artifact@v4
@@ -189,6 +221,7 @@ jobs:
             test-results/
             playwright-report/
             ${{ runner.temp }}/browser-results.json
+            ${{ runner.temp }}/cross-browser-results.json
           if-no-files-found: ignore
 
       - name: Run source writeback safety tests
@@ -215,8 +248,13 @@ jobs:
       - name: Check release sources and PHP syntax
         run: python3 scripts/check_release.py
 
-      - name: Test curated Wiki synchronization
-        run: python3 -m unittest discover -s tests -p 'test_wiki_sync.py'
+      - name: Test anonymous component delivery probe
+        run: python3 -m unittest discover -s tests -p 'test_delivery_probe.py'
+
+      - name: Test curated Wiki synchronization and CI save coverage
+        run: |
+          python3 -m unittest discover -s tests -p 'test_wiki_sync.py'
+          python3 -m unittest discover -s tests -p 'test_ci_workflow.py'
 
       - name: Verify translation catalog and synthetic core locale setup
         run: |

@@ -38,7 +38,7 @@ test('stage navigation sticks below headers, reveals anchors and leaves each gro
   const bar = page.locator('#alpha > .mbb-stage-controls');
   await expect.poll(async () => (await rect(bar)).top).toBeGreaterThan(96);
   await page.evaluate(() => window.scrollTo(0, 800));
-  await expect.poll(async () => (await rect(bar)).top).toBe(96);
+  await expect.poll(async () => (await rect(bar)).top).toBe(108);
   expect(await bar.evaluate((node) => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
   await page.screenshot({ path: path.join(evidence, `sticky-${info.project.name}.png`) });
   await bar.getByRole('button', { name: 'Next stage', exact: true }).click();
@@ -58,8 +58,8 @@ test('stage navigation sticks below headers, reveals anchors and leaves each gro
   await page.evaluate(() => window.scrollTo(0, document.getElementById('beta').offsetTop + 500));
   await expect
     .poll(async () => (await rect(page.locator('#beta > .mbb-stage-controls'))).top)
-    .toBe(96);
-  expect((await rect(bar)).bottom).toBeLessThanOrEqual(96);
+    .toBe(108);
+  expect((await rect(bar)).bottom).toBeLessThanOrEqual(108);
   await page.evaluate(() => (location.hash = 'alpha'));
   await expect
     .poll(async () => (await rect(page.locator('#alpha'))).top)
@@ -78,7 +78,7 @@ test('navigation offset, toolbar resize and disappearing admin bar update anchor
   const bar = group.locator(':scope > .mbb-stage-controls');
   await group.evaluate((node) => node.style.setProperty('--mbb-teaching-sticky-offset', '150px'));
   await page.evaluate(() => window.scrollTo(0, 700));
-  await expect.poll(async () => (await rect(bar)).top).toBe(150);
+  await expect.poll(async () => (await rect(bar)).top).toBe(162);
   await bar.evaluate((node) => (node.style.paddingBottom = '80px'));
   await expect
     .poll(async () => {
@@ -95,7 +95,7 @@ test('navigation offset, toolbar resize and disappearing admin bar update anchor
     document.querySelector('header').style.top = '0px';
     dispatchEvent(new Event('resize'));
   });
-  await expect.poll(async () => (await rect(bar)).top).toBe(64);
+  await expect.poll(async () => (await rect(bar)).top).toBe(76);
   await page.evaluate(() => (location.hash = 'alpha-anchor-1'));
   await expect
     .poll(async () => (await rect(page.locator('#alpha-anchor-1'))).top)

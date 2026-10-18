@@ -396,8 +396,11 @@ test('dialog keeps actions visible and separates scrolling source from the sandb
   const geometry = await frame.evaluate((node) => ({
     frame: node.clientHeight,
     region: node.parentElement.clientHeight,
+    toolbar:
+      node.parentElement.querySelector('.mbb-preview-tools')?.getBoundingClientRect().height || 0,
   }));
-  expect(geometry.frame).toBeGreaterThan(geometry.region - 30);
+  expect(geometry.frame).toBeGreaterThan(geometry.region - geometry.toolbar - 30);
+  expect(geometry.frame + geometry.toolbar).toBeLessThanOrEqual(geometry.region + 2);
   expect(await inViewport(page.locator('#mbb-save'))).toBe(true);
   await page.locator('#mbb-edit-toggle').click();
   await expect(page.locator('#mbb-source')).toBeVisible();
@@ -411,6 +414,8 @@ test('dialog keeps actions visible and separates scrolling source from the sandb
 test('existing article toolbar has compact primary actions and an accessible secondary menu', async ({
   page,
 }, testInfo) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/native-editor');
   await page.locator('#mbb-toolbar').waitFor();
   await page.addScriptTag({ url: '/plugin/export-ui.js' });
@@ -453,6 +458,7 @@ test('existing article toolbar has compact primary actions and an accessible sec
   await expect(menu).not.toHaveAttribute('open', '');
   await page.keyboard.press('Escape');
   await expect(menu.locator('summary').first()).toBeFocused();
+  expect(errors).toEqual([]);
 });
 
 test('tool-screen new Markdown previews and saves without a core/editor store', async ({

@@ -95,6 +95,7 @@ final class Converter
     public function portableImages(array $base, array $mappings): array
     {
         $verified = $this->restorePair($base['source'], $base['serialized'], $base['documentId']);
+        NativeMedia::assertPortable($verified['serialized']);
         $expected = ResourceImages::rewrite($verified['serialized'], $mappings, true);
         if (!$mappings) {
             return $verified;
@@ -108,6 +109,84 @@ final class Converter
         }
         $result['documentId'] = $base['documentId'];
         return $result;
+    }
+
+    public function relocateImages(array $base, array $mappings, bool $portable): array
+    {
+        $verified = $this->restorePair($base['source'], $base['serialized'], $base['documentId']);
+        if (!array_is_list($mappings) || count($mappings) > 256) {
+            throw new ConversionError(
+                'MEDIA_RELOCATION',
+                'Invalid cross-site media association map',
+            );
+        }
+        $map = [];
+        $urls = [];
+        foreach ($mappings as $item) {
+            $keys = is_array($item) ? array_keys($item) : [];
+            sort($keys);
+            if (
+                $keys !== ($portable ? ['from', 'to'] : ['from', 'id', 'to']) ||
+                !is_string($item['from'] ?? null) ||
+                !is_string($item['to'] ?? null) ||
+                (!$portable &&
+                    (!is_int($item['id']) || $item['id'] < 1 || $item['id'] > 9007199254740991)) ||
+                isset($map[$item['from']])
+            ) {
+                throw new ConversionError(
+                    'MEDIA_RELOCATION',
+                    'Invalid cross-site media association map',
+                );
+            }
+            $map[$item['from']] = $item;
+            $urls[] = ['from' => $item['from'], 'to' => $item['to']];
+        }
+        ResourceImages::rewrite($verified['serialized'], $urls, $portable);
+        $serialized = preg_replace_callback(
+            '~<!-- wp:image(?: (\{[^\r\n]*\}))? -->\n([\s\S]*?)\n<!-- /wp:image -->~',
+            function ($block) use ($map, $portable) {
+                $attrs = isset($block[1]) && $block[1] !== '' ? Teaching::json($block[1]) : [];
+                $html = $block[2];
+                preg_match('~<img\b[^>]*\ssrc="([^"]*)"~', $html, $m);
+                $url = html_entity_decode($m[1] ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                if (!isset($map[$url])) {
+                    if ($portable || isset($attrs['id'])) {
+                        throw new ConversionError(
+                            'MEDIA_RELOCATION',
+                            'Every cross-site native image requires a verified association',
+                        );
+                    }
+                    return $block[0];
+                }
+                $mapping = $map[$url];
+                if (isset($attrs['id'])) {
+                    $html = str_replace(' class="wp-image-' . $attrs['id'] . '"', '', $html);
+                }
+                if ($portable) {
+                    unset($attrs['id']);
+                } else {
+                    $attrs['id'] = $mapping['id'];
+                }
+                if (!$portable) {
+                    $html = preg_replace(
+                        '~(<img\b[^>]*?)( title="|/>)~',
+                        '$1 class="wp-image-' . $mapping['id'] . '"$2',
+                        $html,
+                        1,
+                    );
+                }
+
+                $attrs = NativeMedia::attrs('image', $attrs);
+                return '<!-- wp:image' .
+                    ($attrs ? ' ' . self::commentJson($attrs) : '') .
+                    " -->\n" .
+                    $html .
+                    "\n<!-- /wp:image -->";
+            },
+            $verified['serialized'],
+        );
+        $serialized = ResourceImages::rewrite($serialized, $urls, $portable);
+        return $this->fromMarkdown($this->fromBlocks($serialized)['source']);
     }
 
     public function fromMarkdown(string $source): array
@@ -138,6 +217,12 @@ final class Converter
     public function fromBlocks(string $serialized): array
     {
         $this->input($serialized);
+        if (preg_match('~<!-- wp:footnotes(?:\s|/)~', $serialized)) {
+            throw new ConversionError(
+                'NATIVE_FOOTNOTES',
+                'Native footnotes require external post metadata and cannot be converted losslessly',
+            );
+        }
         $blocks = $this->parseBlocks($serialized);
         $this->nodes = 0;
         $source = $this->decodeAll($blocks);
@@ -296,6 +381,7 @@ final class Converter
             $environment->addBlockStartParser(new NamedFootnoteStartParser($registry), 101);
             $environment->addInlineParser(new NamedFootnoteInlineParser(), 36);
         }
+        $environment->addInlineParser(new TechnicalInlineParser(), 210);
         $environment->addInlineParser(new MathInlineParser(), 200);
         $environment->addInlineParser(new TaskMarkerParser(), 35);
         $document = (new MarkdownParser($environment))->parse($source);
@@ -308,6 +394,12 @@ final class Converter
             bool $inLink = false,
         ) use (&$validate, &$references, $registry): void {
             $this->tick($depth);
+            if ($inLink && $node instanceof TechnicalReference) {
+                Technical::fail(
+                    'TECHNICAL_REFERENCE',
+                    'Technical references must not be inside links or images',
+                );
+            }
             // The current link probe forbids literal markers even when raw
             // HTML <code> protects them from footnote parsing. Markdown Code
             // nodes retain their separate literal-code exemption.
@@ -670,6 +762,8 @@ final class Converter
                     '>[^' .
                     self::esc($label) .
                     ']</span>';
+            } elseif ($node instanceof TechnicalReference) {
+                $html .= Technical::storedReference($node->getLiteral());
             } elseif ($node instanceof HtmlInline) {
                 $literal = $node->getLiteral();
                 if (preg_match('/^<span(?:\s|>)/i', $literal)) {
@@ -965,6 +1059,20 @@ final class Converter
                 ' -->';
         }
         if (($kind = Teaching::kind($name)) !== null) {
+            if ($kind === 'identity') {
+                return '<!-- wp:mbb/identity ' . self::commentJson($attrs) . ' /-->';
+            }
+            if (isset(Technical::SCHEMAS[$kind])) {
+                return '<!-- wp:' .
+                    $name .
+                    ' ' .
+                    self::commentJson($attrs) .
+                    " -->\n" .
+                    Technical::html($kind, $attrs, $children) .
+                    "\n<!-- /wp:" .
+                    $name .
+                    ' -->';
+            }
             $html =
                 '<div id="' .
                 self::attribute($attrs['id']) .
@@ -1052,8 +1160,40 @@ final class Converter
             case 'core/separator':
                 $html = '<hr class="wp-block-separator has-alpha-channel-opacity"/>';
                 break;
+            case 'core/gallery':
+                NativeMedia::attrs('gallery', $attrs);
+                $html =
+                    '<figure class="wp-block-gallery has-nested-images columns-' .
+                    ($attrs['columns'] ?? 'default') .
+                    ($attrs['imageCrop'] ?? true ? ' is-cropped' : '') .
+                    '">' .
+                    $children .
+                    '</figure>';
+                if (($attrs['imageCrop'] ?? null) === true) {
+                    unset($attrs['imageCrop']);
+                }
+                break;
             case 'core/image':
-                $html = '<figure class="wp-block-image">' . $content . '</figure>';
+                NativeMedia::attrs('image', $attrs);
+                if (isset($attrs['id'])) {
+                    $content = preg_replace(
+                        '~( title="|/>$)~',
+                        ' class="wp-image-' . $attrs['id'] . '"$1',
+                        $content,
+                        1,
+                    );
+                }
+                $caption = $attrs['caption'] ?? '';
+                unset($attrs['caption']);
+                $html =
+                    '<figure class="wp-block-image' .
+                    (isset($attrs['sizeSlug']) ? ' size-' . $attrs['sizeSlug'] : '') .
+                    '">' .
+                    $content .
+                    ($caption !== ''
+                        ? '<figcaption class="wp-element-caption">' . $caption . '</figcaption>'
+                        : '') .
+                    '</figure>';
                 break;
             case 'core/table':
                 $html = '<figure class="wp-block-table">' . $content . '</figure>';
@@ -1224,6 +1364,27 @@ final class Converter
     {
         $this->tick($depth);
         if (
+            preg_match(
+                '/\G<!-- wp:mbb\/identity (\{[^\r\n]*\}) \/-->/A',
+                $input,
+                $identity,
+                0,
+                $position,
+            )
+        ) {
+            $attrs = Teaching::json($identity[1]);
+            $this->validateAttrs('mbb/identity', $attrs);
+            $position += strlen($identity[0]);
+            return [
+                'name' => 'mbb/identity',
+                'attrs' => $attrs,
+                'children' => [],
+                'raw' => '',
+                'path' => $path,
+            ];
+        }
+
+        if (
             !preg_match(
                 '/\G<!-- wp:([a-z0-9-]+(?:\/[a-z0-9-]+)?)(?: (\{.*?\}))? -->/As',
                 $input,
@@ -1318,6 +1479,16 @@ final class Converter
         );
         if (($descriptor = BlockAdapters::descriptor($name, true)) !== null) {
             BlockAdapters::leafAttrs($descriptor, $attrs);
+            return;
+        }
+        if ($name === 'core/footnotes') {
+            throw new ConversionError(
+                'NATIVE_FOOTNOTES',
+                'Native footnotes require external post metadata and cannot be converted losslessly',
+            );
+        }
+        if (in_array($name, ['core/image', 'core/gallery'], true)) {
+            NativeMedia::attrs(substr($name, 5), $attrs, false);
             return;
         }
         if (!array_key_exists($name, $schemas)) {
@@ -1416,7 +1587,12 @@ final class Converter
                     $error->code !== 801 ||
                     !in_array(
                         trim($error->message),
-                        ['Tag mbb-child invalid', 'Tag figure invalid', 'Tag section invalid'],
+                        [
+                            'Tag mbb-child invalid',
+                            'Tag figure invalid',
+                            'Tag figcaption invalid',
+                            'Tag section invalid',
+                        ],
                         true,
                     )
                 ) {
@@ -1551,6 +1727,7 @@ final class Converter
 
     private function safeHtml(string $html): DOMElement
     {
+        Technical::raw($html);
         $body = $this->dom($html);
         $count = 0;
         $walk = function (DOMNode $node, int $depth) use (&$walk, &$count): void {
@@ -1587,18 +1764,42 @@ final class Converter
                 $tag === 'span' &&
                 $node->getAttribute('class') === 'mbb-footnote-ref' &&
                 $node->hasAttribute('data-mbb-footnote');
-            $allowed = $math
-                ? ['class', 'data-mbb-tex']
-                : ($footnote
-                    ? ['class', 'data-mbb-footnote']
-                    : [
-                            'a' => ['href', 'title', 'id'],
-                            'img' => ['src', 'alt', 'title', 'style', 'width', 'height'],
-                            'p' => ['style'],
-                            'span' => ['style', 'class'],
-                            'font' => ['color', 'style'],
-                            'ol' => ['start'],
-                        ][$tag] ?? []);
+            $technical =
+                $tag === 'span' &&
+                in_array($node->getAttribute('class'), ['mbb-xref', 'mbb-cite'], true);
+            if ($technical) {
+                Technical::reference($node->ownerDocument->saveHTML($node));
+                for ($p = $node->parentNode; $p instanceof DOMElement; $p = $p->parentNode) {
+                    if ($p->tagName === 'a') {
+                        Technical::fail(
+                            'TECHNICAL_REFERENCE',
+                            'Technical references must not be inside links or images',
+                        );
+                    }
+                }
+            }
+            $allowed = $technical
+                ? [
+                    'class',
+                    'data-mbb-target',
+                    'data-mbb-keys',
+                    'data-mbb-version',
+                    'data-mbb-namespace',
+                    'data-mbb-document',
+                    'data-mbb-kind',
+                ]
+                : ($math
+                    ? ['class', 'data-mbb-tex']
+                    : ($footnote
+                        ? ['class', 'data-mbb-footnote']
+                        : [
+                                'a' => ['href', 'title', 'id'],
+                                'img' => ['src', 'alt', 'title', 'style', 'width', 'height'],
+                                'p' => ['style'],
+                                'span' => ['style', 'class'],
+                                'font' => ['color', 'style'],
+                                'ol' => ['start'],
+                            ][$tag] ?? []));
             foreach ($node->attributes as $attribute) {
                 $key = $attribute->name;
                 $value = $attribute->value;
@@ -1611,7 +1812,13 @@ final class Converter
                 if (in_array($key, ['href', 'src'], true)) {
                     self::safeUrl($value);
                 }
-                if ($key === 'class' && !$math && !$footnote && $value !== 'wzf-exercise-hint') {
+                if (
+                    $key === 'class' &&
+                    !$math &&
+                    !$footnote &&
+                    !$technical &&
+                    $value !== 'wzf-exercise-hint'
+                ) {
                     throw new ConversionError('HTML_ATTRIBUTES', 'Unsupported HTML class');
                 }
                 if ($key === 'style') {
@@ -1908,25 +2115,83 @@ final class Converter
                     'FOOTNOTE_STRUCTURE',
                     'Footnotes belong only in the footnote section',
                 );
-            case 'core/image':
-                if ($children !== []) {
+            case 'core/gallery':
+                $attrs = NativeMedia::attrs('gallery', $attrs, false);
+                if (
+                    !$children ||
+                    count($children) > 32 ||
+                    array_filter($children, fn($b) => $b['name'] !== 'core/image')
+                ) {
                     throw new ConversionError(
-                        'IMAGE_STRUCTURE',
-                        'Image blocks cannot contain child blocks',
+                        'MEDIA_STRUCTURE',
+                        'A gallery requires 1 to 32 direct native images',
                     );
                 }
-                $root = $this->outer($raw, 'figure', ['class' => 'wp-block-image']);
+                $root = $this->outer($raw, 'figure', [
+                    'class' =>
+                        'wp-block-gallery has-nested-images columns-' .
+                        ($attrs['columns'] ?? 'default') .
+                        ($attrs['imageCrop'] ?? true ? ' is-cropped' : ''),
+                ]);
+                if (($attrs['imageCrop'] ?? null) === true) {
+                    unset($attrs['imageCrop']);
+                }
+                return NativeMedia::directive(
+                    'gallery',
+                    $attrs,
+                    $this->childElements($root, $children, $depth),
+                );
+            case 'core/image':
+                if ($children) {
+                    throw new ConversionError(
+                        'MEDIA_STRUCTURE',
+                        'Native image blocks cannot contain child blocks',
+                    );
+                }
+                NativeMedia::attrs('image', $attrs);
+                $root = $this->outer($raw, 'figure', [
+                    'class' =>
+                        'wp-block-image' .
+                        (isset($attrs['sizeSlug']) ? ' size-' . $attrs['sizeSlug'] : ''),
+                ]);
                 if (
-                    $root->childNodes->length !== 1 ||
+                    $root->childNodes->length < 1 ||
+                    $root->childNodes->length > 2 ||
                     !($root->firstChild instanceof DOMElement) ||
                     $root->firstChild->tagName !== 'img'
                 ) {
                     throw new ConversionError(
-                        'IMAGE_STRUCTURE',
-                        'Image requires exactly one img element',
+                        'MEDIA_STRUCTURE',
+                        'An image directive requires exactly one ordinary Markdown image',
                     );
                 }
-                return $this->inlineNode($root->firstChild, $depth + 1);
+                $image = $root->firstChild;
+                if (isset($attrs['id'])) {
+                    if ($image->getAttribute('class') !== 'wp-image-' . $attrs['id']) {
+                        throw new ConversionError(
+                            'MEDIA_ID',
+                            'Native image attachment class and ID disagree',
+                        );
+                    }
+                    $image->removeAttribute('class');
+                }
+                if ($root->childNodes->length === 2) {
+                    $caption = $root->lastChild;
+                    if (!($caption instanceof DOMElement) || $caption->tagName !== 'figcaption') {
+                        throw new ConversionError(
+                            'MEDIA_CAPTION',
+                            'Media caption HTML must be canonical and balanced',
+                        );
+                    }
+                    $this->attrs($caption, ['class' => 'wp-element-caption']);
+                    $text = '';
+                    foreach ($caption->childNodes as $n) {
+                        $text .= $caption->ownerDocument->saveHTML($n);
+                    }
+                    $attrs = ['caption' => NativeMedia::caption($text)] + $attrs;
+                }
+                $body = $this->inlineNode($image, $depth + 1);
+                return $attrs ? NativeMedia::directive('image', $attrs, $body) : $body;
             case 'core/table':
                 if ($children !== []) {
                     throw new ConversionError(
@@ -2478,6 +2743,9 @@ final class Converter
                     : '';
                 return '![' . $alt . '](<' . $url . '>' . $title . ')';
             case 'span':
+                if (in_array($node->getAttribute('class'), ['mbb-xref', 'mbb-cite'], true)) {
+                    return Technical::reference($node->ownerDocument->saveHTML($node))['raw'];
+                }
                 if ($node->hasAttribute('data-mbb-footnote')) {
                     $label = FootnoteRegistry::label($node->getAttribute('data-mbb-footnote'));
                     $this->attrs($node, [
@@ -2545,6 +2813,7 @@ final class Converter
                         trim($error->message),
                         [
                             'Tag figure invalid',
+                            'Tag figcaption invalid',
                             'Tag section invalid',
                             'Tag details invalid',
                             'Tag summary invalid',
@@ -2574,7 +2843,24 @@ final class Converter
                 return ['text', $node->textContent];
             }
             if ($node->nodeType === XML_COMMENT_NODE) {
-                return ['comment', $node->textContent];
+                $text = $node->textContent;
+                // Match the native-gallery comparison projection in the Node kernel.
+                // Noncanonical JSON (including duplicate keys) must remain unequal.
+                if (preg_match('/^ wp:gallery (\{[\s\S]*\}) $/D', $text, $match)) {
+                    $a = json_decode($match[1]);
+                    if (
+                        $a instanceof \stdClass &&
+                        ($a->linkTo ?? null) === 'none' &&
+                        Teaching::encode($a) === $match[1]
+                    ) {
+                        unset($a->linkTo);
+                        $text =
+                            ' wp:gallery' .
+                            (get_object_vars($a) ? ' ' . Teaching::encode($a) : '') .
+                            ' ';
+                    }
+                }
+                return ['comment', $text];
             }
             if (!($node instanceof DOMElement)) {
                 throw new ConversionError('UNSAFE_HTML', 'Unexpected DOM node');

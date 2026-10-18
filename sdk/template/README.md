@@ -1,0 +1,7 @@
+# Bounded provider scaffold
+
+This GPL-3.0-or-later sample is trusted local source, not authored script. Copy the entire directory into a development WordPress plugins directory and enable it alongside MarkBridge 2.9. It registers `sdk-bounded-sum@0.1.0`; use the existing component parameter form/JSON candidate, Apply and normal paired save. Params are exactly `{ "values": [1,2,3] }` (1–32 integers, each −1000…1000). Keep the article's static explanation in innerBlocks.
+
+Build locally with Node >=24.15: `npm ci --ignore-scripts`, `npm run build`, `npm test`. No third-party build dependencies or network are required after source checkout. The manifest identifies one immutable text/plain HTML resource by SHA-256. When provider code changes, publish a new component version; never overwrite an existing type/version payload.
+
+The Worker runs only after a matching session/run grant. Stop and destruction reject late results. The provider checks the monotonic 2s budget before/after validation and before terminal output; the host independently enforces the same upper bound. Startup 5s, resource 512KiB, trace 8192 frames/512KiB and params16KiB are unchanged. No results are saved or uploaded. The reusable conformance runner executes real handler success/late/cancel cases under deterministic clocks; it is a baseline, not proof of arbitrary code safety. See the main `docs/SDK.md` for trusted author tools, static projections and permission-aware diagnostics.

@@ -63,7 +63,7 @@ test('source font setting changes only the Markdown input, preserving preview an
   const source = page.locator('#mbb-source');
   await expect(source).toHaveCSS('font-size', '18px');
   await source.fill('Before $x<3$.');
-  await page.getByLabel('标题', { exact: true }).fill('Display fixture');
+  await page.locator('#mbb-title').fill('Display fixture');
   await page.getByLabel('稳定文档 ID', { exact: true }).fill('display-fixture');
   await page.locator('#mbb-review').click();
   await expect(

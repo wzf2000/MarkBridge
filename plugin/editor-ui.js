@@ -24,10 +24,14 @@
     busy = false,
     saving = false;
   let dialog, source, title, docId, publication, status, diff, preview, save, reviewButton;
-  let editorBody, previewBody, previewToggle, editToggle;
+  let editorBody, previewBody, previewToggle, editToggle, workspace, splitToggle, sourceTools;
+  let splitView = false,
+    viewChoice = 0;
   function showPreview(visible) {
-    editorBody.hidden = visible;
-    previewBody.hidden = !visible;
+    const split = splitView && (window.matchMedia?.('(min-width: 900px)').matches ?? false);
+    workspace?.classList.toggle('mbb-workspace-split', split);
+    editorBody.hidden = !split && visible;
+    previewBody.hidden = !split && !visible;
     previewToggle.setAttribute('aria-pressed', String(visible));
     editToggle?.setAttribute('aria-pressed', String(!visible));
     if (visible && editorBody.contains(document.activeElement)) previewToggle.focus();
@@ -58,12 +62,13 @@
           "The source box was edited. Subsequent operations use the browser's textarea newlines. Check code in the difference preview.",
         );
   }
-  function setSource(value) {
+  function setSource(value, preserveHistory = false) {
     rawSource = value;
     source.value = value;
     sourceDisplay = source.value;
     normalizedSourceEOL = false;
     sourceEOLNotice();
+    if (!preserveHistory) sourceTools?.reset();
   }
   function readSource() {
     return typeof rawSource === 'string' && source.value === sourceDisplay
@@ -72,7 +77,8 @@
   }
   const frontmatterSelected = new Set();
   let resources = null;
-  let recoveryRecord = null,
+  let identityStrategy,
+    recoveryRecord = null,
     recoveryVerify = null,
     recoveryRebased = false,
     recoveryApply;
@@ -131,12 +137,21 @@
       );
       error.code = json.code;
       error.status = response.status;
+      if (
+        typeof json.data?.location === 'string' ||
+        Number.isSafeInteger(json.data?.location?.line)
+      )
+        error.location = json.data.location;
       throw error;
     }
     return json;
   }
   function invalidate() {
+    const hadCandidate = !!candidate;
     version++;
+    sourceTools?.invalidate();
+    if (hadCandidate && loaded)
+      message(T('The candidate changed. Preview the differences again before saving.'));
     candidate = null;
     candidateSource = null;
     if (save) save.disabled = true;
@@ -176,6 +191,7 @@
     return E(error) + (label ? `（${label}）` : '');
   }
   function message(text, error = false) {
+    if (dialog) window.MBB_DIAGNOSTICS?.clear(dialog);
     status.textContent = text;
     status.className = error ? 'mbb-error' : 'mbb-status';
   }
@@ -236,6 +252,7 @@
     }
     dialog.querySelector('[data-mbb-close]').disabled = false;
     resources?.render(source.readOnly || mode === 'blocks' || !!base?.source_managed, busy);
+    sourceTools?.controls(busy);
     if (mode === 'blocks' || !!base?.source_managed)
       dialog.querySelector('#mbb-upload').accept = '.md,.markdown,text/markdown,text/plain';
     else
@@ -246,6 +263,9 @@
   const isConflict = (error) => ['conflict', 'source_conflict'].includes(error.code);
   function request() {
     return {
+      ...(recoveryRecord?.identity_receipt
+        ? { identity_receipt: recoveryRecord.identity_receipt }
+        : {}),
       post_id: base?.post_id || 0,
       documentId: docId.value,
       title: title.value,
@@ -1118,15 +1138,24 @@
   async function review() {
     if (busy || (conflict && !conflict.adopted)) return;
     busy = true;
+    sourceTools?.invalidate();
     candidate = null;
     candidateSource = null;
     controls();
     message(T('The server is validating and generating a preview…'));
     const serial = version,
-      session = epoch;
+      session = epoch,
+      requestedView = viewChoice;
     let payload;
     try {
       payload = request();
+      if (window.MBBReferences?.prepareImport)
+        payload = await window.MBBReferences.prepareImport(
+          payload,
+          identityStrategy?.value || 'copy',
+          base?.document,
+        );
+      if (!active(session) || version !== serial) return;
       if (recoveryRecord) {
         await recoveryVerify();
         if (!active(session) || version !== serial) return;
@@ -1159,25 +1188,46 @@
         result.before,
         result.resource_plan?.projectedDocument.source || result.document.source,
       );
-      // Fragment-only links otherwise inherit the parent URL in a srcdoc frame.
       const previewContent = document.createElement('template');
       previewContent.innerHTML = rendered;
       await resources?.preview(result, previewContent.content);
       if (!active(session) || version !== serial) return;
-      for (const link of previewContent.content.querySelectorAll('a[href^="#"]'))
-        link.setAttribute('href', 'about:srcdoc' + link.getAttribute('href'));
-      preview.srcdoc =
-        '<!doctype html><html><head><meta charset="utf-8"><style>' +
+      const navigation =
+        mode !== 'blocks'
+          ? await sourceTools
+              ?.prepare(result.navigation, readSource(), cfg.navigationBridge)
+              .catch(() => null)
+          : null;
+      if (!active(session) || version !== serial) return;
+      // Configure the new generation before connecting it. A pending empty srcdoc
+      // navigation on the old frame must never replace this verified preview.
+      const nextPreview = preview.cloneNode(false);
+      nextPreview.setAttribute('sandbox', navigation ? 'allow-scripts' : '');
+      const previewStyles =
         MBB_MATH.style +
-        (MBB_EDITOR.footnoteStyle || '') +
-        (MBB_EDITOR.teachingStyle || '') +
-        (MBB_EDITOR.codeDisplayStyle || '') +
-        'body{font:16px/1.7 system-ui;padding:16px;overflow-wrap:anywhere}pre{overflow:auto}table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:4px}img{max-width:100%}</style></head><body>' +
-        previewContent.innerHTML +
-        '</body></html>';
+        (cfg.footnoteStyle || '') +
+        (cfg.teachingStyle || '') +
+        (cfg.technicalStyle || '') +
+        (cfg.nativeMediaStyle || '') +
+        (cfg.codeDisplayStyle || '');
+      nextPreview.srcdoc = window.MBBSourceTools
+        ? window.MBBSourceTools.frameDocument(previewContent.content, previewStyles, navigation)
+        : '<!doctype html><html><head><meta charset="utf-8"><style>' +
+          MBB_MATH.style +
+          (MBB_EDITOR.footnoteStyle || '') +
+          (MBB_EDITOR.teachingStyle || '') +
+          (MBB_EDITOR.technicalStyle || '') +
+          (MBB_EDITOR.nativeMediaStyle || '') +
+          (MBB_EDITOR.codeDisplayStyle || '') +
+          'body{font:16px/1.7 system-ui;padding:16px;overflow-wrap:anywhere}pre{overflow:auto}table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:4px}img{max-width:100%}</style></head><body data-mbb-content-view>' +
+          previewContent.innerHTML +
+          '</body></html>';
+      const previousPreview = preview;
+      preview = nextPreview;
+      previousPreview.replaceWith(nextPreview);
       candidate = payload;
       candidateSource = result.document.source;
-      showPreview(true);
+      if (viewChoice === requestedView) showPreview(true);
       conflict = null;
       conflictPanel.hidden = true;
       message(
@@ -1226,7 +1276,11 @@
           }
         }
         enterConflict(e, payload, markdown);
-      } else message(describeError(e), true);
+      } else {
+        message(describeError(e), true);
+        sourceTools?.error(e.location);
+        if (e.mbbDiagnostic) window.MBB_DIAGNOSTICS?.show(dialog, e.mbbDiagnostic);
+      }
     } finally {
       if (active(session)) {
         busy = false;
@@ -1343,6 +1397,7 @@
     dialog.addEventListener('close', () => {
       const snapshot = recoverySnapshot(true);
       rawSource = null;
+      sourceTools?.invalidate();
       sourceDisplay = '';
       normalizedSourceEOL = false;
       if (snapshot) window.MarkBridgeLocalRecovery?.changed(snapshot.kind, () => snapshot);
@@ -1472,7 +1527,16 @@
         }
       }
     };
-    upload.append(file);
+    identityStrategy = el('select', { 'aria-label': T('Logical identity handling') });
+    for (const [value, label] of [
+      ['copy', 'Copy with new identities (default)'],
+      ['migrate', 'Explicit migration retaining identities'],
+    ])
+      identityStrategy.append(el('option', { value }, T(label)));
+    identityStrategy.onchange = invalidate;
+    const identityLabel = el('label', {}, T('Logical identity handling'));
+    identityLabel.append(identityStrategy);
+    upload.append(file, identityLabel);
     dialog.append(upload);
     const resourcePanel = el('section', {
       id: 'mbb-resources',
@@ -1619,7 +1683,11 @@
     dialog.append(actions);
     status = el('p', { role: 'status' });
     diff = el('section', { 'aria-label': T('Changes') });
-    preview = el('iframe', { title: T('Built-in content preview'), sandbox: '' });
+    preview = el('iframe', {
+      title: T('Built-in content preview'),
+      sandbox: '',
+      referrerpolicy: 'no-referrer',
+    });
     conflictPanel = el('section', {
       id: 'mbb-conflict',
       'aria-labelledby': 'mbb-conflict-heading',
@@ -1711,6 +1779,40 @@
     previewBody = el('div', { id: 'mbb-preview-body', class: 'mbb-preview-body' });
     previewBody.hidden = true;
     previewBody.append(preview);
+    source.wrap = 'off';
+    sourceTools = window.MBBSourceTools?.create({
+      referenceContext: () => ({
+        post_id: base?.post_id || 0,
+        expected: base?.expected || null,
+        source_sha256: base?.source_sha256 || null,
+        documentId: docId.value,
+        title: title.value,
+        post_status: publication.value,
+        featured_media: request().featured_media,
+      }),
+      source,
+      frame: () => preview,
+      readSource,
+      applySource: (raw) => {
+        setSource(raw, true);
+        mode = 'markdown';
+        invalidate();
+      },
+      stamp: () => epoch + ':' + version,
+      canEdit: () => loaded && !busy && !source.readOnly && !source.disabled,
+      showSource: () => {
+        viewChoice++;
+        showPreview(false);
+      },
+      showPreview: () => {
+        viewChoice++;
+        showPreview(true);
+      },
+    });
+    if (sourceTools) {
+      source.before(sourceTools.tools);
+      previewBody.prepend(sourceTools.previewTools);
+    }
     previewToggle = el(
       'button',
       {
@@ -1721,7 +1823,10 @@
       },
       T('Content preview'),
     );
-    previewToggle.onclick = () => showPreview(previewBody.hidden);
+    previewToggle.onclick = () => {
+      viewChoice++;
+      showPreview(previewBody.hidden);
+    };
     editToggle = el(
       'button',
       {
@@ -1732,12 +1837,30 @@
       },
       T('Source and differences'),
     );
-    editToggle.onclick = () => showPreview(false);
+    editToggle.onclick = () => {
+      viewChoice++;
+      showPreview(false);
+    };
     const views = el('div', { class: 'mbb-dialog-views' });
     views.append(editToggle, previewToggle);
+    splitToggle = el(
+      'button',
+      { type: 'button', class: 'mbb-split-toggle', 'aria-pressed': 'false' },
+      T('Source beside preview'),
+    );
+    splitToggle.onclick = () => {
+      viewChoice++;
+      splitView = !splitView;
+      splitToggle.setAttribute('aria-pressed', String(splitView));
+      showPreview(!previewBody.hidden);
+    };
+    views.append(splitToggle);
+    window.matchMedia?.('(min-width: 900px)').addEventListener('change', () => showPreview(false));
+    workspace = el('div', { class: 'mbb-dialog-workspace' });
+    workspace.append(editorBody, previewBody);
     const footer = el('div', { class: 'mbb-dialog-footer' });
     footer.append(status, actions);
-    dialog.append(views, editorBody, previewBody, footer);
+    dialog.append(views, workspace, footer);
     document.body.append(dialog);
   }
   async function open(id, selectedMode = 'markdown') {
@@ -2030,6 +2153,7 @@
       source.hidden = mode === 'blocks';
       invalidate();
       await review();
+      return active(restorationEpoch) && recoveryRecord === record && !!candidate && !conflict;
     },
     cancel() {
       if (recoveryRecord) {
@@ -2140,6 +2264,7 @@
         panel.querySelector('summary')?.focus();
       };
       moreBody.append(h, recovery);
+      if (window.MBBWritingTools) moreBody.append(window.MBBWritingTools.native());
       bar.append(
         a,
         b,

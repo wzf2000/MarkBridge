@@ -1,4 +1,14 @@
-import { translate as T, format as F, translateError as E } from './i18n.js';
+import { activityRelations, validateActivity, activityParts } from './activities.js';
+import { mediaKinds, mediaAttributes, assembleMedia, validateMedia } from './native-media.js';
+import {
+  technicalSchemas,
+  technicalKind,
+  technicalAttributes,
+  validateTechnical,
+} from './technical.js';
+import { registerTechnical } from './technical-editor.js';
+import { createParameterEditor } from './component-parameters.js';
+import { translate as T, format as F } from './i18n.js';
 import {
   nativeAdapterKind,
   nativeAdapterName,
@@ -15,6 +25,10 @@ import { componentParams } from './component-data.js';
 import { codeTabsAttributes, codeTabsMarkdown, registerCodeTabs } from './code-tabs.js';
 // Versioned teaching syntax has a closed schema. Bodies use the ordinary parser.
 export const teachingSchemas = {
+  identity: { namespace: 'string', document: 'string' },
+  image: {},
+  gallery: {},
+  ...technicalSchemas,
   details: { summary: 'string', showContent: 'boolean' },
   buttons: {},
   button: { url: 'string' },
@@ -52,6 +66,7 @@ export const teachingKind = (name) =>
     ? name.slice(4)
     : null);
 export function teachingAttributes(kind, attrs, fail, source = false, blockName = null) {
+  if (mediaKinds.has(kind)) return mediaAttributes(kind, attrs, fail, source);
   if (nativeAdapterKinds.has(kind)) return nativeAttributes(kind, attrs, fail, source);
   if (kind === 'adapter') {
     if (source) {
@@ -70,6 +85,14 @@ export function teachingAttributes(kind, attrs, fail, source = false, blockName 
   }
   const schema = {
     ...teachingSchemas[kind],
+    ...(kind === 'component' &&
+    (attrs?.version === 2 || (source && Object.hasOwn(attrs || {}, 'activity')))
+      ? { activity: 'object' }
+      : {}),
+    ...(kind === 'bibliography' &&
+    (attrs?.version === 2 || (source && Object.hasOwn(attrs || {}, 'style')))
+      ? { style: 'string', ...(Object.hasOwn(attrs || {}, 'origins') ? { origins: 'object' } : {}) }
+      : {}),
     ...(!source ? { version: 'number' } : {}),
     ...(kind === 'code-compare' && !source ? sourceFields : {}),
   };
@@ -84,11 +107,24 @@ export function teachingAttributes(kind, attrs, fail, source = false, blockName 
       'TEACHING_ATTRIBUTES',
       'Teaching container attributes are incomplete, unknown, or have invalid types',
     );
-  if (!source && attrs.version !== 1)
+  if (
+    !source &&
+    attrs.version !== 1 &&
+    !(['bibliography', 'component'].includes(kind) && attrs.version === 2)
+  )
     fail('TEACHING_VERSION', 'The teaching block version must be 1');
   if (Object.values(attrs).some((v) => typeof v === 'string' && /[\uD800-\uDFFF]/u.test(v)))
     fail('TEACHING_ATTRIBUTES', 'Teaching attributes must be valid Unicode');
   const out = Object.fromEntries(Object.keys(schema).map((key) => [key, attrs[key]]));
+  if (kind === 'identity') {
+    if (!/^S_[a-f0-9]{32}$/.test(out.namespace) || !/^D_[a-f0-9]{32}$/.test(out.document))
+      fail(
+        'DOCUMENT_IDENTITY',
+        'A logical identity requires a closed namespace and document tuple',
+      );
+    return out;
+  }
+  if (technicalKind('mbb/' + kind)) technicalAttributes(kind, out, fail);
   if (kind === 'code-tabs') out.tabs = codeTabsAttributes(out, source, fail);
   if (!/^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(out.id))
     fail(
@@ -113,6 +149,7 @@ export function teachingAttributes(kind, attrs, fail, source = false, blockName 
     )
       fail('COMPONENT_VERSION', 'Invalid component name or version');
     componentParams(out.params, fail);
+    if (Object.hasOwn(out, 'activity')) activityRelations(out.activity, fail);
   }
   if (kind === 'steps' && (!['full', 'staged'].includes(out.mode) || out.full !== true))
     fail('TEACHING_MODE', 'Stage mode must be full/staged and the full-text entry must be enabled');
@@ -161,7 +198,7 @@ export function teachingJSON(raw, fail) {
 }
 export function validateTeachingSerialized(serialized, fail) {
   for (const m of serialized.matchAll(
-    /<!-- wp:mbb\/(collapse|steps|step|code-compare|component|code-tabs)(?: (\{[\s\S]*?\}))? -->/g,
+    /<!-- wp:mbb\/(collapse|steps|step|code-compare|component|code-tabs|object|statement|bibliography)(?: (\{[\s\S]*?\}))? -->/g,
   ))
     teachingAttributes(m[1], teachingJSON(m[2] || '{}', fail), fail);
 }
@@ -308,6 +345,7 @@ export function teachingSource(source, fail, ignored = new Set(), nonce, fences 
     for (let n = begin + 1; n <= end; n++) replacements.set(n, '');
   }
   let offset = 0;
+  let definitionBeforeBibliography = false;
   return source
     .match(/[^\r\n]*(?:\r\n|\r|\n|$)/g)
     .map((raw, index) => {
@@ -319,12 +357,20 @@ export function teachingSource(source, fail, ignored = new Set(), nonce, fences 
         return line;
       if (/^ {0,3}<!--mbb-teaching/.test(line))
         fail('TEACHING_SYNTAX', 'Reserved internal teaching markers cannot be Markdown input');
+      if (/^ {0,3}\[\^[^\]\r\n]+\]:[ \t]*:::mbb:v1 (?:object|statement) \{/.test(line))
+        fail(
+          'TECHNICAL_STRUCTURE',
+          'Technical objects and statements must not be inside footnotes',
+        );
+      if (/^ {0,3}\[\^[^\]\r\n]+\]:/.test(line)) definitionBeforeBibliography = true;
+      if (definitionBeforeBibliography && /^:::mbb:v[12] bibliography /.test(line))
+        fail('TECHNICAL_STRUCTURE', 'The bibliography must precede footnote definitions');
       if (!line.startsWith(':::mbb:')) return line;
       let data;
       if (line === ':::mbb:end') data = { end: true };
       else {
         const match =
-          /^:::mbb:v1 (collapse|steps|step|code-compare|component|code-tabs|details|buttons|button|adapter) (\{[^\r\n]*\})$/.exec(
+          /^:::mbb:v([12]) (identity|collapse|steps|step|code-compare|component|code-tabs|details|buttons|button|adapter|object|statement|bibliography|image|gallery) (\{[^\r\n]*\})$/.exec(
             line,
           );
         if (!match)
@@ -334,11 +380,27 @@ export function teachingSource(source, fail, ignored = new Set(), nonce, fences 
           );
         let attrs;
         try {
-          attrs = teachingJSON(match[2], fail);
+          attrs = teachingJSON(match[3], fail);
         } catch {
           fail('TEACHING_ATTRIBUTES', 'Teaching attributes must be a valid JSON object');
         }
-        data = { kind: match[1], attrs: teachingAttributes(match[1], attrs, fail, true) };
+        if (match[1] === '2' && !['bibliography', 'component'].includes(match[2]))
+          fail('TEACHING_VERSION', 'The teaching block version must be 1');
+        if (match[2] === 'component' && (match[1] === '2') !== Object.hasOwn(attrs, 'activity'))
+          fail(
+            'ACTIVITY_RELATION',
+            'Activity relations require a closed map of unique local static targets',
+          );
+        if (match[2] === 'bibliography' && (match[1] === '2') !== Object.hasOwn(attrs, 'style'))
+          fail(
+            'TEACHING_ATTRIBUTES',
+            'Teaching container attributes are incomplete, unknown, or have invalid types',
+          );
+        data = {
+          kind: match[2],
+          version: Number(match[1]),
+          attrs: teachingAttributes(match[2], attrs, fail, true),
+        };
       }
       const hex = [...new TextEncoder().encode(JSON.stringify(data))]
         .map((b) => b.toString(16).padStart(2, '0'))
@@ -382,6 +444,10 @@ export function assembleTeaching(blocks, make, fail) {
     if (stack.length === 1)
       fail('TEACHING_STRUCTURE', 'The teaching closing marker has no corresponding opening marker');
     const item = stack.pop();
+    if (mediaKinds.has(item.kind)) {
+      stack.at(-1).children.push(assembleMedia(item, make, fail));
+      continue;
+    }
     if (nativeAdapterKinds.has(item.kind)) {
       let attrs = nativeBlockAttributes(item.kind, item.attrs, fail);
       if (item.kind === 'button') {
@@ -415,7 +481,7 @@ export function assembleTeaching(blocks, make, fail) {
       stack.at(-1).children.push(make(a.descriptor.blockName, a.attributes, []));
       continue;
     }
-    item.attrs.version = 1;
+    item.attrs.version = item.version || 1;
     if (item.kind === 'code-tabs') {
       if (
         item.children.length !== item.attrs.tabs.length ||
@@ -450,9 +516,11 @@ export function assembleTeaching(blocks, make, fail) {
   return root;
 }
 export function validateTeaching(blocks, fail) {
+  validateMedia(blocks, fail);
   const ids = new Set();
   let count = 0;
   let groups = 0;
+  let identities = 0;
   function walk(list, parent = '', depth = 0, collapseDepth = 0, detailsDepth = 0) {
     for (const b of list) {
       if (depth > 32 || ++count > 10000)
@@ -463,6 +531,12 @@ export function validateTeaching(blocks, fail) {
         fail('TEACHING_STRUCTURE', 'A stage group may only contain stages');
       if (kind) {
         const a = teachingAttributes(kind, b.attributes, fail, false, b.name);
+        if (kind === 'component') validateActivity(b, fail);
+        if (kind === 'identity') {
+          if (depth || ++identities > 1 || inner.length)
+            fail('DOCUMENT_IDENTITY', 'A document permits one empty top-level logical identity');
+          continue;
+        }
         if (nativeAdapterKinds.has(kind) || kind === 'adapter') {
           if (kind === 'details' && detailsDepth >= 8)
             fail('ADAPTER_LIMIT', 'Native details are limited to 8 nested levels');
@@ -544,6 +618,7 @@ export function validateTeaching(blocks, fail) {
   }
   collect(blocks);
   walk(blocks);
+  validateTechnical(blocks, fail);
   if (anchors.some((id) => ids.has(id)))
     fail('TEACHING_ID', 'A teaching ID conflicts with a body anchor');
 }
@@ -572,14 +647,25 @@ export function teachingMarkdown(b, body, fail) {
     );
   }
   if (kind === 'code-tabs') return codeTabsMarkdown(a);
-  const attrs = Object.fromEntries(Object.keys(teachingSchemas[kind]).map((key) => [key, a[key]]));
+  const attrs = Object.fromEntries(
+    [
+      ...Object.keys(teachingSchemas[kind]),
+      ...(kind === 'component' && a.version === 2 ? ['activity'] : []),
+      ...(kind === 'bibliography' && a.version === 2 ? ['style'] : []),
+      ...(kind === 'bibliography' && a.version === 2 && Object.hasOwn(a, 'origins')
+        ? ['origins']
+        : []),
+    ].map((key) => [key, a[key]]),
+  );
   const code = (side) => {
     const value = a['code' + side];
     const fence = '`'.repeat(Math.max(3, ...(value.match(/`+/g) || []).map((s) => s.length + 1)));
     return fence + a['language' + side] + '\n' + value + fence + '\n\n';
   };
   return (
-    ':::mbb:v1 ' +
+    ':::mbb:v' +
+    (['bibliography', 'component'].includes(kind) ? a.version : 1) +
+    ' ' +
     kind +
     ' ' +
     JSON.stringify(attrs) +
@@ -601,86 +687,94 @@ export function registerTeaching() {
       else editor.unlockPostSaving('mbb-component-params');
     } catch {}
   };
-  const ParameterEditor = ({ value, onCommit, clientId }) => {
-    const original = JSON.stringify(value || {}, null, 2);
-    const [raw, setRaw] = wp.element.useState(drafts.get(clientId)?.raw ?? original);
-    const [error, setError] = wp.element.useState(drafts.get(clientId)?.error || '');
-    wp.element.useEffect(() => {
-      if (!drafts.has(clientId)) {
-        setRaw(original);
-        setError('');
-      }
-    }, [original]);
-    const change = (text) => {
-      setRaw(text);
-      setError('');
-      if (text === original) drafts.delete(clientId);
-      else drafts.set(clientId, { raw: text, error: '', baseline: original });
-      syncDraftLock();
+  // An Edit can remount while its block remains in the provider (notably when
+  // the editor iframe is established). Draft lifetime follows that provider's
+  // block store, rather than a particular React instance.
+  const draftRegistries = new WeakMap();
+  const draftOwners = new Map();
+  const retainDraftOwner = (registry, clientId) => {
+    let state = draftRegistries.get(registry);
+    if (!state) {
+      state = { clients: new Map(), checking: false, unsubscribe: null };
+      const release = () => {
+        if (!state.clients.size) {
+          state.unsubscribe?.();
+          draftRegistries.delete(registry);
+        }
+      };
+      const check = () => {
+        if (state.checking) return;
+        state.checking = true;
+        let changed = false;
+        try {
+          const blocks = registry.select('core/block-editor');
+          for (const [id, mounted] of state.clients) {
+            if (draftOwners.get(id) !== registry) {
+              state.clients.delete(id);
+              continue;
+            }
+            if (drafts.has(id) && !blocks.getBlock(id)) {
+              drafts.delete(id);
+              changed = true;
+            }
+            if (!mounted && !drafts.has(id)) {
+              state.clients.delete(id);
+              draftOwners.delete(id);
+            }
+          }
+          if (changed) syncDraftLock();
+          release();
+        } finally {
+          state.checking = false;
+        }
+      };
+      state.check = check;
+      draftRegistries.set(registry, state);
+      state.unsubscribe = registry.subscribe(check, 'core/block-editor');
+    }
+    draftOwners.set(clientId, registry);
+    state.clients.set(clientId, (state.clients.get(clientId) || 0) + 1);
+    return () => {
+      state.clients.set(clientId, Math.max(0, (state.clients.get(clientId) || 1) - 1));
+      state.check();
     };
-    const commit = () => {
-      try {
-        const parsed = teachingJSON(raw, (code, message) => {
-          throw new Error(message);
-        });
-        componentParams(parsed, (code, message) => {
-          throw new Error(message);
-        });
-        onCommit(parsed);
-        drafts.delete(clientId);
-        syncDraftLock();
-        setError('');
-      } catch (e) {
-        setError(E(e));
-        drafts.set(clientId, {
-          raw,
-          error: E(e),
-          baseline: drafts.get(clientId)?.baseline || original,
-        });
-        syncDraftLock();
-      }
-    };
-    return el(
-      'div',
-      {},
-      el(wp.components.TextareaControl, {
-        label: T('Parameter JSON (data only)'),
-        value: raw,
-        help:
-          (error ? error + T(' Input has not been applied. Article saving is paused.') : '') ||
-          (drafts.has(clientId)
-            ? drafts.get(clientId).baseline !== original
-              ? T(
-                  'Applied configuration changed. The current candidate is preserved and unapplied. Saving is paused.',
-                )
-              : T(
-                  'Parameters are unapplied; article saving is paused. Apply or discard them to continue.',
-                )
-            : T(
-                'Explicitly apply edits. The server validates parameters against the registered schema when saving.',
-              )),
-        onChange: change,
-      }),
-      el(wp.components.Button, { variant: 'secondary', onClick: commit }, T('Apply parameters')),
-      el(
-        wp.components.Button,
-        {
-          variant: 'tertiary',
-          onClick: () => {
-            drafts.delete(clientId);
-            syncDraftLock();
-            setRaw(original);
-            setError('');
-          },
-        },
-        T('Discard parameter input'),
-      ),
-    );
   };
+  registerTechnical({ drafts, syncDraftLock, retainDraftOwner });
+  const ParameterEditor = createParameterEditor({
+    wp,
+    drafts,
+    syncDraftLock,
+    parse: (raw) =>
+      teachingJSON(raw, (code, message) => {
+        throw Error(message);
+      }),
+  });
 
   for (const [kind, schema] of Object.entries(teachingSchemas)) {
     if (nativeAdapterKinds.has(kind) || kind === 'adapter') continue;
-    if (kind === 'code-tabs') continue;
+    if (kind === 'code-tabs' || mediaKinds.has(kind) || technicalKind('mbb/' + kind)) continue;
+    if (kind === 'identity') {
+      if (!wp.blocks.getBlockType('mbb/identity'))
+        wp.blocks.registerBlockType('mbb/identity', {
+          apiVersion: 3,
+          title: T('Logical document identity'),
+          category: 'text',
+          attributes: {
+            namespace: { type: 'string' },
+            document: { type: 'string' },
+            version: { type: 'number' },
+          },
+          supports: { inserter: false, html: false, reusable: false, customClassName: false },
+          edit: () =>
+            el(
+              'p',
+              wp.blockEditor.useBlockProps({ className: 'mbb-identity-indicator' }),
+              T('Document identity enabled'),
+            ),
+          save: () => null,
+        });
+      continue;
+    }
     const name = 'mbb/' + kind;
     if (wp.blocks.getBlockType(name)) continue;
     wp.blocks.registerBlockType(name, {
@@ -697,19 +791,19 @@ export function registerTeaching() {
       attributes: Object.fromEntries(
         Object.entries({
           ...schema,
+          ...(kind === 'component' ? { activity: 'object' } : {}),
           version: 'number',
           ...(kind === 'code-compare' ? sourceFields : {}),
         }).map(([key, type]) => [key, { type }]),
       ),
       supports: { html: false, customClassName: false, anchor: false },
       edit: ({ attributes: a, setAttributes, clientId }) => {
-        wp.element.useEffect(
-          () => () => {
-            drafts.delete(clientId);
-            syncDraftLock();
-          },
-          [],
+        const registry = wp.data.useRegistry();
+        const currentBlock = wp.data.useSelect(
+          (select) => select('core/block-editor').getBlock(clientId),
+          [clientId],
         );
+        wp.element.useEffect(() => retainDraftOwner(registry, clientId), [registry, clientId]);
         wp.element.useEffect(() => {
           const initial = a.version === undefined ? { version: 1 } : {};
           for (const [key, type] of Object.entries(schema))
@@ -753,8 +847,38 @@ export function registerTeaching() {
               ? el(ParameterEditor, {
                   key,
                   value: a.params,
+                  component: a.component,
+                  componentVersion: a.componentVersion,
+                  instanceId: a.id,
                   clientId,
-                  onCommit: (params) => setAttributes({ params }),
+                  activity: a.activity,
+                  parts: [...activityParts(currentBlock || { innerBlocks: [] })].map(([id, b]) => ({
+                    id,
+                    title: b.attributes.title,
+                    open: b.attributes.open,
+                    direct: (currentBlock?.innerBlocks || []).some(
+                      (child) => child.clientId === b.clientId,
+                    ),
+                  })),
+                  onCommit: (params, meta) => {
+                    if (meta?.activity)
+                      validateActivity(
+                        {
+                          ...registry.select('core/block-editor').getBlock(clientId),
+                          attributes: { ...a, params, version: 2, activity: meta.activity },
+                        },
+                        (code, message) => {
+                          throw Error(message);
+                        },
+                      );
+                    setAttributes({
+                      params,
+                      ...(meta?.activity ? { activity: meta.activity, version: 2 } : {}),
+                      ...(meta?.componentVersion
+                        ? { componentVersion: meta.componentVersion }
+                        : {}),
+                    });
+                  },
                 })
               : el(
                   key === 'mode'
@@ -851,6 +975,7 @@ export function registerTeaching() {
               kind === 'component'
                 ? el(wp.components.SelectControl, {
                     label: T('Registered teaching component'),
+                    disabled: !!a.activity,
                     value: (a.component || '') + '@' + (a.componentVersion || ''),
                     options: [
                       ...((window.MBBComponents || []).some(
@@ -886,7 +1011,7 @@ export function registerTeaching() {
                   })
                 : null,
               ...controls.filter((control) => !visible.includes(control.key)),
-              kind === 'component'
+              kind === 'component' && !a.activity
                 ? el(
                     'div',
                     {
@@ -945,9 +1070,11 @@ export function registerTeaching() {
               ? el(
                   'p',
                   {},
-                  (a.component || T('Choose a teaching component in the sidebar')) +
-                    ' ' +
-                    (a.componentVersion || ''),
+                  (window.MBBComponents || []).find(
+                    (p) => p.id === a.component && p.version === a.componentVersion,
+                  )?.title ||
+                    a.component ||
+                    T('Choose a teaching component in the sidebar'),
                 )
               : field('title'),
 

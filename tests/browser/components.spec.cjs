@@ -18,8 +18,8 @@ async function load(
   } = {},
 ) {
   await page.goto('/health');
-  await page.route('**/component/frame.html', (route) =>
-    route.fulfill({ contentType: 'text/html', body: html }),
+  await page.route('**/component/frame-123456789abc.html.txt', (route) =>
+    route.fulfill({ contentType: 'text/plain', body: html }),
   );
   const config = {
     status,
@@ -41,7 +41,10 @@ async function load(
         ...budgets,
       },
       title: 'Fixed fixture',
-      resource: { url: new URL('/component/frame.html', page.url()).href, sha256: digest },
+      resource: {
+        url: new URL('/component/frame-123456789abc.html.txt', page.url()).href,
+        sha256: digest,
+      },
     },
   };
   await page.setContent(
@@ -90,10 +93,16 @@ test('generic fixed provider uses opaque iframe, enforced CSP and public data, r
   await frame.locator('#run').click();
   await expect(frame.locator('#status')).toHaveText('Complete');
   expect(await page.evaluate(() => MarkBridgeComponents.activeCount())).toBe(0);
+  await expect(page.locator('.mbb-component-status')).toHaveClass(/mbb-component-complete/);
   await page.getByRole('button', { name: '关闭交互预览' }).click();
   await expect(page.locator('iframe')).toHaveCount(0);
   await expect(page.getByRole('button', { name: '启动交互演示' })).toBeFocused();
   await expect(page.locator('.fallback')).toBeVisible();
+  await expect(page.locator('[role=status]')).toBeEmpty();
+  await expect(page.getByRole('button', { name: '启动交互演示' })).toHaveAttribute(
+    'aria-expanded',
+    'false',
+  );
 });
 test('missing provider, 404 and failed digest remain static and support explicit retry', async ({
   page,
@@ -103,12 +112,14 @@ test('missing provider, 404 and failed digest remain static and support explicit
   await expect(page.locator('[role=status]')).toContainText('组件缺失');
   await expect(page.locator('iframe')).toHaveCount(0);
   await load(page);
-  await page.route('**/component/frame.html', (r) => r.fulfill({ status: 404, body: 'Missing' }));
+  await page.route('**/component/frame-123456789abc.html.txt', (r) =>
+    r.fulfill({ status: 404, body: 'Missing' }),
+  );
   await page.getByRole('button', { name: '启动交互演示' }).click();
   await expect(page.locator('[role=status]')).toContainText('资源不可用');
-  await page.unroute('**/component/frame.html');
-  await page.route('**/component/frame.html', (r) =>
-    r.fulfill({ contentType: 'text/html', body: html }),
+  await page.unroute('**/component/frame-123456789abc.html.txt');
+  await page.route('**/component/frame-123456789abc.html.txt', (r) =>
+    r.fulfill({ contentType: 'text/plain', body: html }),
   );
   await page.getByRole('button', { name: '启动交互演示' }).click();
   await expect(page.frameLocator('iframe').locator('#status')).toHaveText('Ready');
@@ -264,7 +275,7 @@ test('bounded streaming and initialization timeout fail without losing static co
   page,
 }) => {
   await load(page);
-  await page.route('**/component/frame.html', (route) =>
+  await page.route('**/component/frame-123456789abc.html.txt', (route) =>
     route.fulfill({ contentType: 'text/html', body: 'x'.repeat(512 * 1024 + 1) }),
   );
   await page.getByRole('button', { name: '启动交互演示' }).click();
@@ -280,7 +291,7 @@ test('bounded streaming and initialization timeout fail without losing static co
     window.MBBComponents[0].resource.sha256 = digest;
     node.dataset.mbbTeachingConfig = JSON.stringify(cfg);
   }, digest);
-  await page.route('**/component/frame.html', (route) =>
+  await page.route('**/component/frame-123456789abc.html.txt', (route) =>
     route.fulfill({ contentType: 'text/html', body: broken }),
   );
   await page.getByRole('button', { name: '启动交互演示' }).click();
@@ -349,7 +360,8 @@ test('over-budget summaries and messages terminate the session without removing 
         ),
       beforeRun,
     );
-  await expect(page.locator('[role=status]')).toContainText('已就绪');
+  await expect(page.locator('[data-mbb-component-state=ready]')).toHaveCount(1);
+  await expect(page.locator('[role=status]')).toBeEmpty();
   const frame = page.frameLocator('iframe');
   await frame.locator('#run').click();
   await expect(frame.locator('#status')).toHaveText('Running');
@@ -482,7 +494,8 @@ async function transport(page, mode) {
     const nativeFetch = window.fetch;
     window.resourceRequests = [];
     window.fetch = async (url, options) => {
-      if (!String(url).includes('/component/frame.html')) return nativeFetch(url, options);
+      if (!String(url).includes('/component/frame-123456789abc.html.txt'))
+        return nativeFetch(url, options);
       if (!resourceRequests.length) window.resourceStarted = performance.now();
       const record = { method: options.method || 'GET', aborted: false };
       resourceRequests.push(record);
@@ -537,14 +550,14 @@ test('fast resources and definite HTTP, redirect, digest and size failures never
       ...(outcome === 'size' ? { budgets: { resourceBytes: 100 } } : {}),
     });
     let calls = 0;
-    await page.route('**/component/frame.html', (route) => {
+    await page.route('**/component/frame-123456789abc.html.txt', (route) => {
       calls++;
       return route.fulfill(
         outcome === '404'
           ? { status: 404, body: 'Missing' }
           : outcome === 'redirect'
             ? { status: 302, headers: { location: '/health' } }
-            : { contentType: 'text/html', body: html },
+            : { contentType: 'text/plain', body: html },
       );
     });
     await page.getByRole('button', { name: '启动交互演示' }).click();
@@ -651,4 +664,44 @@ test('late iframe load callbacks cannot initialize or kill a replacement preview
   await page.locator('iframe').evaluate((frame) => frame.onload());
   await expect(page.locator('iframe')).toHaveCount(0);
   await expect(page.locator('[role=status]')).toContainText('未授权导航');
+});
+
+test('activity controls follow all direct prompt and option bodies when role order differs from DOM order', async ({
+  page,
+}) => {
+  await load(page);
+  await page.evaluate(() => {
+    const node = document.getElementById('demo-0'),
+      config = JSON.parse(node.dataset.mbbTeachingConfig);
+    config.activity = {
+      schema: 1,
+      prompt: 'question',
+      options: [
+        { key: 'c', target: 'option-c' },
+        { key: 'b', target: 'option-b' },
+        { key: 'a', target: 'option-a' },
+      ],
+      hints: ['hint'],
+      feedback: { correct: 'yes', incorrect: 'no' },
+      explanation: 'solution',
+    };
+    config.provider.activityVersion = 1;
+    node.innerHTML =
+      '<div class="mbb-teaching-body">' +
+      ['question', 'option-a', 'option-b', 'option-c', 'hint', 'yes', 'no', 'solution']
+        .map((id) => '<section id="' + id + '"><p>' + id + '</p></section>')
+        .join('') +
+      '</div>';
+    node.dataset.mbbTeachingConfig = JSON.stringify(config);
+    MarkBridgeComponents.scan();
+  });
+  const controls = page.locator('#demo-0 > .mbb-teaching-body > .mbb-component-controls');
+  await expect(controls).toBeVisible();
+  expect(await controls.evaluate((n) => n.previousElementSibling.id)).toBe('option-c');
+  expect(await controls.evaluate((n) => n.nextElementSibling.id)).toBe('hint');
+  expect(
+    await page
+      .locator('#demo-0 > .mbb-teaching-body > section')
+      .evaluateAll((list) => list.map((n) => n.id)),
+  ).toEqual(['question', 'option-a', 'option-b', 'option-c', 'hint', 'yes', 'no', 'solution']);
 });

@@ -1,0 +1,333 @@
+{
+  "cases": [
+    {
+      "name": "structured-person-institution-all-fields",
+      "input": "[{\"id\":\"Paper\",\"type\":\"article-journal\",\"title\":\"Explicit metadata\",\"author\":[{\"family\":\"Lovelace\",\"given\":\"Ada\",\"non-dropping-particle\":\"de\",\"suffix\":\"Jr.\"},{\"literal\":\"研究机构\"}],\"issued\":{\"date-parts\":[[2024,2,29]]},\"container-title\":\"Proceedings\",\"publisher\":\"Press\",\"volume\":0,\"issue\":2,\"page\":\"1–9\",\"DOI\":\"10.1234/example\",\"URL\":\"https://example.org/paper\",\"ISBN\":\"123\",\"ISSN\":\"456\",\"PMID\":\"789\",\"PMCID\":\"PMC1\",\"source\":\"Author supplied source\"}]"
+    },
+    {
+      "name": "literal-date-and-raw-names",
+      "input": "[{\"id\":\"Old\",\"type\":\"book\",\"title\":\"A & B <text> 😀\",\"author\":[{\"literal\":\"Ludwig van Beethoven\"}],\"issued\":{\"literal\":\"Spring 2026\"}}]"
+    },
+    {
+      "name": "numeric-id-proposes-key",
+      "input": "[{\"id\":42,\"type\":\"dataset\",\"title\":\"Dataset\"}]"
+    },
+    {
+      "name": "explicit-key-map",
+      "input": "[{\"id\":\"10.1234/source\",\"type\":\"report\",\"title\":\"Mapped\"}]",
+      "keyMap": {
+        "0": "MappedReport"
+      }
+    },
+    {
+      "name": "unsupported-fields-visible",
+      "input": "[{\"id\":\"Paper\",\"type\":\"article-journal\",\"title\":\"Explicit metadata\",\"author\":[{\"family\":\"Doe\",\"given\":\"Jane\",\"ORCID\":\"unregistered\"}],\"issued\":{\"date-parts\":[[2026]],\"circa\":true},\"container-title\":\"Proceedings\",\"publisher\":\"Press\",\"volume\":0,\"issue\":2,\"page\":\"1–9\",\"DOI\":\"10.1234/example\",\"URL\":\"https://example.org/paper\",\"ISBN\":\"123\",\"ISSN\":\"456\",\"PMID\":\"789\",\"PMCID\":\"PMC1\",\"source\":\"Author supplied source\",\"abstract\":\"Not retained\",\"language\":\"en\"}]"
+    },
+    {
+      "name": "raw-date-loss",
+      "input": "[{\"id\":\"A\",\"type\":\"software\",\"title\":\"Raw date\",\"issued\":{\"raw\":\"Spring 2026\",\"season\":1}}]"
+    },
+    {
+      "name": "string-date-parts",
+      "input": "[{\"id\":\"Paper\",\"type\":\"article-journal\",\"title\":\"Explicit metadata\",\"author\":[{\"family\":\"Lovelace\",\"given\":\"Ada\",\"non-dropping-particle\":\"de\",\"suffix\":\"Jr.\"},{\"literal\":\"研究机构\"}],\"issued\":{\"date-parts\":[[\"2024\",\"02\",\"29\"],[\"2025\",\"03\"]]},\"container-title\":\"Proceedings\",\"publisher\":\"Press\",\"volume\":0,\"issue\":2,\"page\":\"1–9\",\"DOI\":\"10.1234/example\",\"URL\":\"https://example.org/paper\",\"ISBN\":\"123\",\"ISSN\":\"456\",\"PMID\":\"789\",\"PMCID\":\"PMC1\",\"source\":\"Author supplied source\"}]"
+    },
+    {
+      "name": "safe-float-numbers",
+      "input": "[{\"id\":42.0,\"type\":\"book\",\"title\":\"T\",\"volume\":2.0,\"issued\":{\"date-parts\":[[2024.0,2.0,29.0]]}}]"
+    },
+    {
+      "name": "utf8-bom",
+      "input": "﻿[{\"id\": \"BOM\", \"type\": \"document\", \"title\": \"T\"}]"
+    },
+    {
+      "name": "unsupported-type",
+      "input": "[{\"id\":\"A\",\"type\":\"legal_case\",\"title\":\"T\"}]",
+      "reject": true
+    },
+    {
+      "name": "invalid-leap",
+      "input": "[{\"id\":\"Paper\",\"type\":\"article-journal\",\"title\":\"Explicit metadata\",\"author\":[{\"family\":\"Lovelace\",\"given\":\"Ada\",\"non-dropping-particle\":\"de\",\"suffix\":\"Jr.\"},{\"literal\":\"研究机构\"}],\"issued\":{\"date-parts\":[[2023,2,29]]},\"container-title\":\"Proceedings\",\"publisher\":\"Press\",\"volume\":0,\"issue\":2,\"page\":\"1–9\",\"DOI\":\"10.1234/example\",\"URL\":\"https://example.org/paper\",\"ISBN\":\"123\",\"ISSN\":\"456\",\"PMID\":\"789\",\"PMCID\":\"PMC1\",\"source\":\"Author supplied source\"}]",
+      "reject": true
+    },
+    {
+      "name": "invalid-month",
+      "input": "[{\"id\":\"Paper\",\"type\":\"article-journal\",\"title\":\"Explicit metadata\",\"author\":[{\"family\":\"Lovelace\",\"given\":\"Ada\",\"non-dropping-particle\":\"de\",\"suffix\":\"Jr.\"},{\"literal\":\"研究机构\"}],\"issued\":{\"date-parts\":[[2024,13]]},\"container-title\":\"Proceedings\",\"publisher\":\"Press\",\"volume\":0,\"issue\":2,\"page\":\"1–9\",\"DOI\":\"10.1234/example\",\"URL\":\"https://example.org/paper\",\"ISBN\":\"123\",\"ISSN\":\"456\",\"PMID\":\"789\",\"PMCID\":\"PMC1\",\"source\":\"Author supplied source\"}]",
+      "reject": true
+    },
+    {
+      "name": "ambiguous-date",
+      "input": "[{\"id\":\"Paper\",\"type\":\"article-journal\",\"title\":\"Explicit metadata\",\"author\":[{\"family\":\"Lovelace\",\"given\":\"Ada\",\"non-dropping-particle\":\"de\",\"suffix\":\"Jr.\"},{\"literal\":\"研究机构\"}],\"issued\":{\"literal\":\"2026\",\"date-parts\":[[2026]]},\"container-title\":\"Proceedings\",\"publisher\":\"Press\",\"volume\":0,\"issue\":2,\"page\":\"1–9\",\"DOI\":\"10.1234/example\",\"URL\":\"https://example.org/paper\",\"ISBN\":\"123\",\"ISSN\":\"456\",\"PMID\":\"789\",\"PMCID\":\"PMC1\",\"source\":\"Author supplied source\"}]",
+      "reject": true
+    },
+    {
+      "name": "null-name-part",
+      "input": "[{\"id\":\"Paper\",\"type\":\"article-journal\",\"title\":\"Explicit metadata\",\"author\":[{\"family\":\"Doe\",\"given\":null}],\"issued\":{\"date-parts\":[[2024,2,29]]},\"container-title\":\"Proceedings\",\"publisher\":\"Press\",\"volume\":0,\"issue\":2,\"page\":\"1–9\",\"DOI\":\"10.1234/example\",\"URL\":\"https://example.org/paper\",\"ISBN\":\"123\",\"ISSN\":\"456\",\"PMID\":\"789\",\"PMCID\":\"PMC1\",\"source\":\"Author supplied source\"}]",
+      "reject": true
+    },
+    {
+      "name": "missing-title",
+      "input": "[{\"id\":\"A\",\"type\":\"document\"}]",
+      "reject": true
+    },
+    {
+      "name": "duplicate-ids",
+      "input": "[{\"id\":1,\"type\":\"book\",\"title\":\"A\"},{\"id\":\"1\",\"type\":\"book\",\"title\":\"B\"}]",
+      "reject": true
+    },
+    {
+      "name": "proposed-key-conflict",
+      "input": "[{\"id\":1,\"type\":\"book\",\"title\":\"A\"},{\"id\":\"reference-1\",\"type\":\"book\",\"title\":\"B\"}]",
+      "reject": true
+    },
+    {
+      "name": "credential-url",
+      "input": "[{\"id\":\"Paper\",\"type\":\"article-journal\",\"title\":\"Explicit metadata\",\"author\":[{\"family\":\"Lovelace\",\"given\":\"Ada\",\"non-dropping-particle\":\"de\",\"suffix\":\"Jr.\"},{\"literal\":\"研究机构\"}],\"issued\":{\"date-parts\":[[2024,2,29]]},\"container-title\":\"Proceedings\",\"publisher\":\"Press\",\"volume\":0,\"issue\":2,\"page\":\"1–9\",\"DOI\":\"10.1234/example\",\"URL\":\"https://user:secret@example.org/\",\"ISBN\":\"123\",\"ISSN\":\"456\",\"PMID\":\"789\",\"PMCID\":\"PMC1\",\"source\":\"Author supplied source\"}]",
+      "reject": true
+    },
+    {
+      "name": "doi-url-rejected",
+      "input": "[{\"id\":\"Paper\",\"type\":\"article-journal\",\"title\":\"Explicit metadata\",\"author\":[{\"family\":\"Lovelace\",\"given\":\"Ada\",\"non-dropping-particle\":\"de\",\"suffix\":\"Jr.\"},{\"literal\":\"研究机构\"}],\"issued\":{\"date-parts\":[[2024,2,29]]},\"container-title\":\"Proceedings\",\"publisher\":\"Press\",\"volume\":0,\"issue\":2,\"page\":\"1–9\",\"DOI\":\"https://doi.org/10.1234/x\",\"URL\":\"https://example.org/paper\",\"ISBN\":\"123\",\"ISSN\":\"456\",\"PMID\":\"789\",\"PMCID\":\"PMC1\",\"source\":\"Author supplied source\"}]",
+      "reject": true
+    },
+    {
+      "name": "identifier-not-text",
+      "input": "[{\"id\":\"Paper\",\"type\":\"article-journal\",\"title\":\"Explicit metadata\",\"author\":[{\"family\":\"Lovelace\",\"given\":\"Ada\",\"non-dropping-particle\":\"de\",\"suffix\":\"Jr.\"},{\"literal\":\"研究机构\"}],\"issued\":{\"date-parts\":[[2024,2,29]]},\"container-title\":\"Proceedings\",\"publisher\":\"Press\",\"volume\":0,\"issue\":2,\"page\":\"1–9\",\"DOI\":\"10.1234/example\",\"URL\":\"https://example.org/paper\",\"ISBN\":123,\"ISSN\":\"456\",\"PMID\":\"789\",\"PMCID\":\"PMC1\",\"source\":\"Author supplied source\"}]",
+      "reject": true
+    },
+    {
+      "name": "root-object",
+      "input": "{\"id\":\"Paper\",\"type\":\"article-journal\",\"title\":\"Explicit metadata\",\"author\":[{\"family\":\"Lovelace\",\"given\":\"Ada\",\"non-dropping-particle\":\"de\",\"suffix\":\"Jr.\"},{\"literal\":\"研究机构\"}],\"issued\":{\"date-parts\":[[2024,2,29]]},\"container-title\":\"Proceedings\",\"publisher\":\"Press\",\"volume\":0,\"issue\":2,\"page\":\"1–9\",\"DOI\":\"10.1234/example\",\"URL\":\"https://example.org/paper\",\"ISBN\":\"123\",\"ISSN\":\"456\",\"PMID\":\"789\",\"PMCID\":\"PMC1\",\"source\":\"Author supplied source\"}",
+      "reject": true
+    },
+    {
+      "name": "empty-records",
+      "input": "[]",
+      "reject": true
+    },
+    {
+      "name": "duplicate-json-key",
+      "input": "[{\"id\":\"A\",\"type\":\"book\",\"title\":\"A\",\"title\":\"B\"}]",
+      "reject": true
+    },
+    {
+      "name": "duplicate-nested-key",
+      "input": "[{\"id\":\"A\",\"type\":\"book\",\"title\":\"A\",\"author\":[{\"literal\":\"A\",\"literal\":\"B\"}]}]",
+      "reject": true
+    },
+    {
+      "name": "unpaired-unicode",
+      "input": "[{\"id\":\"A\",\"type\":\"book\",\"title\":\"\\ud800\"}]",
+      "reject": true
+    },
+    {
+      "name": "invalid-key-map",
+      "input": "[{\"id\":\"A\",\"type\":\"book\",\"title\":\"A\"}]",
+      "keyMap": {
+        "01": "Renamed"
+      },
+      "reject": true
+    },
+    {
+      "name": "url-ipv4",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"http://192.0.2.1:00080/a?b=1#c\"}]"
+    },
+    {
+      "name": "url-ipv4-final-dot",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://192.0.2.1./\"}]"
+    },
+    {
+      "name": "url-ipv6-compressed",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://[2001:db8::1]:65535/a\"}]"
+    },
+    {
+      "name": "url-ipv6-full",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://[2001:db8:0:0:0:0:0:1]/\"}]"
+    },
+    {
+      "name": "url-ipv6-mapped",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://[::ffff:192.0.2.1]/\"}]"
+    },
+    {
+      "name": "url-ipv6-zero",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://[::]:0/\"}]"
+    },
+    {
+      "name": "url-unicode-host",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://例子.测试/文献\"}]"
+    },
+    {
+      "name": "url-encoded-host",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://%E4%BE%8B%E5%AD%90.test/\"}]"
+    },
+    {
+      "name": "url-host-port-limit",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://example.org:65535/\"}]"
+    },
+    {
+      "name": "url-invalid-ipv6",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://[invalid]/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-invalid-ipv4",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://123.123.123.999/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-short-ipv4",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://127.1/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-leading-zero-ipv4",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://192.00.2.1/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-empty-port",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://example.org:/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-overflow-port",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://example.org:65536/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-negative-port",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://example.org:-1/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-encoded-credentials",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://user%40example.org/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-invalid-percent-host",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://example%zz.org/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-invalid-utf8-host",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://%FF.org/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-encoded-slash-host",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://example%2forg/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-ipv6-zone",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://[fe80::1%25eth0]/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-ipv6-multiple-compression",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://[2001::db8::1]/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-ipv6-extra-group",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://[1:2:3:4:5:6:7:8:9]/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-ipv6-trailing-after-v4",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://[192.0.2.1::]/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-ipv6-v4-too-many",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://[1:2:3:4:5:6:7:192.0.2.1]/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-backslash-host",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://example.org\\\\other/\"}]",
+      "reject": true
+    },
+    {
+      "name": "url-space-path",
+      "input": "[{\"id\":\"URL\",\"type\":\"webpage\",\"title\":\"URL admission\",\"URL\":\"https://example.org/a b\"}]",
+      "reject": true
+    },
+    {
+      "name": "key-map-array",
+      "input": "[{\"id\":\"A\",\"type\":\"book\",\"title\":\"T\"}]",
+      "keyMap": {
+        "0": ["Paper"]
+      },
+      "reject": true
+    },
+    {
+      "name": "key-map-true",
+      "input": "[{\"id\":\"A\",\"type\":\"book\",\"title\":\"T\"}]",
+      "keyMap": {
+        "0": true
+      },
+      "reject": true
+    },
+    {
+      "name": "key-map-false",
+      "input": "[{\"id\":\"A\",\"type\":\"book\",\"title\":\"T\"}]",
+      "keyMap": {
+        "0": false
+      },
+      "reject": true
+    },
+    {
+      "name": "key-map-number",
+      "input": "[{\"id\":\"A\",\"type\":\"book\",\"title\":\"T\"}]",
+      "keyMap": {
+        "0": 12
+      },
+      "reject": true
+    },
+    {
+      "name": "key-map-object",
+      "input": "[{\"id\":\"A\",\"type\":\"book\",\"title\":\"T\"}]",
+      "keyMap": {
+        "0": {}
+      },
+      "reject": true
+    },
+    {
+      "name": "key-map-null",
+      "input": "[{\"id\":\"A\",\"type\":\"book\",\"title\":\"T\"}]",
+      "keyMap": {
+        "0": null
+      },
+      "reject": true
+    },
+    {
+      "name": "safe-integer-exponent-decimal",
+      "input": "[{\"id\":1e15,\"type\":\"book\",\"title\":\"T\",\"volume\":1e15,\"issue\":-0.0,\"page\":9.007199254740991e15}]"
+    },
+    {
+      "name": "safe-integer-negative-exponent",
+      "input": "[{\"id\":-9.007199254740991e15,\"type\":\"book\",\"title\":\"T\",\"volume\":-1e15,\"issue\":9007199254740991,\"page\":-9007199254740991}]"
+    },
+    {
+      "name": "safe-integer-zero-id",
+      "input": "[{\"id\":-0.0,\"type\":\"book\",\"title\":\"T\",\"volume\":0.0,\"issue\":-0.0,\"page\":0e2}]"
+    },
+    {
+      "name": "safe-integer-equivalent-id-duplicate",
+      "input": "[{\"id\":1e15,\"type\":\"book\",\"title\":\"A\"},{\"id\":\"1000000000000000\",\"type\":\"book\",\"title\":\"B\"}]",
+      "reject": true
+    },
+    {
+      "name": "unsafe-integer-exponent",
+      "input": "[{\"id\":9.007199254740992e15,\"type\":\"book\",\"title\":\"T\"}]",
+      "reject": true
+    },
+    {
+      "name": "unsafe-numeric-publication",
+      "input": "[{\"id\":\"A\",\"type\":\"book\",\"title\":\"T\",\"volume\":9.007199254740992e15}]",
+      "reject": true
+    }
+  ],
+  "invalidEntryKeys": [["Paper"], true, false, 12, {}, null]
+}

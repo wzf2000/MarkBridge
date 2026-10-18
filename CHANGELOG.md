@@ -1,5 +1,219 @@
 # Changelog
 
+## 3.0.0-rc.6
+
+- 修复 WebKit 中旧空预览导航偶发覆盖新内容：每次验证完成后以独立 iframe 交接，保留沙箱、来源与会话校验，并拒绝退役窗口的消息。
+- Reuse the existing trusted teaching stylesheet in scriptless revision previews so internal parameter carriers stay hidden, preserving exact HTML, authored fallback, formula content and restoration payloads.
+
+## 3.0.0-rc.5
+
+- Strip bounded generated CHTML collapse bookkeeping on the pinned `mjx-msubsup` node as well as `mjx-math`, preserving subscript/superscript formulas in static HTML and publication clients.
+- Keep authored attributes, other node types, invalid metadata syntax and over-budget values rejected; retain the candidate documentation alignment.
+
+## 3.0.0-rc.4
+
+- Align current candidate documentation and validation scope without changing application behavior or client assets.
+
+## 3.0.0-rc.3
+
+- Plan collection image resources separately from Markdown ZIP admission, supporting native images and galleries with local attachment IDs while preserving external-image links.
+- Retain attachment ownership, current permissions, file/path/digest checks and unchanged ZIP/portable ZIP safety boundaries; do not alter saved source or media relationships.
+
+## 3.0.0-rc.2
+
+- Treat inherited JavaScript object method names as unknown display labels, preserving readable fallback for valid schema keys such as `toString` and all original parameter data.
+
+## 3.0.0-rc.1
+
+- Freeze the integrated paired-writing, references, bibliography, collection and trusted SDK candidate without adopting resource-v2/WASM research.
+- Show registered component titles, readable field labels and one-based array items; retain exact configuration in closed advanced details and improve narrow numeric controls.
+- Correct SDK sample bar groups to equal row spacing for sparse numeric x, preserving numerical line/scatter coordinates and the original params.
+- Keep completion announcements available to assistive technology without repeating a visible result paragraph; wrap catalog resource digests.
+- Align current user documentation, supported dependency floors and upgrade/downgrade guidance.
+
+## 2.9.0-rc.6
+
+- Keep component author callbacks live after same-value changes/consumption and repeated clicks on the active editor mode. Preserve explicit clean Apply/Discard session rotation.
+
+## 2.9.0-rc.5
+
+- Let trusted component authors retain bounded local table/CSV input in the existing in-memory candidate and Save lock, with explicit atomic preparation or discard. Preserve mode/remount drafts and reject obsolete tool sessions/baselines.
+
+## 2.9.0-rc.4
+
+- Accept `-rc.N` minimum-core declarations for trusted components and extension manifests, alongside existing stable and `-dev.N` floors. Keep PHP version comparison and plain exact component versions unchanged.
+
+## 2.9.0-rc.3
+
+- Add a queued, bounded Presentation MathML projection API using the existing MathJax 4.1.3 engine, without accepting authored MathML or requiring a server renderer.
+- Bind exported formulas to validated engine nodes; retain generated-view markers for publication navigation filtering.
+- Let trusted publication clients describe their download filename and concise format controls; keep the existing snapshot/final authorization chain.
+
+## 2.9.0-rc.2
+
+- Compare front-end derived views with a fresh persisted baseline, accounting only for WordPress’s authorized draft/pending preview date projection. Keep all other field, metadata, session and final permission checks.
+- Add real core preview-date, mutation/revocation and password-form regressions; no provider resources or extension APIs change.
+
+## 2.9.0-rc.1
+
+- Add bounded generic author-tool registration and consolidated exact-version extension diagnostics with permission-scoped usage.
+- Add trusted typed-tree static projections for default PHP reading, no-script single HTML and collection publication; retain canonical params and quiet legacy fallback.
+- Guard all legacy/activity grants and terminal messages with monotonic deadlines, preserving ready reader interaction and immutable provider resources.
+- Ship runnable SDK provider/conformance and a separate static bridge for the frozen chart research sample.
+
+## 2.8.0-rc.8
+
+- 原生托管保存仅在原始组件与预备组件的实际 core 投影完整一致时恢复原块注释字节，兼容小数指数写法与空对象投影；不恢复 HTML、真正配置或结构变化，不放宽转换器规范和最终 256 KiB 上限。
+- 新增真实 core parser／serializer／KSES 的 PHP／Node 对照、嵌套、拒绝路径和临界大小回归；旧候选包保留。
+
+## 2.8.0-rc.7
+
+- 新增显式 v2 活动关系：题意、选项、分层提示、反馈和完整解释只保存在静态子块中；缺扩展时核心仍校验同实例关系，保留未变配置和普通正文编辑。旧 v1 不补字段、不自动升级。
+- 作者规则与关系共用未应用候选，一次 Apply／原生撤销；文章内课程工作台支持插入、定位和带新身份复制，内部 DOM 锚点与对象引用分别映射，代码和外部引用意图保留。
+- 读者仅获得当前会话准许的静态目标句柄；初始化与授权终态同步检查期限，ready 思考不设五秒寿命，关闭／销毁后的迟到消息失效。全文、静态 HTML 和打印保留完整题意与解释，不输出临时作答。
+- 补齐中文网页书下载按钮翻译；原有内容、资源、运行与导出预算保持。
+
+## 2.8.0-rc.6
+
+- 静态 HTML 保留固定 MathJax CHTML 为操作符字形生成的 `mjx-c noic="true"`，使含 `\operatorname{KL}` 的公式标题与正文可完成离线导出。仅允许排版后该精确节点／值，不放行作者原始标记或任意同名属性。
+- 增加真实数学配置、错误值／节点和保留合成快照的完整 Publisher 投影回归；不修改服务端出流或最终授权业务。
+
+## 2.8.0-rc.5
+
+- 文集流与作者端最终 JSON 授权在核心 CORS 头过滤器之后输出，避免带 Origin 的真实 REST 请求触发已发送正文后的 header 警告。
+- 新鲜权限／会话／数据核验仍在实际输出前；增加同一 filter 链顺序模型与真实 Origin 保存测试入口。
+
+## 2.8.0-rc.4
+
+- 文集支持受信作者端导出适配器：不消费的输入流、静态预览及绑定快照／精确代码资源／产物摘要的最终下载授权。
+- 授权在真实 JSON 输出前、消费 CAS 后再次复核会话、权限、文章、资源和外部公开目标；不上传 HTML，不更改文章配对。
+- 静态表格保留安全的 headers／scope，供整本标识关联重写；已有单章及集合预算保持。
+
+## 2.8.0-rc.3
+
+- 修正真实文集测试的标题变动夹具：通过现有 preview／配对 save 及其票据修改与恢复标题，先确认实际变动再断言旧快照失效。此前裸 wp_update_post 被配对 guard 拒绝，不能作为失效证据；产品保护与断言未放宽。rc.2 包保持不变。
+
+## 2.8.0-rc.2
+
+- 文集正式候选前补核 Companion 系列导入的全部章节末尾权限与数据指纹，阻断后章转换期间前章失权仍返回配置候选；模型覆盖原排序、空系列、禁用与候选上限。rc.1 固定包保留，未交付安装或标记实际验收通过。
+
+## 2.8.0-rc.1
+
+- 新增作者文集引用配置、Companion 系列一次导入与闭合不可变快照；配置不复制正文。
+- 逐篇编辑权限和会话、数据、资源、渲染器指纹保护 prepare/confirm/流式 download；限定引用范围，未选私人目标不进入输出。
+- 私有有界槽、惰性回收和受信出版适配器 v1；本期 ZIP 是快照接口，尚不是完整网站或打印排版。
+
+## 2.7.0-rc.7
+
+- 文献 v2 增加显式可选的来源版本声明，双后端使用同一内容摘要规范；旧文献不补空字段，删除与引用键重命名同步处理来源。
+- 为独立 Scholarly Tools 提供当前未应用文献候选入口；库版本与 DOI 查询不会旁路正文保存，来源失配保留文章快照并提示本地修改。
+
+## 2.7.0-rc.6
+
+- 文献 v2 的稳定键必须为字符串，拒绝 JavaScript 正则曾隐式接受的数组／布尔值；补充原始条目及显式 CSL 键映射的双后端负夹具。
+- 统一受限 CSL 安全整数的十进制文本及负零规范，避免 PHP 科学计数法与 Node 的键映射／卷期页不一致；不扩大允许类型。
+- 修正真实保存测试夹具的原生区块边界换行、历史恢复票据及现有来源同步入口；未放宽产品的往返或资源保护。
+
+## 2.7.0-rc.5
+
+- 收敛新文献 v2 的 HTTP(S) URL authority、IPv4／IPv6 与端口校验，PHP／Node 使用同一有界规则；保留原始 URL，不进行 DNS／IDNA 改写或网络请求。旧 v1 原文及历史不变，不能安全升级的 URL 明确拒绝候选。
+
+## 2.7.0-rc.4
+
+- 新增闭合文献 v2：有界类型、明确人名／机构、出版日期、刊物、卷期页、DOI／URL／标识符；原 v1 六字段和引用标记保持，升级只生成显式候选。
+- CSL-JSON 采用有限子集，预览字段损失与键映射，明确确认后进入共享文献候选；重复键、已引用键删除和旧预览均拒绝，支持子集导出。无联网查询、资料库或完整 CSL 引擎。
+- 作者—年份与数字两种固定样式复用前台／预览／静态 HTML 渲染，完整字段参与正常双格式、原生、修订与来源保存链。
+
+## 2.7.0-rc.3
+
+- 批量确认资源 ZIP 时转交同次预览的 FrontMatter 收据，使未采纳的元数据提案也保持资源绑定一致；不自动采纳发布提案。
+- 收紧手机工具栏说明文字的隐藏规则，保留嵌套引用选择器的目标／文章名称。
+- 逻辑身份复制映射默认折叠，先说明文章数量、批内引用指向与批外引用保留；完整 ID 可展开并在面板内横向滚动。
+
+## 2.7.0-rc.2
+
+- 修复迁移新文章遇到已占用逻辑身份时，在确认事务及来源／媒体补偿成功后返回明确的 409 冲突；回滚不确定或补偿失败仍保留更强错误。原生保存同样保留引用校验错误，不将其泛化为 500。
+
+## 2.7.0-rc.1
+
+- 新增正文可携带的闭合逻辑身份与 v2 跨文档引用，双转换后端和原生区块共用格式，旧 ID 与同篇引用保持。
+- 显式启用、复制、迁移、冲突修复与启用前历史候选均经正常差异确认；唯一占用、正文和派生索引共用事务。
+- 新增实时鉴权解析、搜索、入链／改名影响检查及固定授权导出；前台缓存 HTML 保持中性。
+- 索引初始化和有界重建纳入现有 MarkBridge 设置分组；不迁移核心表引擎、不安排 cron。
+- 内容导航优先显示标题，稳定 ID 作为次级标识。此为隔离开发候选，未公开发行或部署生产。
+
+## 2.6.0-rc.4
+
+- 为原生样板瞬态入口补齐 PHP 类型登记，使托管文章由服务端类型生成的允许列表可接受插入；显式作者允许列表与禁用策略保持，转换器仍拒绝未展开的瞬态块。
+
+## 2.6.0-rc.3
+
+- 修复服务端恢复候选自身变更通知导致后续比较失败；保留请求期间编辑／会话取消保护，关闭后可再次恢复。
+- 教学样板使用同一 JSON 实例化为折叠问题、提示、推导与实验，分配独立稳定 ID、嵌套公式和内部引用；原生空占位段落由样板替换。
+- 补齐新增导航与粘贴预览的分组、间距、滚动源码和触摸控件样式，导航可定位编辑器 iframe 内嵌套对象。
+
+## 2.6.0-rc.2
+
+- 修复独立 CLI／模型加载时尚无 WordPress 数据库类导致的致命错误；真实 WordPress 备份行为保持。
+
+## 2.6.0-rc.1
+
+- 服务端私有配对备份、明确恢复与当前版本比较；备份不保存正文或写来源文件。每账号／文章最多 10 份、7 天，全站 32 MiB；编辑请求惰性清理，无新增定时任务。
+- 统一内容导航、分级保存前检查与稳定标签重命名预检；技术教程／论文笔记／教学样板采用原生入口与受管 Markdown 同源内容。
+- 仅对明确完整的独立公式、封闭代码围栏和多行列表提供粘贴预览，保留价格、转义及代码原义，插入可单次撤销。
+- 对齐候选文档、版本与本地化；实际验证范围仍见验证说明。
+
+## 2.5.0-rc.2 — 2026-10-17（隔离候选）
+
+- 📖 技术正文采用学术衬线层次、真实字体斜体与证明结束标记；读者引用改为作者／年份及 a/b 消歧，保留稳定键和原段落身份。
+- 🧩 Mermaid 阅读图在接近视口时自动启动，支持轻量收起、离屏卸载及高度保留；编辑预览和算法仍明确手动启动，原沙箱与资源预算不变。
+- 🌿 独立 Mermaid 0.2.0-rc.1 并存旧 0.1.0 与新 0.2.0 组件；新增有界子图、形状、箭头、曲线及固定配色／字体，旧语法不静默扩展。
+- 📄 静态 HTML 准备后显示真实只读阅读预览，最终下载仍重校验和重建；符合条件的外站图片转链接且不抓取，同站不可核验图片仍拒绝。
+- 💻 静态代码增加本地有界高亮、代码外行号与长行滚动，表格和打印改善；图片与画廊共用下置图注样式，不覆盖或截断说明。
+
+## 2.5.0-rc.1 — 2026-10-17（隔离候选）
+
+- ♿ 公式阅读器增加有限中文结构读法和子表达式键盘探索；未覆盖时明确保留英文语义，阅读状态不回写文章。
+- 📚 支持受限 BibTeX 粘贴／上传、六字段映射预览及明确合并／替换，保护已引用键和未应用草稿。
+- 🖼️ 新增明确的跨站图片 ZIP：解除旧站附件 ID，导入时创建新本地附件关系；保留原稿与既有导出方式。
+- 🩹 修复跨站副本中的行内／HTML图片投影与双端规范化；公式失败占位沿用界面语言，通用组件完成提示不再假定存在回放轨迹。
+- 🧩 增加独立 Mermaid 扩展接入说明与真实示例检查；官方流程图／时序图受限渲染由可选扩展提供，主插件沙箱及资源上限不变。
+
+## 2.4.0-rc.1 — 2026-10-16（隔离候选）
+
+- 🖼️ 支持有界的原生图片图注和简单画廊双向编辑；附件权限和URL在保存时复核，不能表达的媒体链接、样式、布局及原生外置脚注明确拒绝。
+- 📥 增加多文稿扫描和逐篇预览、确认创建草稿；支持重复提醒、媒体公开确认、部分成功、重新鉴权恢复与保守的中断处理，不覆盖或自动发布旧文章。
+- 📄 增加已保存配对的静态HTML导出：完整阶段、折叠、代码语言、引用、内嵌图片、公式字体及打印样式；不携带站点身份、评论、私人笔记或组件执行权限。
+- 🔒 为整批上传、解压、图像处理及私有暂存建立预算；失败项也计处理量。不确定的保存结果保留核验依据，禁止盲目重复创建。
+
+## 2.3.0-rc.1 — 2026-10-16（隔离候选）
+
+- 📖 新增公式、图表、代码清单的稳定标签与派生编号，交叉引用支持重命名预检及隐藏内容跳转。
+- 📝 新增可引用的定义、定理、证明和有界参考文献，文献引用按首次阅读顺序编号；作者数据与显示编号分开保存。
+- ♿ 补充 MathJax 英文语义在隔离预览与公式阅读器中的保真、键盘及焦点回归。未声明真实屏幕阅读器或中文语音验收。
+
+## 2.2.0-rc.1 — 2026-10-16（隔离候选）
+
+- 📝 新增长文搜索、保留未触及换行的替换、撤销、源码／预览双向定位和可选并排视图。
+- 🧩 受信组件以表单或 JSON 编辑同一候选；支持精确版本并存和明确应用的版本升级。
+- 🧭 提供教学结构插入样例及独立节点图作者编辑接口；图示实现仍由扩展提供。
+
+## 2.1.0-rc.1 — 2026-10-16
+
+- 🎨 集中正文样式接口，供独立主题适配公式、代码、引用与教学控件。
+- 🩺 区分教学资源与公式故障阶段；管理员可明确复制不含正文、地址或凭据的诊断摘要，公式失败可单独重试。
+- 🧪 增加跨浏览器代表路径、主题合同和可选性能测量；具体实际运行范围见验证文档。
+
+## 2.0.3 — 2026-10-16
+
+- 🧩 允许受信组件使用固定 `.html.txt` 资源，避免 HTML 传输层注入导致摘要校验失败；保留 `.html` 兼容、原始字节 SHA-256、路径、URL 与大小限制。
+
+## 2.0.2 — 2026-10-15
+
+- 🧭 细化悬浮阶段导航间距与阴影，修复代码页签行号与主题样式覆盖。
+- 💻 保留重复高亮时的差异标记，让连续差异底色覆盖长行，并默认联动横向滚动。
+- 🧩 交互预览采用展开／收起入口，正常就绪与关闭后不保留状态段落。
+
 版本按时间倒序排列。具体发行版本与安装包以 [GitHub Releases](https://github.com/wzf2000/MarkBridge/releases) 为准。
 
 ## 2.0.1 — 2026-10-15

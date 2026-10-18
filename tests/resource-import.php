@@ -237,13 +237,25 @@ function ri_zip(array $files): string
     $zip->close();
     return $path;
 }
-function ri_extract($archive): array
-{
+function ri_extract(
+    $archive,
+    $expandedLimit = 33554432,
+    $pixelLimit = PHP_INT_MAX,
+    $consumePixels = null,
+    $consumeExpanded = null,
+): array {
     global $root, $archiveSerial;
     $dir = $root . '/extract-' . ++$archiveSerial;
     mkdir($dir, 0700);
     try {
-        return mbb_resource_extract($archive, $dir);
+        return mbb_resource_extract(
+            $archive,
+            $dir,
+            $expandedLimit,
+            $pixelLimit,
+            $consumePixels,
+            $consumeExpanded,
+        );
     } finally {
         mbb_resource_remove_private($dir);
     }
@@ -304,6 +316,48 @@ try {
     foreach ([['a.md' => 'x', 'A.md' => 'x'], ['é.md' => 'x', "e\u{0301}.md" => 'x']] as $files) {
         ri_bad(fn() => ri_extract(ri_zip($files)), 'resource_duplicate');
     }
+    // Failed ZIPs still consume global decompression and pre-decode pixel budgets.
+    $spent = 0;
+    $consume = static function ($bytes) use (&$spent) {
+        $spent += $bytes;
+    };
+    ri_bad(
+        fn() => ri_extract(
+            ri_zip(['a.md' => 'x', 'wrong.jpg' => $png]),
+            33554432,
+            PHP_INT_MAX,
+            null,
+            $consume,
+        ),
+        'resource_mime',
+    );
+    ri_assert($spent > 1, 'Failed archive expansion was not charged');
+    ri_bad(
+        fn() => ri_extract(ri_zip(['a.md' => 'x']), 33554432, PHP_INT_MAX, null, static function (
+            $bytes,
+        ) {
+            throw new RuntimeException('batch_expanded: exhausted');
+        }),
+        'batch_expanded',
+    );
+    $pixelSpend = 0;
+    ri_extract(ri_zip(['a.md' => 'x', 'pic.png' => $png]), 33554432, PHP_INT_MAX, static function (
+        $count,
+    ) use (&$pixelSpend) {
+        $pixelSpend += $count;
+    });
+    ri_assert($pixelSpend > 0, 'Pixel work was not charged before decode');
+    ri_bad(
+        fn() => ri_extract(
+            ri_zip(['a.md' => 'x', 'pic.png' => $png]),
+            33554432,
+            PHP_INT_MAX,
+            static function ($count) {
+                throw new RuntimeException('batch_pixels: exhausted');
+            },
+        ),
+        'batch_pixels',
+    );
     ri_bad(fn() => ri_extract(ri_zip(['a.md' => 'x', 'b.md' => 'x'])), 'resource_entries');
     ri_bad(fn() => ri_extract(ri_zip(['a.md' => 'x', 'bad.svg' => '<svg/>'])), 'resource_type');
     ri_bad(fn() => ri_extract(ri_zip(['a.md' => 'x', 'wrong.jpg' => $png])), 'resource_mime');
