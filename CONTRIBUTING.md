@@ -74,6 +74,21 @@ npm run test:browser
 
 Markdown 中同一组简单列表项之间不插入空行，避免意外渲染为松散列表；列表与标题、正文之间保留必要空行。列表项包含多个段落、代码块或其他块级内容时，按其结构保留空行，不做全局删除。
 
+## 显式出版客户端集成检查
+
+默认 Chromium／跨浏览器配置只登记可由主仓库准备的用例，CI 仍要求全部已登记检查无失败、无跳过、无重试。静态公式／安全边界留在默认套件；依赖另一仓库和保留输入 ZIP 的两类出版检查使用独立入口，不再从 `static-export-math.spec.cjs` 触发跳过。
+
+完成正常构建后，保留固定组合的相邻目录布局：`<fixed-combination>/main` 与 `<fixed-combination>/publisher-extension`，在前者执行命令。第二项用例复用 Publisher 的 `tests/browser/fixtures.cjs`，后者从 `../main` 读取核心 JS／PHP，须确认它就是本次固定核心，而不是另一工作树；仅提供 Publisher 安装目录并不足够。显式提供 Publisher 完整源码和合成、已获授权的 publication inputs ZIP：
+
+```sh
+cd /path/to/fixed-combination/main
+MARKBRIDGE_TEST_PUBLISHER_ROOT=/path/to/fixed-combination/publisher-extension \
+MARKBRIDGE_TEST_PUBLICATION_INPUTS=/path/to/synthetic-inputs.zip \
+npm run test:publication -- --retries=0
+```
+
+入口缺少任一前提会直接失败，不静默跳过。它加载真实核心静态 builder 与固定 Publisher，验证作者端投影和离线文件；不代表服务端下载授权。此前只设置 Publisher 目录并在默认文件中筛选用例的本地调用，须改用此入口并补齐显式输入。固定版本历史浏览器记录不改写，后续按新入口复现。
+
 ## 提交变更
 
 说明触发场景、最终行为、兼容影响与实际验证。更新 CHANGELOG；不要把未运行的测试写成通过。格式改动与行为改动尽量分开，涉及存储时明确恢复路径。

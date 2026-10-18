@@ -35,6 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       sha: ${{ steps.generate.outputs.sha }}
+      publish: ${{ steps.generate.outputs.publish }}
     steps:
       - name: Check out current main for queued publishing runs
         uses: actions/checkout@v4
@@ -51,10 +52,12 @@ jobs:
         id: generate
         env:
           REPOSITORY: ${{ github.repository }}
+          WIKI_PUBLISH_REQUEST: ${{ inputs.publish && 'true' || 'false' }}
         run: |
           python3 -m unittest discover -s tests -p 'test_wiki_sync.py'
           sha="$(git rev-parse HEAD)"
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          python3 scripts/wiki_sync.py publication-policy --event "$GITHUB_EVENT_NAME" --ref "$GITHUB_REF" --publish "$WIKI_PUBLISH_REQUEST" >> "$GITHUB_OUTPUT"
           python3 scripts/wiki_sync.py generate --output "$RUNNER_TEMP/wiki-staging" --repository "$REPOSITORY" --sha "$sha"
 
       - uses: actions/upload-artifact@v4
@@ -66,7 +69,7 @@ jobs:
 
   publish:
     needs: preview
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || inputs.publish)
+    if: github.ref == 'refs/heads/main' && needs.preview.outputs.publish == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write

@@ -12,7 +12,8 @@
     "test:browser": "npm run build && playwright test",
     "check": "npm run format:check && npm run build && python3 scripts/build-localization.py --check && python3 scripts/check_release.py",
     "package": "python3 scripts/package.py",
-    "package:source": "python3 scripts/package_source.py"
+    "package:source": "python3 scripts/package_source.py",
+    "test:publication": "playwright test --config=playwright.publication.config.cjs"
   },
   "dependencies": {
     "emojilib": "2.4.0",

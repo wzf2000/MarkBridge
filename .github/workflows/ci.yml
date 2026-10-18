@@ -137,6 +137,9 @@ jobs:
           wp_test eval-file tests/technical-writing-save.php
           wp_test eval-file tests/native-media-save.php
           wp_test eval-file tests/batch-save.php
+          wp_test eval-file tests/paired-backups-save.php
+          wp_test eval-file tests/references-save.php
+          wp_test eval-file tests/collections-save.php
           php -d disable_functions=exec,shell_exec,system,passthru,proc_open,popen,pcntl_exec \
             "$RUNNER_TEMP/markbridge-downloads/wp-cli-2.12.0.phar" --path="$MARKBRIDGE_TEST_WORDPRESS_ROOT" eval-file tests/native-rest-save.php
           wp_test eval-file tests/ci-backend.php node
@@ -155,6 +158,9 @@ jobs:
           wp_test eval-file tests/technical-writing-save.php
           wp_test eval-file tests/native-media-save.php
           wp_test eval-file tests/batch-save.php
+          wp_test eval-file tests/paired-backups-save.php
+          wp_test eval-file tests/references-save.php
+          wp_test eval-file tests/collections-save.php
           wp_test eval-file tests/ci-backend.php php
           wp_test eval-file tests/native-rest-save.php
           wp_test eval-file tests/teaching-save.php
@@ -171,6 +177,9 @@ jobs:
           wp_test eval-file tests/technical-writing-save.php
           wp_test eval-file tests/native-media-save.php
           wp_test eval-file tests/batch-save.php
+          wp_test eval-file tests/paired-backups-save.php
+          wp_test eval-file tests/references-save.php
+          wp_test eval-file tests/collections-save.php
 
       - name: Check formatting
         env:
@@ -242,8 +251,10 @@ jobs:
       - name: Test anonymous component delivery probe
         run: python3 -m unittest discover -s tests -p 'test_delivery_probe.py'
 
-      - name: Test curated Wiki synchronization
-        run: python3 -m unittest discover -s tests -p 'test_wiki_sync.py'
+      - name: Test curated Wiki synchronization and CI save coverage
+        run: |
+          python3 -m unittest discover -s tests -p 'test_wiki_sync.py'
+          python3 -m unittest discover -s tests -p 'test_ci_workflow.py'
 
       - name: Verify translation catalog and synthetic core locale setup
         run: |
