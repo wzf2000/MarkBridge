@@ -294,6 +294,7 @@ function get_preview_post_link($id)
 
 require __DIR__ . '/../plugin/source-sync.php';
 require __DIR__ . '/../plugin/components.php';
+require __DIR__ . '/../plugin/native-media.php';
 require __DIR__ . '/../plugin/editor-bridge.php';
 
 function check($condition, $message)
