@@ -414,6 +414,8 @@ test('dialog keeps actions visible and separates scrolling source from the sandb
 test('existing article toolbar has compact primary actions and an accessible secondary menu', async ({
   page,
 }, testInfo) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/native-editor');
   await page.locator('#mbb-toolbar').waitFor();
   await page.addScriptTag({ url: '/plugin/export-ui.js' });
@@ -456,6 +458,7 @@ test('existing article toolbar has compact primary actions and an accessible sec
   await expect(menu).not.toHaveAttribute('open', '');
   await page.keyboard.press('Escape');
   await expect(menu.locator('summary').first()).toBeFocused();
+  expect(errors).toEqual([]);
 });
 
 test('tool-screen new Markdown previews and saves without a core/editor store', async ({

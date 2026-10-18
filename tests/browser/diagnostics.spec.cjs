@@ -195,7 +195,11 @@ test('formula resource failure preserves TeX and explicit retry restores renderi
     JSON.parse(await concurrentDialog.locator('.mbb-diagnostic textarea').inputValue()).stage,
   ).toBe('initialization');
   await concurrentDialog.getByRole('button', { name: /Close|关闭/, exact: true }).click();
+  await expect(concurrentDialog).toBeHidden();
+  // dialog.close() restores its opener on the asynchronous close event.
+  await expect(concurrent).toBeFocused();
   await formula.focus();
+  await expect(formula).toBeFocused();
   await page.keyboard.press('Enter');
   const dialog = page.locator('.mbb-math-reader');
   await expect(dialog.locator('.mbb-math-reader-source')).toHaveValue(tex);

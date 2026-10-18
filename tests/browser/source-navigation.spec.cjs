@@ -44,20 +44,23 @@ test('opaque trusted bridge selects repeated source objects and rejects stale or
   await expect(frame.locator('[data-mbb-preview-range="r3"]')).toHaveAttribute('tabindex', '0');
   await locate.click();
   await frame.locator('[data-mbb-preview-range="r4"]').click();
-  expect(
-    await page
-      .locator('#mbb-source')
-      .evaluate((node) => node.value.slice(node.selectionStart, node.selectionEnd)),
-  ).toBe('$$\n\\frac{a}{d}\n$$\n');
+  await expect
+    .poll(() =>
+      page
+        .locator('#mbb-source')
+        .evaluate((node) => node.value.slice(node.selectionStart, node.selectionEnd)),
+    )
+    .toBe('$$\n\\frac{a}{d}\n$$\n');
   await page.locator('#mbb-preview-toggle').click();
   await frame.locator('[data-mbb-preview-range="r2"]').click();
-  const selection = await page
-    .locator('#mbb-source')
-    .evaluate((node) => [node.selectionStart, node.selectionEnd]);
-  expect(selection).toEqual([
-    raw.replace(/\r\n/g, '\n').lastIndexOf('重复'),
-    raw.replace(/\r\n/g, '\n').lastIndexOf('重复') + 5,
-  ]);
+  await expect
+    .poll(() =>
+      page.locator('#mbb-source').evaluate((node) => [node.selectionStart, node.selectionEnd]),
+    )
+    .toEqual([
+      raw.replace(/\r\n/g, '\n').lastIndexOf('重复'),
+      raw.replace(/\r\n/g, '\n').lastIndexOf('重复') + 5,
+    ]);
   // Reverse selection uses provenance, never repeated rendered text.
   await page.getByText('Find, replace and navigate', { exact: true }).click();
   await page.getByRole('button', { name: 'Locate selection in preview', exact: true }).click();
@@ -69,9 +72,23 @@ test('opaque trusted bridge selects repeated source objects and rejects stale or
     session: node.dataset.mbbPreviewSession,
     sourceHash: node.dataset.mbbPreviewSource,
   }));
-  await page.locator('#mbb-edit-toggle').click();
-  await page.locator('#mbb-source').press('End');
-  await page.locator('#mbb-source').pressSequentially(' new');
+  const beforeForged = await page.locator('#mbb-source').evaluate((node) => ({
+    value: node.value,
+    selection: [node.selectionStart, node.selectionEnd],
+  }));
+  await page.evaluate(() => {
+    window.navigationRejectProbe = [];
+    addEventListener('message', (event) => {
+      if (event.data?.type !== 'mbb-author-navigation/v1' || event.data.id !== 'r0') return;
+      window.navigationRejectProbe.push({
+        fromFrame:
+          event.source ===
+          document.querySelector('iframe[title="Built-in content preview"]').contentWindow,
+        fromSelf: event.source === window,
+        origin: event.origin,
+      });
+    });
+  });
   await page.evaluate(
     (old) =>
       window.postMessage(
@@ -80,8 +97,47 @@ test('opaque trusted bridge selects repeated source objects and rejects stale or
       ),
     old,
   );
-  const unchanged = await page.locator('#mbb-source').inputValue();
-  expect(unchanged).toContain(' new');
+  await expect.poll(() => page.evaluate(() => navigationRejectProbe.length)).toBe(1);
+  expect(await page.evaluate(() => navigationRejectProbe[0].fromSelf)).toBe(true);
+  expect(
+    await page.locator('#mbb-source').evaluate((node) => ({
+      value: node.value,
+      selection: [node.selectionStart, node.selectionEnd],
+    })),
+  ).toEqual(beforeForged);
+  await page.locator('#mbb-edit-toggle').click();
+  await page.locator('#mbb-source').press('End');
+  await page.locator('#mbb-source').pressSequentially(' new');
+  const unchanged = await page.locator('#mbb-source').evaluate((node) => ({
+    value: node.value,
+    selection: [node.selectionStart, node.selectionEnd],
+  }));
+  // A genuine opaque-frame message with the old session/hash is also rejected after editing.
+  await frame.locator('html').evaluate((node) =>
+    parent.postMessage(
+      {
+        type: 'mbb-author-navigation/v1',
+        action: 'select',
+        id: 'r0',
+        session: node.dataset.mbbPreviewSession,
+        sourceHash: node.dataset.mbbPreviewSource,
+      },
+      '*',
+    ),
+  );
+  await expect.poll(() => page.evaluate(() => navigationRejectProbe.length)).toBe(2);
+  expect(await page.evaluate(() => navigationRejectProbe[1])).toEqual({
+    fromFrame: true,
+    fromSelf: false,
+    origin: 'null',
+  });
+  expect(
+    await page.locator('#mbb-source').evaluate((node) => ({
+      value: node.value,
+      selection: [node.selectionStart, node.selectionEnd],
+    })),
+  ).toEqual(unchanged);
+  expect(unchanged.value).toContain(' new');
   await expect(page.locator('#mbb-save')).toBeDisabled();
   await expect(
     page.getByRole('button', { name: 'Locate selection in preview', exact: true }),

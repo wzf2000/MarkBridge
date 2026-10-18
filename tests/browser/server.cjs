@@ -554,17 +554,26 @@ http
     }
     if (pathname === '/native-editor') {
       const sourceManaged = new URL(request.url, 'http://localhost').searchParams.has('source');
+      // This API-middleware fixture uses the real converter exports, not a Gutenberg registry.
       const setup = `<script>
+      window.MBB_CONVERTER_ONLY=true;
       MBB_EDITOR.postId=12;MBB_EDITOR.state={expected:'baseline-1',source_managed:${sourceManaged}};
       const middlewares=[];window.nativeLocks=[];window.nativeRequests=[];
-      const post={getCurrentPostId:()=>12,getEditedPostContent:()=>'<p>draft</p>',getEditedPostAttribute:()=>''};
+      const post={getCurrentPostId:()=>12,getEditedPostContent:()=>'<p>draft</p>',getEditedPostAttribute:()=>'',getBlocks:()=>[],getSelectedBlockClientId:()=>null};
       wp.data={select:()=>post,subscribe:()=>()=>{},dispatch:()=>({lockPostSaving:key=>nativeLocks.push(key),lockPostAutosaving:key=>nativeLocks.push('autosave:'+key)})};
       wp.apiFetch=options=>middlewares.reduceRight((next,fn)=>opts=>fn(opts,next),opts=>{nativeRequests.push(opts);return window.nativeResult?window.nativeResult(opts):Promise.resolve({id:12,mbb_expected:'baseline-2'});})(options);
       wp.apiFetch.use=fn=>middlewares.push(fn);
       </script>`;
       return response
         .writeHead(200, { 'Content-Type': 'text/html' })
-        .end(editor.replace('</head>', setup + '</head>'));
+        .end(
+          editor
+            .replace(
+              '<script defer src=',
+              `<script defer src="${mapped('kernel.js')}"></script><script defer src=`,
+            )
+            .replace('</head>', setup + '</head>'),
+        );
     }
     if (pathname === '/recovery-editor' || pathname === '/wp-admin/post-new.php') {
       const query = new URL(request.url, 'http://localhost').searchParams;
