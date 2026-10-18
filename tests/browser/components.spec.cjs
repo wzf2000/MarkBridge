@@ -150,6 +150,7 @@ test('foreign and late messages fail closed; navigation and removed shells disca
   await load(page);
   await page.getByRole('button', { name: '启动交互演示' }).click();
   await expect(page.frameLocator('iframe').locator('#status')).toHaveText('Ready');
+  const beforeForgedHeight = await page.locator('iframe').evaluate((n) => n.style.height);
   await page.evaluate(() =>
     dispatchEvent(
       new MessageEvent('message', {
@@ -158,7 +159,7 @@ test('foreign and late messages fail closed; navigation and removed shells disca
       }),
     ),
   );
-  expect(await page.locator('iframe').evaluate((n) => parseFloat(n.style.height))).toBe(320);
+  expect(await page.locator('iframe').evaluate((n) => n.style.height)).toBe(beforeForgedHeight);
   await page.route('**/component/navigation.html', (r) =>
     r.fulfill({ contentType: 'text/html', body: '<p>New document</p>' }),
   );
@@ -704,4 +705,64 @@ test('activity controls follow all direct prompt and option bodies when role ord
       .locator('#demo-0 > .mbb-teaching-body > section')
       .evaluateAll((list) => list.map((n) => n.id)),
   ).toEqual(['question', 'option-a', 'option-b', 'option-c', 'hint', 'yes', 'no', 'solution']);
+});
+
+test('verified host layout expands and shrinks dynamic results, rejects forged sizes and preserves input scrolling', async ({
+  page,
+}, info) => {
+  await load(page);
+  await page.evaluate(() =>
+    addEventListener('message', (e) => {
+      if (e.data?.protocol === 'mbb-component/v1' && e.data.type === 'ready')
+        window.fixtureMessage = e.data;
+    }),
+  );
+  await page.getByRole('button', { name: '启动交互演示' }).click();
+  const frame = page.frameLocator('iframe');
+  await expect(frame.locator('#status')).toHaveText('Ready');
+  await frame.locator('body').evaluate((body) => {
+    const box = document.createElement('section');
+    box.id = 'dynamic-result';
+    box.style.cssText = 'height:1500px;max-height:200px;overflow:auto;overscroll-behavior:contain';
+    box.textContent = 'A complete generated result';
+    body.append(box);
+    const input = document.createElement('textarea');
+    input.id = 'bounded-input';
+    input.style.cssText = 'height:60px;max-height:60px;overflow:auto';
+    input.value = 'input\n'.repeat(100);
+    body.append(input);
+  });
+  await expect
+    .poll(() => page.locator('iframe').evaluate((n) => parseFloat(n.style.height)))
+    .toBeGreaterThan(1500);
+  await expect(frame.locator('#dynamic-result')).toHaveCSS('max-height', 'none');
+  await expect(frame.locator('#bounded-input')).toHaveCSS('max-height', '60px');
+  const before = await page.locator('iframe').evaluate((n) => n.style.height);
+  const meta = await page.evaluate(() => {
+    window.addEventListener('message', (e) => {
+      if (e.data?.type === 'layout-probe-delivered') window.layoutProbeDelivered = true;
+    });
+    return window.fixtureMessage;
+  });
+  await frame.locator('body').evaluate((n, meta) => {
+    for (const height of [NaN, -1, 0, 4097, Infinity])
+      parent.postMessage(
+        { protocol: 'mbb-component/v1', session: meta.session, type: 'layout-size', height },
+        '*',
+      );
+    parent.postMessage(
+      { protocol: 'mbb-component/v1', session: '0'.repeat(32), type: 'layout-size', height: 4096 },
+      '*',
+    );
+    parent.postMessage({ type: 'layout-probe-delivered' }, '*');
+  }, meta);
+  await page.waitForFunction(() => window.layoutProbeDelivered === true);
+  expect(await page.locator('iframe').evaluate((n) => n.style.height)).toBe(before);
+  await frame.locator('#dynamic-result').evaluate((n) => n.remove());
+  await expect
+    .poll(() => page.locator('iframe').evaluate((n) => parseFloat(n.style.height)))
+    .toBeLessThan(600);
+  await page.screenshot({ path: info.outputPath('layout-review-' + info.project.name + '.png') });
+  await page.getByRole('button', { name: '关闭交互预览' }).click();
+  await expect(page.locator('iframe')).toHaveCount(0);
 });

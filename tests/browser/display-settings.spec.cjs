@@ -1,9 +1,9 @@
 const { test, expect } = require('@playwright/test');
 
-test('disabled formula reader keeps front-end typesetting and source intact', async ({
+test('default disabled formula reader keeps front-end typesetting and source intact', async ({
   page,
 }, testInfo) => {
-  await page.goto('/front?reader=off');
+  await page.goto('/front');
   expect(await page.evaluate(() => window.MBB_MATH_CONFIG)).toEqual({
     front: true,
     reader: false,

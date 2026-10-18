@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.0.0-rc.7
+
+- Keep theorem and proof text upright in the article reading font; remove only the first/last edge gaps in quotes and component explanations.
+- Default the optional formula reader to off while preserving explicit display preferences and normal formula typesetting.
+- Replace failed reading images with original-image links without a proxy, retries or background fetch; remove reader-facing raw configuration from derived fallback views while preserving saved parameters and authored content.
+- Present complete self-check questions/options together, automatically check radio choices through the existing grant, show only the current feedback, and reveal explanations explicitly; reset clears transient disclosures and failure retains a complete static reading path.
+- Apply a fixed host reading layout only after resource verification, with current-window/session checked dynamic height up to 4096 px, native scroll chaining and unchanged opaque sandbox/CSP. Immutable component payloads are unchanged.
+- Group the compatibility catalog by actual provider plugin, component type and exact version.
+
 ## 3.0.0-rc.6
 
 - 修复 WebKit 中旧空预览导航偶发覆盖新内容：每次验证完成后以独立 iframe 交接，保留沙箱、来源与会话校验，并拒绝退役窗口的消息。

@@ -3,7 +3,7 @@ Tags: markdown, blocks, editor, mathjax, revisions
 Requires at least: 7.1
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 3.0.0-rc.6
+Stable tag: 3.0.0-rc.7
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -24,6 +24,9 @@ Private paired candidate backups for existing managed articles are stored in non
 3. Import a test Markdown draft, preview, save and reopen. Existing Node installations should review the upgrade guide before changing their backend.
 
 == Changelog ==
+
+= 3.0.0-rc.7 =
+* Improve reading typography, complete self-check feedback, verified component height/scroll presentation and provider-grouped catalog; default the optional formula reader off. Preserve immutable component resources and saved source.
 
 = 3.0.0-rc.6 =
 * Reuse trusted teaching styles in opaque revision previews; hide internal parameter carriers while preserving the exact content and restoration payload.

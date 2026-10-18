@@ -803,3 +803,48 @@
   white-space: nowrap;
   border: 0;
 }
+
+/* Keep the full question and rich options together above the answer controls. */
+.mbb-activity-question {
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+  margin-block: 0.8rem;
+}
+.mbb-activity-question > .mbb-teaching-title {
+  margin-block: 0 0.35rem;
+  font-size: 1em;
+}
+.mbb-activity-question > .mbb-teaching-body {
+  padding: 0;
+}
+
+.mbb-activity-disclosure > .mbb-teaching-title {
+  margin-block: 0 0.4rem;
+}
+.mbb-activity-disclosure[hidden] {
+  display: none !important;
+}
+@media print {
+  .mbb-activity-disclosure[hidden],
+  .mbb-activity-disclosure > .mbb-teaching-body {
+    display: block !important;
+  }
+}
+
+/* Remove only the outer fallback edge gap; interior paragraphs retain their rhythm. */
+.wp-block-mbb-component > .mbb-teaching-body > :first-child,
+.wp-block-mbb-component
+  > .mbb-teaching-body
+  > :first-child:is(.wp-block-group, .wp-block-group__inner-container)
+  > :first-child,
+.wp-block-mbb-component
+  > .mbb-teaching-body
+  > :first-child.wp-block-group
+  > .wp-block-group__inner-container
+  > :first-child {
+  margin-block-start: 0;
+}
+.wp-block-mbb-component > .mbb-teaching-body > :last-child {
+  margin-block-end: 0;
+}

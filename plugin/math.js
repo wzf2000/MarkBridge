@@ -212,7 +212,7 @@
   function enableReader(node) {
     if (
       !window.MBB_MATH_CONFIG?.front ||
-      window.MBB_MATH_CONFIG?.reader === false ||
+      window.MBB_MATH_CONFIG?.reader !== true ||
       node.ownerDocument !== document ||
       !node.isConnected ||
       node.isContentEditable ||

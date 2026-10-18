@@ -63,6 +63,7 @@ asset('components.js');
 asset('teaching.css');
 asset('technical.css');
 asset('media-presentation.css');
+asset('media-presentation.js');
 asset('reader-diagrams.css');
 asset('static-code.js');
 asset('settings.css');

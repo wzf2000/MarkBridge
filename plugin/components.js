@@ -82,6 +82,84 @@
       return false;
     }
   }
+  // This fixed host presentation is applied only after the registered resource SHA matches.
+  // It does not alter the immutable provider payload or accept article-supplied styles/scripts.
+  function readingLayout(protocol, token, activity) {
+    let active = true,
+      pending = false,
+      previous = 0;
+    const measure = () => {
+      pending = false;
+      if (!active || !document.body) return;
+      const body = document.body;
+      const children = [...body.children].filter((n) => !['SCRIPT', 'STYLE'].includes(n.tagName));
+      const bottom = Math.max(
+        0,
+        ...children.map((n) => {
+          const rect = n.getBoundingClientRect();
+          return rect.bottom + scrollY + (parseFloat(getComputedStyle(n).marginBottom) || 0);
+        }),
+      );
+      const height = Math.min(4096, Math.max(160, Math.ceil(bottom + 2)));
+      if (height !== previous) {
+        previous = height;
+        parent.postMessage({ protocol, session: token, type: 'layout-size', height }, '*');
+      }
+    };
+    const schedule = () => {
+      if (active && !pending) {
+        pending = true;
+        requestAnimationFrame(measure);
+      }
+    };
+    const observer = typeof ResizeObserver === 'function' ? new ResizeObserver(schedule) : null;
+    const mutations = new MutationObserver(schedule);
+    const start = () => {
+      if (!active) return;
+      observer?.observe(document.body);
+      mutations.observe(document.body, { childList: true, subtree: true, attributes: true });
+      document.fonts?.ready.then(schedule);
+      schedule();
+    };
+    const dispose = () => {
+      active = false;
+      observer?.disconnect();
+      mutations.disconnect();
+      removeEventListener('resize', schedule);
+      removeEventListener('message', cancel);
+      document.removeEventListener('change', answer);
+      document.removeEventListener('click', reset);
+    };
+    const cancel = (event) => {
+      if (
+        event.source === parent &&
+        event.data?.protocol === protocol &&
+        event.data.session === token &&
+        event.data.type === 'cancel'
+      )
+        dispose();
+    };
+    const answer = (event) => {
+      if (active && activity && event.target.matches?.('input[type="radio"]')) {
+        const check = document.getElementById('check');
+        if (check && !check.disabled) check.click();
+      }
+    };
+    const reset = (event) => {
+      if (active && activity && event.target.closest?.('#reset'))
+        parent.postMessage({ protocol, session: token, type: 'activity-reset' }, '*');
+    };
+    document.addEventListener('change', answer);
+    document.addEventListener('click', reset);
+    addEventListener('message', cancel);
+    addEventListener('resize', schedule);
+    addEventListener('pagehide', dispose, { once: true });
+    if (document.readyState === 'loading')
+      document.addEventListener('DOMContentLoaded', start, { once: true });
+    else start();
+  }
+  const readingStyle =
+    '<style>html,body{height:auto!important;min-height:0!important;min-block-size:0!important;overscroll-behavior:auto!important}body *:not(svg,svg *,textarea,input,select){max-height:none!important;max-block-size:none!important;overscroll-behavior:auto!important}</style>';
   function enhance(node) {
     if (instances.has(node) || !node.querySelector(':scope > .mbb-teaching-body')) return;
     const signature = node.dataset.mbbTeachingConfig || '{}';
@@ -138,8 +216,33 @@
       diagnostic = null,
       startupDeadline = 0,
       runDeadline = 0,
-      activityProjection = null;
+      activityProjection = null,
+      layoutHeight = 0;
     const activityHandles = new Map();
+    const activityParts = () =>
+      [...node.querySelectorAll('[id]')].filter(
+        (part) => part.closest('[data-mbb-teaching=component]') === node,
+      );
+    function resetActivity() {
+      if (!config.activity || config.status !== 'available') return;
+      const a = config.activity,
+        hidden = new Set([...a.hints, a.feedback.correct, a.feedback.incorrect, a.explanation]);
+      for (const part of activityParts())
+        if (hidden.has(part.id)) {
+          part.hidden = true;
+          part.classList.add('mbb-activity-disclosure');
+          part.querySelector(':scope > .mbb-teaching-controls[data-mbb-generated]')?.remove();
+          const title = part.querySelector(':scope > .mbb-teaching-title'),
+            body = part.querySelector(':scope > .mbb-teaching-body');
+          if (title) title.hidden = false;
+          if (body) body.hidden = false;
+        }
+    }
+    function showStaticActivity() {
+      for (const part of activityParts())
+        if (part.classList.contains('mbb-activity-disclosure')) part.hidden = false;
+    }
+
     function projectActivity() {
       activityHandles.clear();
       if (!config.activity) return null;
@@ -210,6 +313,7 @@
       activityHandles.clear();
       activityProjection = null;
       startupDeadline = runDeadline = 0;
+      layoutHeight = 0;
       abort?.abort();
       abort = null;
       clearTimeout(timer);
@@ -226,9 +330,11 @@
       launch.disabled = false;
       launch.hidden = false;
       close.hidden = true;
+      if (readStatic) readStatic.hidden = false;
       launch.setAttribute('aria-expanded', 'false');
       close.setAttribute('aria-expanded', 'false');
       node.dataset.mbbComponentState = 'closed';
+      resetActivity();
       status.classList.remove('mbb-component-complete');
       status.textContent = reason || '';
       window.MBB_DIAGNOSTICS?.clear(controls);
@@ -237,6 +343,7 @@
       pumpReaders();
     }
     function report(code) {
+      showStaticActivity();
       node.dataset.mbbFailureCode = code;
       const record = diagnostic?.failure(code);
       if (record) window.MBB_DIAGNOSTICS?.show(controls, record);
@@ -245,6 +352,7 @@
       if (diagram) readerFailed = true;
       const record = diagnostic?.failure(code);
       stop(message + T(' Static fallback content remains readable. You can start again.'));
+      showStaticActivity();
       node.dataset.mbbFailureCode = code;
       if (record) window.MBB_DIAGNOSTICS?.show(controls, record);
     }
@@ -381,6 +489,7 @@
       close.setAttribute('aria-expanded', 'true');
       launch.disabled = true;
       launch.hidden = true;
+      if (readStatic) readStatic.hidden = true;
       close.hidden = false;
       status.textContent = T('Verifying component resources…');
       abort = new AbortController();
@@ -437,7 +546,18 @@
           '<meta http-equiv="Content-Security-Policy" content="' +
           CSP +
           '">' +
-          new TextDecoder().decode(bytes);
+          new TextDecoder().decode(bytes) +
+          readingStyle +
+          '<script>(' +
+          readingLayout.toString() +
+          ')(' +
+          JSON.stringify(PROTOCOL) +
+          ',' +
+          JSON.stringify(session) +
+          ',' +
+          JSON.stringify(!!config.activity) +
+          ')</scr' +
+          'ipt>';
         controls.append(frame);
         close.hidden = false;
         status.textContent = T('Initializing the isolated component…');
@@ -458,12 +578,16 @@
         stop();
         launch.focus();
       });
+    const readStatic = config.activity
+      ? button(T('Read the complete activity'), () => showStaticActivity())
+      : null;
     launch.className = close.className = diagram ? 'mbb-diagram-toggle' : 'mbb-component-toggle';
     launch.setAttribute('aria-expanded', 'false');
     close.setAttribute('aria-expanded', 'false');
     node.dataset.mbbComponentState = 'closed';
     close.hidden = true;
-    controls.append(launch, close, status);
+    controls.append(launch, close, ...(readStatic ? [readStatic] : []), status);
+    resetActivity();
     if (config.activity) {
       const body = node.querySelector(':scope > .mbb-teaching-body'),
         roleIds = new Set([
@@ -533,6 +657,10 @@
         failure(T('Execution exceeded its time budget and was terminated.'), 'RUN_BUDGET');
         return;
       }
+      if (data.type === 'activity-reset') {
+        if (ready && config.activity && Object.keys(data).length === 3) resetActivity();
+        return;
+      }
       if (data.type === 'reveal-target') {
         if (
           Object.keys(data).length !== 4 ||
@@ -554,6 +682,18 @@
           !window.MarkBridgeTeaching?.revealTarget
         )
           return;
+        if (config.activity) {
+          const feedback = config.activity.feedback;
+          if ([feedback.correct, feedback.incorrect].includes(target.id)) {
+            for (const part of node.querySelectorAll('[id]'))
+              if (
+                part.closest('[data-mbb-teaching=component]') === node &&
+                [feedback.correct, feedback.incorrect].includes(part.id)
+              )
+                part.hidden = part !== target;
+          }
+          target.hidden = false;
+        }
         window.MarkBridgeTeaching.revealTarget(target);
         target.scrollIntoView({ block: 'nearest' });
         target.tabIndex = -1;
@@ -576,8 +716,11 @@
         ready = true;
         node.dataset.mbbComponentState = 'ready';
         status.textContent = '';
-      } else if (data.type === 'resize' && Number.isFinite(data.height)) {
-        frame.style.height = Math.min(1200, Math.max(diagram ? 160 : 280, data.height)) + 'px';
+      } else if (['resize', 'layout-size'].includes(data.type)) {
+        if (!Number.isFinite(data.height) || data.height < 1 || data.height > 4096) return;
+        if (data.type === 'layout-size') layoutHeight = Math.ceil(data.height);
+        frame.style.height =
+          Math.max(diagram ? 160 : 280, layoutHeight || Math.ceil(data.height)) + 'px';
         if (diagram) controls.style.removeProperty('min-block-size');
       } else if (data.type === 'run-request') {
         if (!/^[a-f0-9]{32}$/.test(data.runId || '')) return;

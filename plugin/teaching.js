@@ -182,7 +182,7 @@
       const node = document.getElementById(item.id);
       if (node?.dataset.mbbTeaching !== 'collapse') continue;
       const body = child(node, '.mbb-teaching-body');
-      if (body) body.hidden = !item.open;
+      if (body) body.hidden = node.classList.contains('mbb-activity-question') ? false : !item.open;
       child(node, '.mbb-teaching-controls')
         ?.querySelector('button')
         ?.setAttribute('aria-expanded', String(!!item.open));
@@ -534,6 +534,23 @@
         const body = child(node, '.mbb-teaching-body'),
           title = child(node, '.mbb-teaching-title');
         if (!body || !title) continue;
+        if (node.classList.contains('mbb-activity-disclosure')) {
+          body.hidden = false;
+          title.hidden = false;
+          node.dataset.mbbEnhanced = 'true';
+          continue;
+        }
+        const activity = config(node.closest('[data-mbb-teaching="component"]') || node).activity;
+        if (
+          activity &&
+          [activity.prompt, ...(activity.options || []).map((o) => o.target)].includes(node.id)
+        ) {
+          node.classList.add('mbb-activity-question');
+          body.hidden = false;
+          title.hidden = false;
+          node.dataset.mbbEnhanced = 'true';
+          continue;
+        }
         const controls = generated(),
           toggle = button(title.textContent, () => {
             body.hidden = !body.hidden;
@@ -577,6 +594,8 @@
               'details:is(.wp-block-details,.mbb-technical-statement)',
             ))
               detail.open = true;
+            for (const part of article.querySelectorAll('.mbb-activity-disclosure'))
+              part.hidden = false;
             for (const fold of article.querySelectorAll('[data-mbb-teaching=collapse]')) {
               const foldBody = child(fold, '.mbb-teaching-body');
               if (foldBody) foldBody.hidden = false;

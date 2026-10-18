@@ -295,7 +295,7 @@ $corrupt_snapshot = $options;
 mbb_settings_assert(
     mbb_display_preferences() === [
         'source_font_size' => 16,
-        'math_reader' => true,
+        'math_reader' => false,
         'code_line_numbers' => true,
         'code_copy' => false,
     ] && $options === $corrupt_snapshot,

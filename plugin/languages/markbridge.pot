@@ -3060,6 +3060,10 @@ msgid "Image transformation failed closed round-trip validation. The candidate w
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Image unavailable."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Images are only in private staging; no media exists yet. Preview and explicitly confirm first."
 msgstr ""
 
@@ -4232,6 +4236,10 @@ msgid "One nonempty top-level steps group is permitted"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "One provider plugin can include many component types. Exact versions are compatibility records, not separate plugins or questions."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Only HTTP, HTTPS, mailto and relative links are supported"
 msgstr ""
 
@@ -4288,6 +4296,10 @@ msgid "Open created draft"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Open the original image"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Opening version"
 msgstr ""
 
@@ -4333,6 +4345,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Original header selections are preserved. Preview again to obtain a new receipt."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Other registered providers"
 msgstr ""
 
 #: plugin/i18n.js
@@ -4781,6 +4797,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Read source"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Read the complete activity"
 msgstr ""
 
 #: plugin/i18n.js
@@ -5646,6 +5666,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Static view unavailable. Original content and read-only configuration are preserved."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Static view unavailable. The original explanation remains readable."
 msgstr ""
 
 #: plugin/i18n.js

@@ -83,7 +83,7 @@ function mbb_display_defaults()
 {
     return [
         'source_font_size' => 14,
-        'math_reader' => true,
+        'math_reader' => false,
         'code_line_numbers' => true,
         'code_copy' => true,
     ];

@@ -3,7 +3,7 @@ const { test, expect } = require('@playwright/test');
 test('engine semantic speech survives the isolated CHTML pipeline and formula reader', async ({
   page,
 }) => {
-  await page.goto('/front?locale=en_US');
+  await page.goto('/front?locale=en_US&reader=on');
   const formula = page.locator('#inline-line .mbb-math');
   const speech = formula.locator('mjx-speech[role="img"]');
   await expect(speech).toHaveAttribute('aria-label', /x squared.*equals.*z squared/);
@@ -25,7 +25,7 @@ test('engine semantic speech survives the isolated CHTML pipeline and formula re
 test('static preview retains actual engine semantics without executable exploration code', async ({
   page,
 }) => {
-  await page.goto('/front?locale=en_US');
+  await page.goto('/front?locale=en_US&reader=on');
   await expect(page.locator('#inline-line mjx-container')).toBeVisible();
   const result = await page.evaluate(async () => {
     const html = await MBB_MATH.preview(

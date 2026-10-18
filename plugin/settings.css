@@ -138,3 +138,21 @@
 .mbb-settings .widefat details {
   margin-block-start: 0.5rem;
 }
+
+.mbb-provider-group {
+  margin-block: 1.5rem;
+  padding-block-start: 0.25rem;
+  border-block-start: 1px solid #c3c4c7;
+}
+.mbb-component-versions {
+  margin-block: 0.75rem;
+}
+.mbb-component-versions > summary {
+  padding-block: 0.5rem;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.mbb-component-versions > summary code {
+  display: inline-block;
+  font-size: 0.85em;
+}

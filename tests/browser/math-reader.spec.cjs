@@ -6,7 +6,7 @@ test('formula reader supports keyboard, copy, zoom reset and focus restoration',
   context,
 }, testInfo) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-  await page.goto('/front');
+  await page.goto('/front?reader=on');
   const formula = page.locator('#inline-line .mbb-math');
   await expect(formula).toHaveClass(/mbb-math-readable/);
   await expect(formula.locator('mjx-container')).toBeVisible();
@@ -41,7 +41,7 @@ test('formula reader supports keyboard, copy, zoom reset and focus restoration',
 test('formula reader handles wide display math and clipboard denial without page overflow', async ({
   page,
 }) => {
-  await page.goto('/front');
+  await page.goto('/front?reader=on');
   await page.evaluate(async () => {
     const block = document.createElement('pre');
     block.id = 'wide-math';
@@ -84,7 +84,7 @@ test('formula reader handles wide display math and clipboard denial without page
 test('reader preserves invalid TeX and leaves links, editable content and static preview alone', async ({
   page,
 }) => {
-  await page.goto('/front');
+  await page.goto('/front?reader=on');
   await page.evaluate(async () => {
     const host = document.createElement('div');
     host.id = 'reader-boundaries';
@@ -121,7 +121,7 @@ test('reader preserves invalid TeX and leaves links, editable content and static
 });
 
 test('late clipboard failure cannot affect a reopened reader', async ({ page }) => {
-  await page.goto('/front');
+  await page.goto('/front?reader=on');
   const inline = page.locator('#inline-line .mbb-math');
   await expect(inline.locator('mjx-container')).toBeVisible();
   await page.evaluate(() => {

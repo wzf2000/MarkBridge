@@ -44,6 +44,32 @@ function mbb_extensions_response($value, int $status = 200)
     $r->header('Cache-Control', 'private, no-store, max-age=0');
     return $r;
 }
+/** Resource ownership is derived from the verified local plugin directory, never article data. */
+function mbb_extensions_component_owner(array $provider): array
+{
+    $file = realpath($provider['resource']['file'] ?? '');
+    $root = defined('WP_PLUGIN_DIR') ? realpath(WP_PLUGIN_DIR) : false;
+    if (!$file || !$root || !str_starts_with($file, $root . DIRECTORY_SEPARATOR)) {
+        return ['id' => '', 'title' => mbb_t('Other registered providers')];
+    }
+    $directory = explode(DIRECTORY_SEPARATOR, substr($file, strlen($root) + 1))[0];
+    if (
+        !function_exists('get_plugins') &&
+        defined('ABSPATH') &&
+        is_readable(ABSPATH . 'wp-admin/includes/plugin.php')
+    ) {
+        require_once ABSPATH . 'wp-admin/includes/plugin.php';
+    }
+    foreach (function_exists('get_plugins') ? get_plugins() : [] as $entry => $headers) {
+        if (str_starts_with($entry, $directory . '/')) {
+            return [
+                'id' => $directory,
+                'title' => wp_strip_all_tags($headers['Name'] ?: $directory),
+            ];
+        }
+    }
+    return ['id' => $directory, 'title' => $directory];
+}
 function mbb_extensions_catalog($request = null)
 {
     if (!mbb_extensions_permission()) {
@@ -56,6 +82,7 @@ function mbb_extensions_catalog($request = null)
     $items = [];
     foreach (mbb_component_registry() as $p) {
         $items[] = [
+            'provider' => mbb_extensions_component_owner($p),
             'component' => $p['id'],
             'version' => $p['version'],
             'title' => $p['title'],
@@ -274,39 +301,58 @@ function mbb_extensions_settings_page(bool $embedded = false): void
             '</p></details></li>';
     }
     echo '</ul>';
-    echo '<table class="widefat striped"><thead><tr><th>' .
-        esc_html(mbb_t('Component')) .
-        '</th><th>' .
-        esc_html(mbb_t('Version')) .
-        '</th><th>' .
-        esc_html(mbb_t('Status')) .
-        '</th></tr></thead><tbody>';
+    echo '<p>' .
+        esc_html(
+            mbb_t(
+                'One provider plugin can include many component types. Exact versions are compatibility records, not separate plugins or questions.',
+            ),
+        ) .
+        '</p>';
+    $groups = [];
     foreach ($data['components'] as $item) {
-        echo '<tr><td>' .
-            esc_html($item['title']) .
-            '<br><small>' .
-            esc_html($item['component']) .
-            '</small></td><td>' .
-            esc_html($item['version']) .
-            '</td><td>' .
-            esc_html($item['status']) .
-            '<details><summary>' .
-            esc_html(mbb_t('Compatibility details')) .
-            '</summary><dl><dt>' .
-            esc_html(mbb_t('Minimum MarkBridge')) .
-            '</dt><dd>' .
-            esc_html($item['minMarkBridge']) .
-            '</dd><dt>' .
-            esc_html(mbb_t('Protocol')) .
-            '</dt><dd>' .
-            esc_html((string) $item['protocolVersion']) .
-            '</dd><dt>' .
-            esc_html(mbb_t('Resource SHA-256')) .
-            '</dt><dd><code style="overflow-wrap:anywhere;word-break:break-word">' .
-            esc_html($item['resourceSha256']) .
-            '</code></dd></dl></details></td></tr>';
+        $groups[$item['provider']['id']]['provider'] = $item['provider'];
+        $groups[$item['provider']['id']]['types'][$item['component']][] = $item;
     }
-    echo '</tbody></table>';
+    foreach ($groups as $group) {
+        echo '<section class="mbb-provider-group"><h3>' .
+            esc_html($group['provider']['title']) .
+            '</h3>';
+        foreach ($group['types'] as $component => $items) {
+            echo '<details class="mbb-component-versions"><summary><strong>' .
+                esc_html($items[0]['title']) .
+                '</strong> <code>' .
+                esc_html($component) .
+                '</code></summary>';
+            echo '<table class="widefat striped"><thead><tr><th>' .
+                esc_html(mbb_t('Version')) .
+                '</th><th>' .
+                esc_html(mbb_t('Status')) .
+                '</th></tr></thead><tbody>';
+            foreach ($items as $item) {
+                echo '<tr><td>' .
+                    esc_html($item['version']) .
+                    '</td><td>' .
+                    esc_html($item['status']) .
+                    '<details><summary>' .
+                    esc_html(mbb_t('Compatibility details')) .
+                    '</summary><dl><dt>' .
+                    esc_html(mbb_t('Minimum MarkBridge')) .
+                    '</dt><dd>' .
+                    esc_html($item['minMarkBridge']) .
+                    '</dd><dt>' .
+                    esc_html(mbb_t('Protocol')) .
+                    '</dt><dd>' .
+                    esc_html((string) $item['protocolVersion']) .
+                    '</dd><dt>' .
+                    esc_html(mbb_t('Resource SHA-256')) .
+                    '</dt><dd><code style="overflow-wrap:anywhere;word-break:break-word">' .
+                    esc_html($item['resourceSha256']) .
+                    '</code></dd></dl></details></td></tr>';
+            }
+            echo '</tbody></table></details>';
+        }
+        echo '</section>';
+    }
     if ($data['rejections']) {
         echo '<details><summary>' . esc_html(mbb_t('Rejected registrations')) . '</summary><ul>';
         foreach ($data['rejections'] as $r) {

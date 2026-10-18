@@ -3060,6 +3060,10 @@ msgid "Image transformation failed closed round-trip validation. The candidate w
 msgstr "图片变换不能闭合往返；候选未保存"
 
 #: plugin/i18n.js
+msgid "Image unavailable."
+msgstr "图片暂时无法显示。"
+
+#: plugin/i18n.js
 msgid "Images are only in private staging; no media exists yet. Preview and explicitly confirm first."
 msgstr "图片仅在私有暂存中，尚未创建媒体；请先预览并明确确认。"
 
@@ -4232,6 +4236,10 @@ msgid "One nonempty top-level steps group is permitted"
 msgstr "只允许一个非空顶层阶段组"
 
 #: plugin/i18n.js
+msgid "One provider plugin can include many component types. Exact versions are compatibility records, not separate plugins or questions."
+msgstr "一个提供者插件可包含多种组件。精确版本是兼容记录，并非独立插件或一道题目。"
+
+#: plugin/i18n.js
 msgid "Only HTTP, HTTPS, mailto and relative links are supported"
 msgstr "仅支持 HTTP、HTTPS、mailto 和相对链接"
 
@@ -4288,6 +4296,10 @@ msgid "Open created draft"
 msgstr "打开已创建的草稿"
 
 #: plugin/i18n.js
+msgid "Open the original image"
+msgstr "打开原图片"
+
+#: plugin/i18n.js
 msgid "Opening version"
 msgstr "打开时版本"
 
@@ -4334,6 +4346,10 @@ msgstr "当前版本原代码"
 #: plugin/i18n.js
 msgid "Original header selections are preserved. Preview again to obtain a new receipt."
 msgstr "原头部选择已保留，仍须重新预览获取新凭据。"
+
+#: plugin/i18n.js
+msgid "Other registered providers"
+msgstr "其他已登记的提供者"
 
 #: plugin/i18n.js
 msgid "Overlapping image syntax"
@@ -4782,6 +4798,10 @@ msgstr "读取权限"
 #: plugin/i18n.js
 msgid "Read source"
 msgstr "查看来源"
+
+#: plugin/i18n.js
+msgid "Read the complete activity"
+msgstr "阅读完整题目与解析"
 
 #: plugin/i18n.js
 msgid "Read the latest server version again"
@@ -5647,6 +5667,10 @@ msgstr "静态代码高亮超出标记预算"
 #: plugin/i18n.js
 msgid "Static view unavailable. Original content and read-only configuration are preserved."
 msgstr "静态视图不可用，原内容和只读配置已保留。"
+
+#: plugin/i18n.js
+msgid "Static view unavailable. The original explanation remains readable."
+msgstr "静态视图暂不可用，原文说明仍可阅读。"
 
 #: plugin/i18n.js
 msgid "Status"

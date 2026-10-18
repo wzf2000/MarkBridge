@@ -133,7 +133,7 @@ test('cancellation is not reported as a failure and late resources do not restor
   await expect(page.locator('.mbb-component-status')).toBeEmpty();
 });
 test('diagnostic output rejects accidental extra fields and stores nothing', async ({ page }) => {
-  await page.goto('/front');
+  await page.goto('/front?reader=on');
   await expect.poll(() => page.evaluate(() => !!window.MBB_DIAGNOSTICS)).toBe(true);
   const text = await page.evaluate(() => {
     window.MBB_DIAGNOSTICS_CONFIG = { canCopy: true, version: '2.1.0-rc.1' };
@@ -178,7 +178,7 @@ test('formula resource failure preserves TeX and explicit retry restores renderi
     }
     return route.continue();
   });
-  await page.goto('/front');
+  await page.goto('/front?reader=on');
   await page.evaluate(() => {
     window.MBB_DIAGNOSTICS_CONFIG = { canCopy: true, version: '2.1.0-rc.1' };
   });
@@ -274,7 +274,7 @@ test('failed formula retry restores its focus unless the reader chose another co
       });
     await route.abort();
   });
-  await page.goto('/front');
+  await page.goto('/front?reader=on');
   const formula = page.locator('#inline-line .mbb-math');
   await expect(formula).toHaveAttribute('data-mbb-math-error', 'true');
   await formula.focus();
