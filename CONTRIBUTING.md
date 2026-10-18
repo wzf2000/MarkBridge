@@ -37,6 +37,18 @@ Black 默认位于 `.venv`；可用 `MARKBRIDGE_PYTHON` 指定另一个已安装
 
 CI 使用固定 Node 24.15.0 基线及 PHP 8.2／8.3／8.4／8.5 转换、Worker／后端选择和管理员设置契约矩阵。主检查在 WordPress 7.1.3 合成站安装最终 ZIP，用 PHP 8.2 执行 PHP／Node 原生 REST 保存链、PHP 文件写回和禁子进程保存，并在真实核心资源上运行浏览器套件，拒绝跳过、失败及重试通过。四 PHP 契约版本不等同四版本真实保存链；内部 REST 保存检查和浏览器模拟不等同实际 HTTP 认证。
 
+## 作者保存链与扩展集成
+
+默认 `tests/authoring-save.php` 不要求安装外部扩展。它通过正式登记 API 临时注册独立合成组件的两个精确版本，在真实 WordPress REST 保存链验证 CRLF／源映射、版本变更、区块保存／重开、通用 schema 拒写和精确修订恢复；最后删除临时资源、文章和账号并恢复登记表。CI 的 PHP → Node → PHP 三轮均执行它；这不代表 Teacher 图算法或专有域规则验证。
+
+真实 Teacher `node-diagram@0.1.0` → `0.2.0` 的原有保存用例保留于 `tests/integration/authoring-extension-save.php`。在明确拥有的独立本地 WordPress 合成站安装固定 Main 与包含这两个版本的 Teacher，配置 `MARKBRIDGE_TEST_WORDPRESS_ROOT`、`MARKBRIDGE_TEST_HOME` 及所选后端的运行环境后，从 Main 源码目录显式运行：
+
+```sh
+wp --path="$MARKBRIDGE_TEST_WORDPRESS_ROOT" eval-file tests/integration/authoring-extension-save.php
+```
+
+入口会检查回环地址、WordPress 根目录及 `local` 环境，并在缺少任一精确组件版本时直接失败，不跳过。它保留真实图域错误拒绝等扩展断言；不得在已有审阅站或生产站随意运行这些会创建并删除合成数据的保存检查。
+
 ## 本地化维护
 
 插件的界面消息使用英文 msgid，中文翻译统一维护于 `plugin/languages/messages.json`。构建需要 gettext 的 `msgfmt`；`npm run build:localization` 生成 POT、PO、MO、稳定脚本句柄对应的 JSON 和摘要清单，`python3 scripts/build-localization.py --check` 检查生成物是否与源目录一致。固定时间元数据用于可重复构建，不能从本机日期生成翻译时间。可选 WP-CLI 检查必须显式指定独立 phar 和 PHP，不调用站点命令包装器。

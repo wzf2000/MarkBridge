@@ -438,16 +438,17 @@ $GLOBALS['mbb_components'] = [
 ];
 foreach (
     [
-        [$actions['enqueue_block_editor_assets'], ['mbb-components']],
+        [$actions['enqueue_block_editor_assets'], ['mbb-components'], true],
         [
             array_merge($actions['wp_enqueue_scripts'], [
                 'mbb_enqueue_teaching_assets',
                 'mbb_enqueue_teaching_assets',
             ]),
             ['mbb-presentation-loader', 'mbb-components'],
+            false,
         ],
     ]
-    as [$callbacks, $handles]
+    as [$callbacks, $handles, $admin_context]
 ) {
     $scripts = $script_inline = [];
     foreach ($callbacks as $callback) {
@@ -465,7 +466,30 @@ foreach (
             count($registries) === 1,
             'Actual enqueue omitted or duplicated its registry inline for ' . $handle,
         );
-        $encoded = substr($registries[0], strlen($prefix), -1);
+        $suffix =
+            !$admin_context && $handle === 'mbb-components'
+                ? ';window.MBB_COMPONENTS_READER=true;'
+                : ';';
+        mbb_settings_assert(
+            str_ends_with($registries[0], $suffix),
+            'Registry inline has an unexpected reader flag or script suffix for ' . $handle,
+        );
+        $readerFlags = array_values(
+            array_filter(
+                $script_inline[$handle]['before'] ?? [],
+                static fn($script) => str_contains($script, 'window.MBB_COMPONENTS_READER='),
+            ),
+        );
+        mbb_settings_assert(
+            $admin_context
+                ? $readerFlags === []
+                : count($readerFlags) === 1 &&
+                    ($handle === 'mbb-components'
+                        ? $readerFlags[0] === $registries[0]
+                        : $readerFlags[0] === 'window.MBB_COMPONENTS_READER=true;'),
+            'Actual enqueue changed its admin/reader state for ' . $handle,
+        );
+        $encoded = substr($registries[0], strlen($prefix), -strlen($suffix));
         mbb_settings_assert(
             !preg_match('/[<>&\']/', $encoded) &&
                 str_contains($encoded, '\\u0022') &&

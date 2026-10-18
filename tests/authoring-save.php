@@ -1,5 +1,6 @@
 <?php
-// Isolated synthetic lab only. No production credentials or source articles are used.
+// Standalone Main transaction checks with two explicitly registered synthetic providers.
+// This does not validate Teacher diagram algorithms or domain rules. Owned local lab only.
 $root = getenv('MARKBRIDGE_TEST_WORDPRESS_ROOT');
 $home = getenv('MARKBRIDGE_TEST_HOME');
 if (
@@ -29,8 +30,43 @@ function authoring_request($route, $params)
 $previous = get_current_user_id();
 $id = 0;
 $user = 0;
+$suffix = substr(hash('sha256', uniqid('', true)), 0, 12);
+$providerId = 'authoring-fixture-' . $suffix;
+$savedRegistry = mbb_component_registry();
+$fixture = WP_PLUGIN_DIR . '/markbridge-authoring-fixture-' . $suffix;
+$fixtureFile = $fixture . '/frame.html';
 try {
-    $suffix = substr(hash('sha256', uniqid('', true)), 0, 12);
+    authoring_assert(mkdir($fixture, 0700), 'Synthetic resource directory creation failed.');
+    authoring_assert(
+        copy(__DIR__ . '/browser/fixtures/component.html', $fixtureFile),
+        'Synthetic resource copy failed.',
+    );
+    foreach (['0.1.0', '0.2.0'] as $version) {
+        authoring_assert(
+            markbridge_register_teaching_component($providerId, [
+                'version' => $version,
+                'protocolVersion' => 1,
+                'minMarkBridge' => '1.6.0',
+                'budgets' => mbb_component_budget_limits(),
+                'title' => 'Synthetic authoring transaction fixture',
+                'schema' => [
+                    'type' => 'object',
+                    'additionalProperties' => false,
+                    'required' => ['value'],
+                    'properties' => [
+                        'value' => ['type' => 'integer', 'minimum' => 0, 'maximum' => 10],
+                    ],
+                ],
+                'defaults' => ['value' => 1],
+                'resource' => [
+                    'file' => $fixtureFile,
+                    'url' => plugins_url('frame.html', $fixtureFile),
+                    'sha256' => hash_file('sha256', $fixtureFile),
+                ],
+            ]),
+            'Synthetic provider registration failed for ' . $version,
+        );
+    }
     $user = wp_insert_user([
         'user_login' => 'authoring-' . $suffix,
         'user_pass' => wp_generate_password(32),
@@ -38,15 +74,15 @@ try {
     ]);
     authoring_assert(!is_wp_error($user), 'Synthetic author creation failed.');
     wp_set_current_user($user);
-    $old = mbb_component_provider('node-diagram', '0.1.0');
-    $next = mbb_component_provider('node-diagram', '0.2.0');
+    $old = mbb_component_provider($providerId, '0.1.0');
+    $next = mbb_component_provider($providerId, '0.2.0');
     authoring_assert(
         $old && $next && $old['status'] === 'available' && $next['status'] === 'available',
-        'Both exact diagram versions must be available.',
+        'Both exact synthetic versions must be available.',
     );
     $attrs = [
-        'id' => 'stable-diagram',
-        'component' => 'node-diagram',
+        'id' => 'stable-fixture',
+        'component' => $providerId,
         'componentVersion' => '0.1.0',
         'params' => $old['defaults'],
     ];
@@ -93,12 +129,7 @@ try {
         $post->post_status === 'draft' && $post->post_content_filtered === $source,
         'Original draft bytes changed.',
     );
-    $params = json_decode(wp_json_encode($old['defaults']), true);
-    foreach ($params['edges'] as $i => &$edge) {
-        $edge['id'] = 'edge-' . ($i + 1);
-    }
-    unset($edge);
-    $params['nodes'][0]['x'] += 10;
+    $params = ['value' => 2];
     $changed = array_replace($attrs, ['componentVersion' => '0.2.0', 'params' => $params]);
     $upgradeSource = str_replace(
         wp_json_encode($attrs, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
@@ -106,13 +137,12 @@ try {
         $source,
     );
     // Generate matching attributes/fallback, then exercise the real block-mode save endpoint.
-    // React attribute editing and serialization are separately checked by diagram-author.spec.cjs.
     $upgraded = mbb_convert([
         'mode' => 'markdown',
         'source' => $upgradeSource,
         'documentId' => mbb_id($id),
     ]);
-    authoring_assert(!is_wp_error($upgraded), 'Diagram upgrade did not convert.');
+    authoring_assert(!is_wp_error($upgraded), 'Synthetic version upgrade did not convert.');
     $saved = authoring_request('save', [
         'mode' => 'blocks',
         'post_id' => $id,
@@ -135,15 +165,16 @@ try {
     ]);
     authoring_assert(
         !is_wp_error($reopened) &&
-            str_contains($post->post_content, 'edge-1') &&
-            str_contains($post->post_content, 'stable-diagram'),
+            str_contains($post->post_content, 'stable-fixture') &&
+            str_contains($post->post_content_filtered, '"componentVersion":"0.2.0"') &&
+            str_contains($post->post_content_filtered, '"value":2'),
         'Stable identities did not survive paired reopen.',
     );
-    $badSource = str_replace(
-        '"from":"' . $params['edges'][0]['from'] . '"',
-        '"from":"missing-node"',
-        $post->post_content_filtered,
-    );
+    $beforeInvalidToken = mbb_token($post);
+    $beforeInvalidSource = $post->post_content_filtered;
+    $beforeInvalidRevisions = array_keys(wp_get_post_revisions($id));
+    $badSource = str_replace('"value":2', '"value":"not-an-integer"', $post->post_content_filtered);
+    authoring_assert($badSource !== $beforeInvalidSource, 'Invalid candidate was not constructed.');
     $bad = authoring_request('save', [
         'mode' => 'markdown',
         'post_id' => $id,
@@ -153,8 +184,12 @@ try {
         'post_status' => 'draft',
     ]);
     authoring_assert(
-        $bad->get_status() === 422 && get_post($id)->post_content === $post->post_content,
-        'Invalid graph domain overwrote a valid article.',
+        $bad->get_status() === 422 &&
+            get_post($id)->post_content === $post->post_content &&
+            get_post($id)->post_content_filtered === $beforeInvalidSource &&
+            mbb_token(get_post($id)) === $beforeInvalidToken &&
+            array_keys(wp_get_post_revisions($id)) === $beforeInvalidRevisions,
+        'Invalid generic schema changed the valid pair, baseline or revisions.',
     );
     $restored = authoring_request('save', [
         'mode' => 'restore',
@@ -170,12 +205,19 @@ try {
         $restored->get_status() === 200 &&
             get_post($id)->post_content_filtered === $source &&
             get_post($id)->post_content === $originalSerialized,
-        'Exact paired revision did not restore the old diagram version.',
+        'Exact paired revision did not restore the old synthetic version.',
     );
     echo 'Actual ' .
         mbb_converter_backend() .
-        " REST preview, CRLF, explicit diagram upgrade, reopen, rejection and revision restoration passed.\n";
+        " REST preview, CRLF, synthetic exact-version upgrade, reopen, generic schema rejection and revision restoration passed.\n";
 } finally {
+    $GLOBALS['mbb_components'] = $savedRegistry;
+    if (is_file($fixtureFile)) {
+        unlink($fixtureFile);
+    }
+    if (is_dir($fixture)) {
+        rmdir($fixture);
+    }
     if ($id) {
         wp_delete_post($id, true);
     }

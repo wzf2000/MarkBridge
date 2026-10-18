@@ -58,6 +58,22 @@ class CISaveCoverage(unittest.TestCase):
         for name in ["bibliography-v2-save.php", "mermaid-save.php"]:
             self.assertNotIn(name, shell)
 
+    def test_authoring_scope_is_standalone_and_teacher_remains_explicit(self):
+        standalone = (ROOT / "tests/authoring-save.php").read_text()
+        integration = (ROOT / "tests/integration/authoring-extension-save.php").read_text()
+        workflow = (ROOT / ".github/workflows/ci.yml").read_text()
+        self.assertIn("markbridge_register_teaching_component($providerId", standalone)
+        self.assertIn("$GLOBALS['mbb_components'] = $savedRegistry", standalone)
+        self.assertIn("unlink($fixtureFile)", standalone)
+        self.assertNotIn("node-diagram", standalone)
+        for version in ["0.1.0", "0.2.0"]:
+            self.assertIn("mbb_component_provider('node-diagram', '" + version + "')", integration)
+        self.assertIn("Invalid graph domain overwrote a valid article.", integration)
+        self.assertNotIn("authoring-extension-save.php", workflow)
+        for source in [standalone, integration]:
+            self.assertIn("MARKBRIDGE_TEST_WORDPRESS_ROOT", source)
+            self.assertIn("wp_get_environment_type() !== 'local'", source)
+
 
 class PublicationProfile(unittest.TestCase):
     def test_explicit_inputs_fail_closed_and_core_discovery_remains_self_contained(self):
