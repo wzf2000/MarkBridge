@@ -1,0 +1,26 @@
+name: Locked CI tools
+description: Install the pinned source tools on an isolated ephemeral runner
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v7
+      with:
+        node-version: '24.15.0'
+        cache: npm
+    - uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.2'
+        coverage: none
+        extensions: dom, libxml, mbstring, mysqli, zip, intl, gd, posix
+        tools: composer:v2
+    - uses: actions/setup-python@v7
+      with:
+        python-version: '3.x'
+    - shell: bash
+      run: |
+        python -m pip install --disable-pip-version-check -r requirements-dev.txt
+        npm ci
+        sudo apt-get update -qq
+        sudo apt-get install -y bubblewrap default-mysql-client gettext
+        # Required for bwrap only on this disposable Ubuntu 24.04 runner.
+        sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
