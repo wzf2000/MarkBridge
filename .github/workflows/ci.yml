@@ -308,7 +308,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: markbridge-browser-${{ matrix.group }}-${{ inputs.source_sha || github.sha }}
+          name: markbridge-browser-coverage-${{ matrix.group }}-${{ inputs.source_sha || github.sha }}
           path: ${{ runner.temp }}/browser-${{ matrix.group }}.json
           overwrite: ${{ github.run_attempt > 1 }}
           if-no-files-found: error
@@ -418,7 +418,7 @@ jobs:
       - name: Download this run's browser timing reports
         uses: actions/download-artifact@v8
         with:
-          pattern: markbridge-browser-*-${{ inputs.source_sha || github.sha }}
+          pattern: markbridge-browser-coverage-*-${{ inputs.source_sha || github.sha }}
           path: ${{ runner.temp }}/browser-reports
           merge-multiple: true
       - name: Require complete unique browser coverage for the same source

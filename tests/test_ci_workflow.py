@@ -206,6 +206,9 @@ class PipelineCoverage(unittest.TestCase):
         self.assertIn("if: always()", gate)
         self.assertIn("job['result'] == 'success'", gate)
         self.assertIn("check_ci_pipeline.py gate", gate)
+        # A successful explicit rerun must not collect retained failure artifacts.
+        self.assertIn("pattern: markbridge-browser-coverage-*", gate)
+        self.assertNotIn("pattern: markbridge-browser-*", gate)
         self.assertLess(
             gate.index("check_ci_pipeline.py gate"), gate.index("name: markbridge-release-")
         )
