@@ -32,19 +32,19 @@ concurrency:
 
 jobs:
   preview:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       sha: ${{ steps.generate.outputs.sha }}
       publish: ${{ steps.generate.outputs.publish }}
     steps:
       - name: Check out current main for queued publishing runs
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.ref == 'refs/heads/main' && 'main' || github.sha }}
           fetch-depth: 1
           persist-credentials: false
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.x'
 
@@ -60,7 +60,7 @@ jobs:
           python3 scripts/wiki_sync.py publication-policy --event "$GITHUB_EVENT_NAME" --ref "$GITHUB_REF" --publish "$WIKI_PUBLISH_REQUEST" >> "$GITHUB_OUTPUT"
           python3 scripts/wiki_sync.py generate --output "$RUNNER_TEMP/wiki-staging" --repository "$REPOSITORY" --sha "$sha"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: user-docs-wiki-${{ github.run_id }}
           path: ${{ runner.temp }}/wiki-staging/
@@ -70,15 +70,15 @@ jobs:
   publish:
     needs: preview
     if: github.ref == 'refs/heads/main' && needs.preview.outputs.publish == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ needs.preview.outputs.sha }}
           persist-credentials: false
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: user-docs-wiki-${{ github.run_id }}
           path: ${{ runner.temp }}/wiki-staging/
