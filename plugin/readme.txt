@@ -3,7 +3,7 @@ Tags: markdown, blocks, editor, mathjax, revisions
 Requires at least: 7.1
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 3.0.0
+Stable tag: 3.0.1
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
