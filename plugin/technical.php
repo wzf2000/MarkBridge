@@ -270,10 +270,17 @@ function mbb_render_technical($html)
         $kind = $item['kind'];
         $counts[$kind] = ($counts[$kind] ?? 0) + 1;
         $item['label'] = mbb_technical_label($kind) . ' ' . $counts[$kind];
+        $authoredTitle = trim($item['heading']->textContent);
         $prefix = $document->createElement('span');
         $prefix->setAttribute('class', 'mbb-technical-number');
         $prefix->setAttribute('data-mbb-generated', '');
-        $prefix->appendChild($document->createTextNode($item['label'] . '. '));
+        $displayLabel = $item['label'];
+        if ($kind === 'proof' && in_array(mbb_technical_label($kind), ['证明', '證明'], true)) {
+            $displayLabel = mbb_technical_label($kind) . $counts[$kind];
+        }
+        $prefix->appendChild(
+            $document->createTextNode($displayLabel . ($kind === 'proof' ? '.' : '. ')),
+        );
         $item['heading']->insertBefore($prefix, $item['heading']->firstChild);
         $item['node']->setAttribute('data-mbb-technical-rendered', '1');
         if (in_array($kind, ['definition', 'theorem', 'proof'], true)) {
@@ -290,6 +297,26 @@ function mbb_render_technical($html)
                 )
                 ->item(0);
             if ($body) {
+                // Preserve authored title nodes; only their derived reading placement changes.
+                // The original summary and every body/anchor node remain in the document.
+                $title = $document->createElement('div');
+                $title->setAttribute('class', 'mbb-proof-title');
+                $originalTitle = $authoredTitle;
+                $defaultTitle =
+                    $originalTitle === '' ||
+                    strcasecmp($originalTitle, 'Proof') === 0 ||
+                    in_array($originalTitle, ['证明', '證明', mbb_technical_label('proof')], true);
+                if ($defaultTitle) {
+                    $title->setAttribute('class', 'mbb-proof-title mbb-proof-default-title');
+                    $title->setAttribute('hidden', '');
+                    $title->setAttribute('aria-hidden', 'true');
+                }
+                foreach (iterator_to_array($item['heading']->childNodes) as $child) {
+                    if ($child !== $prefix) {
+                        $title->appendChild($child);
+                    }
+                }
+                $body->insertBefore($title, $body->firstChild);
                 $end = $document->createElement('span', '□');
                 $end->setAttribute('class', 'mbb-proof-end');
                 $end->setAttribute('aria-hidden', 'true');

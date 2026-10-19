@@ -55,7 +55,7 @@ body{margin:0;font:16px/1.7 Arial,sans-serif}.mbb-reading{padding:20px;max-width
 </style>
 <style>${settings.inline.join('\n')}</style>
 <script>window.MBB_MATH_CONFIG=${settings.math_config}</script>
-<script defer src="${mapped('math-explorer.js')}"></script><script defer src="${mapped('math.js')}"></script>
+<script defer src="${mapped('math-explorer.js')}"></script><script defer src="${mapped('math.js')}"></script><script defer src="${mapped('media-presentation.js')}"></script>
 ${frontScripts(settings)}
 </head><body><main class="mbb-reading"><article class="mbb-document">
 <p id="inline-line">文字在前 <span class="mbb-math" data-mbb-tex="x^2+y^2=z^2">x^2+y^2=z^2</span> 文字在后</p>
@@ -514,6 +514,12 @@ http
       return response.writeHead(200, { 'Content-Type': 'text/html; charset=UTF-8' }).end(html);
     }
     if (pathname === '/health') return response.writeHead(200).end('ok');
+    if (pathname === '/extension-catalog') {
+      const html = execFileSync('php', [path.join(__dirname, 'extension-catalog.php')], {
+        encoding: 'utf8',
+      });
+      return response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' }).end(html);
+    }
     if (pathname === '/technical-presentation') {
       const html = execFileSync('php', [path.join(__dirname, 'technical-presentation.php')], {
         encoding: 'utf8',
@@ -544,7 +550,15 @@ http
           : query.get('reader') === 'off'
             ? readerDisabledPresentation
             : presentation;
-      return response.writeHead(200, { 'Content-Type': 'text/html' }).end(front(settings));
+      return response
+        .writeHead(200, { 'Content-Type': 'text/html' })
+        .end(
+          front(
+            query.get('reader') === 'on'
+              ? { ...settings, math_config: JSON.stringify({ front: true, reader: true }) }
+              : settings,
+          ),
+        );
     }
     if (pathname.startsWith('/fixture-inline/')) {
       const script = fixtureInlineScripts.get(pathname.slice('/fixture-inline/'.length));

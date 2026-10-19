@@ -1,5 +1,33 @@
 # Changelog
 
+## 3.0.0
+
+- Release the reviewed 2.1–3.0 feature set: paired Markdown/block recovery and private backups, local drafts and three-way merge, source navigation, writing tools, Front Matter and bounded media import/export.
+- Add logical identities, cross-article references, bibliography v2 with BibTeX/CSL snapshots, technical theorem/proof writing and native-media projections while retaining legacy articles and IDs.
+- Add permission-checked collections and immutable publication snapshots, static HTML projections, MathML publication support and the independent Publisher web-book/EPUB integration.
+- Provide the trusted extension/author SDK, bounded typed static projections, explicit component upgrades and independent Teaching, Scholarly, Publisher, Scientific and Mermaid providers.
+- Include the reviewed reading refinements, verified teaching-frame sizing and localized controls. New installations default to PHP; administrators explicitly choose PHP or validated Node, and existing Node settings remain unchanged.
+- Preserve exact component versions, immutable resource payloads and registered compatibility floors. Historical prerelease notes and validation limits remain documented.
+
+## 3.0.0-rc.9
+
+- Show proof bars as a single semibold localized number. Retain original title nodes, place descriptive titles at the start of the proof body, and omit duplicate default labels visually without changing source, anchors or reference numbering.
+- Align activity hint, feedback and explanation spacing with the existing panel tokens. Keep normal closed controls limited to starting the activity; a complete static-reading entry is offered after an explicit resource, compatibility or budget failure. Native folding, full text, printing and no-script/static content remain readable.
+- Clarify provider/type/version and maintenance paths in the teaching-extension guide; add an explicit fixed-Teacher reading integration profile without weakening the standalone CI suite.
+
+## 3.0.0-rc.8
+
+- Include the natural body box, padding and collapsed final margins when measuring verified component frames; retain shrinking, session validation and the 4096 px cap. Provider payloads and teaching parameters are unchanged.
+
+## 3.0.0-rc.7
+
+- Keep theorem and proof text upright in the article reading font; remove only the first/last edge gaps in quotes and component explanations.
+- Default the optional formula reader to off while preserving explicit display preferences and normal formula typesetting.
+- Replace failed reading images with original-image links without a proxy, retries or background fetch; remove reader-facing raw configuration from derived fallback views while preserving saved parameters and authored content.
+- Present complete self-check questions/options together, automatically check radio choices through the existing grant, show only the current feedback, and reveal explanations explicitly; reset clears transient disclosures and failure retains a complete static reading path.
+- Apply a fixed host reading layout only after resource verification, with current-window/session checked dynamic height up to 4096 px, native scroll chaining and unchanged opaque sandbox/CSP. Immutable component payloads are unchanged.
+- Group the compatibility catalog by actual provider plugin, component type and exact version.
+
 ## 3.0.0-rc.6
 
 - 修复 WebKit 中旧空预览导航偶发覆盖新内容：每次验证完成后以独立 iframe 交接，保留沙箱、来源与会话校验，并拒绝退役窗口的消息。

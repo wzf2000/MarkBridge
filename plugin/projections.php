@@ -477,25 +477,16 @@ function mbb_projection_insert(DOMDocument $doc, DOMElement $root, array $items)
                     $doc->createTextNode(
                         function_exists('mbb_t')
                             ? mbb_t(
-                                'Static view unavailable. Original content and read-only configuration are preserved.',
+                                'Static view unavailable. The original explanation remains readable.',
                             )
-                            : 'Static view unavailable. Original content and read-only configuration are preserved.',
+                            : 'Static view unavailable. The original explanation remains readable.',
                     ),
                 );
                 $wrapper->appendChild($p);
             }
-            $details = $doc->createElement('details');
-            $summary = $doc->createElement(
-                'summary',
-                function_exists('mbb_t')
-                    ? mbb_t('Configuration (read only)')
-                    : 'Configuration (read only)',
-            );
-            $pre = $doc->createElement('pre');
-            $pre->appendChild($doc->createTextNode(mbb_component_json($item['params'])));
-            $details->appendChild($summary);
-            $details->appendChild($pre);
-            $wrapper->appendChild($details);
+        }
+        if (!$wrapper->hasChildNodes()) {
+            continue;
         }
         if ($item['state'] === 'available') {
             $target->insertBefore($wrapper, $target->firstChild);

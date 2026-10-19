@@ -2108,5 +2108,11 @@
   "Directed": "有向",
   "Item": "项目",
   "Parameters": "参数",
-  "Component details": "组件详细信息"
+  "Component details": "组件详细信息",
+  "Image unavailable.": "图片暂时无法显示。",
+  "Open the original image": "打开原图片",
+  "Static view unavailable. The original explanation remains readable.": "静态视图暂不可用，原文说明仍可阅读。",
+  "Other registered providers": "其他已登记的提供者",
+  "One provider plugin can include many component types. Exact versions are compatibility records, not separate plugins or questions.": "一个提供者插件可包含多种组件。精确版本是兼容记录，并非独立插件或一道题目。",
+  "Read the complete activity": "阅读完整题目与解析"
 }

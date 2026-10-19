@@ -2,7 +2,7 @@ const { test, expect } = require('@playwright/test');
 test('real engine semantic structures provide bounded Chinese readings and explicit unsupported fallback', async ({
   page,
 }, info) => {
-  await page.goto('/front?locale=en_US');
+  await page.goto('/front?locale=en_US&reader=on');
   await expect(page.locator('#inline-line mjx-container')).toBeVisible();
   const result = await page.evaluate(async () => {
     const values = {};
@@ -65,7 +65,7 @@ test('real engine semantic structures provide bounded Chinese readings and expli
 test('formula reader explores the rendered expression and exits without changing author content', async ({
   page,
 }, info) => {
-  await page.goto('/front?locale=en_US');
+  await page.goto('/front?locale=en_US&reader=on');
   const formula = page.locator('#inline-line .mbb-math');
   await expect(formula.locator('mjx-container')).toBeVisible();
   const before = await formula.getAttribute('data-mbb-tex');

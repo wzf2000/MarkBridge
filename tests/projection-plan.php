@@ -195,4 +195,27 @@ foreach (
         }
     }
 }
+// Reader fallback must not print parameter JSON or leave an empty legacy wrapper gap.
+foreach (['author-fallback', 'unavailable'] as $state) {
+    $doc = new DOMDocument('1.0', 'UTF-8');
+    $doc->loadHTML(
+        '<div id="root"><div id="fallback"><p>Complete authored explanation.</p></div></div>',
+    );
+    mbb_projection_insert($doc, $doc->getElementById('root'), [
+        [
+            'target' => 'fallback',
+            'state' => $state,
+            'projection' => null,
+            'params' => (object) ['sentinel' => 'DO_NOT_PRINT'],
+        ],
+    ]);
+    $html = $doc->saveHTML();
+    if (
+        !str_contains($html, 'Complete authored explanation.') ||
+        str_contains($html, 'DO_NOT_PRINT') ||
+        ($state === 'author-fallback' && str_contains($html, 'class="mbb-projection"'))
+    ) {
+        throw new RuntimeException('reader_fallback');
+    }
+}
 echo "Projection planning: aggregate/reset, quiet legacy fallback, missing/error fallback, real changed callback file and hard budgets passed\n";

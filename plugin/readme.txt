@@ -3,7 +3,7 @@ Tags: markdown, blocks, editor, mathjax, revisions
 Requires at least: 7.1
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 3.0.0-rc.6
+Stable tag: 3.0.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -24,6 +24,15 @@ Private paired candidate backups for existing managed articles are stored in non
 3. Import a test Markdown draft, preview, save and reopen. Existing Node installations should review the upgrade guide before changing their backend.
 
 == Changelog ==
+
+= 3.0.0 =
+* Keep proof bars consistently numbered and move descriptive authored titles into the body. Pad activity disclosures and offer static reading only after an explicit failed start.
+
+= 3.0.0-rc.8 =
+* Include natural body padding and collapsed end margins in verified component height measurements while retaining shrinking and the existing height cap.
+
+= 3.0.0-rc.7 =
+* Improve reading typography, complete self-check feedback, verified component height/scroll presentation and provider-grouped catalog; default the optional formula reader off. Preserve immutable component resources and saved source.
 
 = 3.0.0-rc.6 =
 * Reuse trusted teaching styles in opaque revision previews; hide internal parameter carriers while preserving the exact content and restoration payload.

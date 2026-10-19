@@ -169,19 +169,11 @@
         const p = doc.createElement('p');
         p.textContent =
           globalThis.MBBI18n?.t(
-            'Static view unavailable. Original content and read-only configuration are preserved.',
-          ) ||
-          'Static view unavailable. Original content and read-only configuration are preserved.';
-        const details = doc.createElement('details'),
-          summary = doc.createElement('summary'),
-          pre = doc.createElement('pre');
-        summary.textContent =
-          globalThis.MBBI18n?.t('Configuration (read only)') || 'Configuration (read only)';
-        pre.textContent = JSON.stringify(item.params);
-        details.append(summary, pre);
+            'Static view unavailable. The original explanation remains readable.',
+          ) || 'Static view unavailable. The original explanation remains readable.';
         if (item.state !== 'author-fallback') wrapper.append(p);
-        wrapper.append(details);
       }
+      if (!wrapper.childNodes.length) continue;
       if (item.state === 'available') targets[0].prepend(wrapper);
       else targets[0].append(wrapper);
     }

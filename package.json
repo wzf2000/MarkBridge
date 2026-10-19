@@ -1,6 +1,6 @@
 {
   "name": "markbridge",
-  "version": "3.0.0-rc.6",
+  "version": "3.0.0",
   "private": true,
   "scripts": {
     "build": "npm run build:localization && node scripts/copy-math-assets.cjs && esbuild src/kernel.js --bundle --format=iife --global-name=MBB --external:@wordpress/latex-to-mathml --outfile=plugin/kernel.js && esbuild src/emoji.js --bundle --format=iife --outfile=plugin/emoji.js && node scripts/build-ui-assets.cjs && node scripts/build-runtime-contract.cjs && php scripts/build-php-converter.php",
@@ -13,7 +13,8 @@
     "check": "npm run format:check && npm run build && python3 scripts/build-localization.py --check && python3 scripts/check_release.py",
     "package": "python3 scripts/package.py",
     "package:source": "python3 scripts/package_source.py",
-    "test:publication": "playwright test --config=playwright.publication.config.cjs"
+    "test:publication": "playwright test --config=playwright.publication.config.cjs",
+    "test:teaching-reading": "playwright test --config=playwright.teaching-reading.config.cjs"
   },
   "dependencies": {
     "emojilib": "2.4.0",

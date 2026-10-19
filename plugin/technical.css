@@ -16,16 +16,14 @@
   text-align: center;
   overflow-wrap: anywhere;
 }
-/* AMS-inspired hierarchy: theorem emphasis, upright definitions and quiet proofs. */
+/* Use the surrounding reading font: CJK theorem/proof text must stay upright and legible. */
 .mbb-technical-statement {
-  --mbb-academic-font:
-    'STIX Two Text', 'Latin Modern Roman', 'Noto Serif CJK SC', 'Songti SC', SimSun,
-    'Times New Roman', serif;
   border: 0;
   padding: 0;
   margin-block: 1.65em;
-  font-family: var(--mbb-font-academic, var(--mbb-academic-font));
-  font-synthesis: none;
+  font-family: var(--mbb-font-body, inherit);
+  font-style: normal;
+  font-weight: 400;
   line-height: 1.8;
 }
 .mbb-technical-heading,
@@ -36,7 +34,7 @@
   overflow-wrap: anywhere;
 }
 .mbb-technical-statement.mbb-statement-theorem > .mbb-technical-body {
-  font-style: italic;
+  font-style: normal;
 }
 .mbb-technical-statement
   .mbb-technical-body
@@ -44,11 +42,19 @@
   font-style: normal;
 }
 .mbb-technical-statement.mbb-statement-proof > .mbb-technical-heading {
-  font-style: italic;
-  font-weight: 400;
+  font-style: normal;
+  font-weight: 600;
 }
 .mbb-technical-statement.mbb-statement-proof .mbb-technical-number {
-  font-weight: 400;
+  font-weight: 600;
+}
+.mbb-proof-title {
+  margin-block: 0 0.65em;
+  font-weight: 600;
+}
+/* The authored default title remains present, including when static publishers expand details. */
+.mbb-proof-default-title {
+  display: none !important;
 }
 details.mbb-technical-statement > summary {
   cursor: pointer;

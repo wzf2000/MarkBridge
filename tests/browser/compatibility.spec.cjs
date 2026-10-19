@@ -7,7 +7,7 @@ const action = (page, name) => page.locator(`[data-mbb-reader-action="${name}"]`
 test('CHTML formulas support keyboard reading, clipboard denial and wide layout', async ({
   page,
 }, info) => {
-  await page.goto('/front');
+  await page.goto('/front?reader=on');
   const formula = page.locator('#inline-line .mbb-math');
   await expect(formula.locator('mjx-container[jax="CHTML"]')).toBeVisible();
   await page.evaluate(async () => {
@@ -63,7 +63,7 @@ test('CHTML formulas support keyboard reading, clipboard denial and wide layout'
 test('long code scrolls while stage and collapse controls remain keyboard operable', async ({
   page,
 }, info) => {
-  await page.goto('/front');
+  await page.goto('/front?reader=on');
   const pre = page.locator('#long-code').locator('..');
   await expect(pre).toHaveClass(/mbb-code-display/);
   await expect(pre).toHaveAttribute('tabindex', '0');
