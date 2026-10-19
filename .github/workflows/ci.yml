@@ -43,7 +43,7 @@ jobs:
         php: ['8.2']
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ inputs.source_sha || github.sha }}
           persist-credentials: false
@@ -58,7 +58,7 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node }}
           cache: npm
@@ -72,7 +72,7 @@ jobs:
           tools: composer:v2
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.x'
 
@@ -214,7 +214,7 @@ jobs:
 
       - name: Upload browser failure screenshots and traces
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: markbridge-browser-failures-${{ github.sha }}
           path: |
@@ -279,7 +279,7 @@ jobs:
             --manifest "dist/markbridge-$(node -p "require('./package.json').version").manifest.json"
 
       - name: Upload verification artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: markbridge-ci-${{ github.sha }}
           path: |
@@ -298,7 +298,7 @@ jobs:
           python3 scripts/release_workflow.py --version "$version" --sha "$SOURCE_SHA" --repository "$REPOSITORY" --bundle dist
 
       - name: Upload installation ZIP, checksum, external manifest and notes
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: markbridge-release-${{ inputs.source_sha || github.sha }}
           path: |
@@ -311,19 +311,19 @@ jobs:
 
   php-converter:
     name: PHP conversion contracts (${{ matrix.php }})
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
         php: ['8.2', '8.3', '8.4', '8.5']
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ inputs.source_sha || github.sha }}
           persist-credentials: false
       - name: Set up Node for build tools
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '24.15.0'
           cache: npm
@@ -335,7 +335,7 @@ jobs:
           extensions: dom, libxml, mbstring, zip, intl, gd, posix
           tools: composer:v2
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.x'
       - name: Install translation compiler

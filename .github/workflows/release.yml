@@ -22,7 +22,7 @@ concurrency:
 jobs:
   resolve:
     name: Validate main source and requested version
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       sha: ${{ steps.source.outputs.sha }}
     steps:
@@ -30,7 +30,7 @@ jobs:
         env:
           SOURCE_REF: ${{ github.ref }}
         run: test "$SOURCE_REF" = refs/heads/main
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
@@ -45,7 +45,7 @@ jobs:
           echo "sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
       - name: Refuse an existing tag or release before building
         if: inputs.publish
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           RELEASE_VERSION: ${{ inputs.version }}
         with:
@@ -75,13 +75,13 @@ jobs:
     name: Publish verified bundle
     if: inputs.publish
     needs: [resolve, verify]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
       # No checkout and no execution of repository/artifact code with a write token.
       - name: Download this run's verified installation bundle
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: markbridge-release-${{ needs.resolve.outputs.sha }}
           path: release
@@ -117,7 +117,7 @@ jobs:
                   assert hashlib.sha256(bundle.read('markbridge/' + name)).hexdigest() == digest
           PY
       - name: Recheck tag and release immediately before publishing
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           RELEASE_VERSION: ${{ inputs.version }}
         with:
