@@ -3,7 +3,7 @@ Tags: markdown, blocks, editor, mathjax, revisions
 Requires at least: 7.1
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 3.0.0-rc.9
+Stable tag: 3.0.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -25,7 +25,7 @@ Private paired candidate backups for existing managed articles are stored in non
 
 == Changelog ==
 
-= 3.0.0-rc.9 =
+= 3.0.0 =
 * Keep proof bars consistently numbered and move descriptive authored titles into the body. Pad activity disclosures and offer static reading only after an explicit failed start.
 
 = 3.0.0-rc.8 =

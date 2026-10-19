@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.0.0
+
+- Release the reviewed 2.1–3.0 feature set: paired Markdown/block recovery and private backups, local drafts and three-way merge, source navigation, writing tools, Front Matter and bounded media import/export.
+- Add logical identities, cross-article references, bibliography v2 with BibTeX/CSL snapshots, technical theorem/proof writing and native-media projections while retaining legacy articles and IDs.
+- Add permission-checked collections and immutable publication snapshots, static HTML projections, MathML publication support and the independent Publisher web-book/EPUB integration.
+- Provide the trusted extension/author SDK, bounded typed static projections, explicit component upgrades and independent Teaching, Scholarly, Publisher, Scientific and Mermaid providers.
+- Include the reviewed reading refinements, verified teaching-frame sizing and localized controls. New installations default to PHP; administrators explicitly choose PHP or validated Node, and existing Node settings remain unchanged.
+- Preserve exact component versions, immutable resource payloads and registered compatibility floors. Historical prerelease notes and validation limits remain documented.
+
 ## 3.0.0-rc.9
 
 - Show proof bars as a single semibold localized number. Retain original title nodes, place descriptive titles at the start of the proof body, and omit duplicate default labels visually without changing source, anchors or reference numbering.
