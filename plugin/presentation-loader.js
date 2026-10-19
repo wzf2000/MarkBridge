@@ -46,19 +46,34 @@
     queuedCodeLayout = true;
     requestAnimationFrame(() => {
       queuedCodeLayout = false;
-      for (const [pre, hint] of codeDisplays) {
+      for (const [pre, state] of codeDisplays) {
         if (!pre.isConnected) {
           codeSizes?.unobserve(pre);
           const code = pre.querySelector('code');
           if (code) codeSizes?.unobserve(code);
-          hint.remove();
           codeDisplays.delete(pre);
           continue;
         }
         const overflowing = pre.clientWidth > 0 && pre.scrollWidth > pre.clientWidth + 1;
-        hint.hidden = !overflowing;
-        if (overflowing) pre.setAttribute('tabindex', '0');
-        else pre.removeAttribute('tabindex');
+        if (overflowing) {
+          if (!pre.hasAttribute('tabindex')) {
+            pre.setAttribute('tabindex', '0');
+            state.tabIndexAdded = true;
+          }
+          if (!pre.hasAttribute('aria-description') && !pre.hasAttribute('aria-describedby')) {
+            state.description = T(
+              'Scroll horizontally to read long lines. Focus the code and use the arrow keys.',
+            );
+            pre.setAttribute('aria-description', state.description);
+          }
+        } else {
+          if (state.tabIndexAdded && pre.getAttribute('tabindex') === '0')
+            pre.removeAttribute('tabindex');
+          if (state.description && pre.getAttribute('aria-description') === state.description)
+            pre.removeAttribute('aria-description');
+          state.tabIndexAdded = false;
+          state.description = null;
+        }
       }
     });
   };
@@ -79,18 +94,7 @@
     const digits = String(Math.max(Math.abs(start), Math.abs(start + lineCount - 1))).length;
     pre.style.setProperty('--mbb-code-gutter', Math.max(3.25, digits * 0.65 + 0.9) + 'em');
     if (!codeDisplays.has(pre)) {
-      const hint = document.createElement('p');
-      hint.className = 'mbb-code-scroll-hint';
-      hint.dataset.mbbGenerated = '';
-      hint.textContent = T(
-        'Scroll horizontally to read long lines. Focus the code and use the arrow keys.',
-      );
-      hint.hidden = true;
-      const wrapper = pre.parentElement?.classList.contains('code-toolbar')
-        ? pre.parentElement
-        : pre;
-      wrapper.before(hint);
-      codeDisplays.set(pre, hint);
+      codeDisplays.set(pre, { tabIndexAdded: false, description: null });
       codeSizes?.observe(pre);
       codeSizes?.observe(code);
       pre.addEventListener(

@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.1
+
+- 去除代码块自动插入的可见横向滚动提示，修复仅一侧溢出时的代码对照顶部错位。
+- 保留溢出检测、键盘聚焦与方向键、默认联动横滚和 Prism；尊重作者已有的 ARIA 与 tabindex 属性。
+- CI 官方 Action 改用 Node 24，运行器固定为 Ubuntu 24.04，保留既有版本矩阵、用例和发行／Wiki 保护。
+
 ## 3.0.0
 
 - Release the reviewed 2.1–3.0 feature set: paired Markdown/block recovery and private backups, local drafts and three-way merge, source navigation, writing tools, Front Matter and bounded media import/export.

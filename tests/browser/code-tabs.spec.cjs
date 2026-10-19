@@ -289,6 +289,7 @@ test('language tabs retain visible full-height line-number gutters after theme h
   await page.evaluate(() => Prism.highlightAll());
   await page.getByRole('tab', { name: 'Python', exact: true }).click();
   await expect(page.locator('#python .line-numbers-rows > span')).toHaveCount(18);
+  await expect(page.locator('.mbb-code-scroll-hint')).toHaveCount(0);
   // A theme's generic pre padding must not clip the separately positioned gutter.
   await page.addStyleTag({
     content: 'article pre:not(.wp-block-mbb-math){padding:20px!important}',

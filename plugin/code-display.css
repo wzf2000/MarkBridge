@@ -56,20 +56,7 @@ pre.mbb-code-display.line-numbers .line-numbers-rows > span::before {
 pre.mbb-code-display.line-numbers .line-numbers-rows > span {
   display: block;
 }
-.mbb-code-scroll-hint {
-  margin: 0;
-  padding: 4px 12px;
-  font: 12px/1.5 var(--mbb-font-ui, system-ui);
-  background: var(--mbb-code-surface, #f5f6f8);
-  color: var(--mbb-code-muted, #526577);
-}
-.mbb-code-scroll-hint[hidden] {
-  display: none;
-}
 @media print {
-  .mbb-code-scroll-hint {
-    display: none !important;
-  }
   pre.mbb-code-display.line-numbers > code {
     inline-size: auto;
     white-space: pre-wrap;

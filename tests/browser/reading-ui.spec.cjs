@@ -6,8 +6,8 @@ test('managed long code exposes keyboard scrolling and readable comments without
   await page.goto('/front');
   const pre = page.locator('#long-code').locator('..');
   await expect(pre).toHaveClass(/mbb-code-display/);
-  await expect(page.locator('.mbb-code-scroll-hint').first()).toHaveClass('mbb-code-scroll-hint');
-  await expect(page.locator('.mbb-code-scroll-hint').first()).toBeVisible();
+  await expect(page.locator('.mbb-code-scroll-hint')).toHaveCount(0);
+  await expect(pre).toHaveAttribute('aria-description', /.+/);
   await expect(pre).toHaveAttribute('tabindex', '0');
   await pre.focus();
   await page.keyboard.press('ArrowRight');
@@ -35,13 +35,36 @@ test('managed long code exposes keyboard scrolling and readable comments without
       .querySelector('article')
       .insertAdjacentHTML(
         'beforeend',
-        '<pre id="short" class="wp-block-mbb-code"><code class="language-js">let short = 1;</code></pre><pre id="unmanaged"><code class="language-js">let other = 1;</code></pre>',
+        `<pre id="short" class="wp-block-mbb-code"><code class="language-js">let short = 1;</code></pre><pre id="unmanaged"><code class="language-js">${'long '.repeat(180)}</code></pre><pre id="authored" class="wp-block-mbb-code" tabindex="-1" aria-label="Authored code" aria-description="Author scrolling notes"><code class="language-js">${'long '.repeat(180)}</code></pre><span id="code-help" hidden>Author help</span><pre id="described" class="wp-block-mbb-code" aria-describedby="code-help"><code class="language-js">${'long '.repeat(180)}</code></pre>`,
       );
   });
   await expect(page.locator('#short')).toHaveClass(/mbb-code-display/);
-  await expect(page.locator('#short').locator('xpath=../preceding-sibling::*[1]')).toBeHidden();
+  await expect(page.locator('#short')).not.toHaveAttribute('aria-description');
   await expect(page.locator('#short')).not.toHaveAttribute('tabindex', '0');
   await expect(page.locator('#unmanaged')).not.toHaveClass(/mbb-code-display/);
+  await expect(page.locator('#unmanaged')).not.toHaveAttribute('tabindex');
+  await expect(page.locator('#unmanaged')).not.toHaveAttribute('aria-description');
+  await expect(page.locator('#authored')).toHaveClass(/mbb-code-display/);
+  await expect(page.locator('#authored')).toHaveAttribute('tabindex', '-1');
+  await expect(page.locator('#authored')).toHaveAttribute(
+    'aria-description',
+    'Author scrolling notes',
+  );
+  await expect(page.locator('#authored')).toHaveAttribute('aria-label', 'Authored code');
+  await expect(page.locator('#described')).toHaveAttribute('tabindex', '0');
+  await expect(page.locator('#described')).toHaveAttribute('aria-describedby', 'code-help');
+  await expect(page.locator('#described')).not.toHaveAttribute('aria-description');
+  await page.locator('#short > code').evaluate((node) => {
+    node.textContent = 'long '.repeat(180);
+  });
+  await expect(page.locator('#short')).toHaveAttribute('tabindex', '0');
+  await expect(page.locator('#short')).toHaveAttribute('aria-description', /.+/);
+  await page.locator('#short > code').evaluate((node) => {
+    node.textContent = 'let short = 1;';
+  });
+  await expect(page.locator('#short')).not.toHaveAttribute('tabindex');
+  await expect(page.locator('#short')).not.toHaveAttribute('aria-description');
+  await expect(page.locator('.mbb-code-scroll-hint')).toHaveCount(0);
   await page.screenshot({ path: `test-results/code-scroll-${testInfo.project.name}.png` });
 });
 
@@ -63,10 +86,7 @@ test('comparison scrolling synchronizes by default without a selection control a
   await expect(left).toHaveClass(/mbb-code-display/);
   await expect(group.locator('input[type=checkbox], [role=checkbox]')).toHaveCount(0);
   await expect(group).toHaveAttribute('data-mbb-sync-scroll', 'true');
-  const hint = group.locator('.mbb-code-scroll-hint').first();
-  await expect(hint).toBeVisible();
-  expect(await hint.evaluate((node) => getComputedStyle(node).fontWeight)).toBe('400');
-  expect((await hint.boundingBox()).height).toBeLessThan(60);
+  await expect(group.locator('.mbb-code-scroll-hint')).toHaveCount(0);
   await left.evaluate((node) => {
     node.scrollLeft = 80;
   });
@@ -89,6 +109,53 @@ test('comparison scrolling synchronizes by default without a selection control a
   });
   await expect.poll(() => left.evaluate((node) => node.scrollLeft)).toBe(80);
   expect(await right.evaluate((node) => node.scrollLeft)).toBe(80);
+});
+
+test('one overflowing comparison side adds no row and keeps code aligned below its title', async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize(
+    testInfo.project.name.startsWith('desktop')
+      ? { width: 1440, height: 900 }
+      : { width: 390, height: 844 },
+  );
+  await page.goto('/front');
+  await page.evaluate(() => {
+    const article = document.querySelector('article');
+    article.insertAdjacentHTML(
+      'beforeend',
+      `<div id="asymmetric-compare" class="wp-block-mbb-code-compare" data-mbb-teaching="code-compare" data-mbb-teaching-config="{}"><div class="mbb-compare-left"><p>Before</p><pre><code class="language-js">const result = 1;\nreturn result;</code></pre></div><div class="mbb-compare-right"><p>After</p><pre><code class="language-js">const result = "${'x'.repeat(180)}";\nreturn result;</code></pre></div><div class="mbb-teaching-body">Only the right side needs horizontal scrolling.</div></div>`,
+    );
+  });
+  const group = page.locator('#asymmetric-compare');
+  const left = group.locator('.mbb-compare-left pre');
+  const right = group.locator('.mbb-compare-right pre');
+  await expect(right).toHaveAttribute('tabindex', '0');
+  await expect(left).toHaveClass(/mbb-code-display/);
+  await expect(left).not.toHaveAttribute('tabindex');
+  await expect(left).not.toHaveAttribute('aria-description');
+  await expect(group.locator('.mbb-compare-left > p')).toHaveCount(1);
+  await expect(group.locator('.mbb-compare-right > p')).toHaveCount(1);
+  const geometry = await group.evaluate((node) =>
+    ['.mbb-compare-left', '.mbb-compare-right'].map((selector) => {
+      const side = node.querySelector(selector),
+        code = side.querySelector('pre');
+      const title = side.querySelector('p').getBoundingClientRect();
+      const box = code.getBoundingClientRect();
+      return {
+        x: box.x,
+        top: box.top,
+        titleGap: box.top - title.bottom,
+        overflow: code.scrollWidth > code.clientWidth + 1,
+      };
+    }),
+  );
+  expect(geometry.map((side) => side.overflow)).toEqual([false, true]);
+  for (const side of geometry) expect(Math.abs(side.titleGap)).toBeLessThan(1);
+  if (geometry[0].x !== geometry[1].x)
+    expect(Math.abs(geometry[0].top - geometry[1].top)).toBeLessThan(1);
+  await expect(page.locator('.mbb-code-scroll-hint')).toHaveCount(0);
+  await group.screenshot({ path: testInfo.outputPath('asymmetric-code-diff.png') });
 });
 
 test('Node directory follows the selected engine while remaining a successful form field', async ({
