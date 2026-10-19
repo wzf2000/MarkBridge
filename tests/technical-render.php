@@ -2,7 +2,9 @@
 // Derived display tests deliberately do not load WordPress or write a document.
 function mbb_t($text)
 {
-    return $text;
+    return $text === 'Proof' && ($GLOBALS['technical_fixture_locale'] ?? '') === 'zh_CN'
+        ? '证明'
+        : $text;
 }
 require dirname(__DIR__) . '/plugin/technical.php';
 function technical_assert($value, $message)
@@ -234,3 +236,57 @@ foreach (['author-year', 'numeric'] as $style) {
     );
 }
 echo "Technical display: independent order, citation styles, safe URLs, literal code, bibliography v2 metadata/static parity and idempotence passed.\n";
+
+// Reading placement is derived only: original title children, body IDs and ref numbering survive.
+foreach (['en_US', 'zh_CN'] as $locale) {
+    $GLOBALS['technical_fixture_locale'] = $locale;
+    foreach (
+        ['Proof', '证明', '證明', '<em id="authored-title-node">By induction</em>']
+        as $title
+    ) {
+        $input =
+            '<details id="proof-title" class="mbb-technical-statement" data-mbb-statement-kind="proof"><summary class="mbb-technical-heading">' .
+            $title .
+            '</summary><div class="mbb-technical-body"><p id="authored-proof-body">Exact authored body.</p></div></details>' .
+            technical_ref('proof-title');
+        $before = $input;
+        $output = mbb_render_technical($input);
+        [$d, $xp] = technical_document($output);
+        $summary = $xp->query('//*[@id="proof-title"]/summary')->item(0);
+        technical_assert(
+            $summary->textContent === ($locale === 'zh_CN' ? '证明1.' : 'Proof 1.'),
+            'Proof bar duplicates title or changes locale number',
+        );
+        technical_assert(
+            $input === $before &&
+                $d->getElementById('authored-proof-body')->textContent === 'Exact authored body.',
+            'Derived proof changed source/body',
+        );
+        technical_assert(
+            $xp->query('//span[@class="mbb-xref"]//a')->item(0)->textContent ===
+                ($locale === 'zh_CN' ? '证明 1' : 'Proof 1'),
+            'Proof reference label changed',
+        );
+        if (str_contains($title, 'By induction')) {
+            $node = $d->getElementById('authored-title-node');
+            technical_assert(
+                $node &&
+                    $node->parentNode->getAttribute('class') === 'mbb-proof-title' &&
+                    $node->parentNode->parentNode->getAttribute('class') === 'mbb-technical-body',
+                'Authored title node was lost rather than moved into body',
+            );
+        } else {
+            $stored = $xp->query('//*[contains(@class,"mbb-proof-default-title")]')->item(0);
+            technical_assert(
+                $stored && $stored->hasAttribute('hidden') && $stored->textContent === $title,
+                'Default title must remain present but visually omitted',
+            );
+        }
+        technical_assert(
+            mbb_render_technical($output) === $output,
+            'Proof reading render not idempotent',
+        );
+    }
+}
+unset($GLOBALS['technical_fixture_locale']);
+echo "Proof title placement/default retention, locale bar/ref labels and exact body/source passed.\n";

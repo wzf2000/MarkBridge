@@ -104,3 +104,16 @@ npm run test:publication -- --retries=0
 ## 提交变更
 
 说明触发场景、最终行为、兼容影响与实际验证。更新 CHANGELOG；不要把未运行的测试写成通过。格式改动与行为改动尽量分开，涉及存储时明确恢复路径。
+
+## 显式教学阅读集成检查
+
+正常主仓库套件不要求外部扩展。检查三类自测的真实固定载荷、正常关闭与失败静态入口时，先构建当前 Main，并明确提供固定 Teacher 完整源码、只读核心脚本 runtime 和同版 WordPress 源码目录：
+
+```sh
+MARKBRIDGE_TEST_TEACHER_ROOT=/path/to/fixed/teaching-extension \
+MARKBRIDGE_TEST_RUNTIME=/path/to/prepared-runtime \
+MARKBRIDGE_TEST_WORDPRESS_ROOT=/path/to/wordpress-core \
+npm run test:teaching-reading -- --retries=0
+```
+
+该入口缺少前提直接失败，不跳过。它只运行回环 fixture、读取 PHP 解析库和不可变组件资源，不启动 WordPress 或写数据库；其中作者静态正文与配置来自合成样板。真实 Cookie／权限／数据库保存仍须在明确拥有的独立站另验。

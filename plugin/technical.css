@@ -46,7 +46,15 @@
   font-weight: 600;
 }
 .mbb-technical-statement.mbb-statement-proof .mbb-technical-number {
-  font-weight: 400;
+  font-weight: 600;
+}
+.mbb-proof-title {
+  margin-block: 0 0.65em;
+  font-weight: 600;
+}
+/* The authored default title remains present, including when static publishers expand details. */
+.mbb-proof-default-title {
+  display: none !important;
 }
 details.mbb-technical-statement > summary {
   cursor: pointer;

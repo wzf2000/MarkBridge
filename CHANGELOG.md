@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.0-rc.9
+
+- Show proof bars as a single semibold localized number. Retain original title nodes, place descriptive titles at the start of the proof body, and omit duplicate default labels visually without changing source, anchors or reference numbering.
+- Align activity hint, feedback and explanation spacing with the existing panel tokens. Keep normal closed controls limited to starting the activity; a complete static-reading entry is offered after an explicit resource, compatibility or budget failure. Native folding, full text, printing and no-script/static content remain readable.
+- Clarify provider/type/version and maintenance paths in the teaching-extension guide; add an explicit fixed-Teacher reading integration profile without weakening the standalone CI suite.
+
 ## 3.0.0-rc.8
 
 - Include the natural body box, padding and collapsed final margins when measuring verified component frames; retain shrinking, session validation and the 4096 px cap. Provider payloads and teaching parameters are unchanged.

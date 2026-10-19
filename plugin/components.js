@@ -229,7 +229,7 @@
         (part) => part.closest('[data-mbb-teaching=component]') === node,
       );
     function resetActivity() {
-      if (!config.activity || config.status !== 'available') return;
+      if (!config.activity) return;
       const a = config.activity,
         hidden = new Set([...a.hints, a.feedback.correct, a.feedback.incorrect, a.explanation]);
       for (const part of activityParts())
@@ -335,7 +335,7 @@
       launch.disabled = false;
       launch.hidden = false;
       close.hidden = true;
-      if (readStatic) readStatic.hidden = false;
+      if (readStatic) readStatic.hidden = true;
       launch.setAttribute('aria-expanded', 'false');
       close.setAttribute('aria-expanded', 'false');
       node.dataset.mbbComponentState = 'closed';
@@ -348,7 +348,7 @@
       pumpReaders();
     }
     function report(code) {
-      showStaticActivity();
+      if (readStatic) readStatic.hidden = false;
       node.dataset.mbbFailureCode = code;
       const record = diagnostic?.failure(code);
       if (record) window.MBB_DIAGNOSTICS?.show(controls, record);
@@ -357,7 +357,7 @@
       if (diagram) readerFailed = true;
       const record = diagnostic?.failure(code);
       stop(message + T(' Static fallback content remains readable. You can start again.'));
-      showStaticActivity();
+      if (readStatic) readStatic.hidden = false;
       node.dataset.mbbFailureCode = code;
       if (record) window.MBB_DIAGNOSTICS?.show(controls, record);
     }
@@ -591,6 +591,7 @@
     close.setAttribute('aria-expanded', 'false');
     node.dataset.mbbComponentState = 'closed';
     close.hidden = true;
+    if (readStatic) readStatic.hidden = true;
     controls.append(launch, close, ...(readStatic ? [readStatic] : []), status);
     resetActivity();
     if (config.activity) {
