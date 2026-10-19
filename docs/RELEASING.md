@@ -48,11 +48,17 @@ python3 scripts/verify_package.py /srv/wordpress/wp-content/plugins/markbridge \
 
 先将审阅过的版本更新、CHANGELOG 和发行流程合并至 `main`。打开 GitHub Actions 的 **Manual GitHub Release**，选择 `main`，填写不带 `v` 的版本号，保持 `publish=false` 执行试跑。仅接受 `X.Y.Z` 或 `X.Y.Z-alpha.N` / `beta.N` / `rc.N`（N 从 1 开始）；版本必须与 package、包锁、插件头、Stable tag 和当前唯一 CHANGELOG 节一致。
 
-工作流固定为触发时的 `main` 提交 SHA，通过可复用 CI 运行已有检查，并生成 `markbridge-release-<SHA>` artifact，包含安装 ZIP、SHA-256、外部文件清单、中文发行说明和校验记录。CI 的匹配核心转换运行环境放在忽略目录 `.runtime/ci/`，打包必须保持源码工作树干净，不使用跳过脏工作树检查的环境变量。普通 push / PR CI 也生成相同结构的安装 artifact。
+工作流固定为触发时的 `main` 提交 SHA，默认查找最近 14 天内同一仓库、同一提交的成功 `main` push CI，复用其唯一、未过期的 `markbridge-release-<SHA>` artifact。只接受 `.github/workflows/ci.yml` 的完整成功运行及第 1 次 attempt，核对源／目标仓库 ID、分支、事件、SHA、运行时间窗口和 artifact ID／摘要；PR、其他分支及重新运行而无法绑定 attempt 的旧附件均不复用。找不到合格运行或附件、附件过期时，自动通过可复用 CI 完整重跑；勾选 `force_rebuild=true` 也会强制完整重跑。API 鉴权／服务错误和同名多附件会明确失败，不据此放行。
 
-下载试跑 artifact 后审阅 `release-notes.md` 与 ZIP。确认该提交可发行后，对同一 `main` 提交重新运行工作流并选择 `publish=true`；若 `main` 已变化，应先对新提交重新试跑。发布运行会重新执行 CI，不直接复用前一次 artifact。工作流不支持从其他分支或标签发行；新流程合并前无法在特性分支进行手动试跑，可先用 PR CI 核验共享检查。
+完整 CI 将构建打包、PHP→Node→PHP 三轮真实保存、转换／静态契约、两组 Chromium、四 project 的 Firefox／WebKit 兼容检查和原 PHP 8.2–8.5 矩阵分为独立 job。每个消费者先校验同源 ZIP 与外部清单，各自安装固定 WordPress、合成数据库和真实核心运行环境；不共享可写站点或绝对路径 runtime。最终稳定检查 `Verify source and tests` 要求所有 job 成功，并将每个浏览器分组的完整 test ID＋project 与同 SHA 全量发现清单精确比对，拒绝缺片、重复、跳过、重试或失败。成功也保留小型 JSON 分组耗时与逐用例耗时排行，并在 Actions 汇总中展示最慢 20 项；失败保留截图与 trace。只有汇总通过才生成包含安装 ZIP、SHA-256、外部文件清单、中文发行说明和校验记录的五文件发行 artifact；内部构建输入使用其他名称。打包仍要求源码工作树干净，不使用跳过检查的环境变量。普通 `main` push 和 PR 均运行完整 CI；PR 新提交会取消该 PR 的旧检查，main 与手动发行不会互相取消。
 
-仅发布 job 获得 `contents: write`。它不检出或执行仓库代码，从同一次运行下载 artifact，独立核对版本、源码 SHA、ZIP 与文件清单、摘要和说明完整性。发布前后置的存在检查会拒绝同名标签或 Release（包括草稿）；同版本运行串行，不取消正在执行的发行。随后原子创建固定 SHA 的标签（同名竞争会失败），使用该标签创建草稿并上传 ZIP、SHA-256 和外部清单，全部成功且再次核对标签 SHA 后才公开；候选版本自动标记 Pre-release。已有 Release 永不覆盖。
+在 Actions 中对同一 run 执行 **Re-run failed jobs** 或 **Re-run all jobs** 时，CI 仅在第 2 次及之后 attempt 对该 run 的同名内部构建、浏览器报告／失败材料、汇总和发行 artifact 启用覆盖。覆盖会删除旧附件并创建新 ID；消费者按 build job 输出的 artifact ID 下载，继续验证同 SHA ZIP／外部清单和完整分组覆盖。已成功且未重跑的 job 可以沿用原结果，最终汇总仍要求全部 job 成功。跨运行发行复用继续拒绝多 attempt 的 main CI，避免把旧 attempt 的附件作为新验收；发行转移包使用 attempt 独有名字。
+
+下载试跑 artifact 后审阅 `release-notes.md` 与 ZIP。确认该提交可发行后，对同一 `main` 提交重新运行工作流并选择 `publish=true`；若 `main` 已变化，应先对新提交重新试跑。发布运行优先复用同 SHA 的合格 main push CI 附件；之前仅在手动试跑中生成的附件不属于 main push CI，找不到合格附件时仍会重跑。可用 `force_rebuild=true` 明确要求完整重跑。工作流不支持从其他分支或标签发行；新流程合并前无法在特性分支进行手动试跑，可先用 PR CI 核验共享检查。
+
+选择和转移 job 仅使用只读权限。无论复用还是完整重跑，转移 job 都重新查询运行／附件关联，验证下载的原始 artifact ZIP 摘要，只解开精确五文件并复核原有内层 ZIP、外部清单、逐文件摘要和源码 SHA，再上传本次发行 attempt 独有的 `markbridge-publish-<SHA>-attempt<N>` artifact。跨运行下载失败或摘要变化会失败，不改用未经核验的附件。
+
+仅发布 job 获得 `contents: write`。它不检出或执行仓库代码，按转移 job 输出的 artifact ID 从本次运行下载，独立核对版本、源码 SHA、ZIP 与文件清单、摘要和说明完整性。发布前后置的存在检查会拒绝同名标签或 Release（包括草稿）；同版本运行串行，不取消正在执行的发行。随后原子创建固定 SHA 的标签（同名竞争会失败），使用该标签创建草稿并上传 ZIP、SHA-256 和外部清单，全部成功且再次核对标签 SHA 后才公开；候选版本自动标记 Pre-release。已有 Release 永不覆盖。
 
 GitHub 远端创建并非原子事务：创建标签后的附件上传或公开步骤失败可能留下草稿／标签。检查 Actions 日志和远端状态后，由维护者处理残留并决定如何重试；工作流不会自动删除、替换或继续修改已有发行。Artifact 及其校验记录来自同一可信 CI 运行，摘要用于完整性校验，不是独立签名。流程的信任边界是已审阅的 `main` 源码和工作流。
 

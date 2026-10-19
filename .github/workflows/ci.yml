@@ -2,6 +2,7 @@ name: MarkBridge CI
 
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_call:
     inputs:
@@ -11,13 +12,68 @@ on:
       release_version:
         type: string
         required: true
+    outputs:
+      release_artifact_id:
+        description: Verified release artifact ID
+        value: ${{ jobs.verify.outputs.release_artifact_id }}
+      release_artifact_digest:
+        description: Verified release artifact digest
+        value: ${{ jobs.verify.outputs.release_artifact_digest }}
 
 permissions:
   contents: read
 
+# Only a newer commit on the same PR cancels work. Main and reusable release
+# invocations have a unique run identity and are never cancelled by another run.
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && !inputs.source_sha && format('markbridge-pr-{0}', github.event.pull_request.number) || format('markbridge-ci-{0}', github.run_id) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' && !inputs.source_sha }}
+
+env:
+  SOURCE_SHA: ${{ inputs.source_sha || github.sha }}
+
 jobs:
-  verify:
-    name: Verify source and tests
+  build:
+    name: Build trusted installation inputs
+    outputs:
+      artifact_id: ${{ steps.build-inputs.outputs.artifact-id }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.source_sha || github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/ci-tools
+      - name: Build locked PHP dependencies and browser assets
+        run: |
+          npm run build:php
+          npm run build
+      - name: Build final ZIP from clean source
+        run: python3 scripts/package.py
+      - name: Discover every registered browser test and project
+        env:
+          MARKBRIDGE_CROSS_BROWSER: '1'
+          MARKBRIDGE_BROWSER_REPORT: ${{ runner.temp }}/browser-discovery.json
+        run: |
+          npx playwright test --list --reporter=./scripts/ci-browser-reporter.cjs
+          python3 scripts/check_ci_pipeline.py discover --sha "$SOURCE_SHA" --input "$RUNNER_TEMP/browser-discovery.json" --output dist/browser-discovery.json
+      # This is an internal input, never an already verified release artifact.
+      - id: build-inputs
+        uses: actions/upload-artifact@v7
+        with:
+          name: markbridge-build-${{ inputs.source_sha || github.sha }}
+          path: |
+            dist/markbridge-*.zip
+            dist/markbridge-*.zip.sha256
+            dist/markbridge-*.manifest.json
+            dist/browser-discovery.json
+          overwrite: ${{ github.run_attempt > 1 }}
+          if-no-files-found: error
+
+  save:
+    name: Real PHP to Node to PHP save chains
+    needs: build
     runs-on: ubuntu-24.04
     services:
       mysql:
@@ -30,93 +86,21 @@ jobs:
         options: >-
           --health-cmd="mysqladmin ping -h 127.0.0.1 -psynthetic-ci-only-password"
           --health-interval=10s --health-timeout=5s --health-retries=10
-    env:
-      MARKBRIDGE_CI_DB_HOST: 127.0.0.1:3306
-      MARKBRIDGE_CI_DB_NAME: markbridge_ci_verify
-      MARKBRIDGE_CI_DB_PASSWORD: synthetic-ci-only-password
-      MARKBRIDGE_TEST_HOME: http://127.0.0.1:18764
-      MARKBRIDGE_TEST_RUNTIME: ${{ github.workspace }}/.runtime/ci
-    strategy:
-      fail-fast: false
-      matrix:
-        node: ['24.15.0']
-        php: ['8.2']
     steps:
       - name: Check out source
         uses: actions/checkout@v7
         with:
           ref: ${{ inputs.source_sha || github.sha }}
           persist-credentials: false
-
-      - name: Set synthetic installation paths on the runner
-        run: |
-          {
-            printf 'MARKBRIDGE_TEST_WORDPRESS_ROOT=%s/markbridge-wordpress\n' "$RUNNER_TEMP"
-            printf 'MARKBRIDGE_WORDPRESS_SOURCE=%s/markbridge-wordpress\n' "$RUNNER_TEMP"
-            printf 'MARKBRIDGE_TEST_WPCLI=%s/markbridge-wp\n' "$RUNNER_TEMP"
-            printf 'MARKBRIDGE_TEST_PLUGIN_ROOT=%s/markbridge-wordpress/wp-content/plugins/markbridge\n' "$RUNNER_TEMP"
-          } >> "$GITHUB_ENV"
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v7
+      - uses: ./.github/actions/ci-tools
+      - name: Download internal build inputs from this run
+        uses: actions/download-artifact@v8
         with:
-          node-version: ${{ matrix.node }}
-          cache: npm
-
-      - name: Set up PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: ${{ matrix.php }}
-          coverage: none
-          extensions: dom, libxml, mbstring, mysqli, zip, intl, gd, posix
-          tools: composer:v2
-
-      - name: Set up Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: '3.x'
-
-      - name: Install Python checks
-        run: python -m pip install --disable-pip-version-check -r requirements-dev.txt
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install locked PHP conversion dependencies
-        run: npm run build:php
-
-      - name: Prepare sandbox and translation tools on the ephemeral runner
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y bubblewrap default-mysql-client gettext
-          # Ubuntu 24.04's AppArmor restriction otherwise prevents unprivileged bwrap.
-          # This runner is disposable; no production host settings are changed.
-          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
-
-      - name: Build browser assets for the test runtime
-        run: npm run build
-
-      - name: Build and verify the final installation package
-        run: python3 scripts/package.py
-
-      - name: Install fixed WordPress and the verified ZIP in a synthetic database
-        run: |
-          python3 scripts/prepare_ci_wordpress.py \
-            --wordpress "$MARKBRIDGE_TEST_WORDPRESS_ROOT" \
-            --downloads "$RUNNER_TEMP/markbridge-downloads" \
-            --wp-cli "$MARKBRIDGE_TEST_WPCLI" --with-test-locales
-          version="$(node -p "require('./package.json').version")"
-          "$MARKBRIDGE_TEST_WPCLI" --path="$MARKBRIDGE_TEST_WORDPRESS_ROOT" plugin install "dist/markbridge-$version.zip" --activate
-          python3 scripts/verify_package.py "$MARKBRIDGE_TEST_PLUGIN_ROOT" --manifest "dist/markbridge-$version.manifest.json"
-
-      - name: Prepare the real core conversion and browser runtime from the installed ZIP
-        run: |
-          python3 scripts/prepare_runtime.py \
-            --wordpress "$MARKBRIDGE_TEST_WORDPRESS_ROOT" \
-            --plugin "$MARKBRIDGE_TEST_PLUGIN_ROOT" \
-            --output "$MARKBRIDGE_TEST_RUNTIME" \
-            --wp-cli "$MARKBRIDGE_TEST_WPCLI"
-
+          artifact-ids: ${{ needs.build.outputs.artifact_id }}
+          path: dist
+      - name: Verify ZIP and external manifest, then restore generated test assets
+        run: python3 scripts/prepare_ci_package.py --bundle dist --sha "$SOURCE_SHA" --hydrate
+      - uses: ./.github/actions/ci-wordpress
       - name: Verify the real WordPress PHP and Node save chains
         run: |
           wp_test() { "$MARKBRIDGE_TEST_WPCLI" --path="$MARKBRIDGE_TEST_WORDPRESS_ROOT" "$@"; }
@@ -181,49 +165,42 @@ jobs:
           wp_test eval-file tests/references-save.php
           wp_test eval-file tests/collections-save.php
 
+  unit:
+    name: Conversion, source and static contracts
+    needs: build
+    runs-on: ubuntu-24.04
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: synthetic-ci-only-password
+          MYSQL_ROOT_HOST: '%'
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -psynthetic-ci-only-password"
+          --health-interval=10s --health-timeout=5s --health-retries=10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.source_sha || github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/ci-tools
+      - name: Download internal build inputs from this run
+        uses: actions/download-artifact@v8
+        with:
+          artifact-ids: ${{ needs.build.outputs.artifact_id }}
+          path: dist
+      - name: Verify ZIP and external manifest, then restore generated test assets
+        run: python3 scripts/prepare_ci_package.py --bundle dist --sha "$SOURCE_SHA" --hydrate
+      - uses: ./.github/actions/ci-wordpress
       - name: Check formatting
         env:
           MARKBRIDGE_PYTHON: python
         run: npm run format:check
-
       - name: Run conversion and editor tests
-        env:
-          MARKBRIDGE_TEST_RUNTIME: ${{ github.workspace }}/.runtime/ci
         run: npm test
-
-      - name: Install pinned Chromium for browser regressions
-        run: npx playwright install --with-deps --only-shell chromium
-
-      - name: Run browser regressions against built plugin assets
-        env:
-          PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ runner.temp }}/browser-results.json
-        run: |
-          npx playwright test --retries=0 --reporter=line,json
-          python3 scripts/check_browser_report.py "$RUNNER_TEMP/browser-results.json"
-
-      - name: Install pinned Firefox and WebKit for targeted compatibility
-        run: npx playwright install --with-deps firefox webkit
-
-      - name: Run targeted Firefox and WebKit regressions
-        env:
-          MARKBRIDGE_CROSS_BROWSER: '1'
-          PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ runner.temp }}/cross-browser-results.json
-        run: |
-          npx playwright test --project=desktop-firefox --project=mobile-firefox --project=desktop-webkit --project=mobile-webkit --retries=0 --reporter=line,json
-          python3 scripts/check_browser_report.py "$RUNNER_TEMP/cross-browser-results.json"
-
-      - name: Upload browser failure screenshots and traces
-        if: failure()
-        uses: actions/upload-artifact@v7
-        with:
-          name: markbridge-browser-failures-${{ github.sha }}
-          path: |
-            test-results/
-            playwright-report/
-            ${{ runner.temp }}/browser-results.json
-            ${{ runner.temp }}/cross-browser-results.json
-          if-no-files-found: ignore
-
       - name: Run source writeback safety tests
         run: php tests/source-writeback.php
 
@@ -269,45 +246,83 @@ jobs:
           python3 -m unittest discover -s tests -p 'test_vendor_resources.py'
           php -d disable_functions=mb_check_encoding tests/i18n-bootstrap.php
 
-      - name: Build and verify release package
-        run: |
-          rm -rf /tmp/markbridge-package-check
-          mkdir -p /tmp/markbridge-package-check
-          unzip -q "dist/markbridge-$(node -p "require('./package.json').version").zip" -d /tmp/markbridge-package-check
-          python3 scripts/verify_package.py \
-            /tmp/markbridge-package-check/markbridge \
-            --manifest "dist/markbridge-$(node -p "require('./package.json').version").manifest.json"
-
-      - name: Upload verification artifacts
-        uses: actions/upload-artifact@v7
-        with:
-          name: markbridge-ci-${{ github.sha }}
-          path: |
-            plugin/assets.json
-            plugin/runtime-contract.json
-            plugin/vendor-manifest.json
-          if-no-files-found: error
-
-      - name: Validate immutable release bundle and prepare notes
+  browser:
+    name: Browser regressions (${{ matrix.group }})
+    needs: build
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - group: chromium-desktop
+            projects: --project=desktop-chromium
+            install: --only-shell chromium
+          - group: chromium-mobile
+            projects: --project=mobile-chromium
+            install: --only-shell chromium
+          - group: compatibility
+            projects: --project=desktop-firefox --project=mobile-firefox --project=desktop-webkit --project=mobile-webkit
+            install: firefox webkit
+    services:
+      mysql:
+        image: mysql:8.4
         env:
-          RELEASE_VERSION: ${{ inputs.release_version }}
-          SOURCE_SHA: ${{ inputs.source_sha || github.sha }}
-          REPOSITORY: ${{ github.repository }}
-        run: |
-          version="${RELEASE_VERSION:-$(node -p "require('./package.json').version")}"
-          python3 scripts/release_workflow.py --version "$version" --sha "$SOURCE_SHA" --repository "$REPOSITORY" --bundle dist
-
-      - name: Upload installation ZIP, checksum, external manifest and notes
+          MYSQL_ROOT_PASSWORD: synthetic-ci-only-password
+          MYSQL_ROOT_HOST: '%'
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -psynthetic-ci-only-password"
+          --health-interval=10s --health-timeout=5s --health-retries=10
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.source_sha || github.sha }}
+          persist-credentials: false
+      - uses: ./.github/actions/ci-tools
+      - name: Download internal build inputs from this run
+        uses: actions/download-artifact@v8
+        with:
+          artifact-ids: ${{ needs.build.outputs.artifact_id }}
+          path: dist
+      - name: Verify ZIP and external manifest, then restore generated test assets
+        run: python3 scripts/prepare_ci_package.py --bundle dist --sha "$SOURCE_SHA" --hydrate
+      - uses: ./.github/actions/ci-wordpress
+      - name: Install pinned browsers for this group
+        run: npx playwright install --with-deps ${{ matrix.install }}
+      - name: Run every registered test in this group
+        env:
+          MARKBRIDGE_CROSS_BROWSER: '1'
+          PLAYWRIGHT_JSON_OUTPUT_NAME: ${{ runner.temp }}/browser-results.json
+          MARKBRIDGE_BROWSER_REPORT: ${{ runner.temp }}/browser-coverage.json
+        run: npx playwright test ${{ matrix.projects }} --retries=0 --reporter=line,json,./scripts/ci-browser-reporter.cjs
+      - name: Verify exact browser test identities and write timing report
+        if: always()
+        run: >-
+          python3 scripts/check_ci_pipeline.py report --sha "$SOURCE_SHA"
+          --discovery dist/browser-discovery.json --group "${{ matrix.group }}"
+          --input "$RUNNER_TEMP/browser-coverage.json"
+          --output "$RUNNER_TEMP/browser-${{ matrix.group }}.json"
+      - name: Upload browser timing and coverage report
+        if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: markbridge-release-${{ inputs.source_sha || github.sha }}
-          path: |
-            dist/markbridge-*.zip
-            dist/markbridge-*.zip.sha256
-            dist/markbridge-*.manifest.json
-            dist/release-notes.md
-            dist/release-validation.json
+          name: markbridge-browser-${{ matrix.group }}-${{ inputs.source_sha || github.sha }}
+          path: ${{ runner.temp }}/browser-${{ matrix.group }}.json
+          overwrite: ${{ github.run_attempt > 1 }}
           if-no-files-found: error
+      - name: Upload browser failure screenshots and traces
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: markbridge-browser-failures-${{ matrix.group }}-${{ inputs.source_sha || github.sha }}
+          path: |
+            test-results/
+            playwright-report/
+            ${{ runner.temp }}/browser-results.json
+          overwrite: ${{ github.run_attempt > 1 }}
+          if-no-files-found: ignore
 
   php-converter:
     name: PHP conversion contracts (${{ matrix.php }})
@@ -368,3 +383,73 @@ jobs:
           php tests/merge.php
           php tests/block-adapters.php
           php tests/localization.php
+
+  verify:
+    # Keep the original check name stable for branch protection.
+    name: Verify source and tests
+    outputs:
+      release_artifact_id: ${{ steps.release.outputs.artifact-id }}
+      # upload-artifact returns hex; the REST artifact digest includes this prefix.
+      release_artifact_digest: ${{ format('sha256:{0}', steps.release.outputs.artifact-digest) }}
+    if: always()
+    needs: [build, save, unit, browser, php-converter]
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.source_sha || github.sha }}
+          persist-credentials: false
+      - name: Require every independent job to succeed
+        env:
+          JOB_RESULTS: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          results = json.loads(os.environ['JOB_RESULTS'])
+          assert set(results) == {'build', 'save', 'unit', 'browser', 'php-converter'}
+          assert all(job['result'] == 'success' for job in results.values()), results
+          PY
+      - name: Download this run's internal build inputs
+        uses: actions/download-artifact@v8
+        with:
+          artifact-ids: ${{ needs.build.outputs.artifact_id }}
+          path: dist
+      - name: Download this run's browser timing reports
+        uses: actions/download-artifact@v8
+        with:
+          pattern: markbridge-browser-*-${{ inputs.source_sha || github.sha }}
+          path: ${{ runner.temp }}/browser-reports
+          merge-multiple: true
+      - name: Require complete unique browser coverage for the same source
+        run: >-
+          python3 scripts/check_ci_pipeline.py gate --sha "$SOURCE_SHA"
+          --discovery dist/browser-discovery.json --reports "$RUNNER_TEMP/browser-reports"
+          --output "$RUNNER_TEMP/pipeline-report.json"
+      - name: Upload complete browser timing summary
+        uses: actions/upload-artifact@v7
+        with:
+          name: markbridge-ci-${{ inputs.source_sha || github.sha }}
+          path: ${{ runner.temp }}/pipeline-report.json
+          overwrite: ${{ github.run_attempt > 1 }}
+          if-no-files-found: error
+      - name: Validate immutable release bundle and prepare notes
+        env:
+          RELEASE_VERSION: ${{ inputs.release_version }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          version="${RELEASE_VERSION:-$(python3 -c 'import json; print(json.load(open("package.json"))["version"])')}"
+          python3 scripts/release_workflow.py --version "$version" --sha "$SOURCE_SHA" --repository "$REPOSITORY" --bundle dist
+      - name: Upload installation ZIP, checksum, external manifest and notes
+        id: release
+        uses: actions/upload-artifact@v7
+        with:
+          name: markbridge-release-${{ inputs.source_sha || github.sha }}
+          path: |
+            dist/markbridge-*.zip
+            dist/markbridge-*.zip.sha256
+            dist/markbridge-*.manifest.json
+            dist/release-notes.md
+            dist/release-validation.json
+          overwrite: ${{ github.run_attempt > 1 }}
+          if-no-files-found: error

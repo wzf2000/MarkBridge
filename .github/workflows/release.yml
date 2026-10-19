@@ -7,6 +7,10 @@ on:
         description: 'Version without v (X.Y.Z or X.Y.Z-rc.N / beta.N / alpha.N)'
         required: true
         type: string
+      force_rebuild:
+        description: 'Run complete CI again even when this main commit has a verified bundle'
+        type: boolean
+        default: false
       publish:
         description: 'Create a GitHub Release (false builds downloadable artifacts only)'
         type: boolean
@@ -23,8 +27,14 @@ jobs:
   resolve:
     name: Validate main source and requested version
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: read
     outputs:
       sha: ${{ steps.source.outputs.sha }}
+      selected_run_id: ${{ steps.bundle.outputs.selected_run_id }}
+      artifact_id: ${{ steps.bundle.outputs.artifact_id }}
+      artifact_digest: ${{ steps.bundle.outputs.artifact_digest }}
     steps:
       - name: Require main
         env:
@@ -64,17 +74,69 @@ jobs:
               throw new Error(`Refusing existing tag or release: ${tag}`);
             }
 
+      - name: Select a recent verified main CI bundle or request full verification
+        id: bundle
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ steps.source.outputs.sha }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          FORCE_REBUILD: ${{ inputs.force_rebuild }}
+        run: |
+          flags=()
+          if [ "$FORCE_REBUILD" = true ]; then flags+=(--force); fi
+          python3 scripts/release_reuse.py select --sha "$SOURCE_SHA" --version "$RELEASE_VERSION" "${flags[@]}"
+
   verify:
+    if: needs.resolve.outputs.artifact_id == ''
     needs: resolve
     uses: ./.github/workflows/ci.yml
     with:
       source_sha: ${{ needs.resolve.outputs.sha }}
       release_version: ${{ inputs.version }}
 
+  prepare-bundle:
+    name: Verify and transfer the selected bundle into this release run
+    if: >-
+      ${{ always() && !cancelled() && needs.resolve.result == 'success' &&
+      (needs.resolve.outputs.artifact_id != '' || needs.verify.result == 'success') }}
+    needs: [resolve, verify]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      artifact_id: ${{ steps.transfer.outputs.artifact-id }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.resolve.outputs.sha }}
+          persist-credentials: false
+      - name: Recheck provenance, archive digest and all five release files
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ needs.resolve.outputs.sha }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          SELECTED_RUN_ID: ${{ needs.resolve.outputs.selected_run_id || github.run_id }}
+          ARTIFACT_ID: ${{ needs.resolve.outputs.artifact_id || needs.verify.outputs.release_artifact_id }}
+          ARTIFACT_DIGEST: ${{ needs.resolve.outputs.artifact_digest || needs.verify.outputs.release_artifact_digest }}
+        run: |
+          python3 scripts/release_reuse.py download --sha "$SOURCE_SHA" --version "$RELEASE_VERSION" \
+            --run-id "$SELECTED_RUN_ID" --artifact-id "$ARTIFACT_ID" --digest "$ARTIFACT_DIGEST" \
+            --output "$RUNNER_TEMP/selected-release"
+      - name: Upload the verified bundle for this release attempt
+        id: transfer
+        uses: actions/upload-artifact@v7
+        with:
+          name: markbridge-publish-${{ needs.resolve.outputs.sha }}-attempt${{ github.run_attempt }}
+          path: ${{ runner.temp }}/selected-release/*
+          if-no-files-found: error
+
   publish:
     name: Publish verified bundle
-    if: inputs.publish
-    needs: [resolve, verify]
+    if: >-
+      ${{ !cancelled() && inputs.publish && needs.resolve.result == 'success' &&
+      needs.prepare-bundle.result == 'success' }}
+    needs: [resolve, prepare-bundle]
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -83,7 +145,7 @@ jobs:
       - name: Download this run's verified installation bundle
         uses: actions/download-artifact@v8
         with:
-          name: markbridge-release-${{ needs.resolve.outputs.sha }}
+          artifact-ids: ${{ needs.prepare-bundle.outputs.artifact_id }}
           path: release
       - name: Validate downloaded files and source identity
         env:

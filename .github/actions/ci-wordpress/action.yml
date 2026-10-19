@@ -1,0 +1,35 @@
+name: Independent WordPress test runtime
+description: Install the verified ZIP and core resources in this job's own database and paths
+runs:
+  using: composite
+  steps:
+    - name: Set private paths for this ephemeral runner
+      shell: bash
+      run: |
+        {
+          printf 'MARKBRIDGE_TEST_WORDPRESS_ROOT=%s/markbridge-wordpress\n' "$RUNNER_TEMP"
+          printf 'MARKBRIDGE_WORDPRESS_SOURCE=%s/markbridge-wordpress\n' "$RUNNER_TEMP"
+          printf 'MARKBRIDGE_TEST_WPCLI=%s/markbridge-wp\n' "$RUNNER_TEMP"
+          printf 'MARKBRIDGE_TEST_PLUGIN_ROOT=%s/markbridge-wordpress/wp-content/plugins/markbridge\n' "$RUNNER_TEMP"
+          printf 'MARKBRIDGE_TEST_RUNTIME=%s/markbridge-runtime\n' "$RUNNER_TEMP"
+          printf 'MARKBRIDGE_TEST_HOME=http://127.0.0.1:18764\n'
+        } >> "$GITHUB_ENV"
+    - name: Install pinned core and verify the installed package
+      shell: bash
+      env:
+        MARKBRIDGE_CI_DB_HOST: 127.0.0.1:3306
+        MARKBRIDGE_CI_DB_NAME: markbridge_ci_verify
+        MARKBRIDGE_CI_DB_PASSWORD: synthetic-ci-only-password
+      run: |
+        python3 scripts/prepare_ci_wordpress.py \
+          --wordpress "$MARKBRIDGE_TEST_WORDPRESS_ROOT" \
+          --downloads "$RUNNER_TEMP/markbridge-downloads" \
+          --wp-cli "$MARKBRIDGE_TEST_WPCLI" --with-test-locales
+        version="$(node -p "require('./package.json').version")"
+        "$MARKBRIDGE_TEST_WPCLI" --path="$MARKBRIDGE_TEST_WORDPRESS_ROOT" plugin install "dist/markbridge-$version.zip" --activate
+        python3 scripts/verify_package.py "$MARKBRIDGE_TEST_PLUGIN_ROOT" --manifest "dist/markbridge-$version.manifest.json"
+        python3 scripts/prepare_runtime.py \
+          --wordpress "$MARKBRIDGE_TEST_WORDPRESS_ROOT" \
+          --plugin "$MARKBRIDGE_TEST_PLUGIN_ROOT" \
+          --output "$MARKBRIDGE_TEST_RUNTIME" \
+          --wp-cli "$MARKBRIDGE_TEST_WPCLI"
