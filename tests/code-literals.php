@@ -78,7 +78,11 @@ function literal_render(array $blocks): string
     return $html;
 }
 $token = '[mbb_literal_fixture]';
-$code = 'const value = "' . $token . '";' . "\n";
+$code =
+    'const value = "' .
+    $token .
+    '";' .
+    "\nconst target = 'https://markbridge.invalid/fixed';\n// [embed]https://markbridge.invalid/fixed[/embed]\n";
 $config = [
     'defaultTab' => 'first',
     'tabs' => [
@@ -195,6 +199,14 @@ foreach (
         ['<pre>' . $token, '<pre>&#91;mbb_literal_fixture]'],
         ['<pre>[text]<span title="[opaque]', '<pre>&#91;text]<span title="[opaque]'],
         [
+            '<pre>before' . "\nHTTPS://markbridge.invalid/fixed\nafter</pre>",
+            '<pre>before' . "\nHTTPS:&#47;&#47;markbridge.invalid/fixed\nafter</pre>",
+        ],
+        [
+            '<code title="https://markbridge.invalid/attribute">https://markbridge.invalid/text</code><p>https://markbridge.invalid/prose</p>',
+            '<code title="https://markbridge.invalid/attribute">https:&#47;&#47;markbridge.invalid/text</code><p>https://markbridge.invalid/prose</p>',
+        ],
+        [
             str_repeat('<code>', 64) . $token . str_repeat('</code>', 64) . '<p>[outside]</p>',
             str_repeat('<code>', 64) .
             '&#91;mbb_literal_fixture]' .
@@ -221,6 +233,50 @@ literal_assert(
     json_decode(mbb_code_tabs_config_json($quoted), true) === $quoted,
     'JSON quoted/backslash text changed',
 );
+// Real early WordPress embed dispatch; only post/dimensions context is synthetic.
+function get_post()
+{
+    return (object) ['ID' => 7, 'post_content' => ''];
+}
+function wp_parse_args($args, $defaults = [])
+{
+    return array_merge($defaults, (array) $args);
+}
+function wp_embed_defaults($url)
+{
+    return ['width' => 640, 'height' => 480];
+}
+$embed = new WP_Embed();
+$embedCalls = 0;
+$embed->register_handler(
+    'literal-fixed',
+    '~^https://markbridge\.invalid/fixed$~',
+    static function () use (&$embedCalls) {
+        ++$embedCalls;
+        return '<mark>Fixed synthetic embed</mark>';
+    },
+    1,
+);
+foreach (
+    [
+        ['<pre><code>[embed]https://markbridge.invalid/fixed[/embed]</code></pre>', 0],
+        ['<code>[embed]https://markbridge.invalid/fixed[/embed]</code>', 0],
+        ["<pre><code>before\nhttps://markbridge.invalid/fixed\nafter</code></pre>", 0],
+        ['<p>[embed]https://markbridge.invalid/fixed[/embed]</p>', 1],
+        ['<p>https://markbridge.invalid/fixed</p>', 1],
+    ]
+    as [$input, $expected]
+) {
+    $embedCalls = 0;
+    $output = apply_filters('the_content', $input);
+    literal_assert($embedCalls === $expected, 'Early embed changed code/prose behavior');
+    if (!$expected) {
+        literal_assert(
+            html_entity_decode($output, ENT_QUOTES | ENT_HTML5, 'UTF-8') === $input,
+            'Early embed protection changed displayed code bytes',
+        );
+    }
+}
 if (in_array('--fixture', $argv, true)) {
     echo json_encode(
         ['html' => $rendered, 'code' => $code],

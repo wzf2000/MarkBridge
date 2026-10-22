@@ -2,7 +2,7 @@
 // Reading projection only. Stored block HTML and Markdown are never rewritten.
 function mbb_code_literal_html(string $html): string
 {
-    if (!str_contains($html, '[')) {
+    if (!str_contains($html, '[') && !preg_match('~https?://~i', $html)) {
         return $html;
     }
     // WordPress 7.1 is the plugin minimum. It exposes no public raw token offsets;
@@ -45,11 +45,16 @@ function mbb_code_literal_html(string $html): string
         } elseif (($stack || $overflow) && $parser->get_token_type() === '#text') {
             [$start, $length] = $parser->literal_span();
             $raw = substr($html, $start, $length);
-            if (!str_contains($raw, '[')) {
+            $literal = preg_replace(
+                '~(https?:)//~i',
+                '$1&#47;&#47;',
+                str_replace('[', '&#91;', $raw),
+            );
+            if ($literal === $raw) {
                 continue;
             }
             $parts[] = substr($html, $cursor, $start - $cursor);
-            $parts[] = str_replace('[', '&#91;', $raw);
+            $parts[] = $literal;
             $cursor = $start + $length;
         }
     }
@@ -65,5 +70,8 @@ function mbb_protect_code_shortcodes($html)
 {
     return mbb_managed(get_the_ID()) ? mbb_code_literal_html($html) : $html;
 }
-// After do_blocks (9), before do_shortcode (11), also when Companion owns presentation.
+// Protect source HTML before WP_Embed's shortcode/URL handlers (8), then derived
+// code after do_blocks (9) and before ordinary do_shortcode (11).
+// Both run independently of the optional presentation module/Companion owner.
+add_filter('the_content', 'mbb_protect_code_shortcodes', 7);
 add_filter('the_content', 'mbb_protect_code_shortcodes', 10);

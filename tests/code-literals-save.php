@@ -37,6 +37,17 @@ $user = $id = $unmanaged = 0;
 $tag = 'mbbliteral' . bin2hex(random_bytes(5));
 $token = '[' . $tag . ']';
 $calls = 0;
+$embedCalls = 0;
+$embedURL = 'https://markbridge.invalid/fixed';
+wp_embed_register_handler(
+    'literal-fixed',
+    '~^https://markbridge\.invalid/fixed$~',
+    static function () use (&$embedCalls) {
+        ++$embedCalls;
+        return '<mark class="literal-embed-result">Fixed synthetic embed</mark>';
+    },
+    1,
+);
 add_shortcode($tag, static function () use (&$calls) {
     ++$calls;
     return '<mark class="literal-result">Normal shortcode</mark>';
@@ -49,8 +60,27 @@ try {
     ]);
     cls_assert(!is_wp_error($user), 'Synthetic actor could not be created');
     wp_set_current_user($user);
-    $code = 'const value = "' . $token . '";' . "\n";
-    $source = $token . "\n\nInline `" . $token . "`.\n\n```javascript\n" . $code . "```\n\n";
+    $embedToken = '[embed]' . $embedURL . '[/embed]';
+    $code =
+        'const value = "' .
+        $token .
+        '";' .
+        "\n" .
+        $embedToken .
+        "\nbefore\n" .
+        $embedURL .
+        "\nafter\n";
+    $source =
+        $token .
+        "\n\n" .
+        $embedToken .
+        "\n\nInline `" .
+        $token .
+        ' ' .
+        $embedToken .
+        "`.\n\n```javascript\n" .
+        $code .
+        "```\n\n";
     foreach (['native-code', 'preformatted'] as $kind) {
         $source .=
             ':::mbb:v1 ' . $kind . ' ' . wp_json_encode(['text' => $token]) . "\n:::mbb:end\n\n";
@@ -97,11 +127,15 @@ try {
     $markdown = $post->post_content_filtered;
     cls_assert($markdown === $source && mbb_managed($id), 'The original managed pair changed');
     $GLOBALS['post'] = $post;
-    $calls = 0;
+    $calls = $embedCalls = 0;
     $html = apply_filters('the_content', $stored);
     cls_assert(
         $calls === 1 && substr_count($html, 'literal-result') === 1,
         'Code/config executed or ordinary shortcode did not execute',
+    );
+    cls_assert(
+        $embedCalls === 1 && substr_count($html, 'literal-embed-result') === 1,
+        'Code embed executed or ordinary embed changed',
     );
     $dom = new DOMDocument();
     @$dom->loadHTML('<?xml encoding="UTF-8"?>' . $html, LIBXML_NONET);
@@ -142,10 +176,12 @@ try {
     $withProtection = apply_filters('the_content', $unmanagedSource);
     $protectedCalls = $calls;
     remove_filter('the_content', 'mbb_protect_code_shortcodes', 10);
+    remove_filter('the_content', 'mbb_protect_code_shortcodes', 7);
     $calls = 0;
     try {
         $withoutProtection = apply_filters('the_content', $unmanagedSource);
     } finally {
+        add_filter('the_content', 'mbb_protect_code_shortcodes', 7);
         add_filter('the_content', 'mbb_protect_code_shortcodes', 10);
     }
     cls_assert(
@@ -154,6 +190,7 @@ try {
     );
     echo "Guarded actual shortcode reading/config/managed scope and unchanged stored pair passed.\n";
 } finally {
+    wp_embed_unregister_handler('literal-fixed', 1);
     remove_shortcode($tag);
     if (is_int($id) && $id > 0) {
         wp_delete_post($id, true);

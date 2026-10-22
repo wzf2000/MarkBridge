@@ -1,5 +1,9 @@
 # 当前验证范围
 
+## 3.1.0-rc.2：前置嵌入保护
+
+rc.1 的额外实际 WordPress 检查发现，`WP_Embed::run_shortcode`／`autoembed` 在 priority 8 处理嵌入，早于原代码保护。rc.2 在 priority 7 先保护原始 pre／code 文本，再在 priority 10 保护区块渲染后的内容；`[` 与 http(s) 的 `//` 仅在代码文字中作显示等价的实体转义，不改标签、属性、普通段落或保存双格式。只读核心模型加入真实 `WP_Embed` 调度和固定内存 handler；实际保存入口同样覆盖代码不展开、正常段落仍展开及原文不变，不进行外部抓取。rc.1 包与原失败证据保留，不作为本轮最终候选。
+
 ## 3.1.0-rc.1：阅读时的字面短代码
 
 `tests/code-literals.php` 加载只读 WordPress 核心的 HTML token、block parser、shortcode／KSES 库，在显式合成上下文检查 pre／code、原生代码／预格式化、行内代码、代码分页及比较代码。普通段落仍执行短代码，非托管文章不改。配置属性执行问题由代码分页派生 JSON 的字符串转义修复，解码配置及保存双格式保持原字节。
