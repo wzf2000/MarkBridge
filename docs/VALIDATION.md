@@ -1,6 +1,6 @@
 # 当前验证范围
 
-## 未发布：阅读时的字面短代码（U3）
+## 3.1.0-rc.1：阅读时的字面短代码
 
 `tests/code-literals.php` 加载只读 WordPress 核心的 HTML token、block parser、shortcode／KSES 库，在显式合成上下文检查 pre／code、原生代码／预格式化、行内代码、代码分页及比较代码。普通段落仍执行短代码，非托管文章不改。配置属性执行问题由代码分页派生 JSON 的字符串转义修复，解码配置及保存双格式保持原字节。
 
@@ -8,19 +8,19 @@
 
 `tests/browser/code-literals.spec.cjs` 以该真实核心投影的合成 HTML 验证实际 Prism、原代码／分页复制与两尺寸；`tests/code-literals-save.php` 是 guarded local 安装入口，由独立 WordPress 验证实际过滤链和存储未变，串行接入现有 PHP→Node→PHP 验收，不由无数据库模型替代。
 
-## 未发布：原生纯文本叶子（U2）
+## 3.1.0-rc.1：原生纯文本叶子
 
 `tests/native-text.cjs` 使用真实核心脚本与双 PHP 转换模型，检查 core/code／preformatted 身份、空内容、首尾 LF／tab／空行、NBSP／特殊字符、组内嵌套、原生修改重开、配对恢复、未知属性／格式／非规范 HTML 拒绝、重复锚点和容量。共享 Unicode URL 夹具另覆盖 U+2028／U+2029、em-space、FEFF、LF、混合分隔与多 URL，仅首个独立 URL 使用核心转义。服务器边界复用只读核心 parser／KSES 壳；转换模型不能代替实际数据库保存。
 
 `tests/browser/native-text.spec.cjs` 为真实核心编辑器的合成 fixture；桌面／手机检查编辑、导出、重开与格式拒绝。`tests/native-text-save.php` 仅供显式 local 隔离站运行，覆盖预览、双格式保存、原生修改、拒写与修订，已串行接入现有 CI 的 PHP→Node→PHP 保存轮次。实际 WordPress 结果须单独记录，不由本地模型／fixture 推断。
 
-## 未发布：原生结构组（U1）
+## 3.1.0-rc.1：原生结构组
 
-主包版本仍为 3.0.1，新增能力尚未发行。`tests/native-group.cjs` 使用真实 WordPress 核心区块脚本，覆盖默认／空组、section、标签／类名／布局、嵌套公式／代码／图片／折叠／静态适配、编辑重开与图片改写；PHP 8.2／8.5 与 Node 之间精确往返通过。未知注释属性、HTML 篡改、重复锚点、技术编号冲突、嵌套阶段组／身份／文献、深度／字节预算与缺提供者均明确拒绝。
+本批为本地组合候选。`tests/native-group.cjs` 使用真实 WordPress 核心区块脚本，覆盖默认／空组、section、标签／类名／布局、嵌套公式／代码／图片／折叠／静态适配、编辑重开与图片改写；PHP 8.2／8.5 与 Node 之间精确往返通过。未知注释属性、HTML 篡改、重复锚点、技术编号冲突、嵌套阶段组／身份／文献、深度／字节预算与缺提供者均明确拒绝。
 
 `tests/native-group-kses.php` 在只读真实核心库中检查服务器独立白名单、KSES 与子块递归：组外壳可通过，脚本、事件属性、危险样式与未知嵌套块仍被拒绝。该回归补足实际 WordPress 首轮预览发现的漏列 `core/group`，并不将首次真实保存失败记录改写为成功。
 
-`tests/browser/native-group.spec.cjs` 在合成 fixture 中使用真实核心编辑器新建组、修改组内段落、导出并重开；旧原生折叠／按钮与静态适配回归同时执行。桌面／手机截图用于检查界面和溢出，不代表真实数据库或物理设备验收。`tests/native-group-save.php` 是仅接受显式 local 安装的实际保存／修订入口，须另在隔离 WordPress 中运行；本轮模型与 fixture 不冒称已完成该层验证。
+`tests/browser/native-group.spec.cjs` 在合成 fixture 中使用真实核心编辑器新建组、修改组内段落、导出并重开；旧原生折叠／按钮与静态适配回归同时执行。桌面／手机截图用于检查界面和溢出，不代表真实数据库或物理设备验收。`tests/native-group-save.php` 是仅接受显式 local 安装的实际保存／修订入口，须另在隔离 WordPress 中运行；独立 WordPress 7.1.3 的 PHP→Node→PHP 保存、原生修改、精确重开、拒写、修订及评论／私人元数据保留已通过；测试时使用核验过的源码副本，最终安装 ZIP 的验收另行记录。
 
 ## 3.0.0：正式发行范围
 

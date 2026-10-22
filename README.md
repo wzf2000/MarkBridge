@@ -4,7 +4,7 @@
   <a href="LICENSE"><img alt="License: GPL-3.0-or-later" src="https://img.shields.io/badge/license-GPL--3.0--or--later-818cf8"></a>
   <img alt="WordPress 7.1" src="https://img.shields.io/badge/WordPress-7.1-21759b">
   <img alt="PHP 8.2+" src="https://img.shields.io/badge/PHP-8.2%2B-777bb4">
-  <img alt="Version 3.0.1" src="https://img.shields.io/badge/version-3.0.1-818cf8">
+  <img alt="Version 3.1.0-rc.1" src="https://img.shields.io/badge/version-3.1.0--rc.1-818cf8">
 </p>
 
 <p align="center"><strong>用 Markdown 写作，用区块调整。保存时，让两种格式保持一致。</strong></p>
@@ -20,7 +20,7 @@ MarkBridge 把它们放回同一次编辑流程：**先转换，检查差异与�
 
 - **在两种编辑方式间切换。** 导入 `.md` 或图片 ZIP、编辑 Markdown，或从当前区块生成 Markdown；提交前查看差异。
 - **保留并核对修改。** Markdown 与区块成对保存、成对恢复；提供私有服务端配对备份，以及默认关闭的本机草稿恢复、三方合并与已保存文章导出。
-- **写公式，也看得清公式。** 自托管 MathJax；段落和块级公式可预览。前台点击公式或用键盘打开阅读弹窗，放大查看并复制 TeX；代码里的美元符号保持原样。
+- **写公式，也看得清公式。** 自托管 MathJax；段落和块级公式可预览。管理员开启公式阅读后，可点击公式或用键盘打开阅读弹窗，放大查看并复制 TeX；代码里的美元符号保持原样。
 - **沿用 WordPress 权限。** 支持草稿、待审核、私密、公开与特色图片，普通作者按已有权限操作。
 - **编排文集。** 保存文章引用与顺序，检查公开／私人范围，再准备并确认下载不可变快照；不另存正文。参见[文集说明](docs/COLLECTIONS.md)。
 - **组织长文与教学内容。** 使用折叠、阶段阅读、代码对照和语言页签；受信扩展可提供教学组件与静态区块。
@@ -38,7 +38,7 @@ flowchart LR
 
 ## 开始使用
 
-MarkBridge **3.0.1** 为正式稳定版。使用说明见 [文档索引](docs/index.md) 与在线 Wiki；版本对应的完整文档随 Release 源码提供。
+当前开发包为 **3.1.0-rc.1**；正式稳定版仍为 **3.0.1**。使用说明见 [文档索引](docs/index.md) 与在线 Wiki；版本对应的完整文档随 Release 源码提供。
 
 安装请使用对应 [Release](https://github.com/wzf2000/MarkBridge/releases) 的插件 ZIP，版本变化见[更新记录](CHANGELOG.md)。新安装在 WordPress 7.1.x、PHP 8.2+ 且具备 DOM／mbstring 扩展时使用包内 PHP 转换器，基础编辑不要求额外 Node 运行环境。已有 Node 配置升级后继续使用 Node；管理员可在 **设置 → MarkBridge** 选择 PHP／Node，Node 需预先准备环境并通过验证。尚未提交 WordPress.org 插件目录。
 
