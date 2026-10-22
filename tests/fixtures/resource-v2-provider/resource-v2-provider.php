@@ -105,7 +105,7 @@ add_action('markbridge_register_teaching_components', static function () {
         'version' => '0.1.0',
         'title' => 'Fixed public resource fixture',
         'protocolVersion' => 2,
-        'minMarkBridge' => '3.2.0-rc.1',
+        'minMarkBridge' => '3.2.0-rc.2',
         'schema' => [
             'type' => 'object',
             'properties' => ['text' => ['type' => 'string']],

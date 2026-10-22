@@ -325,6 +325,21 @@ class VerifiedPackageInputs(unittest.TestCase):
 
 
 class CISaveCoverage(unittest.TestCase):
+    def test_complete_plugin_entry_precedes_candidate_activation(self):
+        action = (ROOT / ".github/actions/ci-wordpress/action.yml").read_text()
+        bootstrap = 'php tests/plugin-bootstrap.php "$MARKBRIDGE_TEST_WORDPRESS_ROOT"'
+        self.assertIn(bootstrap, action)
+        self.assertLess(action.index(bootstrap), action.index('plugin install "dist/'))
+        package = json.loads((ROOT / "package.json").read_text())
+        self.assertTrue(
+            package["scripts"]["build"].startswith("php scripts/check_php_symbols.php &&")
+        )
+        self.assertTrue(
+            package["scripts"]["test"].startswith(
+                "php scripts/check_php_symbols.php && php tests/php-symbols.php &&"
+            )
+        )
+
     def test_new_save_contracts_run_in_every_existing_backend_pass(self):
         workflow = (ROOT / ".github/workflows/ci.yml").read_text()
         block = workflow.split("- name: Verify the real WordPress PHP and Node save chains\n", 1)[

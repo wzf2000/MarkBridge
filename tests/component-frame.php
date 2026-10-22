@@ -182,7 +182,7 @@ $p = [
     ],
     'defaults' => (object) [],
     'protocolVersion' => 2,
-    'minMarkBridge' => '3.2.0-rc.1',
+    'minMarkBridge' => '3.2.0-rc.2',
     'budgets' => mbb_component_budget_limits(),
     'resource' => [
         'file' => $bootstrap,

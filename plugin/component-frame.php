@@ -63,7 +63,7 @@ function mbb_component_v2_check(array $p): array
     ) {
         throw new RuntimeException('FRAME_SHA');
     }
-    $plan = mbb_component_resources($p);
+    $plan = mbb_component_resource_group($p);
     if (!hash_equals($p['resourcePlan']['groupSha256'], $plan['groupSha256'])) {
         throw new RuntimeException('FRAME_GROUP');
     }

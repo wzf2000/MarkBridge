@@ -11,7 +11,7 @@ const MBB_COMPONENT_RESOURCE_LIMITS = [
     'cache' => 4194304,
 ];
 /** Decode bounded JSON without silently discarding duplicate keys or invalid Unicode. */
-function mbb_resource_json(string $text): mixed
+function mbb_component_resource_json(string $text): mixed
 {
     if (strlen($text) > 16384 || !mb_check_encoding($text, 'UTF-8')) {
         throw new InvalidArgumentException('RESOURCE_JSON');
@@ -123,7 +123,7 @@ function mbb_resource_json(string $text): mixed
     }
     return $out;
 }
-function mbb_resources_manifest(mixed $m): array
+function mbb_component_resource_manifest(mixed $m): array
 {
     $closed = static fn($v, $keys) => $v instanceof stdClass &&
         count(get_object_vars($v)) === count($keys) &&
@@ -218,7 +218,7 @@ function mbb_resources_manifest(mixed $m): array
     return ['version' => $m->version, 'resources' => $order, 'bytes' => $sum];
 }
 /** Require regular canonical files underneath one registered plugin root, including ancestors. */
-function mbb_resource_file(string $root, string $relative, int $max): string
+function mbb_component_resource_file(string $root, string $relative, int $max): string
 {
     if (
         !preg_match('~^assets/[0-9]+\.[0-9]+\.[0-9]+/[a-z][a-z0-9-]*\.(json|js|bin)$~D', $relative)
@@ -243,7 +243,7 @@ function mbb_resource_file(string $root, string $relative, int $max): string
     }
     return $path;
 }
-function mbb_component_resources(array $provider): array
+function mbb_component_resource_group(array $provider): array
 {
     $r = $provider['resources'] ?? null;
     if (
@@ -278,7 +278,7 @@ function mbb_component_resources(array $provider): array
         throw new InvalidArgumentException('RESOURCE_ROOT');
     }
     $relative = substr($r['file'], strlen($root) + 1);
-    $file = mbb_resource_file($root, $relative, 16384);
+    $file = mbb_component_resource_file($root, $relative, 16384);
     if (
         $r['url'] !== plugins_url(basename($file), $file) ||
         parse_url($r['url'], PHP_URL_HOST) !== parse_url(site_url(), PHP_URL_HOST)
@@ -293,7 +293,7 @@ function mbb_component_resources(array $provider): array
     ) {
         throw new InvalidArgumentException('MANIFEST_SHA');
     }
-    $plan = mbb_resources_manifest(mbb_resource_json($raw));
+    $plan = mbb_component_resource_manifest(mbb_component_resource_json($raw));
     if (
         $plan['version'] !== $provider['version'] ||
         explode('/', $relative)[1] !== $plan['version']
@@ -304,7 +304,7 @@ function mbb_component_resources(array $provider): array
         if ($item['path'] === $relative) {
             throw new InvalidArgumentException('MANIFEST_SELF');
         }
-        $item['file'] = mbb_resource_file($root, $item['path'], 1048576);
+        $item['file'] = mbb_component_resource_file($root, $item['path'], 1048576);
         $bytes = file_get_contents($item['file'], false, null, 0, $item['bytes'] + 1);
         if (
             $bytes === false ||

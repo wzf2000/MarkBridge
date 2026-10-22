@@ -1,5 +1,11 @@
 # 当前验证范围
 
+## 3.2.0-rc.2：完整入口集成检查
+
+rc.1 的独立 WordPress 安装发现 `mbb_resource_file` 与旧媒体导入 API 重名，完整入口发生 fatal；先前纯模型和合成浏览器没有加载完整插件，不能证明实际安装可用。rc.2 将新增助手统一为 `mbb_component_resource_*`，不使用 function_exists 隐藏重名，也不修改旧媒体 API。
+
+`php scripts/check_php_symbols.php` 使用 PHP tokens 扫描全部第一方全局函数／类，区分 namespace、类方法和匿名类；`php tests/php-symbols.php` 保留原重名、大小写冲突及作用域负例。扫描接入正常 build、test 与发行源码检查起点。`php tests/plugin-bootstrap.php <WordPress核心目录> [候选plugin目录]` 加载真实核心 hooks／functions／wpdb 类定义及完整 Main 入口；仅通过公开 pre_option filter 提供空的 active_plugins，不加载 wp-load／wp-settings／wp-config，不创建数据库对象。CI 在安装候选前执行该入口；实际数据库保存、匿名／登录 HTTP 和主题组合仍由独立隔离站验收另记。
+
 ## 3.2.0-rc.1：固定公开资源 v2
 
 本批入口为 `tests/component-resources.cjs`（`MARKBRIDGE_TEST_PHP=php82`／`php85` 分别运行；默认 `php`）、`tests/component-frame.php` 与 `tests/browser/component-resources-v2.spec.cjs`。纯模型覆盖严格 JSON／封闭 manifest、许可／依赖／路径／类型、字节与 SHA、omit／拒绝重定向、有界响应流、整组缓存／4 MiB LRU、副本 transfer、取消、晚 SHA 与并发 generation；PHP 模型还覆盖 raw REST 响应钩子、独立 CSP、固定请求元组、末次文件变更／symlink 拒绝、固定数据 typed 投影和快照身份。v1 的实际 iframe ready／执行回归单独保留有效证据。

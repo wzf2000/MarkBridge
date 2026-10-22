@@ -482,7 +482,7 @@ function mbb_component_register_checked(string $id, array $provider): bool
     );
     if ($provider['protocolVersion'] === 2) {
         try {
-            $provider['resourcePlan'] = mbb_component_resources($provider);
+            $provider['resourcePlan'] = mbb_component_resource_group($provider);
         } catch (Throwable $e) {
             return mbb_component_reject($id, 'invalid-resource-group');
         }
