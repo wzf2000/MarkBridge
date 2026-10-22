@@ -180,11 +180,11 @@ add_action('markbridge_register_teaching_components', static function () {
 
 作者的参数输入暂存在编辑器内存中；明确应用后更新区块，未应用或无效时阻止保存与导出，撤销恢复原配置。切换选区不能静默丢弃候选。应用仍不取代服务端 schema 校验。播放位置、读者输入与执行输出永不写回参数或正文。
 
-## 固定公开资源 v2（3.2.0-rc.2）
+## 固定公开资源 v2（3.2.0-rc.3）
 
 这是显式选择的另一种资源交付协议，与“活动关系 v2”及作者工具合同分别编号。文章仍保存原 `component`、精确版本、`params` 与可选 `activity`，不保存协议、URL、清单或运行结果。原 v1 的资源及 srcdoc 加载保留。
 
-提供者先检查 `markbridge_teaching_supports_resource_groups()`，将 `protocolVersion` 设为 `2`、`minMarkBridge` 设为 `3.2.0-rc.2` 或以后，再增加闭合登记字段：
+提供者先检查 `markbridge_teaching_supports_resource_groups()`，将 `protocolVersion` 设为 `2`、`minMarkBridge` 设为 `3.2.0-rc.3` 或以后，再增加闭合登记字段：
 
 ```php
 'resources' => [

@@ -91,7 +91,7 @@ function mbb_component_frame_body(array $p): string
 }
 function mbb_component_frame_provider($request): ?array
 {
-    if ($request->get_method() !== 'GET' || $request->get_body() !== '') {
+    if ($request->get_method() !== 'GET' || ($request->get_body() ?? '') !== '') {
         return null;
     }
     $query = $request->get_query_params();

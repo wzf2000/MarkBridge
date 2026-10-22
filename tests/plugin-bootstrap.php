@@ -56,6 +56,41 @@ foreach (['MBB_Reference_DB', 'MBB_Backup_DB'] as $name) {
         throw new RuntimeException('Complete entry omitted database subclass ' . $name);
     }
 }
+// Use the actual request class, including its unset-body null default, rather than a transport mock.
+require $root . '/wp-includes/rest-api/class-wp-rest-request.php';
+$registry = mbb_component_registry();
+$fixture = [
+    'id' => 'request-fixture',
+    'version' => '0.1.0',
+    'protocolVersion' => 2,
+    'status' => 'available',
+    'resource' => ['sha256' => str_repeat('a', 64)],
+];
+try {
+    $GLOBALS['mbb_components'] = ['request-fixture' => $fixture];
+    foreach ([null, '', 'x'] as $body) {
+        $request = new WP_REST_Request(
+            'GET',
+            '/mbb/v2/component-frame/request-fixture/0.1.0/' . str_repeat('a', 64),
+        );
+        $request->set_url_params([
+            'component' => 'request-fixture',
+            'version' => '0.1.0',
+            'digest' => str_repeat('a', 64),
+        ]);
+        if ($body !== null) {
+            $request->set_body($body);
+        }
+        if (
+            $request->get_body() !== $body ||
+            (mbb_component_frame_provider($request) !== null) !== ($body !== 'x')
+        ) {
+            throw new RuntimeException('Actual core REST empty/nonempty body contract failed.');
+        }
+    }
+} finally {
+    $GLOBALS['mbb_components'] = $registry;
+}
 if (isset($GLOBALS['wpdb'])) {
     throw new RuntimeException('The read-only bootstrap must not create a database object.');
 }

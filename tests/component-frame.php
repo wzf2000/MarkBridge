@@ -64,7 +64,7 @@ class FrameRequest implements ArrayAccess
         public array $attrs,
         public array $query = [],
         public string $method = 'GET',
-        public string $body = '',
+        public ?string $body = null,
     ) {}
     public function get_query_params()
     {
@@ -182,7 +182,7 @@ $p = [
     ],
     'defaults' => (object) [],
     'protocolVersion' => 2,
-    'minMarkBridge' => '3.2.0-rc.2',
+    'minMarkBridge' => '3.2.0-rc.3',
     'budgets' => mbb_component_budget_limits(),
     'resource' => [
         'file' => $bootstrap,
@@ -240,6 +240,10 @@ try {
             'version' => '0.1.0',
             'digest' => $p['resource']['sha256'],
         ]);
+        check_frame(
+            mbb_component_frame_provider(new FrameRequest($request->attrs, [], 'GET', '')) !== null,
+            'Explicit empty GET body rejected',
+        );
         $response = mbb_component_frame_response($request);
         check_frame(
             $response instanceof WP_REST_Response && $response->status === 200,

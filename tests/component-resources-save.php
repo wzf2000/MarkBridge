@@ -76,7 +76,7 @@ try {
             'version' => '0.1.0',
             'title' => 'Fixed v2 save fixture',
             'protocolVersion' => 2,
-            'minMarkBridge' => '3.2.0-rc.2',
+            'minMarkBridge' => '3.2.0-rc.3',
             'schema' => [
                 'type' => 'object',
                 'properties' => ['text' => ['type' => 'string']],

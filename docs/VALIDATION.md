@@ -1,5 +1,9 @@
 # 当前验证范围
 
+## 3.2.0-rc.3：真实 REST 空正文语义
+
+rc.2 的实际保存入口发现，真实核心 `WP_REST_Request` 未调用 set_body 时 get_body 返回 null，而 HTTP GET 显式设置空串；旧单元模型只模拟空串，导致内部 REST 请求被拒绝。rc.3 将两者统一按空正文处理，仍拒绝任何非空正文。`tests/plugin-bootstrap.php` 现在同时使用真实核心请求类覆盖默认 null／显式空串正例及非空负例；`tests/component-frame.php` 默认也改为 null。旧实际失败记录保留，实际安装／保存与匿名、登录 HTTP 仍需对应候选另验；未变 JavaScript、CSP、资源和浏览器证据按原适用范围复用。
+
 ## 3.2.0-rc.2：完整入口集成检查
 
 rc.1 的独立 WordPress 安装发现 `mbb_resource_file` 与旧媒体导入 API 重名，完整入口发生 fatal；先前纯模型和合成浏览器没有加载完整插件，不能证明实际安装可用。rc.2 将新增助手统一为 `mbb_component_resource_*`，不使用 function_exists 隐藏重名，也不修改旧媒体 API。

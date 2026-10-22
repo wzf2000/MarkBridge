@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.2.0-rc.3
+
+- 固定 frame 端点将真实 `WP_REST_Request` 未设置正文时的 null 与显式空串同视为空正文，继续拒绝非空正文；补齐真实核心请求类与单元模型的对应回归，避免 HTTP 与内部 REST 调用语义分歧。文章合同、JavaScript 与运行资源保持。
+
 ## 3.2.0-rc.2
 
 - 修复资源 v2 模块与既有媒体导入全局函数重名导致完整插件入口无法加载；新内部助手统一使用 `mbb_component_resource_*`，旧媒体 API 保持。
