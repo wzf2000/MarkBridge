@@ -94,10 +94,30 @@ try {
         ]),
         'Native group edit',
     );
+    $editedSource = get_post($id)->post_content_filtered;
+    ngs_assert(get_post($id)->post_content === $edited, 'Native edit changed saved HTML.');
+    ngs_assert($editedSource !== $source, 'Native edit did not update Markdown.');
+    // Markdown may escape punctuation; compare the imported content and exact pair instead.
+    $reimported = mbb_convert([
+        'mode' => 'markdown',
+        'source' => $editedSource,
+        'documentId' => mbb_id($id),
+    ]);
     ngs_assert(
-        get_post($id)->post_content === $edited &&
-            str_contains(get_post($id)->post_content_filtered, 'Group edited paragraph.'),
-        'Native edit did not save both formats.',
+        !is_wp_error($reimported) && $reimported['serialized'] === $edited,
+        'Native edit Markdown did not reimport to the saved HTML.',
+    );
+    $editedPair = mbb_convert([
+        'mode' => 'paired_restore',
+        'source' => $editedSource,
+        'serialized' => $edited,
+        'documentId' => mbb_id($id),
+    ]);
+    ngs_assert(
+        !is_wp_error($editedPair) &&
+            $editedPair['source'] === $editedSource &&
+            $editedPair['serialized'] === $edited,
+        'Native edit did not preserve an exact pair.',
     );
     $bad = str_replace(
         '"layout":{"type":"constrained"}',
@@ -110,7 +130,9 @@ try {
         'mbb_expected' => mbb_token(get_post($id)),
     ]);
     ngs_assert(
-        $rejected->get_status() >= 400 && get_post($id)->post_content === $edited,
+        $rejected->get_status() >= 400 &&
+            get_post($id)->post_content === $edited &&
+            get_post($id)->post_content_filtered === $editedSource,
         'Unsupported raw attributes changed the saved pair.',
     );
     $restore = [
