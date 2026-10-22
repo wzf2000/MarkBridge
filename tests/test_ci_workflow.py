@@ -349,6 +349,7 @@ class CISaveCoverage(unittest.TestCase):
             "export",
             "merge",
             "block-adapters",
+            "native-group",
             "localization",
             "authoring",
             "technical-writing",

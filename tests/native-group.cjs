@@ -23,12 +23,14 @@ const php = (request, reverse = false) =>
       },
     ),
   );
+const policyAccepted = [];
 const flatten = (blocks) => blocks.flatMap((b) => [b, ...flatten(b.innerBlocks || [])]);
 const roundtrip = (source) => {
   const doc = w.MBB.importDocument(source, 'native-group');
   const p = php({ mode: 'markdown', source, documentId: doc.documentId });
   assert(p.ok, JSON.stringify(p));
   assert.equal(p.document.serialized, doc.serialized);
+  policyAccepted.push(doc.serialized);
   const blocks = w.wp.blocks.parse(doc.serialized);
   assert(flatten(blocks).every((b) => b.isValid));
   assert.equal(w.MBB.exportDocument(doc, w.wp.blocks.serialize(blocks)), source);
@@ -161,6 +163,25 @@ try {
     assert.throws(() => w.MBB.importDocument(bad, 'bad-group'));
     assert.equal(php({ mode: 'markdown', source: bad, documentId: 'bad-group' }).ok, false);
   }
+  if (process.env.MARKBRIDGE_WORDPRESS_SOURCE) {
+    const group = (body) =>
+      '<!-- wp:group -->\n<div class="wp-block-group">' + body + '</div>\n<!-- /wp:group -->';
+    const rejected = [
+      group('<script>alert(1)</script>'),
+      group('<iframe src="https://example.invalid"></iframe>'),
+      group('<p onclick="alert(1)">Unsafe</p>'),
+      group('<p style="background-image:url(javascript:alert(1))">Unsafe</p>'),
+      group('<!-- wp:unknown/safe -->\n<p>Unknown child</p>\n<!-- /wp:unknown/safe -->'),
+      group('Body').replace('<div class=', '<div onclick="alert(1)" class='),
+    ];
+    console.log(
+      execFileSync(
+        process.env.MARKBRIDGE_TEST_PHP || 'php',
+        [path.join(__dirname, 'native-group-kses.php'), process.env.MARKBRIDGE_WORDPRESS_SOURCE],
+        { input: JSON.stringify({ accepted: policyAccepted, rejected }), encoding: 'utf8' },
+      ).trim(),
+    );
+  } else console.log('Native group server policy check requires MARKBRIDGE_WORDPRESS_SOURCE.');
   assert.throws(
     () => w.MBB.configureBlockAdapters('[]') || w.MBB.importDocument(source, 'missing-provider'),
   );
