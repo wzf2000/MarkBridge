@@ -3500,6 +3500,10 @@ msgid "Keep my changes and continue from the latest version"
 msgstr "保留我的修改，基于最新版继续"
 
 #: plugin/i18n.js
+msgid "Kind"
+msgstr "类型"
+
+#: plugin/i18n.js
 msgid "Label"
 msgstr "标签"
 

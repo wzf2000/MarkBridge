@@ -367,6 +367,15 @@ function mbb_component_register_checked(string $id, array $provider): bool
 {
     $registry = mbb_component_registry();
     if (
+        array_key_exists('executionProfile', $provider) &&
+        (($provider['protocolVersion'] ?? null) !== 2 ||
+            $provider['executionProfile'] !== 'fixed-wasm/v1' ||
+            !is_string($provider['minMarkBridge'] ?? null) ||
+            version_compare($provider['minMarkBridge'], '3.2.0-rc.5', '<'))
+    ) {
+        return mbb_component_reject($id, 'invalid-execution-profile');
+    }
+    if (
         is_string($provider['version'] ?? null) &&
         mbb_component_provider($id, $provider['version'])
     ) {
@@ -390,6 +399,7 @@ function mbb_component_register_checked(string $id, array $provider): bool
             'readerMode',
             'activityVersion',
             'resources',
+            'executionProfile',
         ]) ||
         (array_key_exists('supportsUiLocale', $provider) &&
             !is_bool($provider['supportsUiLocale'])) ||
@@ -595,6 +605,7 @@ function mbb_component_public(array $p): array
             'supportsUiLocale',
             'readerMode',
             'activityVersion',
+            'executionProfile',
         ]),
     ) + [
         'resource' => ['url' => $p['resource']['url'], 'sha256' => $p['resource']['sha256']],

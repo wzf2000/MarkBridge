@@ -11,6 +11,8 @@ const keyOf = (path) => JSON.stringify(path);
 /** Display-only labels; the registered schema, parameter keys and serialized data are untouched. */
 export function parameterLabel(path) {
   const words = {
+    dataset: T('Dataset'),
+    kind: T('Kind'),
     value: T('Value'),
     values: T('Values'),
     title: T('Title'),

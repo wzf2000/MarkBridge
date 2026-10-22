@@ -2123,5 +2123,6 @@
   "Native code and preformatted blocks only support plain text": "原生代码和预格式化区块仅支持纯文本。",
   "Native text HTML must match the canonical core save": "原生文本 HTML 须与核心保存格式完全一致。",
   "Native text leaves cannot contain body content": "原生文本叶子不能包含内部正文。",
-  "Invalid native block class names": "原生区块类名无效。"
+  "Invalid native block class names": "原生区块类名无效。",
+  "Kind": "类型"
 }

@@ -319,3 +319,15 @@ v2 iframe 的 `src` 指向公开固定 REST HTML 路由 `/mbb/v2/component-frame
 WordPress REST 的块钩子可能把 JSON `1e-8` 写为 `1.0e-8`、把空对象投影为空数组。托管原生保存仅在唯一实例 ID、对应位置与祖先身份、完整组件子树的实际 core 投影精确一致，且预备内容已是 core 序列化定点时恢复浏览器原始组件开注释。所有资格比较先于替换；不恢复 HTML，也不覆盖真正属性、metadata、类型或结构变化。恢复后仍经原严格转换及权限／基线保存链。源码、CLI 和转换器 canonical 不变。
 
 临时 core 投影工作串最多 1,500,000 B、10,000 个块、32 层；这不是可保存预算。作者源稿和最终配对仍各最多 256 KiB，接近上限的指数拼写膨胀仅在临时阶段容纳。
+
+## 固定审核执行 profile（3.2.0-rc.5）
+
+资源 v2 的默认行为保持拒绝 WASM／Worker。受信插件可先检查 `markbridge_teaching_supports_execution_profile('fixed-wasm/v1')`，再在 protocolVersion2 的登记上显式增加 `executionProfile: 'fixed-wasm/v1'`，最低 Main 不得早于3.2.0-rc.5。v1、未知／null profile、旧最低版本均拒绝登记；文章 attrs、参数、活动与源语法不新增执行权限字段。
+
+该首版 profile 的固定清单必须恰有一项 `javascript`（固定 Worker JS）和一项 `webassembly`（`.wasm`）；其余仅可为已有 JSON／bin 数据。原16KiB清单、8项、单项1MiB、组2MiB、HTML512KiB、4MiB原始 LRU、startup5s／grant2s预算保持。PHP 与 JS 都按受信登记的 profile 验证类型／数量，默认 `.wasm` 仍拒绝。`markbridge_teaching_resource_bytes` 明确只允许 `json`／`public-data`，不返回 JS 或 WASM；静态出版不自动附运行程序。
+
+只有该登记元组的 HTTP frame 响应 CSP 增加 `script-src` 的 `'wasm-unsafe-eval'` 和 `worker-src blob:`；不增加 `'unsafe-eval'`、`allow-same-origin`，不放宽父页面、编辑器或整站 CSP，connect-src 仍为none。固定引导与新增资源都由注册 pin 控制；Main 只提供这种受信固定载荷的运行环境，不能据此宣称任意 WASM／Worker 是安全沙箱。提供者仍须独立固定 Worker／模块预期 pin、输入／输出、imports 与内存，不能只相信父消息声称的摘要。
+
+profile 出现在公开 provider 和 init 元数据中，并参与完整组件 identity、快照、CSP／桥代码指纹。HTTP body 的 Main 桥内嵌服务端登记 profile，不能由 init、query 或文章选择；桥只控制布局，不能替代提供者对资源交付的自验。最终 raw serve 再核对 body 与实际响应 headers，拒绝中途变化。
+
+只有该 profile 的已 ready、当前 grant 的 `RUN_LIMIT`／`COMPILE_LIMIT` error 映射为 RUN_BUDGET／现有本实验预算文案，并释放 grant、保留 frame；提供者可先终止自己的 Worker 并保留先前结果。v1／默认v2 的同名任意 code 仍是普通执行失败。父级2s超时会销毁 frame，届时仅保证原静态解释可读；不承诺保留临时读者结果。迟到或不同 runId 的结果仍不采纳。

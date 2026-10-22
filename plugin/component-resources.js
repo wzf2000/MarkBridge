@@ -100,7 +100,9 @@
     Object.keys(x).length === keys.length &&
     keys.every((k) => Object.hasOwn(x, k));
   const semver = /^(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)$/;
-  function manifest(value) {
+  function manifest(value, executionProfile = null) {
+    if (executionProfile !== null && executionProfile !== 'fixed-wasm/v1')
+      throw fault('EXECUTION_PROFILE');
     if (
       !closed(value, ['schema', 'version', 'resources']) ||
       value.schema !== 'mbb-resources/v2' ||
@@ -121,12 +123,16 @@
         !/^[a-z][a-z0-9-]{0,23}$/.test(r.id) ||
         ids.has(r.id) ||
         typeof r.path !== 'string' ||
-        !/^assets\/[0-9]+\.[0-9]+\.[0-9]+\/[a-z][a-z0-9-]*\.(?:json|js|bin)$/.test(r.path) ||
+        !/^assets\/[0-9]+\.[0-9]+\.[0-9]+\/[a-z][a-z0-9-]*\.(?:json|js|bin|wasm)$/.test(r.path) ||
         r.path.split('/')[1] !== value.version ||
         paths.has(r.path) ||
         r.version !== value.version ||
-        !['json', 'javascript', 'public-data'].includes(r.type) ||
-        { json: 'json', javascript: 'js', 'public-data': 'bin' }[r.type] !==
+        !(
+          executionProfile === 'fixed-wasm/v1'
+            ? ['json', 'javascript', 'public-data', 'webassembly']
+            : ['json', 'javascript', 'public-data']
+        ).includes(r.type) ||
+        { json: 'json', javascript: 'js', 'public-data': 'bin', webassembly: 'wasm' }[r.type] !==
           r.path.split('.').pop() ||
         !Number.isInteger(r.bytes) ||
         r.bytes < 1 ||
@@ -144,6 +150,12 @@
       ids.set(r.id, r);
       paths.add(r.path);
     }
+    if (
+      executionProfile === 'fixed-wasm/v1' &&
+      (value.resources.filter((r) => r.type === 'webassembly').length !== 1 ||
+        value.resources.filter((r) => r.type === 'javascript').length !== 1)
+    )
+      throw fault('EXECUTION_RESOURCES');
     if (sum > LIMITS.total) throw fault('GROUP_LIMIT');
     const visiting = new Set(),
       done = new Set(),
@@ -315,8 +327,11 @@
       cache = new PublicCache(),
       fetcher = fetch,
       cryptoProvider = crypto,
+      executionProfile = null,
     } = {},
   ) {
+    if (executionProfile !== null && executionProfile !== 'fixed-wasm/v1')
+      throw fault('EXECUTION_PROFILE');
     if (
       !closed(registration, ['url', 'baseUrl', 'sha256', 'groupSha256', 'version']) ||
       typeof registration.url !== 'string' ||
@@ -341,6 +356,7 @@
       throw fault('MANIFEST_SHA');
     const plan = manifest(
         strictJSON(new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(raw)),
+        executionProfile,
       ),
       group = [];
     if (plan.version !== registration.version) throw fault('MANIFEST_VERSION');

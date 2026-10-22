@@ -555,6 +555,7 @@
           group = await MarkBridgeResources.load(config.provider.resources, {
             context: resourceContext,
             cache: resourceCache,
+            executionProfile: config.provider.executionProfile ?? null,
           });
         } else {
           const url = new URL(config.provider.resource.url, location.href);
@@ -610,6 +611,9 @@
               component: config.component,
               componentVersion: config.componentVersion,
               budgets,
+              ...(config.provider.executionProfile
+                ? { executionProfile: config.provider.executionProfile }
+                : {}),
               ...(resourceV2
                 ? {
                     resourceGroup: {
@@ -876,6 +880,11 @@
         active.delete(node);
         runId = null;
         status.classList.toggle('mbb-component-complete', data.type === 'complete');
+        const reportedBudget =
+          data.type === 'error' &&
+          resourceV2 &&
+          config.provider.executionProfile === 'fixed-wasm/v1' &&
+          ['RUN_LIMIT', 'COMPILE_LIMIT'].includes(data.code);
         status.textContent =
           data.type === 'complete'
             ? diagram
@@ -883,12 +892,14 @@
               : T('Component execution completed.')
             : data.type === 'stopped'
               ? T('Execution stopped.')
-              : T('Execution failed. Static fallback content remains readable.');
+              : reportedBudget
+                ? T('Execution exceeded its time budget and was terminated.')
+                : T('Execution failed. Static fallback content remains readable.');
         pumpReaders();
         if (data.type === 'error') {
           if (diagram) readerFailed = true;
-          node.dataset.mbbFailureCode = 'EXECUTION';
-          const record = diagnostic?.failure('EXECUTION');
+          node.dataset.mbbFailureCode = reportedBudget ? 'RUN_BUDGET' : 'EXECUTION';
+          const record = diagnostic?.failure(reportedBudget ? 'RUN_BUDGET' : 'EXECUTION');
           if (record) window.MBB_DIAGNOSTICS?.show(controls, record);
         }
       }

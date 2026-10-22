@@ -1,10 +1,16 @@
 # 当前验证范围
 
+## 3.2.0-rc.5：固定审核执行 profile
+
+`tests/component-execution.cjs` 与 PHP 模型验证封闭 profile、默认拒WASM、恰一 Worker／一模块、扩展名／依赖／原预算一致；`tests/component-execution.php --core <只读核心目录>` 使用真实WP_REST_Request并捕获最终raw serve headers/body，检查登记与快照身份、v1／默认／旧最低版拒绝及执行载荷不得通过数据API返回。完整入口的旧早期检查继续保留，CI 在安装前串行执行新增真实请求类检查。
+
+真实HTTP浏览器两尺寸验证固定profile可以在Worker编译WASM，严格父页面仍不能；Worker的no-cors联网被拒且服务器未收请求，JavaScript Function/eval仍被拒。旧默认v2继续拒WASM／Worker；仅固定执行profile的当前grant限额错误映射为预算中止、保留frame并释放grant，迟到结果拒绝。v1／默认v2同名错误不会获得该映射。Dataset／Kind仅新增中文显示标签，不改变schema、枚举或已保存参数。实际WordPress安装／Scientific固定模块与出版链在对应包上另验，不能用这个合成探针冒充正式模块验收。
+
 ## 3.2.0-rc.4：PHP 静态 SVG 命名空间
 
 PHP 8.2／8.5 均复现：脱离文档构造的普通 wrapper 中包含 SVG 子树，再接入 HTML 文档时，libxml 将其重命名为 `default:svg` 等前缀；HTML 浏览器不将它识别为 SVG。已有 DOM 中按 localName 查找的断言未覆盖序列化后重新打开的结果。修复在已连接的父节点中逐节点构造，保留类型白名单、作者 fallback、单项／整篇字节预算和局部 ID 保护。
 
-`tests/projection-svg.php` 使用正式 `mbb_component_static_document` 出口验证两张图、标题／说明／形状标记、ID／ARIA、旧文本投影、失败与字节预算；`tests/browser/projection-svg.spec.cjs` 重新打开 PHP 导出的无脚本 HTML，检查真实 SVG namespaceURI、几何 bbox、完整值及本地引用。`sdk-projections.spec.cjs` 继续覆盖独立的 JavaScript 静态导出构建器，不将其原有通过冒称 PHP 出口曾正确。真实 WordPress 安装／PHP 与 Node 保存仍由独立站验收；不在纯模型中加载数据库。
+`tests/projection-svg.php` 使用正式 `mbb_component_static_document` 出口验证两张图、标题／说明／形状标记、ID／ARIA、旧文本投影、失败与字节预算；`tests/browser/projection-svg.spec.cjs` 重新打开 PHP 导出的无脚本 HTML，检查真实 SVG namespaceURI、几何 bbox、完整值及本地引用。`sdk-projections.spec.cjs` 继续覆盖独立的 JavaScript 静态导出构建器，不将其原有通过冒称 PHP 出口曾正确。独立本地 WordPress 已安装 rc.4，旧 Scientific 文章双格式／媒体／文档标识未变、配对重开通过；PageNest 1440／390 的真实禁脚本前台图形命名空间、形状、title／desc／ARIA 与无横溢出均通过。纯模型仍不加载数据库。
 
 ## 3.2.0-rc.3：真实 REST 空正文语义
 

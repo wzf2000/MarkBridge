@@ -3,9 +3,9 @@
 if (!defined('ABSPATH') && PHP_SAPI !== 'cli') {
     exit();
 }
-function mbb_component_frame_profile(): string
+function mbb_component_frame_profile(?string $executionProfile = null): string
 {
-    $parts = [json_encode(mbb_component_frame_headers(), JSON_THROW_ON_ERROR)];
+    $parts = [json_encode(mbb_component_frame_headers($executionProfile), JSON_THROW_ON_ERROR)];
     foreach (
         [
             'component-frame.php',
@@ -31,7 +31,8 @@ function mbb_component_identity(array $p): string
             $p['version'],
             $p['resource']['sha256'],
             $p['resourcePlan']['groupSha256'],
-            mbb_component_frame_profile(),
+            $p['executionProfile'] ?? 'public-data/v1',
+            mbb_component_frame_profile($p['executionProfile'] ?? null),
         ]),
     );
 }
@@ -69,15 +70,22 @@ function mbb_component_v2_check(array $p): array
     }
     return ['html' => $html, 'plan' => $plan];
 }
-function mbb_component_frame_headers(): array
+function mbb_component_frame_headers(?string $executionProfile = null): array
 {
+    if ($executionProfile !== null && $executionProfile !== 'fixed-wasm/v1') {
+        throw new RuntimeException('EXECUTION_PROFILE');
+    }
     return [
         'Content-Type' => 'text/html; charset=UTF-8',
         'Cache-Control' => 'no-store',
         'X-Content-Type-Options' => 'nosniff',
         'Referrer-Policy' => 'no-referrer',
         'Content-Security-Policy' =>
-            "sandbox allow-scripts; frame-ancestors 'self'; default-src 'none'; script-src 'unsafe-inline' blob:; worker-src 'none'; style-src 'unsafe-inline'; connect-src 'none'; img-src data:; base-uri 'none'; form-action 'none'",
+            "sandbox allow-scripts; frame-ancestors 'self'; default-src 'none'; script-src 'unsafe-inline' blob:" .
+            ($executionProfile === 'fixed-wasm/v1'
+                ? " 'wasm-unsafe-eval'; worker-src blob:"
+                : "; worker-src 'none'") .
+            "; style-src 'unsafe-inline'; connect-src 'none'; img-src data:; base-uri 'none'; form-action 'none'",
     ];
 }
 function mbb_component_frame_body(array $p): string
@@ -86,7 +94,11 @@ function mbb_component_frame_body(array $p): string
     // This fixed Main-owned bridge contains no per-article/session data. The parent supplies it only by postMessage.
     return $checked['html'] .
         "\n<script>" .
-        file_get_contents(__DIR__ . '/component-frame-v2.js') .
+        str_replace(
+            '__MBB_FRAME_EXECUTION_PROFILE__',
+            json_encode($p['executionProfile'] ?? null, JSON_THROW_ON_ERROR),
+            file_get_contents(__DIR__ . '/component-frame-v2.js'),
+        ) .
         '</script>';
 }
 function mbb_component_frame_provider($request): ?array
@@ -115,11 +127,13 @@ function mbb_component_frame_response($request)
             throw new RuntimeException('FRAME_NOT_FOUND');
         }
         $body = mbb_component_frame_body($p);
-        $response = new WP_REST_Response(null, 200, mbb_component_frame_headers());
+        $headers = mbb_component_frame_headers($p['executionProfile'] ?? null);
+        $response = new WP_REST_Response(null, 200, $headers);
         $GLOBALS['mbb_component_frame_responses'][spl_object_id($response)] = [
             $response,
             $request,
             $body,
+            $headers,
         ];
         return $response;
     } catch (Throwable $e) {
@@ -153,10 +167,14 @@ if (function_exists('add_filter')) {
             }
             try {
                 $p = mbb_component_frame_provider($request);
-                if (!$p || mbb_component_frame_body($p) !== $entry[2]) {
+                if (
+                    !$p ||
+                    mbb_component_frame_body($p) !== $entry[2] ||
+                    mbb_component_frame_headers($p['executionProfile'] ?? null) !== $entry[3]
+                ) {
                     throw new RuntimeException('FRAME_STALE');
                 }
-                foreach (mbb_component_frame_headers() as $name => $value) {
+                foreach ($entry[3] as $name => $value) {
                     $server->send_header($name, $value);
                 }
                 echo $entry[2]; // Fixed local bytes, checked against registered SHA; never request HTML.

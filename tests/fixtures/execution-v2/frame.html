@@ -1,0 +1,95 @@
+<!doctype html>
+<html>
+<meta charset="utf-8" />
+
+<body>
+  <h2>Local execution profile probe</h2>
+  <p id="status">waiting</p>
+  <button id="run">Run fixed probe</button>
+  <script>
+    (() => {
+      'use strict';
+      let session = null,
+        resources = null,
+        runId = null,
+        worker = null;
+      const protocol = 'mbb-component/v2',
+        send = (type, extra = {}) =>
+        parent.postMessage({
+          protocol,
+          session,
+          type,
+          ...extra
+        }, '*');
+      addEventListener('message', ({
+        source,
+        data: d
+      }) => {
+        if (
+          parent === window ||
+          source !== parent ||
+          d?.protocol !== protocol ||
+          !/^[a-f0-9]{32}$/.test(d.session || '')
+        )
+          return;
+        if (d.type === 'init' && !session && d.executionProfile === 'fixed-wasm/v1') {
+          session = d.session;
+          resources = d.resourceGroup.resources;
+          document.getElementById('status').textContent = 'ready';
+          send('ready');
+        } else if (d.session === session && d.type === 'grant' && d.runId === runId) {
+          const get = (id) => resources.find((r) => r.spec.id === id).buffer;
+          const url = URL.createObjectURL(new Blob([get('worker')], {
+            type: 'text/javascript'
+          }));
+          worker = new Worker(url);
+          URL.revokeObjectURL(url);
+          worker.onmessage = ({
+            data: result
+          }) => {
+            document.getElementById('status').textContent = JSON.stringify(result);
+            worker.terminate();
+            worker = null;
+            send('complete', {
+              runId,
+              frameCount: 0,
+              outputBytes: JSON.stringify(result).length,
+              summary: result,
+            });
+            runId = null;
+          };
+          worker.onerror = () => {
+            worker.terminate();
+            worker = null;
+            send('error', {
+              runId,
+              code: 'PROBE_WORKER'
+            });
+          };
+          worker.postMessage({
+            module: get('module').slice(0),
+            probe: new URL('/execution-network-probe', location.href).href,
+          });
+        } else if (d.session === session && d.type === 'cancel') {
+          worker?.terminate();
+          worker = null;
+          runId = null;
+          document.getElementById('status').textContent = 'stopped';
+        }
+      });
+      document.getElementById('run').onclick = () => {
+        if (session && !runId) {
+          runId = [...crypto.getRandomValues(new Uint8Array(16))]
+            .map((n) => n.toString(16).padStart(2, '0'))
+            .join('');
+          send('run-request', {
+            runId
+          });
+        }
+      };
+    })();
+
+  </script>
+</body>
+
+</html>

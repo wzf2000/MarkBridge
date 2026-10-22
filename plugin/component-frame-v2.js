@@ -1,6 +1,8 @@
 // Fixed Main-owned HTTP frame bridge. No article source, paths or nonce are embedded here.
 (() => {
   'use strict';
+  // Replaced only by the Main-owned HTTP response, never by article/query data.
+  const executionProfile = __MBB_FRAME_EXECUTION_PROFILE__;
   function readingLayout(protocol, token, activity) {
     let active = true,
       pending = false,
@@ -92,6 +94,9 @@
       event.source !== parent ||
       data?.protocol !== 'mbb-component/v2' ||
       data.type !== 'init' ||
+      (executionProfile === null
+        ? Object.hasOwn(data, 'executionProfile')
+        : data.executionProfile !== executionProfile) ||
       typeof data.session !== 'string' ||
       !/^[a-f0-9]{32}$/.test(data.session)
     )

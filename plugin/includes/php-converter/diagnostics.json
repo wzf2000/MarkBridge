@@ -866,6 +866,7 @@
   "Keep as plain text",
   "Keep at most two active batches. Cancel an older batch or wait for expiry; the site also has a shared staging limit.",
   "Keep my changes and continue from the latest version",
+  "Kind",
   "Label",
   "Labels and keys must begin with an ASCII letter and contain at most 64 letters, digits, underscores or hyphens",
   "Language",

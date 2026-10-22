@@ -299,6 +299,7 @@ function mbb_collections_components(string $serialized): array
             ...$identity !== null
                 ? ['componentIdentity' => $identity, 'resourceGroup' => $group]
                 : [],
+            ...isset($p['executionProfile']) ? ['executionProfile' => $p['executionProfile']] : [],
             'status' => $status,
             'representation' => 'author-static-fallback',
             'projectionFingerprint' => function_exists('mbb_component_projection_fingerprint')
@@ -714,7 +715,10 @@ function mbb_collections_final(array $snapshot, array $config, string $adapter):
         if (($component['componentIdentity'] ?? null) !== null) {
             try {
                 mbb_component_v2_check($p);
-                if (!hash_equals($component['componentIdentity'], mbb_component_identity($p))) {
+                if (
+                    !hash_equals($component['componentIdentity'], mbb_component_identity($p)) ||
+                    ($component['executionProfile'] ?? null) !== ($p['executionProfile'] ?? null)
+                ) {
                     throw new RuntimeException('component_changed');
                 }
             } catch (Throwable) {

@@ -131,3 +131,49 @@ test('v2 accepts near-limit pure params without changing the 16KiB author limit'
   await page.getByRole('button', { name: '启动交互演示' }).click();
   await expect(page.frameLocator('iframe').locator('#status')).toHaveText('公开资源已校验');
 });
+
+test('default v2 budget-like provider errors do not inherit execution-profile budget semantics', async ({
+  page,
+}) => {
+  await page.addInitScript(() =>
+    addEventListener('message', (e) => {
+      if (e.data?.type === 'init') window.probeInit = e.data;
+    }),
+  );
+  await load(page);
+  await page.getByRole('button', { name: '启动交互演示' }).click();
+  const frame = page.frameLocator('iframe');
+  await expect(frame.locator('#status')).toHaveText('公开资源已校验');
+  const runId = 'd'.repeat(32);
+  await frame.locator('body').evaluate(
+    (n, id) =>
+      parent.postMessage(
+        {
+          protocol: probeInit.protocol,
+          session: probeInit.session,
+          type: 'run-request',
+          runId: id,
+        },
+        '*',
+      ),
+    runId,
+  );
+  await expect.poll(() => page.evaluate(() => MarkBridgeComponents.activeCount())).toBe(1);
+  await frame.locator('body').evaluate(
+    (n, id) =>
+      parent.postMessage(
+        {
+          protocol: probeInit.protocol,
+          session: probeInit.session,
+          type: 'error',
+          runId: id,
+          code: 'COMPILE_LIMIT',
+        },
+        '*',
+      ),
+    runId,
+  );
+  await expect(page.locator('#demo')).toHaveAttribute('data-mbb-failure-code', 'EXECUTION');
+  await expect(page.locator('iframe')).toHaveCount(1);
+  expect(await page.evaluate(() => MarkBridgeComponents.activeCount())).toBe(0);
+});

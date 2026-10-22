@@ -3500,6 +3500,10 @@ msgid "Keep my changes and continue from the latest version"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Kind"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Label"
 msgstr ""
 

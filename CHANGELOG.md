@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.2.0-rc.5
+
+- 新增显式固定审核 `fixed-wasm/v1` 执行 profile：仅 protocol2 受信登记的一份固定 Worker／WASM 在自己的 HTTP frame 获得必要 CSP，默认数据 profile、父页面与整站 CSP 保持。
+- 绑定登记、布局桥、最终 raw headers、组件与快照身份；数据读取 API 继续拒绝执行资源。固定 profile 的当前运行预算中止可保留 frame，父级强制截止仍销毁。
+- 补齐双 PHP／真实 REST 请求类与 HTTP Worker、严格父页、no-cors 网络、预算／迟到边界；参数表单仅增加 Dataset／Kind 中文显示。
+
 ## 3.2.0-rc.4
 
 - 修复 PHP typed 静态投影在 HTML 中序列化为 `default:svg`、浏览器无法绘图的问题：逐节点接入已连接的父节点后再创建子节点，保留真实 SVG 命名空间、局部 ID、标题与说明引用。

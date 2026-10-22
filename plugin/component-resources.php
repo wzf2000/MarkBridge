@@ -123,8 +123,11 @@ function mbb_component_resource_json(string $text): mixed
     }
     return $out;
 }
-function mbb_component_resource_manifest(mixed $m): array
+function mbb_component_resource_manifest(mixed $m, mixed $executionProfile = null): array
 {
+    if ($executionProfile !== null && $executionProfile !== 'fixed-wasm/v1') {
+        throw new InvalidArgumentException('EXECUTION_PROFILE');
+    }
     $closed = static fn($v, $keys) => $v instanceof stdClass &&
         count(get_object_vars($v)) === count($keys) &&
         !array_diff($keys, array_keys(get_object_vars($v)));
@@ -152,15 +155,25 @@ function mbb_component_resource_manifest(mixed $m): array
             isset($ids[$r->id]) ||
             !is_string($r->path) ||
             !preg_match(
-                '~^assets/[0-9]+\.[0-9]+\.[0-9]+/[a-z][a-z0-9-]*\.(json|js|bin)$~D',
+                '~^assets/[0-9]+\.[0-9]+\.[0-9]+/[a-z][a-z0-9-]*\.(json|js|bin|wasm)$~D',
                 $r->path,
             ) ||
             explode('/', $r->path)[1] !== $m->version ||
             isset($paths[$r->path]) ||
             $r->version !== $m->version ||
-            !in_array($r->type, ['json', 'javascript', 'public-data'], true) ||
-            ['json' => 'json', 'javascript' => 'js', 'public-data' => 'bin'][$r->type] !==
-                pathinfo($r->path, PATHINFO_EXTENSION) ||
+            !in_array(
+                $r->type,
+                $executionProfile === 'fixed-wasm/v1'
+                    ? ['json', 'javascript', 'public-data', 'webassembly']
+                    : ['json', 'javascript', 'public-data'],
+                true,
+            ) ||
+            [
+                'json' => 'json',
+                'javascript' => 'js',
+                'public-data' => 'bin',
+                'webassembly' => 'wasm',
+            ][$r->type] !== pathinfo($r->path, PATHINFO_EXTENSION) ||
             !(is_int($r->bytes) || is_float($r->bytes)) ||
             !is_finite((float) $r->bytes) ||
             floor($r->bytes) != $r->bytes ||
@@ -186,6 +199,13 @@ function mbb_component_resource_manifest(mixed $m): array
         $ids[$r->id] = $row;
         $paths[$r->path] = true;
         $sum += (int) $r->bytes;
+    }
+    if (
+        $executionProfile === 'fixed-wasm/v1' &&
+        (count(array_filter($ids, static fn($r) => $r['type'] === 'webassembly')) !== 1 ||
+            count(array_filter($ids, static fn($r) => $r['type'] === 'javascript')) !== 1)
+    ) {
+        throw new InvalidArgumentException('EXECUTION_RESOURCES');
     }
     if ($sum > 2097152) {
         throw new InvalidArgumentException('GROUP_LIMIT');
@@ -218,10 +238,19 @@ function mbb_component_resource_manifest(mixed $m): array
     return ['version' => $m->version, 'resources' => $order, 'bytes' => $sum];
 }
 /** Require regular canonical files underneath one registered plugin root, including ancestors. */
-function mbb_component_resource_file(string $root, string $relative, int $max): string
-{
+function mbb_component_resource_file(
+    string $root,
+    string $relative,
+    int $max,
+    mixed $executionProfile = null,
+): string {
     if (
-        !preg_match('~^assets/[0-9]+\.[0-9]+\.[0-9]+/[a-z][a-z0-9-]*\.(json|js|bin)$~D', $relative)
+        !preg_match(
+            $executionProfile === 'fixed-wasm/v1'
+                ? '~^assets/[0-9]+\.[0-9]+\.[0-9]+/[a-z][a-z0-9-]*\.(json|js|bin|wasm)$~D'
+                : '~^assets/[0-9]+\.[0-9]+\.[0-9]+/[a-z][a-z0-9-]*\.(json|js|bin)$~D',
+            $relative,
+        )
     ) {
         throw new InvalidArgumentException('RESOURCE_PATH');
     }
@@ -293,7 +322,10 @@ function mbb_component_resource_group(array $provider): array
     ) {
         throw new InvalidArgumentException('MANIFEST_SHA');
     }
-    $plan = mbb_component_resource_manifest(mbb_component_resource_json($raw));
+    $plan = mbb_component_resource_manifest(
+        mbb_component_resource_json($raw),
+        $provider['executionProfile'] ?? null,
+    );
     if (
         $plan['version'] !== $provider['version'] ||
         explode('/', $relative)[1] !== $plan['version']
@@ -304,7 +336,12 @@ function mbb_component_resource_group(array $provider): array
         if ($item['path'] === $relative) {
             throw new InvalidArgumentException('MANIFEST_SELF');
         }
-        $item['file'] = mbb_component_resource_file($root, $item['path'], 1048576);
+        $item['file'] = mbb_component_resource_file(
+            $root,
+            $item['path'],
+            1048576,
+            $provider['executionProfile'] ?? null,
+        );
         $bytes = file_get_contents($item['file'], false, null, 0, $item['bytes'] + 1);
         if (
             $bytes === false ||
@@ -342,7 +379,7 @@ function markbridge_teaching_resource_bytes(string $component, string $version, 
         if ($item['id'] !== $id) {
             continue;
         }
-        if ($item['type'] === 'javascript') {
+        if (!in_array($item['type'], ['json', 'public-data'], true)) {
             throw new RuntimeException('RESOURCE_NOT_DATA');
         }
         $bytes = file_get_contents($item['file'], false, null, 0, $item['bytes'] + 1);
@@ -356,4 +393,10 @@ function markbridge_teaching_resource_bytes(string $component, string $version, 
         return $bytes;
     }
     throw new RuntimeException('RESOURCE_ID');
+}
+
+/** Available only for a fixed trusted protocol-v2 execution registration. */
+function markbridge_teaching_supports_execution_profile(string $profile): bool
+{
+    return $profile === 'fixed-wasm/v1';
 }

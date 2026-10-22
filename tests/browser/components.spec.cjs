@@ -812,3 +812,37 @@ test('verified layout includes natural body padding and collapsed final margins 
     path: info.outputPath('body-natural-height-' + info.project.name + '.png'),
   });
 });
+
+test('v1 arbitrary budget-like error codes remain ordinary execution failures', async ({
+  page,
+}) => {
+  await load(page);
+  await page.getByRole('button', { name: '启动交互演示' }).click();
+  const frame = page.frameLocator('iframe');
+  await expect(frame.locator('#status')).toHaveText('Ready');
+  const runId = 'c'.repeat(32);
+  await frame.locator('body').evaluate((n, id) => {
+    const init = JSON.parse(document.getElementById('init').textContent);
+    parent.postMessage(
+      { protocol: init.protocol, session: init.session, type: 'run-request', runId: id },
+      '*',
+    );
+  }, runId);
+  await expect.poll(() => page.evaluate(() => MarkBridgeComponents.activeCount())).toBe(1);
+  await frame.locator('body').evaluate((n, id) => {
+    const init = JSON.parse(document.getElementById('init').textContent);
+    parent.postMessage(
+      {
+        protocol: init.protocol,
+        session: init.session,
+        type: 'error',
+        runId: id,
+        code: 'RUN_LIMIT',
+      },
+      '*',
+    );
+  }, runId);
+  await expect(page.locator('#demo-0')).toHaveAttribute('data-mbb-failure-code', 'EXECUTION');
+  await expect(page.locator('iframe')).toHaveCount(1);
+  expect(await page.evaluate(() => MarkBridgeComponents.activeCount())).toBe(0);
+});
