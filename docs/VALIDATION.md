@@ -1,5 +1,11 @@
 # 当前验证范围
 
+## 未发布：原生纯文本叶子（U2）
+
+`tests/native-text.cjs` 使用真实核心脚本与双 PHP 转换模型，检查 core/code／preformatted 身份、空内容、首尾 LF／tab／空行、NBSP／特殊字符、组内嵌套、原生修改重开、配对恢复、未知属性／格式／非规范 HTML 拒绝、重复锚点和容量。共享 Unicode URL 夹具另覆盖 U+2028／U+2029、em-space、FEFF、LF、混合分隔与多 URL，仅首个独立 URL 使用核心转义。服务器边界复用只读核心 parser／KSES 壳；转换模型不能代替实际数据库保存。
+
+`tests/browser/native-text.spec.cjs` 为真实核心编辑器的合成 fixture；桌面／手机检查编辑、导出、重开与格式拒绝。`tests/native-text-save.php` 仅供显式 local 隔离站运行，覆盖预览、双格式保存、原生修改、拒写与修订，已串行接入现有 CI 的 PHP→Node→PHP 保存轮次。实际 WordPress 结果须单独记录，不由本地模型／fixture 推断。
+
 ## 未发布：原生结构组（U1）
 
 主包版本仍为 3.0.1，新增能力尚未发行。`tests/native-group.cjs` 使用真实 WordPress 核心区块脚本，覆盖默认／空组、section、标签／类名／布局、嵌套公式／代码／图片／折叠／静态适配、编辑重开与图片改写；PHP 8.2／8.5 与 Node 之间精确往返通过。未知注释属性、HTML 篡改、重复锚点、技术编号冲突、嵌套阶段组／身份／文献、深度／字节预算与缺提供者均明确拒绝。

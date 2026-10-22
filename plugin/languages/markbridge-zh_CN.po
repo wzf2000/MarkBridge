@@ -3356,10 +3356,6 @@ msgid "Invalid field name"
 msgstr "字段名称非法"
 
 #: plugin/i18n.js
-msgid "Invalid group class names"
-msgstr "组容器类名无效。"
-
-#: plugin/i18n.js
 msgid "Invalid highlighted lines"
 msgstr "重点行非法"
 
@@ -3382,6 +3378,10 @@ msgstr "链接 target 非法"
 #: plugin/i18n.js
 msgid "Invalid local author draft"
 msgstr "本地作者草稿无效"
+
+#: plugin/i18n.js
+msgid "Invalid native block class names"
+msgstr "原生区块类名无效。"
 
 #: plugin/i18n.js
 msgid "Invalid native block nesting"
@@ -4038,6 +4038,10 @@ msgid "Native blocks cannot round-trip exactly through Markdown. No candidate wa
 msgstr "原生区块无法精确往返为 Markdown，候选未创建；请下载保留或调整区块。"
 
 #: plugin/i18n.js
+msgid "Native code and preformatted blocks only support plain text"
+msgstr "原生代码和预格式化区块仅支持纯文本。"
+
+#: plugin/i18n.js
 msgid "Native details are limited to 8 nested levels"
 msgstr "原生详情最多嵌套 8 层"
 
@@ -4068,6 +4072,18 @@ msgstr "原生保存未完成，已回滚。"
 #: plugin/i18n.js
 msgid "Native saving only preserves header proposals. Apply metadata by selecting fields, previewing, and confirming in the editing bridge."
 msgstr "原生保存只保留头部提案；应用元数据请在编辑桥中逐项选择、预览并确认。"
+
+#: plugin/i18n.js
+msgid "Native text HTML must match the canonical core save"
+msgstr "原生文本 HTML 须与核心保存格式完全一致。"
+
+#: plugin/i18n.js
+msgid "Native text leaves cannot contain body content"
+msgstr "原生文本叶子不能包含内部正文。"
+
+#: plugin/i18n.js
+msgid "Native text requires bounded plain text with LF line endings"
+msgstr "原生文本须在容量范围内，并使用 LF 换行。"
 
 #: plugin/i18n.js
 msgid "Near serialized block character "

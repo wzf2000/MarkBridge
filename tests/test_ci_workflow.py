@@ -350,6 +350,7 @@ class CISaveCoverage(unittest.TestCase):
             "merge",
             "block-adapters",
             "native-group",
+            "native-text",
             "localization",
             "authoring",
             "technical-writing",

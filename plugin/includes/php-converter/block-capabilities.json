@@ -143,5 +143,13 @@
     "namespace": "string",
     "document": "string",
     "version": "integer"
+  },
+  "core/code": {
+    "anchor": "string",
+    "className": "string"
+  },
+  "core/preformatted": {
+    "anchor": "string",
+    "className": "string"
   }
 }

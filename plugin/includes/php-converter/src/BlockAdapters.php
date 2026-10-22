@@ -13,6 +13,8 @@ final class BlockAdapters
 {
     private static array $registry = [];
     public const NATIVE = [
+        'native-code' => 'core/code',
+        'preformatted' => 'core/preformatted',
         'group' => 'core/group',
         'details' => 'core/details',
         'buttons' => 'core/buttons',
@@ -209,9 +211,63 @@ final class BlockAdapters
         }
         return self::buttonText($inside);
     }
+    public static function textKind(string $kind): bool
+    {
+        return in_array($kind, ['native-code', 'preformatted'], true);
+    }
+    public static function nativeText(mixed $value): string
+    {
+        $value = self::plain($value, 262144);
+        if (strlen($value) > 262144 || preg_match('/[\x00-\x08\x0b-\x1f\x7f]/', $value)) {
+            self::fail(
+                'ADAPTER_TEXT',
+                'Native text requires bounded plain text with LF line endings',
+            );
+        }
+        return $value;
+    }
+    public static function textHtml(string $text, string $kind): string
+    {
+        $html = str_replace(
+            "\u{00a0}",
+            '&nbsp;',
+            htmlspecialchars($text, ENT_NOQUOTES | ENT_HTML5, 'UTF-8'),
+        );
+        return $kind === 'preformatted' ? str_replace("\n", '<br>', $html) : $html;
+    }
+    public static function contentText(mixed $value, string $kind): string
+    {
+        $value = self::plain($value, 262144);
+        if (str_contains($value, "\r")) {
+            self::fail(
+                'ADAPTER_TEXT',
+                'Native text requires bounded plain text with LF line endings',
+            );
+        }
+        $root = self::fragment($value);
+        $text = '';
+        foreach ($root->childNodes as $node) {
+            if ($node->nodeType === XML_TEXT_NODE) {
+                $text .= $node->textContent;
+            } elseif (
+                $node instanceof \DOMElement &&
+                $node->tagName === 'br' &&
+                !$node->attributes->length
+            ) {
+                $text .= "\n";
+            } else {
+                self::fail(
+                    'ADAPTER_TEXT',
+                    'Native code and preformatted blocks only support plain text',
+                );
+            }
+        }
+        return self::nativeText($text);
+    }
     public static function nativeAttrs(string $kind, mixed $attrs, bool $source = false): array
     {
         $keys = match ($kind) {
+            'native-code', 'preformatted' => ['anchor', 'className', $source ? 'text' : 'content'],
             'group' => ['tagName', 'anchor', 'ariaLabel', 'className', 'layout'],
             'details' => ['summary', 'showContent', 'anchor', ...!$source ? ['name'] : []],
             'buttons' => ['anchor', 'layout'],
@@ -228,15 +284,37 @@ final class BlockAdapters
         $attrs = self::keys(
             $attrs,
             $keys,
-            $kind === 'details'
-                ? ['summary']
-                : ($kind === 'button'
-                    ? ['url', ...!$source ? ['text'] : []]
-                    : []),
+            self::textKind($kind)
+                ? [$source ? 'text' : 'content']
+                : ($kind === 'details'
+                    ? ['summary']
+                    : ($kind === 'button'
+                        ? ['url', ...!$source ? ['text'] : []]
+                        : [])),
         );
         $out = [];
         if (array_key_exists('anchor', $attrs) && self::anchor($attrs['anchor']) !== '') {
             $out['anchor'] = $attrs['anchor'];
+        }
+        if (self::textKind($kind)) {
+            $text = $source
+                ? self::nativeText($attrs['text'])
+                : self::contentText($attrs['content'], $kind);
+            $out[$source ? 'text' : 'content'] = $source ? $text : self::textHtml($text, $kind);
+            if (array_key_exists('className', $attrs)) {
+                if (
+                    !is_string($attrs['className']) ||
+                    strlen($attrs['className']) > 200 ||
+                    ($attrs['className'] !== '' &&
+                        !preg_match(
+                            '/^[A-Za-z][A-Za-z0-9_-]*(?: [A-Za-z][A-Za-z0-9_-]*)*$/D',
+                            $attrs['className'],
+                        ))
+                ) {
+                    self::fail('ADAPTER_ATTRIBUTES', 'Invalid native block class names');
+                }
+                $out['className'] = $attrs['className'];
+            }
         }
         if ($kind === 'group') {
             $out['tagName'] = array_key_exists('tagName', $attrs) ? $attrs['tagName'] : 'div';
@@ -262,7 +340,7 @@ final class BlockAdapters
                             $attrs['className'],
                         ))
                 ) {
-                    self::fail('ADAPTER_ATTRIBUTES', 'Invalid group class names');
+                    self::fail('ADAPTER_ATTRIBUTES', 'Invalid native block class names');
                 }
                 $out['className'] = $attrs['className'];
             }
@@ -276,6 +354,8 @@ final class BlockAdapters
                 }
                 $out['layout'] = $layout;
             }
+        } elseif (self::textKind($kind)) {
+            // Plain native leaves have no other fields.
         } elseif ($kind === 'details') {
             if (array_key_exists('name', $attrs) && $attrs['name'] !== '') {
                 self::fail('ADAPTER_ATTRIBUTES', 'Exclusive details groups are not supported');
@@ -360,6 +440,43 @@ final class BlockAdapters
         $id = isset($a['anchor'])
             ? ' id="' . htmlspecialchars($a['anchor'], ENT_QUOTES | ENT_HTML5, 'UTF-8') . '"'
             : '';
+        if (self::textKind($kind)) {
+            $class = 'wp-block-' . ($kind === 'native-code' ? 'code' : 'preformatted');
+            $content = $a['content'];
+            if ($kind === 'native-code') {
+                // Match core/code utils: shortcode and first isolated-URL protection.
+                $content = str_replace('[', '&#91;', $content);
+                // ECMAScript \s and /m use a different set than PCRE's \s and /m.
+                $spaces =
+                    '\x{0009}-\x{000d}\x{0020}\x{00a0}\x{1680}\x{2000}-\x{200a}\x{2028}\x{2029}\x{202f}\x{205f}\x{3000}\x{feff}';
+                $line = '[\r\n\x{2028}\x{2029}]';
+                $content = preg_replace(
+                    '~(?:\A|(?<=' .
+                        $line .
+                        '))([' .
+                        $spaces .
+                        ']*https?:)//([^' .
+                        $spaces .
+                        '<>"]+[' .
+                        $spaces .
+                        ']*)(?=\z|' .
+                        $line .
+                        ')~u',
+                    '$1&#47;&#47;$2',
+                    $content,
+                    1,
+                );
+                $content = '<code>' . $content . '</code>';
+            }
+            return '<pre' .
+                $id .
+                ' class="' .
+                $class .
+                (!empty($a['className']) ? ' ' . $a['className'] : '') .
+                '">' .
+                $content .
+                '</pre>';
+        }
         if ($kind === 'group') {
             return '<' .
                 $a['tagName'] .
@@ -418,6 +535,7 @@ final class BlockAdapters
         self::keys(
             $comment,
             match ($kind) {
+                'native-code', 'preformatted' => ['anchor', 'className'],
                 'group' => ['tagName', 'anchor', 'ariaLabel', 'className', 'layout'],
                 'details' => ['showContent', 'anchor', 'name'],
                 'buttons' => ['anchor', 'layout'],
@@ -425,6 +543,32 @@ final class BlockAdapters
             },
             [],
         );
+        if (self::textKind($kind)) {
+            $attrs = self::nativeAttrs($kind, $comment + ['text' => ''], true);
+            $attrs['content'] = '';
+            unset($attrs['text']);
+            $shell = self::nativeHtml($kind, $attrs, '');
+            $split = $kind === 'native-code' ? '<code>' : '>';
+            $start = strpos($shell, $split) + strlen($split);
+            $tail = $kind === 'native-code' ? '</code></pre>' : '</pre>';
+            $head = substr($shell, 0, $start);
+            if (
+                $block['children'] ||
+                !str_starts_with($block['raw'], $head) ||
+                !str_ends_with($block['raw'], $tail)
+            ) {
+                self::fail('ADAPTER_STRUCTURE', 'Invalid native block wrapper structure');
+            }
+            $html = substr($block['raw'], strlen($head), -strlen($tail));
+            $text = self::contentText($html, $kind);
+            $attrs['content'] = self::textHtml($text, $kind);
+            $canonical = self::nativeHtml($kind, $attrs, '');
+            if ($block['raw'] !== $canonical) {
+                self::fail('ADAPTER_TEXT', 'Native text HTML must match the canonical core save');
+            }
+            $block['attrs'] = self::nativeAttrs($kind, $attrs);
+            return $block;
+        }
         if ($kind === 'group') {
             $comment = self::nativeAttrs($kind, $comment);
         }

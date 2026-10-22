@@ -36,7 +36,7 @@ README 说明产品范围和最短开发入口；本页按用途区分持续有�
 - [工作原理](ARCHITECTURE.md)：双格式存储、转换沙箱、公式和文件来源契约。
 - [教学扩展使用与接口](TEACHING-EXTENSIONS.md)：现有活动、共享回放、精确版本及受信提供者合同。
 - [受信扩展 SDK](SDK.md)：作者候选、typed 静态投影、扩展目录及可运行的一致性样例。
-- [原生区块与静态适配接口](BLOCK-ADAPTERS.md)：详情、链接按钮及受信静态叶子合同。
+- [原生区块与静态适配接口](BLOCK-ADAPTERS.md)：详情、链接按钮及受信静态叶子合同；开发中的结构组、原生代码／预格式化纯文本合同。
 - [验证范围](VALIDATION.md)：实际环境、通过检查与保留边界。
 - [发布流程](RELEASING.md)：版本、检查、安装包和 GitHub Release 的对应关系。
 - [发行渠道](DISTRIBUTION.md)：通用安装包、WordPress.org 提交准备与独立可选 GitHub 更新器。

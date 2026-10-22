@@ -713,6 +713,8 @@ final class Teaching
         'identity' => ['namespace' => 'string', 'document' => 'string'],
         'image' => [],
         'gallery' => [],
+        'native-code' => [],
+        'preformatted' => [],
         'group' => [],
         'details' => [],
         'buttons' => [],
@@ -1464,7 +1466,7 @@ final class Teaching
             } else {
                 if (
                     !preg_match(
-                        '/^:::mbb:v([12]) (identity|collapse|steps|step|code-compare|component|code-tabs|group|details|buttons|button|adapter|object|statement|bibliography|image|gallery) (\{.*\})$/D',
+                        '/^:::mbb:v([12]) (identity|collapse|steps|step|code-compare|component|code-tabs|native-code|preformatted|group|details|buttons|button|adapter|object|statement|bibliography|image|gallery) (\{.*\})$/D',
                         $line,
                         $m,
                     )
@@ -1559,6 +1561,16 @@ final class Teaching
             }
             if (isset(BlockAdapters::NATIVE[$item['kind']])) {
                 $a = BlockAdapters::nativeAttrs($item['kind'], $item['attrs'], true);
+                if (BlockAdapters::textKind($item['kind'])) {
+                    if ($item['children']) {
+                        self::fail(
+                            'ADAPTER_STRUCTURE',
+                            'Native text leaves cannot contain body content',
+                        );
+                    }
+                    $a['content'] = BlockAdapters::textHtml($a['text'], $item['kind']);
+                    unset($a['text']);
+                }
                 if ($item['kind'] === 'details') {
                     $a['summary'] = BlockAdapters::text($a['summary']);
                 }
@@ -1736,6 +1748,12 @@ final class Teaching
                                 'A link button must be a direct leaf of a button group',
                             );
                         }
+                        if (BlockAdapters::textKind($kind) && $inner) {
+                            self::fail(
+                                'ADAPTER_STRUCTURE',
+                                'Native text leaves cannot contain body content',
+                            );
+                        }
                         if ($kind === 'adapter' && $inner) {
                             self::fail(
                                 'ADAPTER_STRUCTURE',
@@ -1857,7 +1875,12 @@ final class Teaching
                 ];
             } else {
                 $header = $a;
-                unset($header['text']);
+                if (BlockAdapters::textKind($kind)) {
+                    $header['text'] = BlockAdapters::contentText($header['content'], $kind);
+                    unset($header['content']);
+                } else {
+                    unset($header['text']);
+                }
             }
             return ':::mbb:v1 ' .
                 $kind .

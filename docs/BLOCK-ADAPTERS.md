@@ -1,6 +1,22 @@
 # 原生区块与静态适配接口
 
-现有正式合同适用于 MarkBridge **3.0.1**；下述原生组为当前开发树新增能力，尚未发行。本页定义原生折叠、链接按钮和受信静态扩展的内容合同；实际验收范围见[验证说明](VALIDATION.md)。交互教学组件使用独立的[教学扩展接口](TEACHING-EXTENSIONS.md)，不能通过本接口运行脚本。
+现有正式合同适用于 MarkBridge **3.0.1**；下述原生组为当前开发树新增能力，尚未发行。本页定义原生结构容器、纯文本叶子、折叠、链接按钮和受信静态扩展的内容合同；实际验收范围见[验证说明](VALIDATION.md)。交互教学组件使用独立的[教学扩展接口](TEACHING-EXTENSIONS.md)，不能通过本接口运行脚本。
+
+## 原生纯文本代码和预格式化（开发中）
+
+`native-code` 对应 `core/code`，`preformatted` 对应 `core/preformatted`，保留原生身份，不转换成围栏代码所用的 `mbb/code`。两种叶子共用闭合 JSON 字段：必填 `text` 和可选 `anchor`、`className`。内部不能另写正文或区块；普通围栏代码的既有语言／高亮功能保持原合同。
+
+```markdown
+:::mbb:v1 native-code {"text":" const value = 1;\n\treturn value;\n","anchor":"example-code"}
+:::mbb:end
+
+:::mbb:v1 preformatted {"text":"名称\t数值\n甲\t1\n\n","className":"plain-data"}
+:::mbb:end
+```
+
+`text` 为纯文字，精确保留 LF、制表符、首尾空格、空行、特殊字符和不换行空格（NBSP）；JSON 的 `\n`／`\t` 表示正文字符。拒绝 CR、除 LF／tab 外的 ASCII 控制字符以及超出整篇容量的内容。锚点与类名沿用本页组容器的闭合规则；全篇锚点唯一、字节／节点／深度预算仍适用，也可嵌入组。
+
+本批只接受真实核心解析后 RichTextData 的固定保存形态：文本使用 `&amp;`／`&lt;`／`&gt;`／`&nbsp;`，代码换行写为 LF，预格式化换行写为 `<br>`。代码区块还沿用核心的短代码／自动嵌入保护：`[` 写为 `&#91;`，首个独立 http(s) URL 行的 `//` 写为 `&#47;&#47;`，行边界与空白集合按核心 ECMAScript 规则处理（包括 U+2028／U+2029、FEFF）；这些固定转义仍对应原来的文字。通过核心 DOM 构建的该形态可精确 parse／save；不同实体写法、CR、额外 HTML 或其他不能按此形态精确重存的原始 HTML 会明确拒绝，不能以 DOM 等价放行。原生编辑器／插件产生的 strong、em、链接、样式、语言字段、绑定、锁定和其他未知属性也不在本批范围内，不静默删除。预格式化区块在 WordPress 本身可带 RichText 格式，这一能力尚未接入本合同。
 
 ## 原生组容器（开发中）
 

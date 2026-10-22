@@ -63,7 +63,7 @@ $fixtures = json_decode(stream_get_contents(STDIN), true, 512, JSON_THROW_ON_ERR
 foreach ($fixtures['accepted'] as $markup) {
     $blocks = (new WP_Block_Parser())->parse($markup);
     if (!mbb_html_allowed($blocks)) {
-        throw new RuntimeException('Native group rejected by actual core parser/KSES policy.');
+        throw new RuntimeException('Native block rejected by actual core parser/KSES policy.');
     }
 }
 foreach ($fixtures['rejected'] as $markup) {
@@ -73,6 +73,6 @@ foreach ($fixtures['rejected'] as $markup) {
     }
 }
 echo count($fixtures['accepted']) .
-    ' native group shells and ' .
+    ' native block shells and ' .
     count($fixtures['rejected']) .
     " server policy refusals passed actual core parser/KSES.\n";

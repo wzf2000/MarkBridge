@@ -3356,10 +3356,6 @@ msgid "Invalid field name"
 msgstr ""
 
 #: plugin/i18n.js
-msgid "Invalid group class names"
-msgstr ""
-
-#: plugin/i18n.js
 msgid "Invalid highlighted lines"
 msgstr ""
 
@@ -3381,6 +3377,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Invalid local author draft"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Invalid native block class names"
 msgstr ""
 
 #: plugin/i18n.js
@@ -4038,6 +4038,10 @@ msgid "Native blocks cannot round-trip exactly through Markdown. No candidate wa
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Native code and preformatted blocks only support plain text"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Native details are limited to 8 nested levels"
 msgstr ""
 
@@ -4067,6 +4071,18 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Native saving only preserves header proposals. Apply metadata by selecting fields, previewing, and confirming in the editing bridge."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Native text HTML must match the canonical core save"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Native text leaves cannot contain body content"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Native text requires bounded plain text with LF line endings"
 msgstr ""
 
 #: plugin/i18n.js

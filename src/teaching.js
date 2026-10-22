@@ -11,6 +11,8 @@ import { createParameterEditor } from './component-parameters.js';
 import { translate as T, format as F } from './i18n.js';
 import {
   nativeAdapterKind,
+  nativeTextKind,
+  nativeContentText,
   nativeAdapterName,
   nativeAdapterKinds,
   nativeAttributes,
@@ -29,6 +31,8 @@ export const teachingSchemas = {
   image: {},
   gallery: {},
   ...technicalSchemas,
+  'native-code': {},
+  preformatted: {},
   group: {},
   details: { summary: 'string', showContent: 'boolean' },
   buttons: {},
@@ -371,7 +375,7 @@ export function teachingSource(source, fail, ignored = new Set(), nonce, fences 
       if (line === ':::mbb:end') data = { end: true };
       else {
         const match =
-          /^:::mbb:v([12]) (identity|collapse|steps|step|code-compare|component|code-tabs|group|details|buttons|button|adapter|object|statement|bibliography|image|gallery) (\{[^\r\n]*\})$/.exec(
+          /^:::mbb:v([12]) (identity|collapse|steps|step|code-compare|component|code-tabs|native-code|preformatted|group|details|buttons|button|adapter|object|statement|bibliography|image|gallery) (\{[^\r\n]*\})$/.exec(
             line,
           );
         if (!match)
@@ -451,6 +455,8 @@ export function assembleTeaching(blocks, make, fail) {
     }
     if (nativeAdapterKinds.has(item.kind)) {
       let attrs = nativeBlockAttributes(item.kind, item.attrs, fail);
+      if (nativeTextKind(item.kind) && item.children.length)
+        fail('ADAPTER_STRUCTURE', 'Native text leaves cannot contain body content');
       if (item.kind === 'button') {
         if (
           item.children.length !== 1 ||
@@ -554,6 +560,8 @@ export function validateTeaching(blocks, fail) {
             fail('ADAPTER_STRUCTURE', 'A button group requires 1–32 direct link buttons');
           if (kind === 'button' && (parent !== 'buttons' || inner.length))
             fail('ADAPTER_STRUCTURE', 'A link button must be a direct leaf of a button group');
+          if (nativeTextKind(kind) && inner.length)
+            fail('ADAPTER_STRUCTURE', 'Native text leaves cannot contain body content');
           if (kind === 'adapter' && inner.length)
             fail('ADAPTER_STRUCTURE', 'Static adapters must not contain nested blocks');
           walk(inner, kind, depth + 1, collapseDepth, detailsDepth + (kind === 'details' ? 1 : 0));
@@ -627,8 +635,12 @@ export function teachingMarkdown(b, body, fail) {
   const kind = teachingKind(b.name);
   const a = teachingAttributes(kind, b.attributes, fail, false, b.name);
   if (nativeAdapterKinds.has(kind) || kind === 'adapter') {
-    const header =
-      kind === 'adapter'
+    const header = nativeTextKind(kind)
+      ? {
+          ...Object.fromEntries(Object.entries(a).filter(([key]) => key !== 'content')),
+          text: nativeContentText(a.content, kind, fail),
+        }
+      : kind === 'adapter'
         ? {
             name: staticAdapterKind(b.name).name,
             version: a.mbbAdapterVersion,

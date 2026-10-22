@@ -2117,7 +2117,11 @@
   "Read the complete activity": "阅读完整题目与解析",
   "Groups only support div or section tags": "组容器仅支持 div 或 section 标签。",
   "A group label must be single-line plain text": "组容器标签必须为单行纯文字。",
-  "Invalid group class names": "组容器类名无效。",
   "Groups only support flow or constrained layout": "组容器仅支持 flow 或 constrained 布局。",
-  "The group label differs from its HTML": "组容器标签与保存 HTML 不一致。"
+  "The group label differs from its HTML": "组容器标签与保存 HTML 不一致。",
+  "Native text requires bounded plain text with LF line endings": "原生文本须在容量范围内，并使用 LF 换行。",
+  "Native code and preformatted blocks only support plain text": "原生代码和预格式化区块仅支持纯文本。",
+  "Native text HTML must match the canonical core save": "原生文本 HTML 须与核心保存格式完全一致。",
+  "Native text leaves cannot contain body content": "原生文本叶子不能包含内部正文。",
+  "Invalid native block class names": "原生区块类名无效。"
 }

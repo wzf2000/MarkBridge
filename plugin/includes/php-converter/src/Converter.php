@@ -244,6 +244,11 @@ final class Converter
     {
         $this->input($left);
         $this->input($right);
+        foreach ([$left, $right] as $snapshot) {
+            if (preg_match('~<!-- wp:(?:code|preformatted)(?: |\x20?-->)~', $snapshot)) {
+                $this->parseBlocks($snapshot);
+            }
+        }
         return $this->canonical($left) === $this->canonical($right);
     }
 
@@ -251,6 +256,9 @@ final class Converter
     {
         $this->input($source);
         $this->input($serialized);
+        if (preg_match('~<!-- wp:(?:code|preformatted)(?: |\x20?-->)~', $serialized)) {
+            $this->parseBlocks($serialized);
+        }
         if (trim($documentId) === '') {
             throw new ConversionError('DOCUMENT_ID', 'A nonempty documentId is required');
         }
@@ -1028,6 +1036,9 @@ final class Converter
             }
             if (isset($a['anchor'])) {
                 $comment['anchor'] = $a['anchor'];
+            }
+            if (BlockAdapters::textKind($native) && array_key_exists('className', $a)) {
+                $comment['className'] = $a['className'];
             }
             if ($native === 'group') {
                 foreach (['ariaLabel', 'className', 'layout'] as $field) {

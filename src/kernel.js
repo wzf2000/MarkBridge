@@ -1168,6 +1168,7 @@ export function toMarkdown(blocks, context) {
   // Fail closed if formatting, attributes, nesting, or inline constructs would be lost.
   const original = api().serialize(blocks);
   checkSource(original);
+  validateAdaptersSerialized(original, fail, teachingJSON);
   const regenerated = api().serialize(blocksFromSource(result, false, false, false));
   if (canonical(original) !== canonical(regenerated)) {
     // Identify the first real differing block, including its nested path.

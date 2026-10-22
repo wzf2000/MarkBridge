@@ -117,6 +117,7 @@ jobs:
           wp_test eval-file tests/merge-save.php
           wp_test eval-file tests/block-adapters-save.php
           wp_test eval-file tests/native-group-save.php
+          wp_test eval-file tests/native-text-save.php
           wp_test eval-file tests/localization-save.php
           wp_test eval-file tests/authoring-save.php
           wp_test eval-file tests/technical-writing-save.php
@@ -139,6 +140,7 @@ jobs:
           wp_test eval-file tests/merge-save.php
           wp_test eval-file tests/block-adapters-save.php
           wp_test eval-file tests/native-group-save.php
+          wp_test eval-file tests/native-text-save.php
           wp_test eval-file tests/localization-save.php
           wp_test eval-file tests/authoring-save.php
           wp_test eval-file tests/technical-writing-save.php
@@ -159,6 +161,7 @@ jobs:
           wp_test eval-file tests/merge-save.php
           wp_test eval-file tests/block-adapters-save.php
           wp_test eval-file tests/native-group-save.php
+          wp_test eval-file tests/native-text-save.php
           wp_test eval-file tests/localization-save.php
           wp_test eval-file tests/authoring-save.php
           wp_test eval-file tests/technical-writing-save.php
