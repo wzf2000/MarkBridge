@@ -180,6 +180,7 @@ add_filter('render_block', function ($html) {
 require_once __DIR__ . '/source-sync.php';
 require_once __DIR__ . '/publication.php';
 require_once __DIR__ . '/editor-bridge.php';
+require_once __DIR__ . '/code-literals.php';
 require_once __DIR__ . '/footnotes.php';
 require_once __DIR__ . '/technical.php';
 require_once __DIR__ . '/references.php';

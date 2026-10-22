@@ -7,6 +7,16 @@ if (!defined('ABSPATH')) {
     }
 }
 
+// Protect literal shortcode syntax in derived code-tabs JSON strings, not array syntax.
+// JSON decoding still yields exactly the same configuration and original code bytes.
+function mbb_code_tabs_config_json(array $config): string
+{
+    return preg_replace_callback(
+        '/"(?:[^"\\\\]|\\\\.)*"/s',
+        static fn($match) => str_replace('[', '\\u005b', $match[0]),
+        mbb_component_json($config),
+    );
+}
 // Frontend enhancement never changes stored markup or paragraph identity.
 add_action('init', static function () {
     $schemas = json_decode(
@@ -196,7 +206,11 @@ add_filter(
             '$1<div data-mbb-teaching="' .
                 esc_attr($kind) .
                 '" data-mbb-teaching-config="' .
-                esc_attr(mbb_component_json($config)) .
+                esc_attr(
+                    $kind === 'code-tabs'
+                        ? mbb_code_tabs_config_json($config)
+                        : mbb_component_json($config),
+                ) .
                 '"',
             $html,
             1,

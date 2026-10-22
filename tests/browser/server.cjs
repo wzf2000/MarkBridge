@@ -542,6 +542,14 @@ http
     }
     if (pathname === '/wp/v2/types')
       return response.writeHead(200, { 'Content-Type': 'application/json' }).end('{}');
+    if (pathname === '/code-literals-fixture') {
+      const fixture = execFileSync(
+        'php',
+        [path.join(__dirname, '../code-literals.php'), '--fixture'],
+        { encoding: 'utf8' },
+      );
+      return response.writeHead(200, { 'Content-Type': 'application/json' }).end(fixture);
+    }
     if (pathname === '/front') {
       const query = new URL(request.url, 'http://localhost').searchParams;
       const settings =

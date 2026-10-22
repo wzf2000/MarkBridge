@@ -1,5 +1,13 @@
 # 当前验证范围
 
+## 未发布：阅读时的字面短代码（U3）
+
+`tests/code-literals.php` 加载只读 WordPress 核心的 HTML token、block parser、shortcode／KSES 库，在显式合成上下文检查 pre／code、原生代码／预格式化、行内代码、代码分页及比较代码。普通段落仍执行短代码，非托管文章不改。配置属性执行问题由代码分页派生 JSON 的字符串转义修复，解码配置及保存双格式保持原字节。
+
+保护使用插件最低依赖 WordPress 7.1 的 Tag Processor；当前无公开原始 token 字节偏移 API，小子类通过 protected bookmark span 取得范围，不读私有属性或使用 Reflection。单次线性扫描只持有一个 bookmark、最多 32 层栈及一个溢出计数，输出不超过输入五倍，不截断全文。未闭合 pre／code 延续字面文本至末尾；无法完成的 HTML token 尾段原样保留，不猜测其标签／属性。脚本、样式、注释、标签与属性字节不在文本替换范围内，已编码方括号及重复调用保持。
+
+`tests/browser/code-literals.spec.cjs` 以该真实核心投影的合成 HTML 验证实际 Prism、原代码／分页复制与两尺寸；`tests/code-literals-save.php` 是 guarded local 安装入口，由独立 WordPress 验证实际过滤链和存储未变，串行接入现有 PHP→Node→PHP 验收，不由无数据库模型替代。
+
 ## 未发布：原生纯文本叶子（U2）
 
 `tests/native-text.cjs` 使用真实核心脚本与双 PHP 转换模型，检查 core/code／preformatted 身份、空内容、首尾 LF／tab／空行、NBSP／特殊字符、组内嵌套、原生修改重开、配对恢复、未知属性／格式／非规范 HTML 拒绝、重复锚点和容量。共享 Unicode URL 夹具另覆盖 U+2028／U+2029、em-space、FEFF、LF、混合分隔与多 URL，仅首个独立 URL 使用核心转义。服务器边界复用只读核心 parser／KSES 壳；转换模型不能代替实际数据库保存。
