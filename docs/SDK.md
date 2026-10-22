@@ -64,3 +64,7 @@ The ordinary source sanitizer still refuses MathML/SVG. StaticExport alone marks
 ## Generic author presentation
 
 The schema stays data-only. Core uses display-only field labels and one-based array item numbers, with registered localized component titles. Unknown keys are humanized without deleting or remapping data; exact keys/implementation version remain in advanced configuration details. No component-specific algorithm is dispatched by these labels. Sparse-x bars in the chart-static sample follow row order with equal group spacing; line/scatter retain numeric x. The research provider and its immutable resources are not changed by the sample bridge.
+
+## Fixed public resource protocol v2
+
+Main 3.2.0-rc.1 adds opt-in `protocolVersion:2`, `mbb-component/v2`, a pinned public manifest and an independent HTTP opaque frame. v1 stays on srcdoc; authored component/activity attributes are unchanged. The closed registration, resource types, transport/deadline budgets, Cookie/navigation distinction, static data reader and complete identity contract are specified in [教学扩展接口](TEACHING-EXTENSIONS.md#固定公开资源-v2320-rc1). `markbridge_teaching_resource_bytes(component,version,resourceId)` supplies only registered fixed JSON/bin bytes to trusted typed projections; it never returns JavaScript or accepts article URLs. No WASM/Worker/network permission is granted by v2. The local-only synthetic provider is `tests/fixtures/resource-v2-provider`; it exercises JSON/bin delivery and a pinned JavaScript blob under the frame's own CSP.

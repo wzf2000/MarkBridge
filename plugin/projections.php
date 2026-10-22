@@ -250,6 +250,17 @@ function mbb_component_projection_fingerprint(string $component, string $version
         return null;
     }
     $files = [];
+    $provider = function_exists('mbb_component_provider')
+        ? mbb_component_provider($component, $version)
+        : null;
+    if (($provider['protocolVersion'] ?? null) === 2) {
+        try {
+            mbb_component_v2_check($provider);
+            $files[] = mbb_component_identity($provider);
+        } catch (Throwable) {
+            return null;
+        }
+    }
     foreach ($d['files'] as $f) {
         if (
             !is_file($f['file']) ||

@@ -13,6 +13,7 @@ function mbb_component_diagnostics(): array
 {
     return [
         'protocolVersion' => 1,
+        'protocolVersions' => [1, 2],
         'limits' => ['activeRuns' => 2, 'previewFrames' => 4, 'paramsBytes' => 16384],
         'providers' => array_values(
             array_map(

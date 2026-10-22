@@ -378,7 +378,7 @@ function mbb_extensions_settings_page(bool $embedded = false): void
         '">';
     submit_button(mbb_t('Check selected articles'));
     echo '</form>';
-    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         check_admin_referer('mbb_extension_usage');
         $parts = preg_split('/\s*,\s*/', trim($input));
         $ids = [];

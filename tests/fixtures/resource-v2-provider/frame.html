@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<style>
+  body {
+    font: 16px/1.6 system-ui;
+    margin: 16px
+  }
+
+  button {
+    font: inherit;
+    padding: 8px
+  }
+
+  pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%
+  }
+
+  td,
+  th {
+    padding: 6px;
+    border: 1px solid #bbb;
+    text-align: left
+  }
+
+</style>
+
+<body>
+  <h2>固定公开数据演示</h2>
+  <p id="status" role="status">等待宿主</p>
+  <pre id="data"></pre><button id="run">计算固定数据</button>
+  <table>
+    <caption>公开数据静态语义</caption>
+    <thead>
+      <tr>
+        <th>项目</th>
+        <th>数值</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>样本 A</td>
+        <td>42</td>
+      </tr>
+    </tbody>
+  </table>
+  <script>
+    (() => {
+      'use strict';
+      const protocol = 'mbb-component/v2';
+      const expectedGroup = '5bcca719a5db000e1440fa7ae419bbd725afa51929f1b1f7bfe384b891615bc3';
+      const expectedResources = {
+        "data": {
+          "id": "data",
+          "path": "assets/0.1.0/data.json",
+          "type": "json",
+          "bytes": 16,
+          "sha256": "4a421daa81852b3fc555af5110f6f445b526186b8b11b32a58fe54b7fa4f1f16",
+          "deps": [],
+          "license": "CC0-1.0",
+          "version": "0.1.0"
+        },
+        "program": {
+          "id": "program",
+          "path": "assets/0.1.0/program.js",
+          "type": "javascript",
+          "bytes": 48,
+          "sha256": "9ca9e3065264d545317742d86577f3c06adebbeae9afabe251a5d95bf2b3421e",
+          "deps": ["data"],
+          "license": "CC0-1.0",
+          "version": "0.1.0"
+        },
+        "values": {
+          "id": "values",
+          "path": "assets/0.1.0/values.bin",
+          "type": "public-data",
+          "bytes": 2,
+          "sha256": "a12871fee210fb8619291eaea194581cbd2531e4b23759d225f6806923f63222",
+          "deps": [],
+          "license": "CC0-1.0",
+          "version": "0.1.0"
+        }
+      };
+      let session = null,
+        runId = null,
+        value = null;
+      const status = document.getElementById('status');
+      const send = (type, extra = {}) => parent.postMessage({
+        protocol,
+        session,
+        type,
+        ...extra
+      }, '*');
+      addEventListener('message', async (event) => {
+        const d = event.data;
+        if (parent === window || event.source !== parent || d?.protocol !== protocol || !
+          /^[a-f0-9]{32}$/.test(d.session || '')) return;
+        if (d.type === 'init' && session === null) {
+          const group = d.resourceGroup;
+          if (group?.version !== '0.1.0' || group.sha256 !== expectedGroup || !
+            /^[a-f0-9]{64}$/.test(group.identity || '') || group.resources?.length !== 3)
+            return;
+          const resources = new Map();
+          for (const resource of group.resources) {
+            const expected = expectedResources[resource.spec?.id];
+            if (!expected || Object.keys(resource.spec).length !== 8 || Object.keys(
+                expected).some(key => JSON.stringify(resource.spec[key]) !== JSON.stringify(
+                expected[key]))) return;
+            if (!(resource.buffer instanceof ArrayBuffer) || resource.buffer.byteLength !==
+              resource.spec.bytes || resource.buffer.byteLength > 1048576 || resources.has(
+                resource.spec.id)) return;
+            const hash = [...new Uint8Array(await crypto.subtle.digest('SHA-256', resource
+              .buffer))].map(v => v.toString(16).padStart(2, '0')).join('');
+            if (hash !== resource.spec.sha256) return;
+            resources.set(resource.spec.id, resource);
+          }
+          if (resources.get('data')?.spec.type !== 'json' || resources.get('program')?.spec
+            .type !== 'javascript' || resources.get('values')?.spec.type !== 'public-data')
+            return;
+          value = JSON.parse(new TextDecoder('utf-8', {
+            fatal: true
+          }).decode(resources.get('data').buffer));
+          if (value.value !== 42 || [...new Uint8Array(resources.get('values').buffer)]
+            .join(',') !== '1,2') return;
+          const url = URL.createObjectURL(new Blob([resources.get('program').buffer], {
+            type: 'text/javascript'
+          }));
+          try {
+            await new Promise((resolve, reject) => {
+              const script = document.createElement('script');
+              script.src = url;
+              script.onload = resolve;
+              script.onerror = reject;
+              document.head.append(script);
+            });
+          } finally {
+            URL.revokeObjectURL(url);
+          }
+          if (globalThis.fixedCompute(value.value) !== 84) return;
+          session = d.session;
+          document.getElementById('data').textContent = JSON.stringify(value);
+          status.textContent = '公开资源已校验';
+          send('ready');
+        } else if (session === d.session && d.type === 'grant' && d.runId === runId) {
+          status.textContent = '计算完成';
+          send('complete', {
+            runId,
+            frameCount: 0,
+            outputBytes: 12,
+            summary: {
+              value: value.value
+            }
+          });
+          runId = null;
+        } else if (session === d.session && d.type === 'cancel') {
+          status.textContent = '已停止';
+        }
+      });
+      document.getElementById('run').onclick = () => {
+        if (session && !runId) {
+          runId = [...crypto.getRandomValues(new Uint8Array(16))].map(v => v.toString(16)
+            .padStart(2, '0')).join('');
+          send('run-request', {
+            runId
+          });
+        }
+      };
+    })();
+
+  </script>
+</body>
+
+</html>

@@ -59,7 +59,7 @@ asset('editor-ui.css');
 asset('math.css');
 asset('footnotes.css');
 asset('teaching.js');
-asset('components.js');
+asset('components.js', read('component-resources.js') + '\n' + read('components.js'));
 asset('teaching.css');
 asset('technical.css');
 asset('media-presentation.css');

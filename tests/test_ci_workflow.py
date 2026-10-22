@@ -342,6 +342,7 @@ class CISaveCoverage(unittest.TestCase):
             "native-rest",
             "teaching",
             "provider",
+            "component-resources",
             "recovery",
             "frontmatter",
             "resource-import",

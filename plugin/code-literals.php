@@ -1,4 +1,7 @@
 <?php
+if (!defined('ABSPATH') && PHP_SAPI !== 'cli') {
+    exit();
+}
 // Reading projection only. Stored block HTML and Markdown are never rewritten.
 function mbb_code_literal_html(string $html): string
 {

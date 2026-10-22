@@ -108,6 +108,7 @@ jobs:
           wp_test eval-file tests/native-rest-save.php
           wp_test eval-file tests/teaching-save.php
           wp_test eval-file tests/provider-save.php
+          wp_test eval-file tests/component-resources-save.php
           wp_test eval-file tests/php-backend-save.php
           wp_test eval-file tests/recovery-save.php
           wp_test eval-file tests/frontmatter-save.php
@@ -133,6 +134,7 @@ jobs:
           wp_test eval-file tests/native-rest-save.php
           wp_test eval-file tests/teaching-save.php
           wp_test eval-file tests/provider-save.php
+          wp_test eval-file tests/component-resources-save.php
           wp_test eval-file tests/recovery-save.php
           wp_test eval-file tests/frontmatter-save.php
           wp_test eval-file tests/resource-import-save.php
@@ -155,6 +157,7 @@ jobs:
           wp_test eval-file tests/native-rest-save.php
           wp_test eval-file tests/teaching-save.php
           wp_test eval-file tests/provider-save.php
+          wp_test eval-file tests/component-resources-save.php
           wp_test eval-file tests/recovery-save.php
           wp_test eval-file tests/frontmatter-save.php
           wp_test eval-file tests/resource-import-save.php

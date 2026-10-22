@@ -259,6 +259,8 @@ function mbb_collections_components(string $serialized): array
     foreach (mbb_component_descriptors($serialized) as $id => $a) {
         $p = mbb_component_provider($a->component, $a->componentVersion);
         $sha = null;
+        $identity = null;
+        $group = null;
         $status = $p['status'] ?? 'missing';
         if ($status === 'available') {
             $file = $p['resource']['file'];
@@ -271,6 +273,22 @@ function mbb_collections_components(string $serialized): array
                 mbb_collections_fail('collection_changed');
             }
             $sha = $p['resource']['sha256'];
+            if (($p['protocolVersion'] ?? 1) === 2) {
+                try {
+                    $checked = mbb_component_v2_check($p);
+                    $identity = mbb_component_identity($p);
+                    $group = [
+                        'manifestSha256' => $checked['plan']['manifestSha256'],
+                        'groupSha256' => $checked['plan']['groupSha256'],
+                        'resources' => array_map(
+                            static fn($r) => array_diff_key($r, ['file' => true]),
+                            $checked['plan']['resources'],
+                        ),
+                    ];
+                } catch (Throwable) {
+                    mbb_collections_fail('collection_changed');
+                }
+            }
         }
         $items[] = [
             'id' => $id,
@@ -278,6 +296,9 @@ function mbb_collections_components(string $serialized): array
             'version' => $a->componentVersion,
             'paramsSha256' => hash('sha256', mbb_component_json($a->params)),
             'resourceSha256' => $sha,
+            ...$identity !== null
+                ? ['componentIdentity' => $identity, 'resourceGroup' => $group]
+                : [],
             'status' => $status,
             'representation' => 'author-static-fallback',
             'projectionFingerprint' => function_exists('mbb_component_projection_fingerprint')
@@ -689,6 +710,16 @@ function mbb_collections_final(array $snapshot, array $config, string $adapter):
                 : null)
         ) {
             mbb_collections_fail('collection_changed');
+        }
+        if (($component['componentIdentity'] ?? null) !== null) {
+            try {
+                mbb_component_v2_check($p);
+                if (!hash_equals($component['componentIdentity'], mbb_component_identity($p))) {
+                    throw new RuntimeException('component_changed');
+                }
+            } catch (Throwable) {
+                mbb_collections_fail('collection_changed');
+            }
         }
         if (($p['status'] ?? 'missing') !== $component['status']) {
             mbb_collections_fail('collection_changed');

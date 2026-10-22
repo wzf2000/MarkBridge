@@ -1,5 +1,13 @@
 # 当前验证范围
 
+## 3.2.0-rc.1：固定公开资源 v2
+
+本批入口为 `tests/component-resources.cjs`（`MARKBRIDGE_TEST_PHP=php82`／`php85` 分别运行；默认 `php`）、`tests/component-frame.php` 与 `tests/browser/component-resources-v2.spec.cjs`。纯模型覆盖严格 JSON／封闭 manifest、许可／依赖／路径／类型、字节与 SHA、omit／拒绝重定向、有界响应流、整组缓存／4 MiB LRU、副本 transfer、取消、晚 SHA 与并发 generation；PHP 模型还覆盖 raw REST 响应钩子、独立 CSP、固定请求元组、末次文件变更／symlink 拒绝、固定数据 typed 投影和快照身份。v1 的实际 iframe ready／执行回归单独保留有效证据。
+
+浏览器为合成 HTTP fixture，无 WordPress 数据库；桌面／手机覆盖严格父 CSP 下的 v2 opaque HTTP frame、固定 JSON／JavaScript／bin 交付、blob 脚本、no-cors 网络探针、WASM／Worker 拒绝、生命周期、坏摘要、warm manifest 重验、近 16 KiB 合法登记参数与静态说明。截图通过 Playwright 的 outputPath 输出，由调用方指定证据目录；手机尺寸模拟不是物理设备验收。
+
+`tests/fixtures/resource-v2-provider` 是供独立 local WordPress 安装的固定合成插件；须显式设置 `MARKBRIDGE_TEST_RESOURCE_V2=true`，且环境与 home 都通过 local／loopback guard。`tests/component-resources-save.php` 是受 CLI／WP_CLI／ROOT／HOME／local 共同保护的实际登记、匿名 REST、配对保存、原生修改、重开、修订与末次数据拒绝入口，串行加入既有 PHP→Node→PHP CI 保存序列。本地仅 lint；真实 WordPress HTTP、账户响应一致性、保存与安装 ZIP 由独立集成验收另记，不从模型或 fixture 推断通过。
+
 ## 3.1.0-rc.2：前置嵌入保护
 
 rc.1 的额外实际 WordPress 检查发现，`WP_Embed::run_shortcode`／`autoembed` 在 priority 8 处理嵌入，早于原代码保护。rc.2 在 priority 7 先保护原始 pre／code 文本，再在 priority 10 保护区块渲染后的内容；`[` 与 http(s) 的 `//` 仅在代码文字中作显示等价的实体转义，不改标签、属性、普通段落或保存双格式。只读核心模型加入真实 `WP_Embed` 调度和固定内存 handler；实际保存入口同样覆盖代码不展开、正常段落仍展开及原文不变，不进行外部抓取。rc.1 包与原失败证据保留，不作为本轮最终候选。

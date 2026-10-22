@@ -180,7 +180,60 @@ add_action('markbridge_register_teaching_components', static function () {
 
 作者的参数输入暂存在编辑器内存中；明确应用后更新区块，未应用或无效时阻止保存与导出，撤销恢复原配置。切换选区不能静默丢弃候选。应用仍不取代服务端 schema 校验。播放位置、读者输入与执行输出永不写回参数或正文。
 
-## 隔离加载与消息协议
+## 固定公开资源 v2（3.2.0-rc.1）
+
+这是显式选择的另一种资源交付协议，与“活动关系 v2”及作者工具合同分别编号。文章仍保存原 `component`、精确版本、`params` 与可选 `activity`，不保存协议、URL、清单或运行结果。原 v1 的资源及 srcdoc 加载保留。
+
+提供者先检查 `markbridge_teaching_supports_resource_groups()`，将 `protocolVersion` 设为 `2`、`minMarkBridge` 设为 `3.2.0-rc.1` 或以后，再增加闭合登记字段：
+
+```php
+'resources' => [
+    'file' => __DIR__ . '/assets/0.1.0/manifest.json',
+    'url' => plugins_url('assets/0.1.0/manifest.json', __FILE__),
+    'sha256' => $reviewedBuildPins['manifest.json'],
+],
+```
+
+原 `resource:{file,url,sha256}` 仍指向该提供者固定 HTML 引导，单项最多 512 KiB；它不进入额外资源列表。摘要应来自审阅构建的固定 pin，不从文章、网络响应或每次请求动态计算为新信任值。所有文件必须位于同一插件真实目录，清单和条目不允许 symlink、路径逃逸、查询或外部 URL。
+
+清单最多 16 KiB，严格拒绝重复 JSON 键、无效 Unicode、非有限数与未知字段，结构如下：
+
+```json
+{
+  "schema": "mbb-resources/v2",
+  "version": "0.1.0",
+  "resources": [
+    {
+      "id": "data",
+      "path": "assets/0.1.0/data.json",
+      "type": "json",
+      "bytes": 12,
+      "sha256": "<64 lowercase hexadecimal characters>",
+      "deps": [],
+      "license": "CC0-1.0",
+      "version": "0.1.0"
+    }
+  ]
+}
+```
+
+`version` 为无前导零的稳定 `x.y.z`，须同时等于精确组件版本及路径版本。条目 ID 为最多 24 个小写字母／数字／连字符，首字符为字母；路径只接受 `assets/<version>/<小写字母开头的字母数字连字符文件名>.<json|js|bin>`。类型与后缀一一对应：`json`、`javascript`、`public-data`。许可枚举为 `CC0-1.0`、`GPL-3.0-or-later`、`Apache-2.0`。依赖为本组已登记 ID，无重复、缺失或环；交付按稳定拓扑顺序。最多八项，每项 1 MiB，资源条目原始字节合计 2 MiB；清单的 16 KiB 与 HTML 引导的 512 KiB 分别计量，不扣入该资源合计；不接受 WASM、Worker 或任意附加类型。清单不能列入自身。
+
+父窗每次启动都以 `credentials:'omit'`、`redirect:'error'` 重新读取并校验固定清单；缓存命中也不省略此步。只有整组下载、字节数、SHA 和当前 generation 均有效后才提交原始字节 LRU，页面内最多 4 MiB。交付副本可 transfer，缓存原件不被 detach；取消或晚 SHA 结果不能提交半组或复活旧实例，并发实例各有上下文。
+
+v2 iframe 的 `src` 指向公开固定 REST HTML 路由 `/mbb/v2/component-frame/<id>/<version>/<bootstrap-sha256>`，采用 `sandbox="allow-scripts"`、无同源权限。端点只接受登记元组，拒绝额外查询／正文／nonce／任意文件或脚本（WordPress 的 `rest_route` 路由参数除外）。响应为原始 HTML，不是 JSON；发送前重读本地引导及整组摘要，返回 `no-store`、`nosniff` 与独立 CSP：只允许本站嵌入、固定内联／blob 脚本与内联样式，`connect-src 'none'`、`worker-src 'none'`，不授予 WASM 编译权限。不会调整编辑器或整站 CSP。iframe 导航可能携带浏览器 Cookie；端点不读取账户／文章身份来生成正文，opaque 子文档也不能读取 Cookie。不要把父窗 fetch 的 omit 误写成导航 omit。
+
+端点 URL 的摘要只绑定提供者固定 HTML；最终响应另附 Main 固定布局桥。完整组件身份同时绑定 ID、精确版本、协议、引导 SHA、资源组及 Main 桥／CSP／校验代码摘要。布局桥只负责有界自然高度和活动布局，不替提供者验证资源消息或计算。
+
+每实例 wire 为 `mbb-component/v2`，会话、来源、runId 及已有 `ready`／`run-request`／`grant`／`complete`／`cancel` 控制保持。v2 `init.resourceGroup` 为 `{version,sha256,identity,resources:[{spec,buffer}]}`；`buffer` 是 ArrayBuffer，元数据中的 spec 与固定清单一致。提供者须先拒绝 `parent===window`，再检查 `event.source===parent`、协议、固定会话、条目身份、长度与摘要；资源交付不是运行许可，计算仍需 `grant`。v2 初始化 JSON 元数据单独限制 40 KiB（v1 仍 20 KiB），参数仍 16 KiB，控制／结果仍 8 KiB；ArrayBuffer 另按八项／每项 1 MiB／合计 2 MiB 核对，不以 JSON 中的 `{}` 绕过预算。
+
+启动总期限最多五秒，覆盖加载、摘要、HTTP frame、交付和 ready；累计下载最多 2.5 秒、摘要最多一秒、frame 导航至 ready 最多 1.5 秒，任一先到即失败。ready 后的读者思考不消耗启动期限；每次 grant 仍独立最多两秒。父窗的移除与 deadline 是兜底，不是任意恶意程序的硬实时 CPU 隔离证明。
+
+受信 typed 投影可通过 `markbridge_teaching_resource_bytes($component,$version,$resourceId)` 读取固定 JSON／bin 数据；该接口不读文章 URL、不返回脚本，且重新校验全部登记文件。投影指纹及文集快照同时绑定数据身份，末次变更拒绝。静态输出保留投影和作者替代，不自动打包 HTML／JS 运行代码；不会因为启用了 v2 就把整个资源组作为离线运行程序导出。
+
+本地 HTTP 合成提供者位于 `tests/fixtures/resource-v2-provider`，含固定 HTML、JSON、JS、bin、字面 pin 与 typed 表格；只在 `WP_ENVIRONMENT_TYPE=local`、loopback home、`MARKBRIDGE_TEST_RESOURCE_V2=true` 时登记。它是测试夹具，不是已发行扩展或生产数据源。
+
+## 隔离加载与消息协议（v1）
 
 静态文章预览继续使用不允许脚本的沙箱。交互组件必须显式启动，运行在单独 `sandbox="allow-scripts"` 的无同源权限 iframe 中。主插件前置 CSP，禁止网络连接、表单、外部资源和基准 URL；只允许登记资源中的内联脚本／样式及 blob Worker。资源请求不带凭据、禁止重定向；运行 iframe 不取得编辑器 REST nonce、Cookie、私人正文或服务器执行接口。
 

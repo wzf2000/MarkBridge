@@ -6,6 +6,7 @@ const fixturePort = Number(process.env.MARKBRIDGE_TEST_BROWSER_PORT || 8765);
 if (!Number.isInteger(fixturePort) || fixturePort < 1024 || fixturePort > 65535)
   throw Error('MARKBRIDGE_TEST_BROWSER_PORT must be a local unprivileged port.');
 
+const resourceV2Fixture = require('./resource-v2-fixture.cjs')(fixturePort);
 const plugin = process.env.MARKBRIDGE_TEST_PLUGIN_ROOT
   ? fs.realpathSync(process.env.MARKBRIDGE_TEST_PLUGIN_ROOT)
   : path.resolve(__dirname, '../../plugin');
@@ -383,6 +384,7 @@ function batchFixture(request, response, pathname) {
 
 http
   .createServer((request, response) => {
+    if (resourceV2Fixture(request, response)) return;
     const pathname = new URL(request.url, 'http://localhost').pathname;
     const locale =
       new URL(request.url, 'http://localhost').searchParams.get('locale') === 'en_US'
