@@ -513,6 +513,10 @@ msgid "A gallery requires 1 to 32 direct native images"
 msgstr "图库需要 1–32 个直接隶属的原生图片区块"
 
 #: plugin/i18n.js
+msgid "A group label must be single-line plain text"
+msgstr "组容器标签必须为单行纯文字。"
+
+#: plugin/i18n.js
 msgid "A link button must be a direct leaf of a button group"
 msgstr "链接按钮只能是按钮组直接叶节点"
 
@@ -2912,6 +2916,14 @@ msgid "Go to line"
 msgstr "跳转行号"
 
 #: plugin/i18n.js
+msgid "Groups only support div or section tags"
+msgstr "组容器仅支持 div 或 section 标签。"
+
+#: plugin/i18n.js
+msgid "Groups only support flow or constrained layout"
+msgstr "组容器仅支持 flow 或 constrained 布局。"
+
+#: plugin/i18n.js
 msgid "HTML blocks cannot contain child blocks"
 msgstr "HTML 区块不能包含子区块"
 
@@ -3342,6 +3354,10 @@ msgstr "枚举声明非法"
 #: plugin/i18n.js
 msgid "Invalid field name"
 msgstr "字段名称非法"
+
+#: plugin/i18n.js
+msgid "Invalid group class names"
+msgstr "组容器类名无效。"
 
 #: plugin/i18n.js
 msgid "Invalid highlighted lines"
@@ -6790,6 +6806,10 @@ msgstr "静态导出所需的公式预览引擎不可用"
 #: plugin/i18n.js
 msgid "The formula syntax cannot be typeset"
 msgstr "公式语法无法排版"
+
+#: plugin/i18n.js
+msgid "The group label differs from its HTML"
+msgstr "组容器标签与保存 HTML 不一致。"
 
 #: plugin/i18n.js
 msgid "The header proposal changed. Previous metadata selections were reset; choose them again."

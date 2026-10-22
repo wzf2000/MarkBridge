@@ -1020,11 +1020,21 @@ final class Converter
         if (($native = BlockAdapters::kind($name)) !== null) {
             $a = BlockAdapters::nativeAttrs($native, $attrs);
             $comment = [];
+            if ($native === 'group' && $a['tagName'] !== 'div') {
+                $comment['tagName'] = $a['tagName'];
+            }
             if ($native === 'details' && $a['showContent']) {
                 $comment['showContent'] = true;
             }
             if (isset($a['anchor'])) {
                 $comment['anchor'] = $a['anchor'];
+            }
+            if ($native === 'group') {
+                foreach (['ariaLabel', 'className', 'layout'] as $field) {
+                    if (array_key_exists($field, $a)) {
+                        $comment[$field] = $a[$field];
+                    }
+                }
             }
             if ($native === 'buttons' && isset($a['layout'])) {
                 $comment['layout'] = $a['layout'];

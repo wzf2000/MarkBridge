@@ -2114,5 +2114,10 @@
   "Static view unavailable. The original explanation remains readable.": "静态视图暂不可用，原文说明仍可阅读。",
   "Other registered providers": "其他已登记的提供者",
   "One provider plugin can include many component types. Exact versions are compatibility records, not separate plugins or questions.": "一个提供者插件可包含多种组件。精确版本是兼容记录，并非独立插件或一道题目。",
-  "Read the complete activity": "阅读完整题目与解析"
+  "Read the complete activity": "阅读完整题目与解析",
+  "Groups only support div or section tags": "组容器仅支持 div 或 section 标签。",
+  "A group label must be single-line plain text": "组容器标签必须为单行纯文字。",
+  "Invalid group class names": "组容器类名无效。",
+  "Groups only support flow or constrained layout": "组容器仅支持 flow 或 constrained 布局。",
+  "The group label differs from its HTML": "组容器标签与保存 HTML 不一致。"
 }

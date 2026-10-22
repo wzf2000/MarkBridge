@@ -13,6 +13,7 @@ final class BlockAdapters
 {
     private static array $registry = [];
     public const NATIVE = [
+        'group' => 'core/group',
         'details' => 'core/details',
         'buttons' => 'core/buttons',
         'button' => 'core/button',
@@ -211,6 +212,7 @@ final class BlockAdapters
     public static function nativeAttrs(string $kind, mixed $attrs, bool $source = false): array
     {
         $keys = match ($kind) {
+            'group' => ['tagName', 'anchor', 'ariaLabel', 'className', 'layout'],
             'details' => ['summary', 'showContent', 'anchor', ...!$source ? ['name'] : []],
             'buttons' => ['anchor', 'layout'],
             'button' => [
@@ -236,7 +238,45 @@ final class BlockAdapters
         if (array_key_exists('anchor', $attrs) && self::anchor($attrs['anchor']) !== '') {
             $out['anchor'] = $attrs['anchor'];
         }
-        if ($kind === 'details') {
+        if ($kind === 'group') {
+            $out['tagName'] = array_key_exists('tagName', $attrs) ? $attrs['tagName'] : 'div';
+            if (!in_array($out['tagName'], ['div', 'section'], true)) {
+                self::fail('ADAPTER_ATTRIBUTES', 'Groups only support div or section tags');
+            }
+            if (array_key_exists('ariaLabel', $attrs)) {
+                $out['ariaLabel'] = self::plain($attrs['ariaLabel'], 200);
+                if (preg_match('/[\x00-\x1f\x7f\x{0085}\x{2028}\x{2029}]/u', $out['ariaLabel'])) {
+                    self::fail(
+                        'ADAPTER_ATTRIBUTES',
+                        'A group label must be single-line plain text',
+                    );
+                }
+            }
+            if (array_key_exists('className', $attrs)) {
+                if (
+                    !is_string($attrs['className']) ||
+                    strlen($attrs['className']) > 200 ||
+                    ($attrs['className'] !== '' &&
+                        !preg_match(
+                            '/^[A-Za-z][A-Za-z0-9_-]*(?: [A-Za-z][A-Za-z0-9_-]*)*$/D',
+                            $attrs['className'],
+                        ))
+                ) {
+                    self::fail('ADAPTER_ATTRIBUTES', 'Invalid group class names');
+                }
+                $out['className'] = $attrs['className'];
+            }
+            if (array_key_exists('layout', $attrs)) {
+                $layout = self::keys($attrs['layout'], ['type'], ['type']);
+                if (!in_array($layout['type'], ['flow', 'constrained'], true)) {
+                    self::fail(
+                        'ADAPTER_ATTRIBUTES',
+                        'Groups only support flow or constrained layout',
+                    );
+                }
+                $out['layout'] = $layout;
+            }
+        } elseif ($kind === 'details') {
             if (array_key_exists('name', $attrs) && $attrs['name'] !== '') {
                 self::fail('ADAPTER_ATTRIBUTES', 'Exclusive details groups are not supported');
             }
@@ -320,6 +360,23 @@ final class BlockAdapters
         $id = isset($a['anchor'])
             ? ' id="' . htmlspecialchars($a['anchor'], ENT_QUOTES | ENT_HTML5, 'UTF-8') . '"'
             : '';
+        if ($kind === 'group') {
+            return '<' .
+                $a['tagName'] .
+                $id .
+                (isset($a['ariaLabel']) && $a['ariaLabel'] !== ''
+                    ? ' aria-label="' .
+                        htmlspecialchars($a['ariaLabel'], ENT_COMPAT | ENT_HTML5, 'UTF-8') .
+                        '"'
+                    : '') .
+                ' class="wp-block-group' .
+                (!empty($a['className']) ? ' ' . $a['className'] : '') .
+                '">' .
+                $body .
+                '</' .
+                $a['tagName'] .
+                '>';
+        }
         if ($kind === 'details') {
             return '<details' .
                 $id .
@@ -361,12 +418,16 @@ final class BlockAdapters
         self::keys(
             $comment,
             match ($kind) {
+                'group' => ['tagName', 'anchor', 'ariaLabel', 'className', 'layout'],
                 'details' => ['showContent', 'anchor', 'name'],
                 'buttons' => ['anchor', 'layout'],
                 'button' => ['anchor', 'tagName', 'type'],
             },
             [],
         );
+        if ($kind === 'group') {
+            $comment = self::nativeAttrs($kind, $comment);
+        }
         $wrapper = self::fragment($block['raw']);
         $nodes = [];
         foreach ($wrapper->childNodes as $n) {
@@ -379,14 +440,20 @@ final class BlockAdapters
             self::fail('ADAPTER_STRUCTURE', 'Invalid native block wrapper structure');
         }
         $root = $nodes[0];
-        $tag = $kind === 'details' ? 'details' : 'div';
-        $class = 'wp-block-' . $kind;
+        $tag = $kind === 'group' ? $comment['tagName'] : ($kind === 'details' ? 'details' : 'div');
+        $class =
+            'wp-block-' .
+            $kind .
+            ($kind === 'group' && !empty($comment['className']) ? ' ' . $comment['className'] : '');
         if (strtolower($root->tagName) !== $tag || $root->getAttribute('class') !== $class) {
             self::fail('ADAPTER_STRUCTURE', 'Invalid native block tag or class');
         }
         $allowed = ['class'];
         if (isset($comment['anchor']) && self::anchor($comment['anchor']) !== '') {
             $allowed[] = 'id';
+        }
+        if ($kind === 'group' && array_key_exists('ariaLabel', $comment)) {
+            $allowed[] = 'aria-label';
         }
         if ($kind === 'details') {
             $allowed[] = 'open';
@@ -405,6 +472,14 @@ final class BlockAdapters
         }
         if ($root->getAttribute('id') !== ($comment['anchor'] ?? '')) {
             self::fail('ADAPTER_ANCHOR', 'The HTML anchor differs from the block attribute');
+        }
+        if (
+            $kind === 'group' &&
+            ($root->hasAttribute('aria-label') !==
+                (isset($comment['ariaLabel']) && $comment['ariaLabel'] !== '') ||
+                $root->getAttribute('aria-label') !== ($comment['ariaLabel'] ?? ''))
+        ) {
+            self::fail('ADAPTER_ATTRIBUTES', 'The group label differs from its HTML');
         }
         $children = [];
         foreach ($root->childNodes as $n) {

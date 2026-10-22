@@ -1,6 +1,24 @@
 # 原生区块与静态适配接口
 
-适用于 MarkBridge **3.0.0 正式稳定版**。本页定义原生折叠、链接按钮和受信静态扩展的内容合同；实际验收范围见[验证说明](VALIDATION.md)。交互教学组件使用独立的[教学扩展接口](TEACHING-EXTENSIONS.md)，不能通过本接口运行脚本。
+现有正式合同适用于 MarkBridge **3.0.1**；下述原生组为当前开发树新增能力，尚未发行。本页定义原生折叠、链接按钮和受信静态扩展的内容合同；实际验收范围见[验证说明](VALIDATION.md)。交互教学组件使用独立的[教学扩展接口](TEACHING-EXTENSIONS.md)，不能通过本接口运行脚本。
+
+## 原生组容器（开发中）
+
+使用 WordPress 自带的组区块 `core/group`，不另建组编辑器。Markdown 使用 `:::mbb:v1 group {...}`，内部仍为已支持的普通正文和登记静态适配：
+
+```markdown
+:::mbb:v1 group {"tagName":"section","anchor":"overview","ariaLabel":"内容概览","className":"reading-group","layout":{"type":"constrained"}}
+
+这里可以放段落、列表、公式、代码、图片、原生折叠，或继续嵌套一个组。
+
+:::mbb:end
+```
+
+闭合字段为 anchor、tagName、ariaLabel、className、layout，均可省略。tagName 默认 div，也可为 section。layout 只接受单字段 `{type:"flow"}` 或 `{type:"constrained"}`，不接收宽度或其他布局设置。ariaLabel 为最多 200 个 Unicode 码点、不含控制字符及换行的文字；className 为最多 200 个 ASCII 字符的类名序列，类名以字母开头，仅含字母、数字、下划线和连字符，以单个空格分隔。明确的空 ariaLabel／className 保留在属性中，核心保存 HTML 不产生空 aria-label 或附加类名。anchor 沿用全文唯一、1–64 位 ASCII 锚点规则。
+
+保存 HTML 遵循实际 WordPress 核心：div 或 section 外壳带 wp-block-group，可携带 id、非空 aria-label 和自定义类；flow/constrained 只保存为注释属性，不凭空添加服务器渲染时的 is-layout 类。原始注释先校验字段和类型，再由核心解析；未知属性、样式、颜色、宽度、排版、metadata（含 bindings）、锁定、allowedBlocks、非支持标签及任意 HTML 外壳差异明确拒绝，不依赖核心归一化后静默删除。
+
+允许空组和嵌套组，沿用每种正文 256 KiB、10,000 节点及 32 层整篇预算。锚点、技术对象编号、文献与逻辑身份仍是全文约束；逻辑身份、文献表和阶段组必须遵守原顶层规则，阶段组放入结构组仍明确拒绝。缺少静态适配提供者时不能转换其嵌套内容。组的外观由当前主题和核心决定，本合同不新增主题样式或任意原生区块支持。
 
 ## 原生折叠和链接按钮
 

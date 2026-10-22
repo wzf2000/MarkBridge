@@ -29,6 +29,7 @@ export const teachingSchemas = {
   image: {},
   gallery: {},
   ...technicalSchemas,
+  group: {},
   details: { summary: 'string', showContent: 'boolean' },
   buttons: {},
   button: { url: 'string' },
@@ -370,7 +371,7 @@ export function teachingSource(source, fail, ignored = new Set(), nonce, fences 
       if (line === ':::mbb:end') data = { end: true };
       else {
         const match =
-          /^:::mbb:v([12]) (identity|collapse|steps|step|code-compare|component|code-tabs|details|buttons|button|adapter|object|statement|bibliography|image|gallery) (\{[^\r\n]*\})$/.exec(
+          /^:::mbb:v([12]) (identity|collapse|steps|step|code-compare|component|code-tabs|group|details|buttons|button|adapter|object|statement|bibliography|image|gallery) (\{[^\r\n]*\})$/.exec(
             line,
           );
         if (!match)

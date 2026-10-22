@@ -88,6 +88,13 @@
     "tabs": "array",
     "version": "integer"
   },
+  "core/group": {
+    "tagName": "string",
+    "anchor": "string",
+    "ariaLabel": "string",
+    "className": "string",
+    "layout": "array"
+  },
   "core/details": {
     "summary": "string",
     "showContent": "boolean",

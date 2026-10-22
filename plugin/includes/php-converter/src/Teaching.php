@@ -713,6 +713,7 @@ final class Teaching
         'identity' => ['namespace' => 'string', 'document' => 'string'],
         'image' => [],
         'gallery' => [],
+        'group' => [],
         'details' => [],
         'buttons' => [],
         'button' => [],
@@ -1463,7 +1464,7 @@ final class Teaching
             } else {
                 if (
                     !preg_match(
-                        '/^:::mbb:v([12]) (identity|collapse|steps|step|code-compare|component|code-tabs|details|buttons|button|adapter|object|statement|bibliography|image|gallery) (\{.*\})$/D',
+                        '/^:::mbb:v([12]) (identity|collapse|steps|step|code-compare|component|code-tabs|group|details|buttons|button|adapter|object|statement|bibliography|image|gallery) (\{.*\})$/D',
                         $line,
                         $m,
                     )

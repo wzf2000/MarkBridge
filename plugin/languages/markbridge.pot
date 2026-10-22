@@ -513,6 +513,10 @@ msgid "A gallery requires 1 to 32 direct native images"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "A group label must be single-line plain text"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "A link button must be a direct leaf of a button group"
 msgstr ""
 
@@ -2912,6 +2916,14 @@ msgid "Go to line"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Groups only support div or section tags"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Groups only support flow or constrained layout"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "HTML blocks cannot contain child blocks"
 msgstr ""
 
@@ -3341,6 +3353,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Invalid field name"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Invalid group class names"
 msgstr ""
 
 #: plugin/i18n.js
@@ -6789,6 +6805,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "The formula syntax cannot be typeset"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The group label differs from its HTML"
 msgstr ""
 
 #: plugin/i18n.js

@@ -1,6 +1,11 @@
 import { translate as T, format as F, translateError as E } from './i18n.js';
 // Closed native containers and trusted declarative static leaves; never execute article code.
-const nativeNames = { details: 'core/details', buttons: 'core/buttons', button: 'core/button' };
+const nativeNames = {
+  group: 'core/group',
+  details: 'core/details',
+  buttons: 'core/buttons',
+  button: 'core/button',
+};
 const bytes = (v) => new TextEncoder().encode(v).length;
 const nonblank = (v) =>
   v.replace(
@@ -118,6 +123,7 @@ const nativeRichText = (value) =>
 export function nativeAttributes(kind, attrs, fail, source = false) {
   if (!nativeAdapterKinds.has(kind)) fail('ADAPTER_KIND', 'Unknown native adapter type');
   const keys = {
+    group: ['tagName', 'anchor', 'ariaLabel', 'className', 'layout'],
     details: ['summary', 'showContent', 'anchor', ...(!source ? ['name'] : [])],
     buttons: ['anchor', 'layout'],
     button: [
@@ -142,7 +148,32 @@ export function nativeAttributes(kind, attrs, fail, source = false) {
   const out = {};
   if (Object.hasOwn(attrs, 'anchor') && adapterAnchor(attrs.anchor, fail))
     out.anchor = attrs.anchor;
-  if (kind === 'details') {
+  if (kind === 'group') {
+    out.tagName = Object.hasOwn(attrs, 'tagName') ? attrs.tagName : 'div';
+    if (!['div', 'section'].includes(out.tagName))
+      fail('ADAPTER_ATTRIBUTES', 'Groups only support div or section tags');
+    if (Object.hasOwn(attrs, 'ariaLabel')) {
+      out.ariaLabel = plain(attrs.ariaLabel, 200, fail);
+      if (/[\x00-\x1f\x7f\u0085\u2028\u2029]/.test(out.ariaLabel))
+        fail('ADAPTER_ATTRIBUTES', 'A group label must be single-line plain text');
+    }
+    if (Object.hasOwn(attrs, 'className')) {
+      if (
+        typeof attrs.className !== 'string' ||
+        attrs.className.length > 200 ||
+        (attrs.className !== '' &&
+          !/^[A-Za-z][A-Za-z0-9_-]*(?: [A-Za-z][A-Za-z0-9_-]*)*$/.test(attrs.className))
+      )
+        fail('ADAPTER_ATTRIBUTES', 'Invalid group class names');
+      out.className = attrs.className;
+    }
+    if (Object.hasOwn(attrs, 'layout')) {
+      closed(attrs.layout, ['type'], ['type'], fail);
+      if (!['flow', 'constrained'].includes(attrs.layout.type))
+        fail('ADAPTER_ATTRIBUTES', 'Groups only support flow or constrained layout');
+      out.layout = { type: attrs.layout.type };
+    }
+  } else if (kind === 'details') {
     if (Object.hasOwn(attrs, 'name') && attrs.name !== '')
       fail('ADAPTER_ATTRIBUTES', 'Exclusive details groups are not supported');
     out.summary = source
@@ -605,6 +636,7 @@ export function validateAdaptersSerialized(serialized, fail, parse = JSON.parse)
       closed(
         a,
         {
+          group: ['tagName', 'anchor', 'ariaLabel', 'className', 'layout'],
           details: ['showContent', 'anchor', 'name'],
           buttons: ['anchor', 'layout'],
           button: ['anchor', 'tagName', 'type'],
@@ -612,6 +644,7 @@ export function validateAdaptersSerialized(serialized, fail, parse = JSON.parse)
         [],
         fail,
       );
+      if (kind === 'group') nativeAttributes(kind, a, fail, true);
       if (Object.hasOwn(a, 'anchor')) adapterAnchor(a.anchor, fail);
       if (
         kind === 'details' &&
