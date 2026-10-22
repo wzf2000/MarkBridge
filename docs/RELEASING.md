@@ -28,7 +28,7 @@ python3 scripts/check_clean_release.py \
   --runtime /srv/markbridge-runtime-candidate
 ```
 
-准备工作站须安装 Python venv、Node.js 24.15.0+、PHP、Git；运行环境按安装说明提前准备。运行配置测试：
+准备工作站须安装 Python venv、Node.js 24.22.1+、PHP、Git；运行环境按安装说明提前准备。运行配置测试：
 
 ```sh
 php tests/runtime-settings.php

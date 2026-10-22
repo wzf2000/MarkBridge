@@ -4,7 +4,7 @@ README 说明产品范围和最短开发入口；本页按用途区分持续有�
 
 ## 使用手册
 
-本文档适用于 **MarkBridge 3.0.0 正式稳定版**，包含使用手册与接口说明；其他版本请查看对应 Release 源码中的文档。第一次使用按“快速开始 → 编辑与发布”阅读，管理员先完成安装与服务器配置。在线阅读入口为 [GitHub Wiki](https://github.com/wzf2000/MarkBridge/wiki)。
+本文档适用于 **MarkBridge 3.0.1 正式稳定版**，包含使用手册与接口说明；其他版本请查看对应 Release 源码中的文档。第一次使用按“快速开始 → 编辑与发布”阅读，管理员先完成安装与服务器配置。在线阅读入口为 [GitHub Wiki](https://github.com/wzf2000/MarkBridge/wiki)。
 
 | 阅读顺序   | 文档                           | 内容                                                 |
 | ---------- | ------------------------------ | ---------------------------------------------------- |
@@ -17,6 +17,11 @@ README 说明产品范围和最短开发入口；本页按用途区分持续有�
 | 可选资源   | [图片表情](EMOJI-PACKS.md)     | 导入、启用和制作图片表情包                           |
 | 查看变化   | [更新记录](../CHANGELOG.md)    | 各版本变化                                           |
 
+- [文集与出版](COLLECTIONS.md)：编排文章引用、确认快照范围，使用可选 Publisher 导出网页书与 EPUB。
+- [公式结构读法与探索](MATH-READING.md)：结构读法、局部探索与原始 TeX。
+- [文献与 BibTeX](BIBTEX.md)：受限导入、文献候选及字段损失核对。
+- [跨站图片携带](CROSS-SITE-MEDIA.md)：媒体计划、目标关联与明确确认。
+- [独立 Mermaid 图示](MERMAID.md)：流程、时序及有界平面状态图与静态替代。
 - [私有配对备份](PAIRED-BACKUPS.md)：身份、恢复 CAS、私有存储、配额与失败边界。
 - [长文编辑与预览定位](SOURCE-NAVIGATION.md)：查找、替换、双向定位、并排预览和插入样例。
 - [原生图片与画廊](NATIVE-MEDIA.md)：可保存的图注、媒体关联和明确拒绝的样式。
@@ -29,7 +34,8 @@ README 说明产品范围和最短开发入口；本页按用途区分持续有�
 - [主题适配](THEME-INTEGRATION.md)：可继承的样式变量与跨包资源句柄。
 - [浏览器与性能检查](TESTING.md)：代表引擎、合成夹具、资源探针和可复用测量入口。
 - [工作原理](ARCHITECTURE.md)：双格式存储、转换沙箱、公式和文件来源契约。
-- [教学扩展接口](TEACHING-EXTENSIONS.md)：v1 登记、资源、参数与执行协议。
+- [教学扩展使用与接口](TEACHING-EXTENSIONS.md)：现有活动、共享回放、精确版本及受信提供者合同。
+- [受信扩展 SDK](SDK.md)：作者候选、typed 静态投影、扩展目录及可运行的一致性样例。
 - [原生区块与静态适配接口](BLOCK-ADAPTERS.md)：详情、链接按钮及受信静态叶子合同。
 - [验证范围](VALIDATION.md)：实际环境、通过检查与保留边界。
 - [发布流程](RELEASING.md)：版本、检查、安装包和 GitHub Release 的对应关系。
@@ -60,12 +66,3 @@ README 说明产品范围和最短开发入口；本页按用途区分持续有�
 - [统一发行与正式版原计划](plans/completed/ROADMAP.md)：保留原 R07/R10 完成标准；不作当前状态入口。
 - [0.7.0 候选验证记录](archive/VALIDATION-0.7.0-RC.md)：已运行检查及当时未覆盖范围。
 - [更新记录](../CHANGELOG.md)：按版本记录已交付变更。
-
-- [公式结构读法与探索](MATH-READING.md)
-- [受限 BibTeX 导入](BIBTEX.md)
-- [跨站图片携带](CROSS-SITE-MEDIA.md)
-- [独立 Mermaid 图示](MERMAID.md)
-
-- [文集与不可变快照](COLLECTIONS.md)：编排文章引用、范围确认、私有快照与受信出版适配接口。
-
-- [Trusted extension SDK](SDK.md): author candidates, typed static projection, catalog/scoped usage and runnable conformance samples.

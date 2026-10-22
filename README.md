@@ -4,7 +4,7 @@
   <a href="LICENSE"><img alt="License: GPL-3.0-or-later" src="https://img.shields.io/badge/license-GPL--3.0--or--later-818cf8"></a>
   <img alt="WordPress 7.1" src="https://img.shields.io/badge/WordPress-7.1-21759b">
   <img alt="PHP 8.2+" src="https://img.shields.io/badge/PHP-8.2%2B-777bb4">
-  <img alt="Version 3.0.0" src="https://img.shields.io/badge/version-3.0.0-818cf8">
+  <img alt="Version 3.0.1" src="https://img.shields.io/badge/version-3.0.1-818cf8">
 </p>
 
 <p align="center"><strong>用 Markdown 写作，用区块调整。保存时，让两种格式保持一致。</strong></p>
@@ -38,7 +38,7 @@ flowchart LR
 
 ## 开始使用
 
-MarkBridge **3.0.0** 为正式稳定版。使用说明见 [文档索引](docs/index.md) 与在线 Wiki；版本对应的完整文档随 Release 源码提供。
+MarkBridge **3.0.1** 为正式稳定版。使用说明见 [文档索引](docs/index.md) 与在线 Wiki；版本对应的完整文档随 Release 源码提供。
 
 安装请使用对应 [Release](https://github.com/wzf2000/MarkBridge/releases) 的插件 ZIP，版本变化见[更新记录](CHANGELOG.md)。新安装在 WordPress 7.1.x、PHP 8.2+ 且具备 DOM／mbstring 扩展时使用包内 PHP 转换器，基础编辑不要求额外 Node 运行环境。已有 Node 配置升级后继续使用 Node；管理员可在 **设置 → MarkBridge** 选择 PHP／Node，Node 需预先准备环境并通过验证。尚未提交 WordPress.org 插件目录。
 
@@ -82,6 +82,9 @@ MarkBridge **3.0.0** 为正式稳定版。使用说明见 [文档索引](docs/in
 
 - [快速开始](docs/GETTING-STARTED.md)：用截图完成首次文件导入、草稿保存和发布。
 - [编辑与发布](docs/USAGE.md)：已有文章编辑、公式、任务列表、脚注和历史恢复。
+- [教学内容](docs/TEACHING.md)：折叠、阶段、代码页签、自测与可选教学扩展。
+- [文集与出版](docs/COLLECTIONS.md)：引用编排、不可变快照和可选网页书／EPUB 导出。
+- [扩展使用与开发](docs/TEACHING-EXTENSIONS.md)：教学回放、Mermaid、科研等已登记能力与版本边界。
 - [常见问题](docs/TROUBLESHOOTING.md)：文件、ID、封面、权限和保存冲突的处理。
 - [更新记录](CHANGELOG.md)：各版本新增功能与修复。
 - [文档索引](docs/index.md)：安装、架构、验证范围与计划归档。
@@ -100,7 +103,7 @@ npm run package
 
 发行打包要求已提交的干净工作树；完整自动检查见 [发布流程](docs/RELEASING.md)。
 
-Node.js 使用 **24 LTS（24.15.0+）**。格式规范、运行测试和目录说明见 [CONTRIBUTING.md](CONTRIBUTING.md)。PHP 使用 4 空格与 PER-CS 式括号；JS/CSS/JSON 使用 2 空格；目标 100 列。
+构建与 CI 固定使用 **Node.js 24.22.1**。包与可选 Node 转换环境的最低版本为 **24.22.1**；保留 `>=24.22.1` 对未来主版本的准入，后续版本仍须验证，不表示已完成兼容验收。格式规范、运行测试和目录说明见 [CONTRIBUTING.md](CONTRIBUTING.md)。PHP 使用 4 空格与 PER-CS 式括号；JS/CSS/JSON 使用 2 空格；目标 100 列。
 
 构建得到与 `package.json` 版本一致的 `dist/markbridge-<version>.zip`。仓库保留可读源码，构建产物与第三方文件不参与手工格式化。PHP 合成测试不需要 Node 转换环境；Node 对照及真实核心编辑器测试仍需匹配的隔离运行环境，见[服务器配置](docs/RUNTIME.md)。
 

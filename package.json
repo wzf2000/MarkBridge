@@ -32,6 +32,6 @@
   "description": "Markdown and WordPress blocks, kept together.",
   "license": "GPL-3.0-or-later",
   "engines": {
-    "node": ">=24.15.0"
+    "node": ">=24.22.1"
   }
 }

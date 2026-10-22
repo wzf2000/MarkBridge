@@ -4,10 +4,18 @@ import argparse
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+
+
+def supported_node_version(version):
+    """Accept stable Node versions at the package minimum; no major-version ceiling."""
+    if not re.fullmatch(r"v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)", version):
+        return False
+    return tuple(int(part) for part in version[1:].split(".")) >= (24, 22, 1)
 
 
 def main():
@@ -25,13 +33,15 @@ def main():
     if output == Path("/") or output == wordpress or wordpress in output.parents:
         parser.error("Runtime must be outside the public WordPress directory")
     if output.exists():
-        parser.error("Output already exists; use a new directory and switch after verification")
+        parser.error(
+            "Output already exists; use a new directory and switch after verification"
+        )
     if not args.node or not (plugin / "kernel.js").is_file():
         parser.error("Node.js and npm run build are required")
     node = Path(args.node).resolve()
     version = subprocess.check_output([str(node), "--version"], text=True).strip()
-    if tuple(int(part) for part in version.lstrip("v").split(".")[:3]) < (24, 15, 0):
-        parser.error("Use Node.js 24 LTS (24.15.0 or newer)")
+    if not supported_node_version(version):
+        parser.error("Use a stable Node.js version >=24.22.1 (vMAJOR.MINOR.PATCH)")
     command = [
         args.wp_cli,
         "--path=" + str(wordpress),
@@ -46,9 +56,13 @@ def main():
     for public_root in manifest.get("public_roots", []):
         public = Path(public_root).resolve()
         if output == public or public in output.parents:
-            parser.error("Runtime must be outside every public content and upload directory")
+            parser.error(
+                "Runtime must be outside every public content and upload directory"
+            )
     output.parent.mkdir(mode=0o750, parents=True, exist_ok=True)
-    staging = Path(tempfile.mkdtemp(prefix="." + output.name + ".building-", dir=output.parent))
+    staging = Path(
+        tempfile.mkdtemp(prefix="." + output.name + ".building-", dir=output.parent)
+    )
     try:
         staging.chmod(0o750)
         (staging / "run").mkdir()
@@ -69,19 +83,25 @@ def main():
                 raise RuntimeError("Core source escapes WordPress root")
             digest = hashlib.sha256(source.read_bytes()).hexdigest()
             if manifest.get("core_sha256", {}).get(name) != digest:
-                raise RuntimeError("Core source changed while preparing runtime: " + name)
+                raise RuntimeError(
+                    "Core source changed while preparing runtime: " + name
+                )
             target = staging / "site" / name.lstrip("/")
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, target)
             hashes[name] = digest
             if name in manifest["scripts"]:
-                scripts.append('<script src="http://markbridge.invalid' + name + '"></script>')
+                scripts.append(
+                    '<script src="http://markbridge.invalid' + name + '"></script>'
+                )
         scripts.append("<script>wp.blockLibrary.registerCoreBlocks();</script>")
         kernel = "wp-content/plugins/markdown-block-bridge/kernel.js"
         target = staging / "site" / kernel
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(plugin / "kernel.js", target)
-        scripts.append('<script src="http://markbridge.invalid/' + kernel + '"></script>')
+        scripts.append(
+            '<script src="http://markbridge.invalid/' + kernel + '"></script>'
+        )
         (staging / "run/worker-bootstrap.html").write_text(
             '<!doctype html><html><head><meta charset="utf-8"></head><body>'
             + "\n".join(scripts)

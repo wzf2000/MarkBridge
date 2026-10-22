@@ -1,6 +1,8 @@
 # 编辑与发布
 
-本文适用于 MarkBridge **3.0.0 正式稳定版**。先学习已有文章的日常保存，再按需要使用公式、任务列表和脚注；最后介绍冲突处理与历史恢复。第一次创建文章请先看带截图的[快速开始](GETTING-STARTED.md)，遇到错误请查[常见问题](TROUBLESHOOTING.md)，版本变化见[更新记录](../CHANGELOG.md)。
+本文适用于 MarkBridge **3.0.1 正式稳定版**。先学习已有文章的日常保存，再按需要使用公式、任务列表和脚注；最后介绍冲突处理与历史恢复。第一次创建文章请先看带截图的[快速开始](GETTING-STARTED.md)，遇到错误请查[常见问题](TROUBLESHOOTING.md)，版本变化见[更新记录](../CHANGELOG.md)。
+
+需要组织长文时继续阅读[教学内容](TEACHING.md)；公式结构探索见[公式阅读](MATH-READING.md)，文献候选见[BibTeX 与文献](BIBTEX.md)，多篇编排和离线出版见[文集](COLLECTIONS.md)。可选扩展的能力与精确版本见[扩展说明](TEACHING-EXTENSIONS.md)。
 
 ## 编辑长文与复杂内容
 
