@@ -426,6 +426,14 @@ function mbb_projection_insert(DOMDocument $doc, DOMElement $root, array $items)
         $wrapper = $doc->createElement('section');
         $wrapper->setAttribute('class', 'mbb-projection');
         $wrapper->setAttribute('data-mbb-generated', '');
+        // libxml reconciles namespaces when a detached subtree is attached. Build
+        // each node in its connected parent so SVG never gains default: aliases
+        // that HTML readers would interpret as unknown, non-SVG elements.
+        if ($item['state'] === 'available') {
+            $target->insertBefore($wrapper, $target->firstChild);
+        } else {
+            $target->appendChild($wrapper);
+        }
         try {
             if ($item['state'] !== 'available' || !is_array($item['projection'])) {
                 throw new RuntimeException('projection_unavailable');
@@ -441,9 +449,14 @@ function mbb_projection_insert(DOMDocument $doc, DOMElement $root, array $items)
                 $used[$id] = true;
                 $map[$key] = $id;
             }
-            $make = static function ($node, $svg = false) use (&$make, $doc, $map) {
+            $make = static function (DOMNode $parent, $node, $svg = false) use (
+                &$make,
+                $doc,
+                $map,
+            ) {
                 if (is_string($node)) {
-                    return $doc->createTextNode($node);
+                    $parent->appendChild($doc->createTextNode($node));
+                    return;
                 }
                 $svg = $svg || $node['tag'] === 'svg';
                 $out = $svg
@@ -465,13 +478,13 @@ function mbb_projection_insert(DOMDocument $doc, DOMElement $root, array $items)
                     }
                     $out->setAttribute($k, (string) $v);
                 }
+                $parent->appendChild($out);
                 foreach ($node['children'] as $child) {
-                    $out->appendChild($make($child, $svg));
+                    $make($out, $child, $svg);
                 }
-                return $out;
             };
             foreach ($item['projection']['tree'] as $node) {
-                $wrapper->appendChild($make($node));
+                $make($wrapper, $node);
             }
             $bytes = strlen($doc->saveHTML($wrapper));
             if ($bytes > MBB_PROJECTION_BYTES || $total + $bytes > 524288) {
@@ -497,12 +510,7 @@ function mbb_projection_insert(DOMDocument $doc, DOMElement $root, array $items)
             }
         }
         if (!$wrapper->hasChildNodes()) {
-            continue;
-        }
-        if ($item['state'] === 'available') {
-            $target->insertBefore($wrapper, $target->firstChild);
-        } else {
-            $target->appendChild($wrapper);
+            $target->removeChild($wrapper);
         }
     }
 }

@@ -1,8 +1,14 @@
 # 当前验证范围
 
+## 3.2.0-rc.4：PHP 静态 SVG 命名空间
+
+PHP 8.2／8.5 均复现：脱离文档构造的普通 wrapper 中包含 SVG 子树，再接入 HTML 文档时，libxml 将其重命名为 `default:svg` 等前缀；HTML 浏览器不将它识别为 SVG。已有 DOM 中按 localName 查找的断言未覆盖序列化后重新打开的结果。修复在已连接的父节点中逐节点构造，保留类型白名单、作者 fallback、单项／整篇字节预算和局部 ID 保护。
+
+`tests/projection-svg.php` 使用正式 `mbb_component_static_document` 出口验证两张图、标题／说明／形状标记、ID／ARIA、旧文本投影、失败与字节预算；`tests/browser/projection-svg.spec.cjs` 重新打开 PHP 导出的无脚本 HTML，检查真实 SVG namespaceURI、几何 bbox、完整值及本地引用。`sdk-projections.spec.cjs` 继续覆盖独立的 JavaScript 静态导出构建器，不将其原有通过冒称 PHP 出口曾正确。真实 WordPress 安装／PHP 与 Node 保存仍由独立站验收；不在纯模型中加载数据库。
+
 ## 3.2.0-rc.3：真实 REST 空正文语义
 
-rc.2 的实际保存入口发现，真实核心 `WP_REST_Request` 未调用 set_body 时 get_body 返回 null，而 HTTP GET 显式设置空串；旧单元模型只模拟空串，导致内部 REST 请求被拒绝。rc.3 将两者统一按空正文处理，仍拒绝任何非空正文。`tests/plugin-bootstrap.php` 现在同时使用真实核心请求类覆盖默认 null／显式空串正例及非空负例；`tests/component-frame.php` 默认也改为 null。旧实际失败记录保留，实际安装／保存与匿名、登录 HTTP 仍需对应候选另验；未变 JavaScript、CSP、资源和浏览器证据按原适用范围复用。
+rc.2 的实际保存入口发现，真实核心 `WP_REST_Request` 未调用 set_body 时 get_body 返回 null，而 HTTP GET 显式设置空串；旧单元模型只模拟空串，导致内部 REST 请求被拒绝。rc.3 将两者统一按空正文处理，仍拒绝任何非空正文。`tests/plugin-bootstrap.php` 现在同时使用真实核心请求类覆盖默认 null／显式空串正例及非空负例；`tests/component-frame.php` 默认也改为 null。旧实际失败记录保留。rc.3 最终 ZIP 已在独立本地 WordPress 完成 PHP→Node→PHP 保存、原生编辑／重开／修订恢复与迟到数据拒绝，PHP 8.5 对应入口也通过；PageNest 两尺寸的真实 HTTP 运行／关闭／重开、v1 同页与匿名／登录响应正文一致通过。默认主题证据按 rc.2 未变 JavaScript／HTML 的范围复用，不扩写为生产验收。
 
 ## 3.2.0-rc.2：完整入口集成检查
 
