@@ -92,6 +92,7 @@ function mbb_component_index_entries(): array
             'title' => $p['title'],
             'fingerprint' => markbridge_teaching_component_fingerprint($p['id'], $p),
             'status' => $p['status'],
+            ...isset($p['activityVersion']) ? ['activityVersion' => $p['activityVersion']] : [],
         ];
     }
     foreach ($GLOBALS['mbb_component_indexes'] ?? [] as $id => $index) {
@@ -137,6 +138,7 @@ function mbb_component_index_definition_fits(array $p): bool
         'version' => $p['version'],
         'title' => $p['title'],
         'status' => $p['status'],
+        ...isset($p['activityVersion']) ? ['activityVersion' => $p['activityVersion']] : [],
         'fingerprint' => markbridge_teaching_component_fingerprint($p['id'], $p),
     ];
     return mbb_component_index_bytes(
@@ -172,8 +174,14 @@ function markbridge_register_teaching_component_catalog(
         foreach ($index['versions'] as $v) {
             if (
                 !is_array($v) ||
-                count($v) !== 3 ||
-                array_diff(array_keys($v), ['version', 'title', 'fingerprint']) ||
+                array_diff(['version', 'title', 'fingerprint'], array_keys($v)) ||
+                array_diff(array_keys($v), [
+                    'version',
+                    'title',
+                    'fingerprint',
+                    'activityVersion',
+                ]) ||
+                (array_key_exists('activityVersion', $v) && $v['activityVersion'] !== 1) ||
                 !is_string($v['version']) ||
                 !preg_match('/^\d+\.\d+\.\d+$/D', $v['version']) ||
                 !is_string($v['title']) ||
@@ -304,6 +312,7 @@ function mbb_component_resolve(string $id, string $version): ?array
             if (
                 is_array($checked) &&
                 $checked['title'] === $entry['title'] &&
+                ($checked['activityVersion'] ?? null) === ($entry['activityVersion'] ?? null) &&
                 hash_equals(
                     $entry['fingerprint'],
                     markbridge_teaching_component_fingerprint($id, $checked),

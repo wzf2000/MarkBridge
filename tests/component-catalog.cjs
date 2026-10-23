@@ -98,6 +98,36 @@ vm.runInNewContext(
   assert.equal(url.searchParams.get('fingerprint'), 'plain');
   reply({ fingerprint: 'plain', provider: { id: 'plain-fixture', version: '9.0.0' } });
   await plainDescriptor;
+  const beforeMenu = calls.length;
+  const menu = api.componentActivityTemplates([
+    { component: 'activity', componentVersion: '1.0.0' },
+    { component: 'replay', componentVersion: '0.1.0' },
+    { component: 'unknown', componentVersion: '1.0.0' },
+  ]);
+  assert.equal(new URL(calls.at(-1)).searchParams.get('per_page'), '50');
+  reply({
+    fingerprint: 'plain',
+    items: [{ id: 'replay', version: '0.1.0', title: 'Replay' }],
+    page: 1,
+    perPage: 50,
+    total: 70,
+  });
+  await new Promise(setImmediate);
+  reply({
+    fingerprint: 'plain',
+    items: [{ id: 'activity', version: '1.0.0', title: 'Self check', activityVersion: 1 }],
+    page: 2,
+    perPage: 50,
+    total: 70,
+  });
+  const visible = await menu;
+  assert.equal(visible.length, 1);
+  assert.equal(visible[0].component, 'activity');
+  assert.equal(calls.length - beforeMenu, 2, 'Menu scanned beyond bounded lightweight pages');
+  assert.ok(
+    calls.slice(beforeMenu).every((url) => !url.includes('descriptor')),
+    'Menu eagerly resolved providers',
+  );
   console.log(
     'Client exact descriptor deduplication, scoped identity and stale registry guards passed',
   );

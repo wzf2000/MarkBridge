@@ -115,8 +115,8 @@ npm run package:source
 
 先检测 `markbridge_teaching_supports_component_catalog()`。受信扩展调用
 `markbridge_register_teaching_component_catalog($id, $index, $resolver)`，每类型只声明一次。
-`$index` 是闭合的 `title`、`defaultVersion`、`versions`；每版本项仅含 `version`、`title`、
-`fingerprint`。默认版本必须是版本列表首项。同类型跨新旧接口的第一次成功登记决定默认值；
+`$index` 是闭合的 `title`、`defaultVersion`、`versions`；每版本项含 `version`、`title`、
+`fingerprint`，可声明 `activityVersion:1`。默认版本必须是版本列表首项。同类型跨新旧接口的第一次成功登记决定默认值；
 目录翻页、安装新版本、重开文章不会升级已有精确版本。
 
 每项 `fingerprint` 由 `markbridge_teaching_component_fingerprint($id, $provider)` 生成。
@@ -125,7 +125,7 @@ npm run package:source
 发布构建应将资源摘要及索引固定到包内；请求中不能重新计算“期望摘要”来接受变更后的资源。
 
 本地 `$resolver($id, $version)` 只能接到已登记的精确键，返回原 v1/v2 provider 数组。
-主包重新执行原 schema、默认值、资源路径／摘要／组校验，再核对定义 pin 和标题。
+主包重新执行原 schema、默认值、资源路径／摘要／组校验，再核对定义 pin、标题及声明的自测能力。
 异常、递归、未登记版本或 pin 不符均解析失败。作者配置及静态正文保留。
 保存准入、阅读、静态投影、出版、资源路由和启动共用此入口；客户端选过版本不是服务器准入条件。
 可运行的 40 版本样例位于 `sdk/examples/indexed-components/provider.php`，详见其 README。
@@ -150,6 +150,11 @@ renderer 文件、返回树及出版指纹仍执行原校验。新索引没有�
 后者必须携带目录的 `fingerprint`。可带 `post_id`，服务器另查文章编辑权限。
 响应不包含文件路径或工厂，且 `private, no-store`；目录变更须刷新。
 作者异步选择同时核对当前文章、选区、块属性／草稿代次与目录指纹，迟到结果不能应用到新草稿。
+
+3.4.0-rc.2 起，插入自测菜单只列出作者模板与轻量目录中 `activityVersion:1` 精确键的交集。
+打开菜单最多读取六页、每页 50 项，作者键都已找到即可停止；页字节超额时改用最多十三页、
+每页 20 项。此过程不解析完整提供者，选定插入时才获取精确描述。未登记作者和普通回放不会
+出现在自测列表中，模板、文章或选区变化仍会使迟到插入失效。
 
 ## 登记 v1 提供者
 

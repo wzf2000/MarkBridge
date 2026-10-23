@@ -2149,5 +2149,6 @@
   "Invalid component catalog request.": "组件目录请求无效。",
   "Indexed component versions": "按需解析的组件版本",
   "Previous page": "上一页",
-  "Loading component description…": "正在加载组件描述…"
+  "Loading component description…": "正在加载组件描述…",
+  "Loading activity templates…": "正在加载自测模板…"
 }

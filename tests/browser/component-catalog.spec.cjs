@@ -260,6 +260,7 @@ test('late activity template resolution preserves a changed template and source 
     };
     window.MarkBridgeComponentCatalog = {
       scope: () => 'fixed',
+      activities: async (templates) => templates,
       resolve: () =>
         new Promise((resolve) => {
           window.releaseActivity = resolve;
@@ -410,4 +411,82 @@ test('unapplied JSON edits followed by discard still invalidate an earlier exact
           .componentVersion,
     ),
   ).toBe('0.1.0');
+});
+
+test('empty article self-check menu intersects lightweight capabilities and resolves only the chosen activity', async ({
+  page,
+}) => {
+  await open(page);
+  const requests = [];
+  await page.route('**/catalog-fixture/catalog?*', async (route) => {
+    requests.push('list');
+    const url = new URL(route.request().url()),
+      n = Number(url.searchParams.get('page'));
+    const first = [
+      { id: 'legacy-activity', version: '1.0.0', title: 'Legacy self-check', activityVersion: 1 },
+      { id: 'teaching-replay', version: '0.1.0', title: 'Prepared replay' },
+      ...Array.from({ length: 48 }, (_, i) => ({
+        id: 'filler-' + i,
+        version: '1.0.0',
+        title: 'Filler',
+      })),
+    ];
+    const last = [
+      { id: 'indexed-activity', version: '1.0.0', title: 'Indexed self-check', activityVersion: 1 },
+    ];
+    await route.fulfill({
+      json: {
+        fingerprint: 'fixed-index',
+        page: n,
+        perPage: 50,
+        total: 70,
+        items: n === 1 ? first : last,
+        defaults: {},
+      },
+    });
+  });
+  await page.route('**/catalog-fixture/descriptor/**', async (route) => {
+    requests.push('descriptor');
+    await route.fulfill({
+      json: {
+        fingerprint: 'fixed-index',
+        provider: { ...provider('1.0.0'), id: 'indexed-activity', activityVersion: 1 },
+      },
+    });
+  });
+  await page.evaluate(() => {
+    window.menuInsertions = [];
+    window.MBBComponents = [];
+    window.MarkBridgeComponentAuthors = {
+      templates: () => [
+        { component: 'legacy-activity', componentVersion: '1.0.0' },
+        { component: 'indexed-activity', componentVersion: '1.0.0' },
+        { component: 'teaching-replay', componentVersion: '0.1.0' },
+        { component: 'unknown-author', componentVersion: '1.0.0' },
+      ],
+    };
+    window.MBB = { ...MBB, createActivity: (id, version) => id + '@' + version };
+    const panel = MBBWritingTools.create({
+      stamp: () => 'unchanged',
+      blocks: () => [],
+      insert: (value) => menuInsertions.push(value),
+      select: () => {},
+    });
+    panel.id = 'activity-capability-menu';
+    panel.open = true;
+    document.body.append(panel);
+    panel.querySelector('.mbb-activity-insert').open = true;
+  });
+  const panel = page.locator('#activity-capability-menu'),
+    select = panel.getByRole('combobox', { name: 'Activity template', exact: true });
+  await expect(select.locator('option')).toHaveCount(2);
+  expect(await select.locator('option').allTextContents()).toEqual([
+    'Legacy self-check',
+    'Indexed self-check',
+  ]);
+  expect(requests).toEqual(['list', 'list']);
+  await select.selectOption('indexed-activity@1.0.0');
+  await panel.getByRole('button', { name: 'Insert activity', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => menuInsertions.length)).toBe(1);
+  expect(requests).toEqual(['list', 'list', 'descriptor']);
 });

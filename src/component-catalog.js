@@ -24,14 +24,49 @@ function request(path, fields = {}) {
     url.searchParams.set(key, value);
   return globalThis.wp.apiFetch({ url: url.href });
 }
-export async function componentCatalogPage(page = 1, type = '') {
+export async function componentCatalogPage(page = 1, type = '', perPage = 20) {
   const cfg = config();
   if (!cfg) return { items: providers(), total: providers().length, perPage: 50, page: 1 };
   const opening = cfg.fingerprint;
-  const result = await request('catalog', { page, type, fingerprint: opening });
+  const result = await request('catalog', { page, type, per_page: perPage, fingerprint: opening });
   if (config() !== cfg || result.fingerprint !== opening)
     throw Error(T('The component catalog changed. Refresh the list before continuing.'));
   return result;
+}
+/** Intersect trusted author callbacks with bounded lightweight activity capability data. */
+export async function componentActivityTemplates(templates) {
+  if (!Array.isArray(templates) || templates.length > 32)
+    throw Error(T('Invalid activity template'));
+  if (!templates.length) return [];
+  const openingConfig = config(),
+    openingScope = scope();
+  const remaining = new Set(templates.map((t) => t.component + '@' + t.componentVersion));
+  const allowed = new Map();
+  let perPage = 50,
+    page;
+  try {
+    page = await componentCatalogPage(1, '', perPage);
+  } catch (error) {
+    if (error.code !== 'component_catalog_limit') throw error;
+    perPage = 20;
+    page = await componentCatalogPage(1, '', perPage);
+  }
+  for (let n = 1; n <= Math.ceil(256 / perPage); n++) {
+    if (config() !== openingConfig || scope() !== openingScope)
+      throw Error(T('The component catalog changed. Refresh the list before continuing.'));
+    for (const entry of page.items) {
+      const key = entry.id + '@' + entry.version;
+      if (!remaining.has(key)) continue;
+      remaining.delete(key);
+      if (entry.activityVersion === 1) allowed.set(key, entry);
+    }
+    if (!remaining.size || page.page * page.perPage >= page.total) break;
+    page = await componentCatalogPage(page.page + 1, '', perPage);
+  }
+  return templates.flatMap((t) => {
+    const entry = allowed.get(t.component + '@' + t.componentVersion);
+    return entry ? [{ ...t, title: entry.title }] : [];
+  });
 }
 export async function resolveComponent(id, version) {
   const cfg = config();
@@ -250,6 +285,7 @@ export function createComponentSelector(wp) {
 }
 globalThis.MarkBridgeComponentCatalog = Object.freeze({
   page: componentCatalogPage,
+  activities: componentActivityTemplates,
   resolve: resolveComponent,
   resolveDefault: resolveDefaultComponent,
   scope,

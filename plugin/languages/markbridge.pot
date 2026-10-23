@@ -3661,6 +3661,10 @@ msgid "Literature citation"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Loading activity templates…"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Loading component description…"
 msgstr ""
 

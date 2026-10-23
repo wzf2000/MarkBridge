@@ -340,6 +340,71 @@ try {
             markbridge_teaching_component_fingerprint('portable', $moved),
         'Defaults absent from pin',
     );
+    $activity = mbb_sdk_indexed_definition('6.0.0', $file, $provider['resource']['sha256']);
+    $activity['activityVersion'] = 1;
+    $entry = [
+        'version' => '6.0.0',
+        'title' => $activity['title'],
+        'fingerprint' => markbridge_teaching_component_fingerprint('activity-indexed', $activity),
+        'activityVersion' => 1,
+    ];
+    catalog_assert(
+        markbridge_register_teaching_component_catalog(
+            'activity-indexed',
+            ['title' => 'Activities', 'defaultVersion' => '6.0.0', 'versions' => [$entry]],
+            static fn() => $activity,
+        ),
+        'Indexed activity metadata rejected',
+    );
+    $beforeFactories = count($GLOBALS['mbb_component_resolved']);
+    $entries = mbb_component_index_entries();
+    catalog_assert(
+        ($entries['activity-indexed@6.0.0']['activityVersion'] ?? null) === 1,
+        'Indexed lightweight activity capability missing',
+    );
+    catalog_assert(
+        count($GLOBALS['mbb_component_resolved']) === $beforeFactories,
+        'Lightweight capability discovery resolved a factory',
+    );
+    catalog_assert(
+        mbb_component_provider('activity-indexed', '6.0.0')['activityVersion'] === 1,
+        'Exact declared activity failed resolution',
+    );
+    $badEntry = $entry;
+    $badEntry['fingerprint'] = markbridge_teaching_component_fingerprint(
+        'activity-mismatch',
+        $activity,
+    );
+    unset($badEntry['activityVersion']);
+    catalog_assert(
+        markbridge_register_teaching_component_catalog(
+            'activity-mismatch',
+            ['title' => 'Mismatch', 'defaultVersion' => '6.0.0', 'versions' => [$badEntry]],
+            static fn() => $activity,
+        ),
+        'Omitted-capability declaration rejected too early',
+    );
+    catalog_assert(
+        mbb_component_provider('activity-mismatch', '6.0.0') === null,
+        'Resolver silently acquired undeclared activity capability',
+    );
+    $badEntry['activityVersion'] = 2;
+    catalog_assert(
+        !markbridge_register_teaching_component_catalog(
+            'bad-activity',
+            ['title' => 'Bad activity', 'defaultVersion' => '6.0.0', 'versions' => [$badEntry]],
+            static fn() => $activity,
+        ),
+        'Unknown activity version accepted',
+    );
+    catalog_assert(
+        markbridge_register_teaching_component('activity-legacy', $activity),
+        'Legacy activity rejected',
+    );
+    catalog_assert(
+        (mbb_component_index_entries()['activity-legacy@6.0.0']['activityVersion'] ?? null) === 1,
+        'Legacy lightweight activity capability missing',
+    );
     $legacyLater = mbb_sdk_indexed_definition('0.1.0', $file, $provider['resource']['sha256']);
     catalog_assert(
         markbridge_register_teaching_component('sdk-indexed-counter', $legacyLater),

@@ -6,12 +6,12 @@ This API is for installed, reviewed PHP and JavaScript code. Authored Markdown a
 
 Feature-detect `markbridge_teaching_supports_component_catalog()`. Call
 `markbridge_register_teaching_component_catalog($id, $index, $resolver)` from installed trusted PHP.
-The closed index is `{title, defaultVersion, versions}`; each version is `{version, title, fingerprint}`.
+The closed index is `{title, defaultVersion, versions}`; each version is `{version, title, fingerprint}` with optional `activityVersion:1`.
 `defaultVersion` must be the first item. Generate portable definition pins with
 `markbridge_teaching_component_fingerprint($id, $provider)` from fixed build data, including fixed
 resource/manifest SHA-256 values. Never recompute expected resource hashes from mutable installed files
 on each request. The resolver receives only an already declared type/exact version and returns the
-existing provider shape. Core validates the full provider, its definition pin and title before use.
+existing provider shape. Core validates the full provider, its definition pin, title and declared activity capability before use.
 
 The combined legacy/indexed directory admits 256 exact keys, 64 types and 64 versions per type within
 128 KiB, with 32 KiB per atomic declaration. Directory pages default to 20, allow at most 50 items and
@@ -36,6 +36,12 @@ no-store, and omit local paths/factories. Descriptor requests bind the directory
 and after resolution. Core loads existing block attributes directly and discards late selection
 results when article scope, selection, draft attributes or generation changed. Reader delivery
 contains only the current page's exact dependencies, never the complete directory.
+
+From 3.4.0-rc.2, the self-check insertion menu intersects trusted author template keys with lightweight
+`activityVersion:1` entries. It reads at most six 50-item catalog pages, stopping once all registered
+author keys are found; a page-byte overflow falls back to at most thirteen 20-item pages. Opening
+the menu never resolves full providers. The selected exact descriptor is fetched only for insertion.
+Unregistered author keys and non-activity replay templates are omitted.
 
 ## Author candidates
 

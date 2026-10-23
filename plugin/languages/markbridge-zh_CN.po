@@ -3661,6 +3661,10 @@ msgid "Literature citation"
 msgstr "文献引用"
 
 #: plugin/i18n.js
+msgid "Loading activity templates…"
+msgstr "正在加载自测模板…"
+
+#: plugin/i18n.js
 msgid "Loading component description…"
 msgstr "正在加载组件描述…"
 
