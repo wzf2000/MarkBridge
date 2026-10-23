@@ -3,7 +3,9 @@ if (!defined('ABSPATH') && PHP_SAPI !== 'cli') {
     exit();
 }
 require_once __DIR__ . '/collections-store.php';
+require_once __DIR__ . '/component-catalog.php';
 /** Trusted PHP registration only. There is deliberately no client callback/path interface. */
+
 function mbb_register_publication_adapter(string $id, array $descriptor): bool
 {
     if (
@@ -54,6 +56,7 @@ function mbb_collections_renderer(string $adapter): array
             'export.php',
             'resource-import.php',
             'components.php',
+            'component-catalog.php',
             'projections.php',
             'projections.js',
             'projections-profile.json',
@@ -255,9 +258,15 @@ function mbb_collections_references(array $edges, array $selected, array &$outsi
 }
 function mbb_collections_components(string $serialized): array
 {
+    if (!mbb_component_document_within_budget($serialized)) {
+        mbb_collections_fail('collection_quota', 413);
+    }
     $items = [];
     foreach (mbb_component_descriptors($serialized) as $id => $a) {
         $p = mbb_component_provider($a->component, $a->componentVersion);
+        if (!empty($p['integrityChanged'])) {
+            mbb_collections_fail('collection_changed');
+        }
         $sha = null;
         $identity = null;
         $group = null;
@@ -651,6 +660,7 @@ function mbb_collections_snapshot(array $config, string $adapter, ?string $direc
         'session' => $session,
         'renderer' => $renderer,
     ];
+    mbb_component_publication_budget($result['componentChecks']);
     mbb_collections_final($result, $config, $adapter);
     return $result;
 }

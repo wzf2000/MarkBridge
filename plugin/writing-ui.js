@@ -289,6 +289,10 @@
       insert,
     );
     const activities = el('select');
+    let activityGeneration = 0;
+    activities.onchange = () => {
+      activityGeneration++;
+    };
     activities.setAttribute('aria-label', T('Activity template'));
     const updateActivities = () => {
       activities.replaceChildren();
@@ -297,8 +301,7 @@
           (p) =>
             p.id === a.component && p.version === a.componentVersion && p.activityVersion === 1,
         );
-        if (!p) continue;
-        const option = el('option', p.title);
+        const option = el('option', p?.title || a.component + ' ' + a.componentVersion);
         option.value = a.component + '@' + a.componentVersion;
         activities.append(option);
       }
@@ -311,9 +314,29 @@
         'No compatible self-check templates are registered. Existing static content remains readable.',
       ),
     );
-    const insertActivity = button('Insert activity', () => {
+    const insertActivity = button('Insert activity', async () => {
       try {
-        const [id, version] = activities.value.split('@');
+        const key = activities.value;
+        const generation = ++activityGeneration;
+        const [id, version] = key.split('@');
+        const opening = adapter.stamp();
+        const openingSelection = JSON.stringify(adapter.selection?.());
+        const selected = globalThis.wp?.data
+          ?.select?.('core/block-editor')
+          ?.getSelectedBlockClientId?.();
+        const openingScope = window.MarkBridgeComponentCatalog?.scope();
+        if (window.MarkBridgeComponentCatalog)
+          await window.MarkBridgeComponentCatalog.resolve(id, version);
+        if (
+          activities.value !== key ||
+          generation !== activityGeneration ||
+          opening !== adapter.stamp() ||
+          openingSelection !== JSON.stringify(adapter.selection?.()) ||
+          selected !==
+            globalThis.wp?.data?.select?.('core/block-editor')?.getSelectedBlockClientId?.() ||
+          openingScope !== window.MarkBridgeComponentCatalog?.scope()
+        )
+          return;
         adapter.insert(window.MBB.createActivity(id, version));
         refresh();
       } catch (error) {

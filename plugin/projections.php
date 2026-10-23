@@ -193,11 +193,13 @@ function mbb_register_component_projection(
     array $d,
 ): bool {
     $key = $component . '@' . $componentVersion;
+    $indexed = isset($GLOBALS['mbb_component_resolving'][$key]);
+    $namespace = $indexed ? 'mbb_indexed_projection_renderers' : 'mbb_projection_renderers';
     if (
         !preg_match('/\A[a-z][a-z0-9-]{0,63}\z/D', $component) ||
         !preg_match('/\A\d+\.\d+\.\d+\z/D', $componentVersion) ||
-        isset($GLOBALS['mbb_projection_renderers'][$key]) ||
-        count($GLOBALS['mbb_projection_renderers'] ?? []) >= 32 ||
+        isset($GLOBALS[$namespace][$key]) ||
+        count($GLOBALS[$namespace] ?? []) >= ($indexed ? 256 : 32) ||
         !mbb_projection_closed($d, ['contract', 'version', 'render', 'files']) ||
         $d['contract'] !== 'mbb-component-projection/v1' ||
         !is_string($d['version']) ||
@@ -240,12 +242,17 @@ function mbb_register_component_projection(
     } catch (Throwable) {
         return false;
     }
-    $GLOBALS['mbb_projection_renderers'][$key] = $d;
+    $GLOBALS[$namespace][$key] = $d;
     return true;
 }
 function mbb_component_projection_fingerprint(string $component, string $version): ?string
 {
-    $d = $GLOBALS['mbb_projection_renderers'][$component . '@' . $version] ?? null;
+    $provider = function_exists('mbb_component_provider')
+        ? mbb_component_provider($component, $version)
+        : null;
+    $d =
+        $GLOBALS['mbb_projection_renderers'][$component . '@' . $version] ??
+        ($GLOBALS['mbb_indexed_projection_renderers'][$component . '@' . $version] ?? null);
     if (!$d) {
         return null;
     }
@@ -288,6 +295,12 @@ function mbb_component_projection_plan(
     string $locale = 'en',
     int $budget = 524288,
 ): array {
+    if (
+        function_exists('mbb_component_document_within_budget') &&
+        !mbb_component_document_within_budget($serialized)
+    ) {
+        throw new RuntimeException('component_limit');
+    }
     $items = [];
     $total = 0;
     foreach (mbb_component_descriptors($serialized) as $id => $a) {
@@ -297,6 +310,11 @@ function mbb_component_projection_plan(
         $state =
             isset(
                 $GLOBALS['mbb_projection_renderers'][$a->component . '@' . $a->componentVersion],
+            ) ||
+            isset(
+                $GLOBALS['mbb_indexed_projection_renderers'][
+                    $a->component . '@' . $a->componentVersion
+                ],
             ) ||
             !$provider ||
             $provider['status'] !== 'available'
@@ -320,6 +338,9 @@ function mbb_component_projection_plan(
                 }
                 $d =
                     $GLOBALS['mbb_projection_renderers'][
+                        $a->component . '@' . $a->componentVersion
+                    ] ??
+                    $GLOBALS['mbb_indexed_projection_renderers'][
                         $a->component . '@' . $a->componentVersion
                     ];
                 $tree = $d['render'](json_decode(mbb_component_json($a->params)), [
@@ -348,6 +369,11 @@ function mbb_component_projection_plan(
                 $state =
                     isset(
                         $GLOBALS['mbb_projection_renderers'][
+                            $a->component . '@' . $a->componentVersion
+                        ],
+                    ) ||
+                    isset(
+                        $GLOBALS['mbb_indexed_projection_renderers'][
                             $a->component . '@' . $a->componentVersion
                         ],
                     ) ||

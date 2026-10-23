@@ -265,6 +265,15 @@
     const headingLabel = el('label', {}, T('Title'));
     const heading = el('input', { type: 'text', maxLength: 200 });
     headingLabel.append(heading);
+    let exampleGeneration = 0;
+    for (const input of [kind, heading]) {
+      input.addEventListener('input', () => {
+        exampleGeneration++;
+      });
+      input.addEventListener('change', () => {
+        exampleGeneration++;
+      });
+    }
     wizard.append(
       kindLabel,
       headingLabel,
@@ -273,8 +282,11 @@
         {},
         T('Creates an unsaved structure. Preview before saving; reader state is not stored.'),
       ),
-      button('Insert example at selection', () => {
+      button('Insert example at selection', async () => {
         if (!canEdit()) return;
+        const generation = ++exampleGeneration;
+        const openingForm = JSON.stringify([kind.value, heading.value]);
+        const openingScope = window.MarkBridgeComponentCatalog?.scope();
         const raw = readSource(),
           start = rawOffset(raw, source.selectionStart),
           end = rawOffset(raw, source.selectionEnd);
@@ -314,10 +326,30 @@
             '```python\ndef total(values):\n    return sum(values)\n```\n\n```javascript\nfunction total(values) {\n  return values.reduce((sum, value) => sum + value, 0);\n}\n```' +
             close;
         else {
-          const provider =
+          let provider =
             (window.MBBComponents || []).find(
               (p) => p.id === 'node-diagram' && p.version === '0.2.0',
             ) ?? (window.MBBComponents || []).find((p) => p.id === 'node-diagram');
+          try {
+            if (window.MarkBridgeComponentCatalog)
+              provider = await window.MarkBridgeComponentCatalog.resolveDefault(
+                'node-diagram',
+                '0.2.0',
+              );
+          } catch (error) {
+            status.textContent = error.message;
+            return;
+          }
+          if (
+            generation !== exampleGeneration ||
+            openingForm !== JSON.stringify([kind.value, heading.value]) ||
+            openingScope !== window.MarkBridgeComponentCatalog?.scope() ||
+            readSource() !== raw ||
+            rawOffset(raw, source.selectionStart) !== start ||
+            rawOffset(raw, source.selectionEnd) !== end ||
+            !canEdit()
+          )
+            return;
           if (!provider) {
             status.textContent = T(
               'Enable a compatible diagram extension before inserting a diagram.',
@@ -361,6 +393,7 @@
         source: readSource,
         blocks,
         stamp: readSource,
+        selection: () => [source.selectionStart, source.selectionEnd],
         select(item) {
           const tree = blocks();
           let path = item.path;

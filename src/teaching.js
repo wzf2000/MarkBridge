@@ -1,3 +1,8 @@
+import {
+  createComponentSelector,
+  useComponentDescriptor,
+  resolveDefaultComponent,
+} from './component-catalog.js';
 import { activityRelations, validateActivity, activityParts } from './activities.js';
 import { mediaKinds, mediaAttributes, assembleMedia, validateMedia } from './native-media.js';
 import {
@@ -707,7 +712,22 @@ export function teachingMarkdown(b, body, fail) {
 export function registerTeaching() {
   if (!wp.blocks.getBlockType('mbb/code-tabs')) registerCodeTabs();
   const el = wp.element.createElement;
-  const drafts = new Map();
+  class DraftRegistry extends Map {
+    revision = 0;
+    set(key, value) {
+      this.revision++;
+      return super.set(key, value);
+    }
+    delete(key) {
+      this.revision++;
+      return super.delete(key);
+    }
+    clear() {
+      this.revision++;
+      return super.clear();
+    }
+  }
+  const drafts = new DraftRegistry();
   const syncDraftLock = () => {
     window.MarkBridgeParameterDrafts = { pending: () => drafts.size > 0 };
     try {
@@ -769,6 +789,7 @@ export function registerTeaching() {
     };
   };
   registerTechnical({ drafts, syncDraftLock, retainDraftOwner });
+  const ComponentSelector = createComponentSelector(wp);
   const ParameterEditor = createParameterEditor({
     wp,
     drafts,
@@ -828,6 +849,7 @@ export function registerTeaching() {
       supports: { html: false, customClassName: false, anchor: false },
       edit: ({ attributes: a, setAttributes, clientId }) => {
         const registry = wp.data.useRegistry();
+        useComponentDescriptor(wp, a.component, a.componentVersion);
         const currentBlock = wp.data.useSelect(
           (select) => select('core/block-editor').getBlock(clientId),
           [clientId],
@@ -839,11 +861,11 @@ export function registerTeaching() {
             if (a[key] === undefined)
               initial[key] =
                 key === 'params'
-                  ? window.MBBComponents?.[0]?.defaults || {}
+                  ? {}
                   : key === 'component'
-                    ? window.MBBComponents?.[0]?.id || ''
+                    ? ''
                     : key === 'componentVersion'
-                      ? window.MBBComponents?.[0]?.version || ''
+                      ? ''
                       : key === 'id'
                         ? 'mbb-' + clientId
                         : type === 'boolean'
@@ -861,6 +883,30 @@ export function registerTeaching() {
             for (const key of Object.keys(sourceFields))
               if (a[key] === undefined) initial[key] = key.startsWith('code') ? '\n' : '';
           if (Object.keys(initial).length) setAttributes(initial);
+          if (kind === 'component' && !a.component && !a.componentVersion) {
+            const id =
+              Object.keys(globalThis.MBBComponentCatalog?.defaults || {})[0] ||
+              window.MBBComponents?.[0]?.id;
+            if (id)
+              resolveDefaultComponent(id).then(
+                (p) => {
+                  const live = registry.select('core/block-editor').getBlock(clientId)?.attributes;
+                  if (
+                    p &&
+                    live &&
+                    !live.component &&
+                    !live.componentVersion &&
+                    !Object.keys(live.params || {}).length
+                  )
+                    setAttributes({
+                      component: p.id,
+                      componentVersion: p.version,
+                      params: p.defaults,
+                    });
+                },
+                () => {},
+              );
+          }
         }, []);
         const controls = Object.entries({
           ...schema,
@@ -1002,41 +1048,19 @@ export function registerTeaching() {
               wp.components.PanelBody,
               { title: T('Teaching settings'), initialOpen: true },
               kind === 'component'
-                ? el(wp.components.SelectControl, {
-                    label: T('Registered teaching component'),
+                ? el(ComponentSelector, {
+                    draftFingerprint: JSON.stringify(a),
+                    draftGeneration: () => drafts.revision,
+                    component: a.component || '',
+                    version: a.componentVersion || '',
+                    clientId,
                     disabled: !!a.activity,
-                    value: (a.component || '') + '@' + (a.componentVersion || ''),
-                    options: [
-                      ...((window.MBBComponents || []).some(
-                        (p) => p.id === a.component && p.version === a.componentVersion,
-                      )
-                        ? []
-                        : [
-                            {
-                              label:
-                                T('Preserve current component ') +
-                                (a.component || T('Awaiting selection')) +
-                                ' ' +
-                                (a.componentVersion || ''),
-                              value: (a.component || '') + '@' + (a.componentVersion || ''),
-                            },
-                          ]),
-                      ...(window.MBBComponents || []).map((p) => ({
-                        label: p.title + ' ' + p.version,
-                        value: p.id + '@' + p.version,
-                      })),
-                    ],
-                    onChange: (key) => {
-                      const p = (window.MBBComponents || []).find(
-                        (p) => p.id + '@' + p.version === key,
-                      );
-                      if (p)
-                        setAttributes({
-                          component: p.id,
-                          componentVersion: p.version,
-                          params: p.defaults,
-                        });
-                    },
+                    onChange: (p) =>
+                      setAttributes({
+                        component: p.id,
+                        componentVersion: p.version,
+                        params: p.defaults,
+                      }),
                   })
                 : null,
               ...controls.filter((control) => !visible.includes(control.key)),

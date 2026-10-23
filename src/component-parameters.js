@@ -1,3 +1,4 @@
+import { useComponentDescriptor } from './component-catalog.js';
 import { componentAuthor } from './component-authors.js';
 import { componentParams } from './component-data.js';
 import { translate as T, translateError as E } from './i18n.js';
@@ -330,6 +331,7 @@ export function createParameterEditor({
     const [candidateVersion, setCandidateVersion] = wp.element.useState(
       drafts.get(clientId)?.componentVersion ?? componentVersion,
     );
+    useComponentDescriptor(wp, component, candidateVersion);
     const provider = find(component, candidateVersion);
     const schema = provider?.schema;
     const [raw, setRaw] = wp.element.useState(drafts.get(clientId)?.raw ?? original);
@@ -411,6 +413,11 @@ export function createParameterEditor({
         !!author?.supports(clone(candidate), { activity: candidateActivity });
     } catch {}
 
+    useComponentDescriptor(
+      wp,
+      component,
+      authorSupported ? author?.upgrade?.componentVersion : undefined,
+    );
     const upgrade =
       authorSupported && author?.upgrade && find(component, author.upgrade.componentVersion);
     const currentIssues = (text, currentSchema = schema) => {

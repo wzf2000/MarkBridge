@@ -2001,7 +2001,7 @@
   "Add article": "加入文章",
   "Import Companion series": "导入 Companion 系列",
   "Search for saved articles you can edit.": "搜索当前账号可编辑的已保存文章。",
-  "Next page": "Next page",
+  "Next page": "下一页",
   "Unavailable article": "文章不可用",
   "Move up": "上移",
   "Move down": "下移",
@@ -2143,5 +2143,11 @@
   "Numbered lines %1$s–%2$s; the complete code remains visible.": "当前标注第 %1$s–%2$s 行；完整代码仍可阅读。",
   "Go to highlighted lines": "跳到重点行",
   "Starting line: %1$s": "起始行号：%1$s",
-  "Highlighted lines: %1$s": "重点行：%1$s"
+  "Highlighted lines: %1$s": "重点行：%1$s",
+  "The article exceeds the component description budget.": "文章引用的组件版本或描述总量超限。",
+  "The component catalog changed. Refresh the list before continuing.": "组件目录已变化，请刷新列表后继续。",
+  "Invalid component catalog request.": "组件目录请求无效。",
+  "Indexed component versions": "按需解析的组件版本",
+  "Previous page": "上一页",
+  "Loading component description…": "正在加载组件描述…"
 }

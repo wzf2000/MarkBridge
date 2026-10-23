@@ -3185,6 +3185,10 @@ msgid "Index status"
 msgstr "索引状态"
 
 #: plugin/i18n.js
+msgid "Indexed component versions"
+msgstr "按需解析的组件版本"
+
+#: plugin/i18n.js
 msgid "Initial values"
 msgstr "初始数值"
 
@@ -3367,6 +3371,10 @@ msgstr "代码语言非法"
 #: plugin/i18n.js
 msgid "Invalid code line metadata"
 msgstr "代码行设置无效"
+
+#: plugin/i18n.js
+msgid "Invalid component catalog request."
+msgstr "组件目录请求无效。"
 
 #: plugin/i18n.js
 msgid "Invalid component name or version"
@@ -3651,6 +3659,10 @@ msgstr "原文姓名不会自动拆分。切换到人名字段时从空字段开
 #: plugin/i18n.js
 msgid "Literature citation"
 msgstr "文献引用"
+
+#: plugin/i18n.js
+msgid "Loading component description…"
+msgstr "正在加载组件描述…"
 
 #: plugin/i18n.js
 msgid "Loading your active batches…"
@@ -4193,7 +4205,7 @@ msgstr "后一段行号"
 
 #: plugin/i18n.js
 msgid "Next page"
-msgstr "Next page"
+msgstr "下一页"
 
 #: plugin/i18n.js
 msgid "Next stage"
@@ -4764,6 +4776,10 @@ msgstr "上一个匹配"
 #: plugin/i18n.js
 msgid "Previous numbered lines"
 msgstr "前一段行号"
+
+#: plugin/i18n.js
+msgid "Previous page"
+msgstr "上一页"
 
 #: plugin/i18n.js
 msgid "Previous stage"
@@ -6171,6 +6187,10 @@ msgid "The article does not exist."
 msgstr "文章不存在。"
 
 #: plugin/i18n.js
+msgid "The article exceeds the component description budget."
+msgstr "文章引用的组件版本或描述总量超限。"
+
+#: plugin/i18n.js
 msgid "The article has more than 32 related images; silent truncation is not allowed"
 msgstr "文章关联资源超过 32 张，不能静默截取"
 
@@ -6445,6 +6465,10 @@ msgstr "提交结果无法可靠确认；已保留当前源稿、媒体和导入
 #: plugin/i18n.js
 msgid "The commit result could not be reliably confirmed. Verify the article before saving again."
 msgstr "提交结果无法可靠确认，请重新核对文章，勿直接重复保存。"
+
+#: plugin/i18n.js
+msgid "The component catalog changed. Refresh the list before continuing."
+msgstr "组件目录已变化，请刷新列表后继续。"
 
 #: plugin/i18n.js
 msgid "The component changed while this candidate was open. Review or discard the candidate."

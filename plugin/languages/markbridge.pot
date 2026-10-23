@@ -3185,6 +3185,10 @@ msgid "Index status"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Indexed component versions"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Initial values"
 msgstr ""
 
@@ -3366,6 +3370,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Invalid code line metadata"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Invalid component catalog request."
 msgstr ""
 
 #: plugin/i18n.js
@@ -3650,6 +3658,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Literature citation"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Loading component description…"
 msgstr ""
 
 #: plugin/i18n.js
@@ -4763,6 +4775,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Previous numbered lines"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Previous page"
 msgstr ""
 
 #: plugin/i18n.js
@@ -6171,6 +6187,10 @@ msgid "The article does not exist."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "The article exceeds the component description budget."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "The article has more than 32 related images; silent truncation is not allowed"
 msgstr ""
 
@@ -6444,6 +6464,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "The commit result could not be reliably confirmed. Verify the article before saving again."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The component catalog changed. Refresh the list before continuing."
 msgstr ""
 
 #: plugin/i18n.js

@@ -79,21 +79,40 @@ function mbb_extensions_catalog($request = null)
             404,
         );
     }
+    $page = max(1, (int) ($request['page'] ?? 1));
+    $perPage = min(50, max(1, (int) ($request['per_page'] ?? 20)));
+    $all = function_exists('mbb_component_index_entries')
+        ? array_values(mbb_component_index_entries())
+        : array_map(
+            static fn($p) => [
+                'id' => $p['id'],
+                'version' => $p['version'],
+                'title' => $p['title'],
+                'status' => $p['status'],
+            ],
+            array_values(mbb_component_registry()),
+        );
     $items = [];
-    foreach (mbb_component_registry() as $p) {
+    foreach (array_slice($all, ($page - 1) * $perPage, $perPage) as $entry) {
+        $legacy = null;
+        foreach (mbb_component_registry() as $p) {
+            if ($p['id'] === $entry['id'] && $p['version'] === $entry['version']) {
+                $legacy = $p;
+                break;
+            }
+        }
         $items[] = [
-            'provider' => mbb_extensions_component_owner($p),
-            'component' => $p['id'],
-            'version' => $p['version'],
-            'title' => $p['title'],
-            'status' => $p['status'],
-            'protocolVersion' => $p['protocolVersion'],
-            'minMarkBridge' => $p['minMarkBridge'],
-            'resourceSha256' => $p['resource']['sha256'],
-            'projectionFingerprint' => mbb_component_projection_fingerprint(
-                $p['id'],
-                $p['version'],
-            ),
+            'provider' => $legacy
+                ? mbb_extensions_component_owner($legacy)
+                : ['id' => 'indexed', 'title' => mbb_t('Indexed component versions')],
+            'component' => $entry['id'],
+            'version' => $entry['version'],
+            'title' => $entry['title'],
+            'status' => $entry['status'],
+            'protocolVersion' => $legacy['protocolVersion'] ?? '—',
+            'minMarkBridge' => $legacy['minMarkBridge'] ?? '—',
+            'resourceSha256' => $legacy['resource']['sha256'] ?? '—',
+            'projectionFingerprint' => null,
         ];
     }
     preg_match(
@@ -113,7 +132,10 @@ function mbb_extensions_catalog($request = null)
         'schema' => 1,
         'extensions' => $extensions ?: (object) [],
         'components' => $items,
-        'capacity' => ['used' => count($items), 'limit' => 32],
+        'capacity' => ['used' => count($all), 'limit' => 256],
+        'page' => $page,
+        'perPage' => $perPage,
+        'total' => count($all),
         'rejections' => $GLOBALS['mbb_component_rejections'] ?? [],
     ];
     if (!mbb_extensions_permission()) {
@@ -123,7 +145,7 @@ function mbb_extensions_catalog($request = null)
             404,
         );
     }
-    if (strlen(mbb_projection_json($value)) > 131072) {
+    if (strlen(mbb_projection_json($value)) > 32768) {
         return mbb_error(
             'extension_catalog_limit',
             mbb_t('The installed extension catalog exceeds its display budget.'),
@@ -224,7 +246,7 @@ function mbb_extensions_usage($r)
         }
         unset($group);
         $value = ['schema' => 1, 'scope' => 'selected-posts', 'groups' => array_values($groups)];
-        if (strlen(mbb_projection_json($value)) > 131072) {
+        if (strlen(mbb_projection_json($value)) > 32768) {
             throw new RuntimeException('limit');
         }
         // No partial old titles survive a later query's capability/session/body change.
@@ -277,7 +299,8 @@ function mbb_extensions_settings_page(bool $embedded = false): void
             ),
         ) .
         '</p>';
-    $response = mbb_extensions_catalog();
+    $page = max(1, (int) ($_GET['mbb_component_page'] ?? 1));
+    $response = mbb_extensions_catalog(['page' => $page]);
     if (is_wp_error($response)) {
         return;
     }
@@ -352,6 +375,20 @@ function mbb_extensions_settings_page(bool $embedded = false): void
             echo '</tbody></table></details>';
         }
         echo '</section>';
+    }
+    if ($page > 1) {
+        echo '<a class="button" href="' .
+            esc_url(add_query_arg('mbb_component_page', $page - 1)) .
+            '">' .
+            esc_html(mbb_t('Previous page')) .
+            '</a> ';
+    }
+    if ($page * $data['perPage'] < $data['total']) {
+        echo '<a class="button" href="' .
+            esc_url(add_query_arg('mbb_component_page', $page + 1)) .
+            '">' .
+            esc_html(mbb_t('Next page')) .
+            '</a>';
     }
     if ($data['rejections']) {
         echo '<details><summary>' . esc_html(mbb_t('Rejected registrations')) . '</summary><ul>';

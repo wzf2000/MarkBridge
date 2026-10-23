@@ -17,12 +17,7 @@ function mbb_component_registry(): array
 /** Resolve authored versions exactly; first registration remains the legacy/default entry. */
 function mbb_component_provider(string $id, string $version): ?array
 {
-    foreach (mbb_component_registry() as $provider) {
-        if ($provider['id'] === $id && $provider['version'] === $version) {
-            return $provider;
-        }
-    }
-    return null;
+    return mbb_component_resolve($id, $version);
 }
 function mbb_component_json(mixed $value, int $flags = 0): string|false
 {
@@ -363,8 +358,11 @@ function mbb_component_domain_valid(
         return false;
     }
 }
-function mbb_component_register_checked(string $id, array $provider): bool
-{
+function mbb_component_register_checked(
+    string $id,
+    array $provider,
+    bool $resolved = false,
+): array|bool {
     $registry = mbb_component_registry();
     if (
         array_key_exists('executionProfile', $provider) &&
@@ -376,8 +374,9 @@ function mbb_component_register_checked(string $id, array $provider): bool
         return mbb_component_reject($id, 'invalid-execution-profile');
     }
     if (
+        !$resolved &&
         is_string($provider['version'] ?? null) &&
-        mbb_component_provider($id, $provider['version'])
+        mbb_component_index_has($id, $provider['version'])
     ) {
         return mbb_component_reject($id, 'duplicate-provider');
     }
@@ -392,7 +391,9 @@ function mbb_component_register_checked(string $id, array $provider): bool
         'budgets',
     ];
     if (
-        count($registry) >= 32 ||
+        (!$resolved &&
+            (count($registry) >= 32 ||
+                !mbb_component_index_room($id, $provider['version'] ?? ''))) ||
         array_diff(array_keys($provider), [
             ...$fields,
             'supportsUiLocale',
@@ -510,6 +511,13 @@ function mbb_component_register_checked(string $id, array $provider): bool
                     : (hash_equals($provider['resource']['sha256'], hash_file('sha256', $path))
                         ? 'available'
                         : 'resource-integrity'))));
+    if ($resolved) {
+        return $provider;
+    }
+    if (!mbb_component_index_definition_fits($provider)) {
+        return mbb_component_reject($id, 'catalog-limit');
+    }
+    $GLOBALS['mbb_component_defaults'][$id] ??= $provider['version'];
     $GLOBALS['mbb_components'][
         isset($registry[$id]) ? $id . '@' . $provider['version'] : $id
     ] = $provider;
@@ -534,6 +542,13 @@ function mbb_component_descriptors(string $serialized): array
 }
 function mbb_component_admit(string $serialized, string $base)
 {
+    if (!mbb_component_document_within_budget($serialized)) {
+        return mbb_error(
+            'component_limit',
+            mbb_t('The article exceeds the component description budget.'),
+            422,
+        );
+    }
     $original = mbb_component_descriptors($base);
     foreach (mbb_component_descriptors($serialized) as $id => $a) {
         $old = $original[$id] ?? null;
@@ -640,7 +655,7 @@ function mbb_component_available(): array
     );
 }
 add_action('enqueue_block_editor_assets', static function () {
-    $providers = mbb_component_available();
+    $providers = mbb_component_page_providers();
     wp_enqueue_script(
         'mbb-components',
         plugins_url(mbb_asset('components.js'), __FILE__),
@@ -655,10 +670,17 @@ add_action('enqueue_block_editor_assets', static function () {
                 $providers,
                 JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT,
             ) .
+            ';window.MBBComponentCatalog=' .
+            mbb_component_json(
+                mbb_component_catalog_bootstrap(),
+                JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT,
+            ) .
             ';',
         'before',
     );
 });
+
+require_once __DIR__ . '/component-catalog.php';
 
 require_once __DIR__ . '/component-diagnostics.php';
 
