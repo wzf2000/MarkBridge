@@ -859,3 +859,59 @@
 .wp-block-mbb-component > .mbb-teaching-body > :last-child {
   margin-block-end: 0;
 }
+
+/* Author inputs use the same compact grouping as the component preview. */
+.mbb-parameter-modes {
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--mbb-border-color, #dcdcde);
+}
+.mbb-parameter-editor > .components-button {
+  margin: 0.4rem 0.5rem 0.4rem 0;
+  min-height: 36px;
+  height: auto;
+  white-space: normal;
+}
+.mbb-parameter-technical {
+  border: 1px solid var(--mbb-border-color, #dcdcde);
+  border-radius: 5px;
+  padding: 0.65rem 0.75rem;
+}
+.mbb-parameter-technical > summary {
+  cursor: pointer;
+  font-weight: 600;
+  min-height: 24px;
+}
+.mbb-parameter-form > fieldset + fieldset {
+  border-top: 1px solid var(--mbb-border-color, #dcdcde);
+  padding-top: 1rem;
+}
+.mbb-parameter-editor select {
+  padding-inline-end: 2rem;
+  min-height: 36px;
+}
+.mbb-parameter-editor :focus-visible {
+  outline: 2px solid #2271b1;
+  outline-offset: 2px;
+}
+
+.mbb-parameter-scalar-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.5rem;
+  margin-block: 0.65rem;
+  padding-bottom: 0.65rem;
+}
+.mbb-parameter-scalar-item .components-base-control {
+  margin-bottom: 0;
+}
+.mbb-parameter-scalar-item .components-base-control__field {
+  margin-bottom: 0;
+}
+.mbb-parameter-scalar-item > button {
+  align-self: end;
+  min-height: 40px;
+  height: auto;
+  margin-bottom: 0;
+  padding-inline: 0.5rem;
+}

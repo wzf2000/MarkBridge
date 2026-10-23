@@ -47,11 +47,13 @@
   }
 }
 
-.mbb-component-diagram[data-mbb-component-state='ready'] > .mbb-projection {
+[data-mbb-teaching='component'][data-mbb-component-state='ready']
+  > .mbb-projection[data-mbb-generated] {
   display: none;
 }
 @media print {
-  .mbb-component-diagram[data-mbb-component-state='ready'] > .mbb-projection {
+  [data-mbb-teaching='component'][data-mbb-component-state='ready']
+    > .mbb-projection[data-mbb-generated] {
     display: block;
   }
 }

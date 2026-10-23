@@ -621,7 +621,14 @@ export function createParameterEditor({
           ...v.map((child, i) =>
             el(
               'div',
-              { key: i, className: 'mbb-parameter-array-item' },
+              {
+                key: i,
+                className:
+                  'mbb-parameter-array-item' +
+                  (['string', 'number', 'integer'].includes(s.items.type)
+                    ? ' mbb-parameter-scalar-item'
+                    : ''),
+              },
               render(s.items, child, [...path, i], true, seed?.[i]),
               el(
                 wp.components.Button,
@@ -868,7 +875,7 @@ export function createParameterEditor({
       notice || parseError
         ? el('p', { role: error ? 'alert' : 'status' }, notice || parseError)
         : null,
-      el(wp.components.Button, { variant: 'secondary', onClick: commit }, T('Apply parameters')),
+      el(wp.components.Button, { variant: 'primary', onClick: commit }, T('Apply parameters')),
       el(
         wp.components.Button,
         {
