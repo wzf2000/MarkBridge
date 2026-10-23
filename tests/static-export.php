@@ -54,6 +54,36 @@ try {
     if ($value !== mbb_static_export_descriptor($snapshot, $files, $resources, $mappings)) {
         throw new RuntimeException('Non-deterministic descriptor/digest inputs');
     }
+    $lineAttrs = [
+        'version' => 2,
+        'id' => 'static-group',
+        'defaultTab' => 'static-tab',
+        'tabs' => [
+            [
+                'id' => 'static-tab',
+                'title' => '',
+                'language' => 'text',
+                'code' => "a\nb",
+                'startLine' => 12,
+                'highlights' => '12-13',
+            ],
+        ],
+    ];
+    $lineSnapshot =
+        '<!-- wp:mbb/code-tabs ' .
+        json_encode($lineAttrs) .
+        ' --><div id="static-group" class="wp-block-mbb-code-tabs"><div id="static-tab" class="mbb-code-tab"><pre><code>a' .
+        "\n" .
+        'b</code></pre></div></div><!-- /wp:mbb/code-tabs --><p><a href="#mbb-code/static-group/static-tab/L12-L13">Valid lines</a> <a href="#mbb-code/static-group/static-tab/L99">Invalid range</a></p>';
+    $lineBody = mbb_static_export_body($lineSnapshot);
+    if (
+        !str_contains($lineBody, 'href="#static-tab"') ||
+        !str_contains($lineBody, 'href="#mbb-code/static-group/static-tab/L99"')
+    ) {
+        throw new RuntimeException(
+            'Static line references must validate ranges and resolve to the retained version anchor',
+        );
+    }
     $json = mbb_component_json($value);
     foreach (
         [
@@ -68,7 +98,9 @@ try {
         ]
         as $needle
     ) {
-        if (str_contains($json, $needle)) {
+        // CSS selectors may name runtime attributes without retaining them in exported HTML.
+        $search = $needle === 'data-mbb-teaching' ? $value['body'] : $json;
+        if (str_contains($search, $needle)) {
             throw new RuntimeException('Sensitive/executable marker: ' . $needle);
         }
     }

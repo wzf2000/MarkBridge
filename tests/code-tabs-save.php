@@ -67,8 +67,19 @@ try {
         32,
         JSON_THROW_ON_ERROR,
     );
+    $fixtureChoice = getenv('MARKBRIDGE_TEST_CODE_TABS_FIXTURE');
+    $fixtureIndex =
+        $fixtureChoice === 'v2'
+            ? array_key_last(
+                array_filter(
+                    $fixtures,
+                    static fn($f) => str_contains($f['source'], ':::mbb:v2 code-tabs '),
+                ),
+            )
+            : (int) ($fixtureChoice ?: 2);
+    cts_assert(isset($fixtures[$fixtureIndex]), 'Requested code tabs fixture missing');
     $source =
-        $fixtures[2]['source'] .
+        $fixtures[$fixtureIndex]['source'] .
         "\nAuthor paragraph with math \$x+1$.\n\n- [ ] task\n\nNote[^a].\n\n[^a]: retained footnote\n";
     $params = [
         'mode' => 'markdown',
@@ -88,7 +99,7 @@ try {
     cts_assert($before === $source, 'Original Markdown changed');
     $block = cts_tabs(parse_blocks($baseline));
     cts_assert($block !== null, 'Tabs missing');
-    foreach ($fixtures[2]['tabs'] as $index => $tab) {
+    foreach ($fixtures[$fixtureIndex]['tabs'] as $index => $tab) {
         foreach ($tab as $key => $value) {
             cts_assert(
                 $block['attrs']['tabs'][$index][$key] === $value,
@@ -123,8 +134,32 @@ try {
         JSON_THROW_ON_ERROR,
     );
     cts_assert(
-        $config['tabs'][3]['code'] === $fixtures[2]['tabs'][3]['code'],
+        $config['tabs'][3]['code'] === $fixtures[$fixtureIndex]['tabs'][3]['code'],
         'Rendered copy config normalized original CRLF',
+    );
+    if (($block['attrs']['version'] ?? 1) === 2) {
+        $firstTab = $block['attrs']['tabs'][0];
+        $label = mbb_code_tabs_summary_text($firstTab['startLine'], $firstTab['highlights']);
+        cts_assert(
+            str_contains($html, esc_html($label)),
+            'Reader line summary locale was not derived',
+        );
+        cts_assert(
+            str_contains(mbb_static_export_body($baseline), esc_html($label)),
+            'Static line summary locale was not derived',
+        );
+        cts_assert(
+            str_contains($baseline, 'Starting line: '),
+            'Canonical line summary must remain locale independent',
+        );
+    }
+    $lineHref = '#mbb-code/examples/variant0/L12-L13';
+    cts_assert(
+        str_contains(
+            wp_kses_post('<p><a href="' . $lineHref . '">Code lines</a></p>'),
+            'href="' . $lineHref . '"',
+        ),
+        'KSES changed stable code line fragment',
     );
     $revision = (int) $result['saved_revision'];
     cts_assert(is_int($revision) && $revision > 0, 'No baseline revision');

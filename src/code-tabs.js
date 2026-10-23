@@ -34,8 +34,54 @@ const languageLabel = (language) =>
   T('Code');
 const displayLabel = (tab) => tab.title || tab.language || T('Code');
 export const tabsLabel = (tab) => tab.title || tab.language || '代码';
+// Displayed line numbers are metadata; original source bytes remain untouched.
+export function codeTabLines(tab, source, fail) {
+  const count = source
+    ? null
+    : Math.max(
+        1,
+        tab.code
+          .replace(/\r\n|\r/g, '\n')
+          .replace(/\n$/, '')
+          .split('\n').length,
+      );
+  if (
+    !Number.isInteger(tab.startLine) ||
+    tab.startLine < 1 ||
+    tab.startLine > 999999 ||
+    (count !== null && tab.startLine + count - 1 > 999999)
+  )
+    fail('CODE_TABS_LINES', 'Code line numbers must remain between 1 and 999999');
+  if (
+    typeof tab.highlights !== 'string' ||
+    tab.highlights.length > 512 ||
+    !/^(?:[1-9]\d{0,5}(?:-[1-9]\d{0,5})?(?:,[1-9]\d{0,5}(?:-[1-9]\d{0,5})?)*)?$/.test(
+      tab.highlights,
+    )
+  )
+    fail('CODE_TABS_LINES', 'Highlights require comma-separated lines or closed ranges');
+  const ranges = tab.highlights
+    ? tab.highlights.split(',').map((x) => x.split('-').map(Number))
+    : [];
+  if (ranges.length > 32) fail('CODE_TABS_LINES', 'At most 32 highlighted ranges are allowed');
+  let previous = 0;
+  for (const [start, end = start] of ranges) {
+    if (
+      start < tab.startLine ||
+      end < start ||
+      start <= previous ||
+      (count !== null && end >= tab.startLine + count)
+    )
+      fail('CODE_TABS_LINES', 'Highlighted ranges must be ordered, disjoint and within the code');
+    previous = end;
+  }
+  return ranges;
+}
 export function codeTabsAttributes(attrs, source, fail) {
-  const keys = source ? ['id', 'title', 'terminalNewline'] : ['id', 'title', 'language', 'code'];
+  const keys = [
+    ...(source ? ['id', 'title', 'terminalNewline'] : ['id', 'title', 'language', 'code']),
+    ...(attrs.version === 2 ? ['startLine', 'highlights'] : []),
+  ];
   if (!Array.isArray(attrs.tabs) || attrs.tabs.length < 1 || attrs.tabs.length > 8)
     fail('CODE_TABS_STRUCTURE', 'A code group requires 1–8 versions');
   const ids = new Set();
@@ -78,6 +124,7 @@ export function codeTabsAttributes(attrs, source, fail) {
       if (size > 65536 || bytes > 131072)
         fail('CODE_TABS_LIMIT', 'Each version is limited to 64 KiB and the group to 128 KiB');
     }
+    if (attrs.version === 2) codeTabLines(tab, source, fail);
     return Object.fromEntries(keys.map((key) => [key, tab[key]]));
   });
   if (!ids.has(attrs.defaultTab))
@@ -85,10 +132,11 @@ export function codeTabsAttributes(attrs, source, fail) {
   return tabs;
 }
 export function codeTabsMarkdown(a) {
-  const tabs = a.tabs.map(({ id, title, code }) => ({
+  const tabs = a.tabs.map(({ id, title, code, startLine, highlights }) => ({
     id,
     title,
     terminalNewline: code.endsWith('\n'),
+    ...(a.version === 2 ? { startLine, highlights } : {}),
   }));
   const codes = a.tabs
     .map((tab) => {
@@ -98,7 +146,9 @@ export function codeTabsMarkdown(a) {
     })
     .join('\n\n');
   return (
-    ':::mbb:v1 code-tabs ' +
+    ':::mbb:v' +
+    a.version +
+    ' code-tabs ' +
     JSON.stringify({ id: a.id, defaultTab: a.defaultTab, tabs }) +
     '\n\n' +
     codes +
@@ -114,6 +164,17 @@ export function codeTabsSave(a, el) {
         'div',
         { id: tab.id, key: tab.id, className: 'mbb-code-tab' },
         el('p', { 'data-mbb-generated': '', className: 'mbb-code-tab-title' }, tabsLabel(tab)),
+        ...(a.version === 2
+          ? [
+              el(
+                'p',
+                { 'data-mbb-generated': '', className: 'mbb-code-line-summary' },
+                'Starting line: ' +
+                  tab.startLine +
+                  (tab.highlights ? '; highlights: ' + tab.highlights : ''),
+              ),
+            ]
+          : []),
         el(
           'pre',
           {},
@@ -176,6 +237,16 @@ export function registerCodeTabs() {
           tabs: tabs.map((t, i) => (i === index ? { ...t, ...changes } : t)),
           ...('id' in changes && a.defaultTab === tab.id ? { defaultTab: changes.id } : {}),
         });
+      const updateLines = (changes) =>
+        setAttributes({
+          version: 2,
+          tabs: tabs.map((t, i) => ({
+            startLine: 1,
+            highlights: '',
+            ...t,
+            ...(i === index ? changes : {}),
+          })),
+        });
       const action = (label, onClick, disabled = false) =>
         el(wp.components.Button, { variant: 'secondary', onClick, disabled }, label);
       const move = (delta) => {
@@ -213,6 +284,20 @@ export function registerCodeTabs() {
                   field(T('Stable version ID'), 'id'),
                   field(T('Version title (optional)'), 'title'),
                   field(T('Version language'), 'language'),
+                  el(wp.components.TextControl, {
+                    label: T('Starting line number'),
+                    type: 'number',
+                    min: 1,
+                    max: 999999,
+                    value: tab.startLine ?? 1,
+                    onChange: (value) => updateLines({ startLine: Number(value) }),
+                  }),
+                  el(wp.components.TextControl, {
+                    label: T('Highlighted lines or ranges'),
+                    help: T('Use displayed line numbers, for example 12,15-18.'),
+                    value: tab.highlights ?? '',
+                    onChange: (value) => updateLines({ highlights: value }),
+                  }),
                 )
               : null,
             el(wp.components.SelectControl, {
@@ -290,7 +375,9 @@ export function registerCodeTabs() {
           T('Add code version'),
           () => {
             const t = freshTab();
-            setAttributes({ tabs: [...tabs, t] });
+            setAttributes({
+              tabs: [...tabs, a.version === 2 ? { ...t, startLine: 1, highlights: '' } : t],
+            });
             select(tabs.length);
           },
           tabs.length >= 8,
@@ -326,7 +413,7 @@ export function registerCodeTabs() {
         action(T('Duplicate code group'), () => {
           const copies = tabs.map((t) => ({ ...t, id: freshId() }));
           const block = wp.blocks.createBlock('mbb/code-tabs', {
-            version: 1,
+            version: a.version,
             id: freshId(),
             defaultTab: copies[tabs.findIndex((t) => t.id === a.defaultTab)].id,
             tabs: copies,

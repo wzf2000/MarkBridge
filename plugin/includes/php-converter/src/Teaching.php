@@ -771,6 +771,7 @@ final class Teaching
         mixed $attrs,
         bool $source = false,
         ?string $blockName = null,
+        int $sourceVersion = 1,
     ): array {
         if (in_array($kind, ['image', 'gallery'], true)) {
             return NativeMedia::attrs($kind, $attrs);
@@ -823,7 +824,10 @@ final class Teaching
         if (
             !$source &&
             $attrs['version'] !== 1 &&
-            !(in_array($kind, ['bibliography', 'component'], true) && $attrs['version'] === 2)
+            !(
+                in_array($kind, ['bibliography', 'component', 'code-tabs'], true) &&
+                $attrs['version'] === 2
+            )
         ) {
             self::fail('TEACHING_VERSION', 'Unsupported teaching block version');
         }
@@ -847,7 +851,10 @@ final class Teaching
             Technical::attrs($kind, $out);
         }
         if ($kind === 'code-tabs') {
-            $out['tabs'] = self::tabs($out, $source);
+            $out['tabs'] = self::tabs(
+                $source ? $out + ['version' => $sourceVersion] : $out,
+                $source,
+            );
         }
         if (!preg_match('/^[A-Za-z][A-Za-z0-9_-]{0,63}$/D', $out['id'])) {
             self::fail('TEACHING_ID', 'Invalid stable teaching ID');
@@ -909,7 +916,10 @@ final class Teaching
     }
     private static function tabs(array $attrs, bool $source): array
     {
-        $keys = $source ? ['id', 'title', 'terminalNewline'] : ['id', 'title', 'language', 'code'];
+        $keys = array_merge(
+            $source ? ['id', 'title', 'terminalNewline'] : ['id', 'title', 'language', 'code'],
+            ($attrs['version'] ?? 1) === 2 ? ['startLine', 'highlights'] : [],
+        );
         if (
             !array_is_list($attrs['tabs']) ||
             count($attrs['tabs']) < 1 ||
@@ -968,6 +978,65 @@ final class Teaching
                 $bytes += strlen($tab['code']);
                 if (strlen($tab['code']) > 65536 || $bytes > 131072) {
                     self::fail('CODE_TABS_LIMIT', 'Code version/group exceeds 64/128 KiB');
+                }
+            }
+            if (($attrs['version'] ?? 1) === 2) {
+                $count = $source
+                    ? null
+                    : max(
+                        1,
+                        count(
+                            explode(
+                                "\n",
+                                preg_replace(
+                                    '/\n$/',
+                                    '',
+                                    str_replace(["\r\n", "\r"], "\n", $tab['code']),
+                                ),
+                            ),
+                        ),
+                    );
+                if (
+                    !(
+                        is_int($tab['startLine']) ||
+                        (is_float($tab['startLine']) &&
+                            is_finite($tab['startLine']) &&
+                            floor($tab['startLine']) === $tab['startLine'])
+                    ) ||
+                    $tab['startLine'] < 1 ||
+                    $tab['startLine'] > 999999 ||
+                    ($count !== null && $tab['startLine'] + $count - 1 > 999999) ||
+                    !is_string($tab['highlights']) ||
+                    strlen($tab['highlights']) > 512 ||
+                    !preg_match(
+                        '/^(?:[1-9]\d{0,5}(?:-[1-9]\d{0,5})?(?:,[1-9]\d{0,5}(?:-[1-9]\d{0,5})?)*)?$/D',
+                        $tab['highlights'],
+                    )
+                ) {
+                    self::fail('CODE_TABS_LINES', 'Invalid code line metadata');
+                }
+                $tab['startLine'] = (int) $tab['startLine'];
+                $ranges = $tab['highlights'] === '' ? [] : explode(',', $tab['highlights']);
+                if (count($ranges) > 32) {
+                    self::fail('CODE_TABS_LINES', 'Too many highlighted ranges');
+                }
+                $previous = 0;
+                foreach ($ranges as $range) {
+                    $parts = array_map('intval', explode('-', $range));
+                    $start = $parts[0];
+                    $end = $parts[1] ?? $start;
+                    if (
+                        $start < $tab['startLine'] ||
+                        $end < $start ||
+                        $start <= $previous ||
+                        ($count !== null && $end >= $tab['startLine'] + $count)
+                    ) {
+                        self::fail(
+                            'CODE_TABS_LINES',
+                            'Highlighted ranges must be ordered, disjoint and within the code',
+                        );
+                    }
+                    $previous = $end;
                 }
             }
             $tabs[] = array_combine($keys, array_map(static fn($key) => $tab[$key], $keys));
@@ -1319,11 +1388,11 @@ final class Teaching
             if (
                 $protectedLine ||
                 isset($ignored[$i]) ||
-                !preg_match('/^:::mbb:v1 code-tabs (\{[^\r\n]*\})$/D', $text($i), $match)
+                !preg_match('/^:::mbb:v([12]) code-tabs (\{[^\r\n]*\})$/D', $text($i), $match)
             ) {
                 continue;
             }
-            $a = self::attrs('code-tabs', self::json($match[1]), true);
+            $a = self::attrs('code-tabs', self::json($match[2]), true, null, (int) $match[1]);
             $next = $i + 1;
             foreach ($a['tabs'] as $tab) {
                 while ($next < count($rawLines) && preg_match('/^[ \t]*$/D', $text($next))) {
@@ -1478,7 +1547,10 @@ final class Teaching
                 } catch (\JsonException $e) {
                     self::fail('TEACHING_ATTRIBUTES', 'Invalid JSON attributes');
                 }
-                if ($m[1] === '2' && !in_array($m[2], ['bibliography', 'component'], true)) {
+                if (
+                    $m[1] === '2' &&
+                    !in_array($m[2], ['bibliography', 'component', 'code-tabs'], true)
+                ) {
                     self::fail('TEACHING_VERSION', 'Unsupported teaching block version');
                 }
                 if ($m[2] === 'component' && ($m[1] === '2') !== array_key_exists('activity', $a)) {
@@ -1493,7 +1565,7 @@ final class Teaching
                 $data = [
                     'kind' => $m[2],
                     'version' => (int) $m[1],
-                    'attrs' => self::attrs($m[2], $a, true),
+                    'attrs' => self::attrs($m[2], $a, true, null, (int) $m[1]),
                 ];
             }
             $line =
@@ -1632,12 +1704,16 @@ final class Teaching
                             'Code version is not a complete original fence',
                         );
                     }
-                    $tab = [
-                        'id' => $tab['id'],
-                        'title' => $tab['title'],
-                        'language' => $child['attrs']['language'],
-                        'code' => $child['attrs']['code'],
-                    ];
+                    $tab =
+                        [
+                            'id' => $tab['id'],
+                            'title' => $tab['title'],
+                            'language' => $child['attrs']['language'],
+                            'code' => $child['attrs']['code'],
+                        ] +
+                        ($item['attrs']['version'] === 2
+                            ? ['startLine' => $tab['startLine'], 'highlights' => $tab['highlights']]
+                            : []);
                 }
                 unset($tab);
                 $item['children'] = [];
@@ -1895,11 +1971,15 @@ final class Teaching
             $codes = [];
             foreach ($a['tabs'] as $tab) {
                 $terminal = str_ends_with($tab['code'], "\n");
-                $tabs[] = [
-                    'id' => $tab['id'],
-                    'title' => $tab['title'],
-                    'terminalNewline' => $terminal,
-                ];
+                $tabs[] =
+                    [
+                        'id' => $tab['id'],
+                        'title' => $tab['title'],
+                        'terminalNewline' => $terminal,
+                    ] +
+                    ($a['version'] === 2
+                        ? ['startLine' => $tab['startLine'], 'highlights' => $tab['highlights']]
+                        : []);
                 preg_match_all('/`+/', $tab['code'], $runs);
                 $length = 3;
                 foreach ($runs[0] as $run) {
@@ -1914,7 +1994,9 @@ final class Teaching
                     ($terminal ? '' : "\n") .
                     $fence;
             }
-            return ':::mbb:v1 code-tabs ' .
+            return ':::mbb:v' .
+                $a['version'] .
+                ' code-tabs ' .
                 self::encode([
                     'id' => $a['id'],
                     'defaultTab' => $a['defaultTab'],

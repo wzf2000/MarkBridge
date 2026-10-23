@@ -68,6 +68,91 @@ function mbb_static_export_body(string $serialized, array $referenceMap = []): s
     // Canonical HTML only: never call arbitrary render_block/the_content filters.
     $html = preg_replace('/<!--[\s\S]*?-->/', '', $serialized);
     [$doc, $xpath, $root] = mbb_static_export_fragment($html);
+    // Static snapshots retain version anchors, rather than runtime-only line fragments.
+    $lineTargets = [];
+    preg_match_all('/<!-- wp:mbb\/code-tabs (\{[^\r\n]*\}) -->/', $serialized, $codeGroups);
+    foreach ($codeGroups[1] as $rawGroup) {
+        $group = json_decode($rawGroup, true);
+        if (
+            !is_array($group) ||
+            !in_array($group['version'] ?? null, [1, 2], true) ||
+            !is_string($group['id'] ?? null) ||
+            !preg_match('/^[A-Za-z][A-Za-z0-9_-]{0,63}$/D', $group['id']) ||
+            !is_array($group['tabs'] ?? null)
+        ) {
+            continue;
+        }
+        foreach ($group['tabs'] as $tab) {
+            if (
+                !is_array($tab) ||
+                !is_string($tab['id'] ?? null) ||
+                !preg_match('/^[A-Za-z][A-Za-z0-9_-]{0,63}$/D', $tab['id']) ||
+                !is_string($tab['code'] ?? null)
+            ) {
+                continue;
+            }
+            $start = $group['version'] === 2 ? $tab['startLine'] ?? null : 1;
+            if (!is_int($start) || $start < 1 || $start > 999999) {
+                continue;
+            }
+            $nodes = $xpath->query(
+                './/div[@id="' .
+                    $group['id'] .
+                    '" and contains(concat(" ",normalize-space(@class)," ")," wp-block-mbb-code-tabs ")]/div[@id="' .
+                    $tab['id'] .
+                    '" and contains(concat(" ",normalize-space(@class)," ")," mbb-code-tab ")]/pre/code',
+                $root,
+            );
+            if ($nodes->length !== 1) {
+                continue;
+            }
+            $count = max(
+                1,
+                count(
+                    explode(
+                        "\n",
+                        preg_replace(
+                            '/\n$/',
+                            '',
+                            str_replace(["\r\n", "\r"], "\n", $nodes->item(0)->textContent),
+                        ),
+                    ),
+                ),
+            );
+            if ($start + $count - 1 > 999999) {
+                continue;
+            }
+            $key = $group['id'] . '/' . $tab['id'];
+            $lineTargets[$key][] = [
+                'start' => $start,
+                'end' => $start + $count - 1,
+                'id' => $tab['id'],
+            ];
+        }
+    }
+    foreach ($xpath->query('.//a[@href]', $root) as $link) {
+        if (
+            !preg_match(
+                '~^#mbb-code/([A-Za-z][A-Za-z0-9_-]{0,63}/[A-Za-z][A-Za-z0-9_-]{0,63})/L([1-9]\d{0,5})(?:-L([1-9]\d{0,5}))?$~D',
+                $link->getAttribute('href'),
+                $range,
+            )
+        ) {
+            continue;
+        }
+        $targets = $lineTargets[$range[1]] ?? [];
+        $first = (int) $range[2];
+        $last = (int) ($range[3] ?? $range[2]);
+        if (
+            count($targets) === 1 &&
+            $first >= $targets[0]['start'] &&
+            $last >= $first &&
+            $last <= $targets[0]['end']
+        ) {
+            $link->setAttribute('href', '#' . $targets[0]['id']);
+        }
+    }
+
     foreach (
         iterator_to_array(
             $xpath->query(
@@ -78,6 +163,25 @@ function mbb_static_export_body(string $serialized, array $referenceMap = []): s
         as $n
     ) {
         $n->parentNode->removeChild($n);
+    }
+    if (function_exists('mbb_code_tabs_summary_text')) {
+        foreach (
+            $xpath->query('.//p[@data-mbb-generated and @class="mbb-code-line-summary"]', $root)
+            as $summary
+        ) {
+            if (
+                preg_match(
+                    '/^Starting line: ([1-9]\d{0,5})(?:; highlights: ([0-9,-]+))?$/D',
+                    $summary->textContent,
+                    $lineSettings,
+                )
+            ) {
+                $summary->textContent = mbb_code_tabs_summary_text(
+                    (int) $lineSettings[1],
+                    $lineSettings[2] ?? '',
+                );
+            }
+        }
     }
     // Deterministic, collision-free footnote identity local to this saved snapshot.
     $prefix = 'mbb-static-fn-';

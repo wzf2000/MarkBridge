@@ -204,6 +204,17 @@
     } catch {
       return;
     }
+    if (id?.startsWith('mbb-code/')) {
+      const m =
+        /^mbb-code\/([A-Za-z][A-Za-z0-9_-]{0,63})\/([A-Za-z][A-Za-z0-9_-]{0,63})\/L([1-9]\d{0,5})(?:-L([1-9]\d{0,5}))?$/.exec(
+          id,
+        );
+      if (m)
+        codeGroups
+          .get(document.getElementById(m[1]))
+          ?.line(m[2], Number(m[3]), Number(m[4] || m[3]));
+      return;
+    }
     if (id) {
       const node = document.getElementById(id);
       if (node && revealTarget(node)) {
@@ -212,8 +223,49 @@
       }
     }
   }
+  function sourceLines(source) {
+    const lines = source.match(/[^\r\n]*(?:\r\n|\r|\n|$)/g) || [];
+    if (lines.at(-1) === '') lines.pop();
+    return lines.length ? lines : [''];
+  }
+  function validLines(tab) {
+    if (
+      !Number.isInteger(tab.startLine) ||
+      tab.startLine < 1 ||
+      tab.startLine + sourceLines(tab.code).length - 1 > 999999 ||
+      typeof tab.highlights !== 'string' ||
+      tab.highlights.length > 512 ||
+      !/^(?:[1-9]\d{0,5}(?:-[1-9]\d{0,5})?(?:,[1-9]\d{0,5}(?:-[1-9]\d{0,5})?)*)?$/.test(
+        tab.highlights,
+      )
+    )
+      return false;
+    const ranges = tab.highlights ? tab.highlights.split(',') : [];
+    if (ranges.length > 32) return false;
+    let previous = 0;
+    for (const range of ranges) {
+      const [start, last = start] = range.split('-').map(Number);
+      if (
+        start < tab.startLine ||
+        last < start ||
+        start <= previous ||
+        last >= tab.startLine + sourceLines(tab.code).length
+      )
+        return false;
+      previous = last;
+    }
+    return true;
+  }
   function codeTabs(node, options) {
     if (!options || typeof options !== 'object' || Array.isArray(options)) return false;
+    const version = options.version === undefined ? 1 : options.version;
+    if (
+      ![1, 2].includes(version) ||
+      Object.keys(options).some(
+        (k) => !['defaultTab', 'tabs', ...(version === 2 ? ['version'] : [])].includes(k),
+      )
+    )
+      return false;
     const panels = [...node.children].filter((n) => n.classList.contains('mbb-code-tab'));
     const values = options.tabs;
     if (
@@ -226,8 +278,17 @@
           !t ||
           Array.isArray(t) ||
           typeof t !== 'object' ||
-          Object.keys(t).length !== 4 ||
-          Object.keys(t).some((k) => !['id', 'title', 'language', 'code'].includes(k)) ||
+          Object.keys(t).length !== (version === 2 ? 6 : 4) ||
+          Object.keys(t).some(
+            (k) =>
+              ![
+                'id',
+                'title',
+                'language',
+                'code',
+                ...(version === 2 ? ['startLine', 'highlights'] : []),
+              ].includes(k),
+          ) ||
           typeof t.id !== 'string' ||
           !/^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(t.id) ||
           typeof t.title !== 'string' ||
@@ -238,7 +299,8 @@
           typeof t.code !== 'string' ||
           /[\0\uD800-\uDFFF]/u.test(t.code) ||
           new TextEncoder().encode(t.code).length > 65536 ||
-          t.id !== panels[i].id,
+          t.id !== panels[i].id ||
+          (version === 2 && !validLines(t)),
       ) ||
       values.reduce((n, t) => n + new TextEncoder().encode(t.code).length, 0) > 131072 ||
       new Set(values.map((t) => t.id)).size !== values.length ||
@@ -252,6 +314,7 @@
     list.className = 'mbb-code-tabs-list';
     list.setAttribute('role', 'tablist');
     list.setAttribute('aria-label', T('Code versions'));
+    const lineViews = [];
     const tabs = panels.map((panel, index) => {
       const tab = button(languageLabel(values[index].language), () => select(panel, true));
       let suffix = 0;
@@ -291,6 +354,10 @@
               );
               copyControls.append(area);
             }
+            area.setAttribute(
+              'aria-label',
+              T('Code text for manual copying (newlines may be normalized)'),
+            );
             area.value = values[index].code;
             area.focus();
             area.select();
@@ -303,9 +370,189 @@
       copyIcon(copy, T('Copy ') + tab.textContent);
       copyControls.classList.add('mbb-code-panel-tools');
       copyControls.append(copy, status);
+      const summary = panel.querySelector('.mbb-code-line-summary');
+      if (summary && version === 2) {
+        summary.hidden = true;
+        summary.textContent =
+          F(T('Starting line: %1$s'), values[index].startLine) +
+          (values[index].highlights
+            ? '; ' + F(T('Highlighted lines: %1$s'), values[index].highlights)
+            : '');
+      }
       const heading = panel.querySelector('.mbb-code-tab-title');
       if (heading) heading.hidden = !values[index].title;
+      panel.classList.toggle('mbb-code-no-title', !values[index].title);
       panel.insertBefore(copyControls, panel.querySelector('pre'));
+      const code = panel.querySelector('pre code');
+      if (code && node.id && values[index].id) {
+        const value = values[index],
+          lines = sourceLines(value.code),
+          start = value.startLine ?? 1;
+        let windowStart = 0,
+          shown = Math.min(400, lines.length),
+          anchor = start,
+          selected = null;
+        const share = button(T('Copy line link'), async () => {
+          const range = selected || [start, start];
+          const hash =
+            '#mbb-code/' +
+            node.id +
+            '/' +
+            value.id +
+            '/L' +
+            range[0] +
+            (range[1] === range[0] ? '' : '-L' + range[1]);
+          try {
+            await navigator.clipboard.writeText(new URL(hash, location.href).href);
+            status.textContent = T('Line link copied');
+          } catch {
+            let area = copyControls.querySelector('textarea');
+            if (!area) {
+              area = document.createElement('textarea');
+              area.readOnly = true;
+              copyControls.append(area);
+            }
+            area.setAttribute('aria-label', T('Copy line link'));
+            area.value = new URL(hash, location.href).href;
+            area.focus();
+            area.select();
+            status.textContent = T('Copy line link');
+          }
+        });
+        share.className = 'mbb-code-line-share';
+        share.textContent = '';
+        share.setAttribute('aria-label', T('Copy line link'));
+        share.title = T('Copy line link');
+        copyControls.append(share);
+        code.dataset.mbbCodeLines = '';
+        code.style.setProperty(
+          '--mbb-code-digits',
+          String(String(start + lines.length - 1).length),
+        );
+        const marked = (n) =>
+          (value.highlights || '')
+            .split(',')
+            .filter(Boolean)
+            .some((part) => {
+              const [a, b = a] = part.split('-').map(Number);
+              return n >= a && n <= b;
+            });
+        const draw = () => {
+          const rows = lines.slice(windowStart, shown).map((text, offset) => {
+            const i = windowStart + offset;
+            const n = start + i,
+              row = document.createElement('span');
+            row.className = 'mbb-code-line';
+            row.dataset.line = String(n);
+            if (marked(n)) row.dataset.mbbHighlight = '';
+            if (selected && n >= selected[0] && n <= selected[1]) row.dataset.mbbSelected = '';
+            const number = button(F(T('Select code line %1$s'), n), () => {});
+            number.textContent = '';
+            number.className = 'mbb-code-line-number';
+            number.dataset.line = String(n);
+            number.dataset.mbbGenerated = '';
+            number.setAttribute('aria-label', F(T('Select code line %1$s'), n));
+            number.onclick = (event) => {
+              if (!event.shiftKey) anchor = n;
+              selected = [Math.min(anchor, n), Math.max(anchor, n)];
+              const targetHash =
+                '#mbb-code/' +
+                node.id +
+                '/' +
+                value.id +
+                '/L' +
+                selected[0] +
+                (selected[1] === selected[0] ? '' : '-L' + selected[1]);
+              record(false, targetHash);
+              draw();
+              code
+                .querySelector('[data-line="' + n + '"] .mbb-code-line-number')
+                ?.focus({ preventScroll: true });
+            };
+            const content = document.createElement('span');
+            content.className = 'mbb-compare-source';
+            content.dataset.mbbSourceLine = String(i);
+            content.textContent = text;
+            row.append(number, content);
+            return row;
+          });
+          if (windowStart)
+            rows.unshift(document.createTextNode(lines.slice(0, windowStart).join('')));
+          if (shown < lines.length) rows.push(document.createTextNode(lines.slice(shown).join('')));
+          code.replaceChildren(...rows);
+          highlightCompare(code);
+        };
+        const lineNavigation = generated();
+        lineNavigation.classList.add('mbb-code-line-navigation');
+        panel.insertBefore(lineNavigation, panel.querySelector('pre'));
+        const highlightRanges = (value.highlights || '')
+          .split(',')
+          .filter(Boolean)
+          .map((part) => part.split('-').map(Number));
+        const outsideHighlight = () => {
+          for (const [a, b = a] of highlightRanges) {
+            if (a < start + windowStart) return a;
+            if (b >= start + shown) return Math.max(a, start + shown);
+          }
+          return null;
+        };
+        const more = button(T('Next numbered lines'), () => {
+          windowStart = shown;
+          shown = Math.min(lines.length, shown + 400);
+          draw();
+          syncWindow();
+        });
+        more.className = 'mbb-code-lines-more';
+        more.hidden = shown >= lines.length;
+        const earlier = button(T('Previous numbered lines'), () => {
+          windowStart = Math.max(0, windowStart - 400);
+          shown = Math.min(lines.length, windowStart + 400);
+          draw();
+          syncWindow();
+        });
+        const windowHint = document.createElement('span');
+        windowHint.className = 'mbb-code-status';
+        const syncWindow = () => {
+          more.hidden = shown >= lines.length;
+          earlier.hidden = windowStart === 0;
+          if (highlights) highlights.hidden = outsideHighlight() === null;
+          lineNavigation.hidden =
+            more.hidden && earlier.hidden && (!highlights || highlights.hidden);
+          windowHint.textContent =
+            lines.length > 400
+              ? F(
+                  T('Numbered lines %1$s–%2$s; the complete code remains visible.'),
+                  start + windowStart,
+                  start + shown - 1,
+                )
+              : '';
+        };
+        lineNavigation.append(earlier, more, windowHint);
+        const highlights = value.highlights
+          ? button(T('Go to highlighted lines'), () => {
+              const n = outsideHighlight();
+              if (n === null) return;
+              lineViews[index](n, n);
+              panel
+                .querySelector('.mbb-code-line[data-line="' + n + '"]')
+                ?.scrollIntoView({ block: 'center' });
+            })
+          : null;
+        if (highlights) lineNavigation.append(highlights);
+        syncWindow();
+        lineViews[index] = (first, last) => {
+          if (first < start || last < first || last >= start + lines.length) return false;
+          selected = [first, last];
+          anchor = first;
+          windowStart = Math.max(0, first - start - 20);
+          shown = Math.min(lines.length, windowStart + 400);
+          draw();
+          syncWindow();
+          return true;
+        };
+        draw();
+      }
+
       list.append(tab);
       return tab;
     });
@@ -328,6 +575,17 @@
     controls.append(list);
     node.prepend(controls);
     codeGroups.set(node, {
+      line: (id, first, last) => {
+        const index = values.findIndex((v) => v.id === id);
+        if (index < 0 || !lineViews[index]?.(first, last)) return false;
+        revealTarget(panels[index]);
+        select(panels[index], false);
+        measureStageBars();
+        panels[index]
+          .querySelector('.mbb-code-line[data-line="' + first + '"]')
+          ?.scrollIntoView({ block: 'center' });
+        return true;
+      },
       select,
       all: () => {
         full = true;
@@ -499,26 +757,30 @@
     const rows = [[]];
     function split(node, ancestors = []) {
       if (node.nodeType === Node.TEXT_NODE) {
-        const parts = node.textContent.split('\n');
-        parts.forEach((part, i) => {
-          if (i) rows.push([]);
-          let leaf = document.createTextNode(part + (i < parts.length - 1 ? '\n' : ''));
+        const parts = node.textContent.split(/(\r\n|\r|\n)/);
+        for (let i = 0; i < parts.length; i += 2) {
+          const newline = parts[i + 1] || '';
+          let leaf = document.createTextNode(parts[i] + newline);
           for (let j = ancestors.length - 1; j >= 0; j--) {
             const wrapper = ancestors[j].cloneNode(false);
             wrapper.append(leaf);
             leaf = wrapper;
           }
           rows.at(-1).push(leaf);
-        });
+          if (newline) rows.push([]);
+        }
       } else for (const child of node.childNodes) split(child, [...ancestors, node]);
     }
     for (const node of fragment.childNodes) split(node);
     code.querySelectorAll('.mbb-compare-source').forEach((row, i) => {
-      if (rows[i]) row.replaceChildren(...rows[i]);
+      const index = row.dataset.mbbSourceLine === undefined ? i : Number(row.dataset.mbbSourceLine);
+      if (rows[index]) row.replaceChildren(...rows[index]);
     });
   }
   document.addEventListener('mbb:syntax-ready', () => {
-    for (const code of document.querySelectorAll('.wp-block-mbb-code-compare pre code'))
+    for (const code of document.querySelectorAll(
+      '.wp-block-mbb-code-compare pre code,code[data-mbb-code-lines]',
+    ))
       highlightCompare(code);
   });
   function init(root = document) {
@@ -722,11 +984,11 @@
   hash();
   record(true);
   window.addEventListener('hashchange', () => {
-    if (!hasCurrentHistoryView()) hash();
+    if (location.hash.startsWith('#mbb-code/') || !hasCurrentHistoryView()) hash();
   });
   window.addEventListener('popstate', (event) => {
     restore(event.state);
-    if (!hasCurrentHistoryView()) hash();
+    if (location.hash.startsWith('#mbb-code/') || !hasCurrentHistoryView()) hash();
   });
   document.addEventListener('click', (event) => {
     const a = event.target.closest?.('a[href*="#"]');

@@ -17,6 +17,12 @@ function mbb_code_tabs_config_json(array $config): string
         mbb_component_json($config),
     );
 }
+// Derived labels use the current locale; canonical paired markup remains locale independent.
+function mbb_code_tabs_summary_text(int $startLine, string $highlights): string
+{
+    return sprintf(mbb_t('Starting line: %1$s'), $startLine) .
+        ($highlights !== '' ? '; ' . sprintf(mbb_t('Highlighted lines: %1$s'), $highlights) : '');
+}
 // Frontend enhancement never changes stored markup or paragraph identity.
 add_action('init', static function () {
     $schemas = json_decode(
@@ -140,6 +146,31 @@ add_filter(
         );
         if ($kind === 'code-tabs') {
             $config = array_intersect_key($attrs, array_flip(['defaultTab', 'tabs']));
+            if (($attrs['version'] ?? 1) === 2) {
+                $config['version'] = 2;
+            }
+            if (($attrs['version'] ?? 1) === 2) {
+                $summaryIndex = 0;
+                $html = preg_replace_callback(
+                    '/<p data-mbb-generated="" class="mbb-code-line-summary">[^<]*<\/p>/',
+                    static function ($match) use (&$summaryIndex, $attrs) {
+                        $tab = $attrs['tabs'][$summaryIndex++] ?? null;
+                        return is_array($tab) &&
+                            is_int($tab['startLine'] ?? null) &&
+                            is_string($tab['highlights'] ?? null)
+                            ? '<p data-mbb-generated="" class="mbb-code-line-summary">' .
+                                    esc_html(
+                                        mbb_code_tabs_summary_text(
+                                            $tab['startLine'],
+                                            $tab['highlights'],
+                                        ),
+                                    ) .
+                                    '</p>'
+                            : $match[0];
+                    },
+                    $html,
+                );
+            }
         }
         if ($kind === 'component') {
             $paramsConsistent = true;

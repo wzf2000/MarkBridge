@@ -915,3 +915,111 @@
   margin-bottom: 0;
   padding-inline: 0.5rem;
 }
+
+.mbb-code-line {
+  display: block;
+  position: relative;
+  min-height: 1.5em;
+  padding-inline-start: calc(var(--mbb-code-digits, 3) * 0.52em + 1.4em);
+}
+.mbb-code-line-number {
+  position: absolute;
+  inset-inline-start: 0;
+  width: calc(var(--mbb-code-digits, 3) * 0.65em + 1em);
+  padding: 0 0.5em;
+  border: 0;
+  border-inline-end: 1px solid var(--mbb-teaching-border, #ccd1d0);
+  color: inherit;
+  background: transparent;
+  opacity: 0.65;
+  font: inherit;
+  font-size: 0.8em;
+  height: 100%;
+  box-sizing: border-box;
+  text-align: end;
+  cursor: pointer;
+}
+.mbb-code-line-number::before {
+  content: attr(data-line);
+}
+.mbb-code-line-number:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+  opacity: 1;
+}
+.mbb-code-line[data-mbb-highlight] {
+  background: var(--mbb-teaching-highlight, rgba(160, 145, 45, 0.12));
+}
+.mbb-code-line[data-mbb-selected] {
+  background: var(--mbb-teaching-selected, rgba(72, 124, 150, 0.22));
+}
+.mbb-code-line-share,
+.mbb-code-lines-more {
+  font-size: 0.8em;
+}
+@media print {
+  .mbb-code-line-number {
+    pointer-events: none;
+  }
+}
+
+/* Code tabs keep two compact actions beside the title; long-code navigation flows below. */
+.mbb-code-tab {
+  --mbb-code-tool-size: 30px;
+}
+.mbb-code-tab-title {
+  padding-inline-end: calc(2 * var(--mbb-code-tool-size) + 2.2rem);
+}
+.mbb-code-no-title {
+  padding-block-start: calc(var(--mbb-code-tool-size) + 1rem);
+}
+.mbb-teaching-controls .mbb-code-line-share {
+  position: relative;
+  width: var(--mbb-code-tool-size);
+  height: var(--mbb-code-tool-size);
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+}
+.mbb-code-line-share::before,
+.mbb-code-line-share::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 8px;
+  border: 1.5px solid currentColor;
+  border-radius: 5px;
+  transform: translate(-50%, -50%) rotate(-35deg);
+}
+.mbb-code-line-share::before {
+  left: calc(50% - 4px);
+}
+.mbb-code-line-share::after {
+  left: calc(50% + 4px);
+}
+.mbb-code-line-navigation {
+  padding: 0.35rem 1rem;
+  margin: 0;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.mbb-code-line-navigation[hidden] {
+  display: none;
+}
+@media (pointer: coarse) {
+  .mbb-code-tab {
+    --mbb-code-tool-size: 44px;
+  }
+}
+@media print {
+  .mbb-code-line-summary[hidden] {
+    display: block !important;
+  }
+  .mbb-code-line-navigation {
+    display: none !important;
+  }
+  .mbb-code-no-title {
+    padding-block-start: 0;
+  }
+}

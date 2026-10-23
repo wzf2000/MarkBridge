@@ -1113,7 +1113,16 @@ final class Converter
                                     ? $tab['language']
                                     : '代码'),
                         ) .
-                        '</p><pre><code' .
+                        '</p>' .
+                        (($attrs['version'] ?? 1) === 2
+                            ? '<p data-mbb-generated="" class="mbb-code-line-summary">Starting line: ' .
+                                $tab['startLine'] .
+                                ($tab['highlights'] !== ''
+                                    ? '; highlights: ' . self::elementText($tab['highlights'])
+                                    : '') .
+                                '</p>'
+                            : '') .
+                        '<pre><code' .
                         ($tab['language'] === ''
                             ? ''
                             : ' class="language-' . self::attribute($tab['language']) . '"') .

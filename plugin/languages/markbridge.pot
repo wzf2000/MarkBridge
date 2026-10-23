@@ -933,6 +933,10 @@ msgid "At most 32 actual images may be exported"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "At most 32 highlighted ranges are allowed"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "At most 32 image targets"
 msgstr ""
 
@@ -1639,6 +1643,10 @@ msgid "Code line numbers"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Code line numbers must remain between 1 and 999999"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Code markup only supports plain text"
 msgstr ""
 
@@ -1978,6 +1986,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Copy identity metadata"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Copy line link"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2912,6 +2924,10 @@ msgid "Go"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Go to highlighted lines"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Go to line"
 msgstr ""
 
@@ -2981,6 +2997,23 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Highlighted lines must be unique positive integers separated by commas"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Highlighted lines or ranges"
+msgstr ""
+
+#, php-format
+#: plugin/i18n.js
+msgid "Highlighted lines: %1$s"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Highlighted ranges must be ordered, disjoint and within the code"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Highlights require comma-separated lines or closed ranges"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3332,6 +3365,10 @@ msgid "Invalid code language"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Invalid code line metadata"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Invalid component name or version"
 msgstr ""
 
@@ -3557,6 +3594,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Line differences: "
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Line link copied"
 msgstr ""
 
 #: plugin/i18n.js
@@ -4147,6 +4188,10 @@ msgid "Next match"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Next numbered lines"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Next page"
 msgstr ""
 
@@ -4228,6 +4273,11 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Nothing is stored by default. When enabled, drafts are stored as unencrypted text in this browser and may be accessible to other users of a shared device. At most 8 records and 1 MiB total, expiring after 7 days. This is not a substitute for saving to the site."
+msgstr ""
+
+#, php-format
+#: plugin/i18n.js
+msgid "Numbered lines %1$s–%2$s; the complete code remains visible."
 msgstr ""
 
 #: plugin/i18n.js
@@ -4709,6 +4759,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Previous match"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Previous numbered lines"
 msgstr ""
 
 #: plugin/i18n.js
@@ -5364,6 +5418,11 @@ msgstr ""
 msgid "Select at least one article before preparing a snapshot."
 msgstr ""
 
+#, php-format
+#: plugin/i18n.js
+msgid "Select code line %1$s"
+msgstr ""
+
 #: plugin/i18n.js
 msgid "Select editable public articles without passwords, or explicitly include selected private drafts. Password-protected articles are not supported."
 msgstr ""
@@ -5435,6 +5494,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Show line numbers beside frontend code blocks."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Show more code lines"
 msgstr ""
 
 #: plugin/i18n.js
@@ -5597,6 +5660,15 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Start interactive demonstration"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Starting line number"
+msgstr ""
+
+#, php-format
+#: plugin/i18n.js
+msgid "Starting line: %1$s"
 msgstr ""
 
 #, php-format
@@ -7942,6 +8014,10 @@ msgid "Tolerance"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Too many highlighted ranges"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Too many media files were generated"
 msgstr ""
 
@@ -8237,6 +8313,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Use bibliography candidate"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Use displayed line numbers, for example 12,15-18."
 msgstr ""
 
 #: plugin/i18n.js

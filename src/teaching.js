@@ -70,7 +70,14 @@ export const teachingKind = (name) =>
   (name?.startsWith('mbb/') && Object.hasOwn(teachingSchemas, name.slice(4))
     ? name.slice(4)
     : null);
-export function teachingAttributes(kind, attrs, fail, source = false, blockName = null) {
+export function teachingAttributes(
+  kind,
+  attrs,
+  fail,
+  source = false,
+  blockName = null,
+  sourceVersion = 1,
+) {
   if (mediaKinds.has(kind)) return mediaAttributes(kind, attrs, fail, source);
   if (nativeAdapterKinds.has(kind)) return nativeAttributes(kind, attrs, fail, source);
   if (kind === 'adapter') {
@@ -115,7 +122,7 @@ export function teachingAttributes(kind, attrs, fail, source = false, blockName 
   if (
     !source &&
     attrs.version !== 1 &&
-    !(['bibliography', 'component'].includes(kind) && attrs.version === 2)
+    !(['bibliography', 'component', 'code-tabs'].includes(kind) && attrs.version === 2)
   )
     fail('TEACHING_VERSION', 'The teaching block version must be 1');
   if (Object.values(attrs).some((v) => typeof v === 'string' && /[\uD800-\uDFFF]/u.test(v)))
@@ -130,7 +137,8 @@ export function teachingAttributes(kind, attrs, fail, source = false, blockName 
     return out;
   }
   if (technicalKind('mbb/' + kind)) technicalAttributes(kind, out, fail);
-  if (kind === 'code-tabs') out.tabs = codeTabsAttributes(out, source, fail);
+  if (kind === 'code-tabs')
+    out.tabs = codeTabsAttributes(source ? { ...out, version: sourceVersion } : out, source, fail);
   if (!/^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(out.id))
     fail(
       'TEACHING_ID',
@@ -291,9 +299,16 @@ export function teachingSource(source, fail, ignored = new Set(), nonce, fences 
   for (let i = 0; i < lines.length; i++) {
     if (ignored.has(i) || protectedHTML.some(([a, b]) => offsets[i] >= a && offsets[i] < b))
       continue;
-    const match = /^:::mbb:v1 code-tabs (\{[^\r\n]*\})$/.exec(text(i));
+    const match = /^:::mbb:v([12]) code-tabs (\{[^\r\n]*\})$/.exec(text(i));
     if (!match) continue;
-    const a = teachingAttributes('code-tabs', teachingJSON(match[1], fail), fail, true);
+    const a = teachingAttributes(
+      'code-tabs',
+      teachingJSON(match[2], fail),
+      fail,
+      true,
+      null,
+      Number(match[1]),
+    );
     let next = i + 1;
     for (const tab of a.tabs) {
       while (next < lines.length && /^[ \t]*$/.test(text(next))) next++;
@@ -389,7 +404,7 @@ export function teachingSource(source, fail, ignored = new Set(), nonce, fences 
         } catch {
           fail('TEACHING_ATTRIBUTES', 'Teaching attributes must be a valid JSON object');
         }
-        if (match[1] === '2' && !['bibliography', 'component'].includes(match[2]))
+        if (match[1] === '2' && !['bibliography', 'component', 'code-tabs'].includes(match[2]))
           fail('TEACHING_VERSION', 'The teaching block version must be 1');
         if (match[2] === 'component' && (match[1] === '2') !== Object.hasOwn(attrs, 'activity'))
           fail(
@@ -404,7 +419,7 @@ export function teachingSource(source, fail, ignored = new Set(), nonce, fences 
         data = {
           kind: match[2],
           version: Number(match[1]),
-          attrs: teachingAttributes(match[2], attrs, fail, true),
+          attrs: teachingAttributes(match[2], attrs, fail, true, null, Number(match[1])),
         };
       }
       const hex = [...new TextEncoder().encode(JSON.stringify(data))]
@@ -500,6 +515,7 @@ export function assembleTeaching(blocks, make, fail) {
         title: t.title,
         language: item.children[i].attributes.language,
         code: item.children[i].attributes.code,
+        ...(item.attrs.version === 2 ? { startLine: t.startLine, highlights: t.highlights } : {}),
       }));
       item.children = [];
     }

@@ -176,7 +176,11 @@
           // A theme may run highlightAll again after our renderer. Comparison rows are
           // already highlighted as a whole source and must retain their annotations.
           Prism.hooks.add('before-sanity-check', (env) => {
-            if (env.element.closest('.wp-block-mbb-code-compare')) env.code = '';
+            if (
+              env.element.closest('.wp-block-mbb-code-compare') ||
+              env.element.hasAttribute('data-mbb-code-lines')
+            )
+              env.code = '';
           });
           Prism.hooks.add('complete', ({ element }) => {
             if (!element.closest('.wp-block-mbb-code-tabs,.wp-block-mbb-code-compare')) return;
@@ -210,7 +214,10 @@
         !/(?:^|\s)lang(?:uage)?-\S+/.test(block.parentElement.className)
       )
         block.classList.add('language-text');
-      if (block.closest('.wp-block-mbb-code-compare')) {
+      if (
+        block.closest('.wp-block-mbb-code-compare') ||
+        block.hasAttribute('data-mbb-code-lines')
+      ) {
         // Its renderer preserves diff rows while distributing whole-source Prism tokens.
         highlighted.set(block, codeSignature(block));
         prepareComparison(block);
