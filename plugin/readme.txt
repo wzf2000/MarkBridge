@@ -3,7 +3,7 @@ Tags: markdown, blocks, editor, mathjax, revisions
 Requires at least: 7.1
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 3.4.0-rc.2
+Stable tag: 3.4.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -14,7 +14,7 @@ MarkBridge provides paired Markdown/block editing, previews, revisions, local Ma
 
 New installations use the bundled PHP converter with PHP 8.2+, DOM and mbstring on WordPress 7.1.x. No Node.js runtime or subprocess is required for supported content. Existing non-empty runtime settings retain Node until an administrator explicitly switches; unsupported environments or content are rejected without fallback.
 
-This readme applies to MarkBridge 3.4.0-rc.2. WordPress.org submission and approval are separate from a GitHub release. Download reviewed installation packages from GitHub Releases; source archives are not installation packages. Chinese and English interface text follows the WordPress user language in the editor and the site language for readers.
+This readme applies to MarkBridge 3.4.0. WordPress.org submission and approval are separate from a GitHub release. Download reviewed installation packages from GitHub Releases; source archives are not installation packages. Chinese and English interface text follows the WordPress user language in the editor and the site language for readers.
 
 Private paired candidate backups for existing managed articles are stored in non-autoloaded database options, up to 10 per account/article for 7 days within a 32 MiB site quota. They never save a post or write a source file. Core Markdown editing does not call an external service. Local recovery is off until an author explicitly enables browser storage; it is not encrypted or a server backup. Optional ZIP images use normal WordPress media storage: a draft or private article does not make the media URL private. Bound-file writeback requires separate trusted server configuration. A GitHub updater, if chosen, is a separate plugin requiring explicit consent; it is not included in this package.
 
@@ -25,8 +25,11 @@ Private paired candidate backups for existing managed articles are stored in non
 
 == Changelog ==
 
-= 3.4.0-rc.2 =
-* Improve component parameter controls and restore static projections when an interactive preview closes or is printed.
+= 3.4.0 =
+* 支持有界原生分组、代码与预格式化文本往返，保护代码中的短代码与嵌入字面量。
+* 代码页签增加行号、高亮、行链接；新增有界组件目录、分页选择和按需精确解析，旧文章不自动升级。
+* 增加固定公开资源协议与显式审核的固定 Worker/WASM profile；保留静态阅读、打印和出版。
+* 新安装默认 PHP；可选 Node 须先验证，最低版本为 24.22.1。
 
 = 3.2.0-rc.5 =
 * Add an explicit audited fixed Worker/WASM HTTP frame profile; default data, article source and parent CSP remain unchanged.
