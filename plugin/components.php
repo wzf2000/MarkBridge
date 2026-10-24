@@ -404,7 +404,8 @@ function mbb_component_register_checked(
         ]) ||
         (array_key_exists('supportsUiLocale', $provider) &&
             !is_bool($provider['supportsUiLocale'])) ||
-        (array_key_exists('readerMode', $provider) && $provider['readerMode'] !== 'diagram') ||
+        (array_key_exists('readerMode', $provider) &&
+            !in_array($provider['readerMode'], ['diagram', 'relation-map/v1'], true)) ||
         (array_key_exists('activityVersion', $provider) && $provider['activityVersion'] !== 1) ||
         array_diff($fields, array_keys($provider)) ||
         !preg_match('/^[a-z][a-z0-9-]{0,63}$/D', $id) ||
@@ -692,6 +693,7 @@ require_once __DIR__ . '/component-catalog.php';
 
 require_once __DIR__ . '/component-diagnostics.php';
 
+require_once __DIR__ . '/relation-map.php';
 require_once __DIR__ . '/projections.php';
 
 require_once __DIR__ . '/component-frame.php';

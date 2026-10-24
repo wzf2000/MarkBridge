@@ -845,3 +845,132 @@ test('v1 arbitrary budget-like error codes remain ordinary execution failures', 
   await expect(page.locator('iframe')).toHaveCount(1);
   expect(await page.evaluate(() => MarkBridgeComponents.activeCount())).toBe(0);
 });
+
+test('native relation-map: native links, mobile branch/full view and drag lifecycle', async ({
+  page,
+  context,
+}) => {
+  await page.goto('/health');
+  const params = {
+    format: 'relation-map/v1',
+    title: '主题关系图',
+    groups: ['基础主题', '序列主题', '搜索主题', '扫描主题'].map((title, i) => ({
+      id: 'g' + i,
+      title,
+    })),
+    nodes: Array.from({ length: 15 }, (_, i) => ({
+      id: 'n' + i,
+      group: 'g' + (i < 6 ? 0 : i < 10 ? 1 : i < 13 ? 2 : 3),
+      title: i === 0 ? '从一个较长的中文问题题名理解状态与关系的联系' : '中文主题 ' + (i + 1),
+      url: '/relation-map-target?node=n' + i,
+    })),
+    edges: [],
+  };
+  for (let i = 0; i < 14; i++)
+    params.edges.push({ from: 'n' + i, to: 'n' + (i + 1), kind: 'recommended' });
+  params.edges.push(
+    { from: 'n0', to: 'n1', kind: 'compare', why: '相同端点保留不同关系。' },
+    { from: 'n0', to: 'n6', kind: 'recommended', why: '同一终点有两个推荐入边。' },
+    { from: 'n10', to: 'n6', kind: 'optimization' },
+  );
+  await context.route('**/relation-map-target?*', (r) =>
+    r.fulfill({
+      contentType: 'text/html;charset=utf-8',
+      body: '<!doctype html><h1>合成目标文章</h1>',
+    }),
+  );
+  const styles = ['teaching.css', 'relation-map.css']
+    .map((name) => fs.readFileSync(path.join(plugin, name), 'utf8'))
+    .join('\n');
+  await page.setContent(
+    '<meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;padding:20px;font:16px/1.7 system-ui}article{max-width:850px;margin:auto}footer{height:600px}' +
+      styles +
+      '</style><article><div id="native-map" data-mbb-teaching="component"><div class="mbb-teaching-body">作者说明始终保留。</div></div></article><footer></footer>',
+  );
+  await page.addScriptTag({ url: '/fixture-localization.js?locale=zh_CN' });
+  await page.evaluate((params) => {
+    const provider = {
+      id: 'native-fixture',
+      version: '0.1.0',
+      protocolVersion: 1,
+      minMarkBridge: '3.5.0-rc.1',
+      readerMode: 'relation-map/v1',
+      title: 'Native map',
+      resource: { url: location.origin + '/native-unused.html.txt', sha256: '0'.repeat(64) },
+      budgets: {
+        resourceBytes: 524288,
+        startupMs: 5000,
+        wallMs: 2000,
+        traceFrames: 8192,
+        traceBytes: 524288,
+      },
+    };
+    window.MBBComponents = [provider];
+    window.MBB_COMPONENTS_READER = true;
+    document.querySelector('#native-map').dataset.mbbTeachingConfig = JSON.stringify({
+      status: 'available',
+      component: provider.id,
+      componentVersion: provider.version,
+      params,
+    });
+  }, params);
+  const assets = JSON.parse(fs.readFileSync(path.join(plugin, 'assets.json'), 'utf8'));
+  await page.addScriptTag({
+    content: fs.readFileSync(path.join(plugin, assets['components.js']), 'utf8'),
+  });
+  await expect(page.locator('#native-map')).toHaveAttribute('data-mbb-component-state', 'ready');
+  const mobile = page.viewportSize().width <= 700;
+  await expect(page.locator('.mbb-relation-node')).toHaveCount(mobile ? 6 : 15);
+  await expect(page.locator('iframe')).toHaveCount(0);
+  await expect(page.locator('.mbb-teaching-body')).toBeVisible();
+  if (mobile) {
+    await expect(page.locator('.mbb-relation-cross')).toContainText('跨分支联系');
+    await page.getByRole('button', { name: '查看全图', exact: true }).click();
+    await expect(page.locator('.mbb-relation-node')).toHaveCount(15);
+    await page.getByRole('button', { name: '拖动画布：关闭', exact: true }).click();
+    await page.getByRole('button', { name: '返回分支', exact: true }).click();
+    await expect(page.getByLabel('当前分支', { exact: true })).toBeFocused();
+    await expect(page.locator('.mbb-relation-viewport')).not.toHaveClass(/is-panning/);
+    expect(
+      await page.locator('.mbb-relation-viewport').evaluate((n) => getComputedStyle(n).touchAction),
+    ).toBe('pan-y');
+    await page.evaluate(() => scrollTo(0, 0));
+    const cdp = await context.newCDPSession(page);
+    await cdp.send('Input.dispatchTouchEvent', {
+      type: 'touchStart',
+      touchPoints: [{ x: 180, y: 600 }],
+    });
+    for (let i = 1; i <= 8; i++) {
+      await cdp.send('Input.dispatchTouchEvent', {
+        type: 'touchMove',
+        touchPoints: [{ x: 180, y: 600 - i * 35 }],
+      });
+      await page.waitForTimeout(25);
+    }
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await expect.poll(() => page.evaluate(() => scrollY)).toBeGreaterThan(0);
+    await page.getByRole('button', { name: '查看全图', exact: true }).click();
+  }
+  await expect(page.locator('.mbb-relation-lines .edge')).toHaveCount(17);
+  const popupPromise = context.waitForEvent('page');
+  await page.locator('.mbb-relation-node').first().click({ button: 'middle' });
+  const popup = await popupPromise;
+  await popup.waitForURL('**/relation-map-target?node=n0');
+  await expect(popup.getByRole('heading', { name: '合成目标文章' })).toBeVisible();
+  await popup.close();
+  await page.getByRole('button', { name: '重置视图', exact: true }).click();
+  await page.getByRole('button', { name: '拖动画布：关闭', exact: true }).click();
+  const first = page.locator('.mbb-relation-node').first();
+  await first.scrollIntoViewIfNeeded();
+  const box = await first.boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 24, box.y + box.height / 2 + 12, { steps: 5 });
+  await page.mouse.up();
+  expect(new URL(page.url()).pathname).toBe('/health');
+  await page.getByRole('button', { name: '重置视图', exact: true }).click();
+  await first.focus();
+  await page.keyboard.press('Enter');
+  await page.waitForURL('**/relation-map-target?node=n0');
+  await expect(page.getByRole('heading', { name: '合成目标文章' })).toBeVisible();
+});

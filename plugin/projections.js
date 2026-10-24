@@ -131,6 +131,27 @@
       wrapper.className = 'mbb-projection';
       wrapper.setAttribute('data-mbb-generated', '');
       try {
+        if (item.projection?.schema === 'relation-map/v1') {
+          if (
+            !['available', 'author-fallback'].includes(item.state) ||
+            !closed(item.projection, ['schema', 'map', 'locale']) ||
+            !['zh', 'en'].includes(item.projection.locale) ||
+            JSON.stringify(item.projection.map) !== JSON.stringify(item.params)
+          )
+            fail();
+          wrapper.append(
+            globalThis.MBBRelationMap.staticView(
+              doc,
+              item.projection.map,
+              item.projection.locale === 'zh',
+            ),
+          );
+          const bytes = new TextEncoder().encode(wrapper.outerHTML).length;
+          if (bytes > 131072 || total + bytes > 524288) fail();
+          total += bytes;
+          targets[0].prepend(wrapper);
+          continue;
+        }
         if (item.state !== 'available') fail();
         const keys = validate(item.projection),
           map = new Map();

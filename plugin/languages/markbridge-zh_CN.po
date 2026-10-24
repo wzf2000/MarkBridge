@@ -777,6 +777,14 @@ msgid "All content"
 msgstr "全部内容"
 
 #: plugin/i18n.js
+msgid "All relationships"
+msgstr "完整关系说明"
+
+#: plugin/i18n.js
+msgid "All relationships and articles"
+msgstr "完整关系与文章列表"
+
+#: plugin/i18n.js
 msgid "All whitespace is preserved. Empty code and code without a trailing newline are allowed."
 msgstr "保留所有空白；允许空代码或没有末尾换行。"
 
@@ -983,6 +991,10 @@ msgstr "此文档的自动保存与修订不能单独写入。"
 #: plugin/i18n.js
 msgid "Awaiting selection"
 msgstr "待选择"
+
+#: plugin/i18n.js
+msgid "Back to branch"
+msgstr "返回分支"
 
 #: plugin/i18n.js
 msgid "Batch Markdown source"
@@ -1495,6 +1507,14 @@ msgid "Choose an existing article."
 msgstr "请选择已有文章。"
 
 #: plugin/i18n.js
+msgid "Choose an existing group for every node."
+msgstr "每个节点都须选择已定义的分组；请先调整引用，再删除分组。"
+
+#: plugin/i18n.js
+msgid "Choose an existing item"
+msgstr "选择已有条目"
+
+#: plugin/i18n.js
 msgid "Choose an existing line."
 msgstr "请选择存在的行号。"
 
@@ -1525,6 +1545,10 @@ msgstr "请逐项选择全部正文和元数据冲突。采用只生成未保存
 #: plugin/i18n.js
 msgid "Choose every conflict explicitly"
 msgstr "请逐项选择全部冲突"
+
+#: plugin/i18n.js
+msgid "Choose existing, different endpoints for every relationship."
+msgstr "每条关系须选择两个不同的已有节点；请先调整关系，再删除节点。"
 
 #: plugin/i18n.js
 msgid "Choose explicit BibTeX merge or replacement"
@@ -1743,6 +1767,10 @@ msgid "Companion series import is unavailable or exceeds the bounded candidate l
 msgstr "Companion 系列导入不可用或超过候选列表上限，请手动选择文章。"
 
 #: plugin/i18n.js
+msgid "Compare ideas"
+msgstr "思想对照"
+
+#: plugin/i18n.js
 msgid "Compatibility and advanced runtime settings"
 msgstr "兼容与高级运行环境设置"
 
@@ -1865,6 +1893,10 @@ msgstr "确认此快照"
 #: plugin/i18n.js
 msgid "Conflict repair requires an administrator and the unchanged article identity."
 msgstr "冲突修复需要管理员权限，且文章身份须保持不变。"
+
+#: plugin/i18n.js
+msgid "Connections to other branches"
+msgstr "跨分支联系"
 
 #: plugin/i18n.js
 msgid "Container must contain only its declared child blocks"
@@ -2065,6 +2097,10 @@ msgid "Current blocks were converted to Markdown for preview and have not been s
 msgstr "将当前区块转换回 Markdown 并预览，尚未保存。"
 
 #: plugin/i18n.js
+msgid "Current branch"
+msgstr "当前分支"
+
+#: plugin/i18n.js
 msgid "Current categories or tags could not be read"
 msgstr "无法读取当前分类或标签"
 
@@ -2175,6 +2211,10 @@ msgstr "删除配置不会删除文章。最多 10 篇；已核验图片总计�
 #: plugin/i18n.js
 msgid "Dependency loading"
 msgstr "依赖加载"
+
+#: plugin/i18n.js
+msgid "Description"
+msgstr "简要说明"
 
 #: plugin/i18n.js
 msgid "Details"
@@ -2330,6 +2370,14 @@ msgid "Draft title"
 msgstr "草稿标题"
 
 #: plugin/i18n.js
+msgid "Drag canvas: "
+msgstr "拖动画布："
+
+#: plugin/i18n.js
+msgid "Drag canvas: off"
+msgstr "拖动画布：关闭"
+
+#: plugin/i18n.js
 msgid "Dropping particle"
 msgstr "可省略前缀"
 
@@ -2416,6 +2464,10 @@ msgid "Each operation processes at most ten articles. Continue until ready; no b
 msgstr "每次最多处理十篇文章，请继续操作至就绪；不会安排后台任务。"
 
 #: plugin/i18n.js
+msgid "Each pair may contain each relationship kind only once."
+msgstr "同一对节点的同一种关系只能出现一次。"
+
+#: plugin/i18n.js
 msgid "Each registration descriptor is limited to 16 KiB"
 msgstr "单个登记描述最多 16 KiB"
 
@@ -2435,6 +2487,10 @@ msgstr "边"
 #: plugin/i18n.js
 msgid "Edit inline formula: %1$s"
 msgstr "编辑行内公式：%1$s"
+
+#: plugin/i18n.js
+msgid "Edit item"
+msgstr "编辑条目"
 
 #: plugin/i18n.js
 msgid "Edit or upload Markdown, then check the differences."
@@ -2511,6 +2567,10 @@ msgstr "公式"
 #: plugin/i18n.js
 msgid "Every cross-site native image requires a verified association"
 msgstr "跨站副本中每张原生图片都需要经核验的关联"
+
+#: plugin/i18n.js
+msgid "Every group must contain at least one node."
+msgstr "每个分组至少保留一个节点。"
 
 #: plugin/i18n.js
 msgid "Every local image must be a readable attachment of its selected article. External images remain links and are not fetched."
@@ -2795,6 +2855,14 @@ msgid "Footnotes belong only in the footnote section"
 msgstr "脚注只能位于脚注区"
 
 #: plugin/i18n.js
+msgid "For further optimization"
+msgstr "用于后续优化"
+
+#: plugin/i18n.js
+msgid "Format"
+msgstr "格式"
+
+#: plugin/i18n.js
 msgid "Formula engine failed to load: "
 msgstr "公式引擎加载失败："
 
@@ -2846,6 +2914,10 @@ msgstr "公式排版超时，已保留源码，可重试。"
 msgid "Four interactive previews are already open. Close another preview first."
 msgstr "已打开 4 个交互预览，请先关闭其他预览。"
 
+#: plugin/i18n.js
+msgid "From"
+msgstr "起点"
+
 #, php-format
 #: plugin/i18n.js
 msgid "From line %1$s: current %2$s lines → revision %3$s lines (including unchanged lines between changes)."
@@ -2878,6 +2950,10 @@ msgstr "FrontMatter 值必须是合法 JSON"
 #: plugin/i18n.js
 msgid "Full explanation"
 msgstr "完整解析"
+
+#: plugin/i18n.js
+msgid "Full map"
+msgstr "全图"
 
 #: plugin/i18n.js
 msgid "Full reading entry must remain enabled"
@@ -2930,6 +3006,14 @@ msgstr "跳到重点行"
 #: plugin/i18n.js
 msgid "Go to line"
 msgstr "跳转行号"
+
+#: plugin/i18n.js
+msgid "Group"
+msgstr "所属分组"
+
+#: plugin/i18n.js
+msgid "Groups"
+msgstr "分组"
 
 #: plugin/i18n.js
 msgid "Groups only support div or section tags"
@@ -3027,6 +3111,10 @@ msgstr "我已核对并接受列出的 CSL-JSON 字段损失"
 #: plugin/i18n.js
 msgid "I reviewed and accept the proposed citation keys"
 msgstr "我已核对并接受候选引用键"
+
+#: plugin/i18n.js
+msgid "Identifier"
+msgstr "稳定标识"
 
 #: plugin/i18n.js
 msgid "Image alternative text cannot contain footnote markers"
@@ -3459,6 +3547,10 @@ msgstr "图片映射非法或重复"
 #: plugin/i18n.js
 msgid "Invalid plain text field type, Unicode, or length"
 msgstr "纯文字字段类型、Unicode 或长度非法"
+
+#: plugin/i18n.js
+msgid "Invalid relationship map configuration."
+msgstr "关系图配置不完整、含未知字段或超过范围，请检查题名、稳定标识与数量。"
 
 #: plugin/i18n.js
 msgid "Invalid stable teaching ID"
@@ -4232,6 +4324,10 @@ msgid "No compatible self-check templates are registered. Existing static conten
 msgstr "尚未登记兼容的自测样板；既有静态内容仍可阅读。"
 
 #: plugin/i18n.js
+msgid "No cross-branch relationships in this branch."
+msgstr "这个分支暂无跨组联系。"
+
+#: plugin/i18n.js
 msgid "No fields are applied by default. Select fields and preview again. Clearing a selection changes neither current article settings nor the header."
 msgstr "默认不应用。逐项选择后须重新预览；取消选择不会改写当前文章设置或头部。"
 
@@ -4392,6 +4488,10 @@ msgstr "阶段组只能包含阶段"
 #: plugin/i18n.js
 msgid "Only unlinked native images are supported in this version"
 msgstr "此版本仅支持不带链接的原生图片"
+
+#: plugin/i18n.js
+msgid "Open an article by its title. Connections suggest reading paths; choose your own starting point."
+msgstr "点击题名打开文章。连线是阅读建议，可按熟悉程度选择起点。"
 
 #: plugin/i18n.js
 msgid "Open created draft"
@@ -5046,6 +5146,18 @@ msgid "Rejected registrations"
 msgstr "被拒绝的登记"
 
 #: plugin/i18n.js
+msgid "Relations suggest reading paths and connections; choose your own starting point."
+msgstr "连线表示阅读建议与思想联系，可按熟悉程度选择起点。"
+
+#: plugin/i18n.js
+msgid "Relationship canvas; arrow keys pan when drag mode is on"
+msgstr "关系图画布，拖动模式下可用方向键平移"
+
+#: plugin/i18n.js
+msgid "Relationship explanation"
+msgstr "关系说明"
+
+#: plugin/i18n.js
 msgid "Removal count"
 msgstr "移除数量"
 
@@ -5124,6 +5236,10 @@ msgstr "保留的内部教学标记不能作为 Markdown 输入"
 #: plugin/i18n.js
 msgid "Reset size"
 msgstr "重置大小"
+
+#: plugin/i18n.js
+msgid "Reset view"
+msgstr "重置视图"
 
 #: plugin/i18n.js
 msgid "Resource SHA-256"
@@ -5513,6 +5629,10 @@ msgid "Show full text"
 msgstr "显示全文"
 
 #: plugin/i18n.js
+msgid "Show in map"
+msgstr "在图中查看"
+
+#: plugin/i18n.js
 msgid "Show line numbers beside frontend code blocks."
 msgstr "在前台代码块旁显示行号。"
 
@@ -5823,6 +5943,10 @@ msgstr "结构读法与逐项探索"
 #: plugin/i18n.js
 msgid "Structured year, month and day"
 msgstr "结构化年月日"
+
+#: plugin/i18n.js
+msgid "Suggested reading order"
+msgstr "推荐阅读顺序"
 
 #: plugin/i18n.js
 msgid "Sync by content anchors"
@@ -7293,6 +7417,10 @@ msgid "The reference operation input is invalid."
 msgstr "引用操作输入无效。"
 
 #: plugin/i18n.js
+msgid "The relationship map validator is unavailable. Reload before applying parameters."
+msgstr "关系图校验器尚未就绪，请刷新页面后再应用参数。"
+
+#: plugin/i18n.js
 msgid "The remaining expanded batch budget is exhausted"
 msgstr "批次剩余展开大小预算已耗尽"
 
@@ -8038,6 +8166,10 @@ msgid "Title: %1$s → %2$s"
 msgstr "标题：%1$s → %2$s"
 
 #: plugin/i18n.js
+msgid "To"
+msgstr "终点"
+
+#: plugin/i18n.js
 msgid "Tolerance"
 msgstr "容差"
 
@@ -8060,6 +8192,10 @@ msgstr "两篇所选文章声明了相同逻辑身份，请先解决身份冲突
 #: plugin/i18n.js
 msgid "Typesetting the complete offline article…"
 msgstr "正在排版完整的离线文章…"
+
+#: plugin/i18n.js
+msgid "URL"
+msgstr "文章链接"
 
 #: plugin/i18n.js
 msgid "Unapplied component version change:"
@@ -8340,6 +8476,10 @@ msgid "Uploaded image URLs may become public, including for a draft."
 msgstr "上传图片的地址可能公开，即使文章仍为草稿。"
 
 #: plugin/i18n.js
+msgid "Use a safe article URL for every node."
+msgstr "每个节点都须填写安全的文章链接。"
+
+#: plugin/i18n.js
 msgid "Use bibliography candidate"
 msgstr "使用文献候选"
 
@@ -8478,6 +8618,10 @@ msgstr "查看外部图片"
 #: plugin/i18n.js
 msgid "View formula: "
 msgstr "查看公式："
+
+#: plugin/i18n.js
+msgid "View full map"
+msgstr "查看全图"
 
 #: plugin/i18n.js
 msgid "View restoration differences and preview"
@@ -8660,6 +8804,14 @@ msgstr "左"
 #: plugin/i18n.js
 msgid "manifest.json is missing, damaged, or has an unsupported version."
 msgstr "manifest.json 缺失、损坏或版本不受支持。"
+
+#: plugin/i18n.js
+msgid "off"
+msgstr "关闭"
+
+#: plugin/i18n.js
+msgid "on"
+msgstr "开启"
 
 #: plugin/i18n.js
 msgid "raw must contain only the complete FrontMatter header"

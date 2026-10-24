@@ -777,6 +777,14 @@ msgid "All content"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "All relationships"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "All relationships and articles"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "All whitespace is preserved. Empty code and code without a trailing newline are allowed."
 msgstr ""
 
@@ -982,6 +990,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Awaiting selection"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Back to branch"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1495,6 +1507,14 @@ msgid "Choose an existing article."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Choose an existing group for every node."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Choose an existing item"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Choose an existing line."
 msgstr ""
 
@@ -1524,6 +1544,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Choose every conflict explicitly"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Choose existing, different endpoints for every relationship."
 msgstr ""
 
 #: plugin/i18n.js
@@ -1743,6 +1767,10 @@ msgid "Companion series import is unavailable or exceeds the bounded candidate l
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Compare ideas"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Compatibility and advanced runtime settings"
 msgstr ""
 
@@ -1864,6 +1892,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Conflict repair requires an administrator and the unchanged article identity."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Connections to other branches"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2065,6 +2097,10 @@ msgid "Current blocks were converted to Markdown for preview and have not been s
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Current branch"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Current categories or tags could not be read"
 msgstr ""
 
@@ -2174,6 +2210,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Dependency loading"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Description"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2330,6 +2370,14 @@ msgid "Draft title"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Drag canvas: "
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Drag canvas: off"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Dropping particle"
 msgstr ""
 
@@ -2416,6 +2464,10 @@ msgid "Each operation processes at most ten articles. Continue until ready; no b
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Each pair may contain each relationship kind only once."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Each registration descriptor is limited to 16 KiB"
 msgstr ""
 
@@ -2434,6 +2486,10 @@ msgstr ""
 #, php-format
 #: plugin/i18n.js
 msgid "Edit inline formula: %1$s"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Edit item"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2510,6 +2566,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Every cross-site native image requires a verified association"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Every group must contain at least one node."
 msgstr ""
 
 #: plugin/i18n.js
@@ -2795,6 +2855,14 @@ msgid "Footnotes belong only in the footnote section"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "For further optimization"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Format"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Formula engine failed to load: "
 msgstr ""
 
@@ -2846,6 +2914,10 @@ msgstr ""
 msgid "Four interactive previews are already open. Close another preview first."
 msgstr ""
 
+#: plugin/i18n.js
+msgid "From"
+msgstr ""
+
 #, php-format
 #: plugin/i18n.js
 msgid "From line %1$s: current %2$s lines → revision %3$s lines (including unchanged lines between changes)."
@@ -2877,6 +2949,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Full explanation"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Full map"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2929,6 +3005,14 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Go to line"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Group"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Groups"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3026,6 +3110,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "I reviewed and accept the proposed citation keys"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Identifier"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3458,6 +3546,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Invalid plain text field type, Unicode, or length"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Invalid relationship map configuration."
 msgstr ""
 
 #: plugin/i18n.js
@@ -4232,6 +4324,10 @@ msgid "No compatible self-check templates are registered. Existing static conten
 msgstr ""
 
 #: plugin/i18n.js
+msgid "No cross-branch relationships in this branch."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "No fields are applied by default. Select fields and preview again. Clearing a selection changes neither current article settings nor the header."
 msgstr ""
 
@@ -4391,6 +4487,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Only unlinked native images are supported in this version"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Open an article by its title. Connections suggest reading paths; choose your own starting point."
 msgstr ""
 
 #: plugin/i18n.js
@@ -5046,6 +5146,18 @@ msgid "Rejected registrations"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Relations suggest reading paths and connections; choose your own starting point."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Relationship canvas; arrow keys pan when drag mode is on"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Relationship explanation"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Removal count"
 msgstr ""
 
@@ -5123,6 +5235,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Reset size"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Reset view"
 msgstr ""
 
 #: plugin/i18n.js
@@ -5513,6 +5629,10 @@ msgid "Show full text"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Show in map"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Show line numbers beside frontend code blocks."
 msgstr ""
 
@@ -5822,6 +5942,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Structured year, month and day"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Suggested reading order"
 msgstr ""
 
 #: plugin/i18n.js
@@ -7293,6 +7417,10 @@ msgid "The reference operation input is invalid."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "The relationship map validator is unavailable. Reload before applying parameters."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "The remaining expanded batch budget is exhausted"
 msgstr ""
 
@@ -8038,6 +8166,10 @@ msgid "Title: %1$s → %2$s"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "To"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Tolerance"
 msgstr ""
 
@@ -8059,6 +8191,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Typesetting the complete offline article…"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "URL"
 msgstr ""
 
 #: plugin/i18n.js
@@ -8340,6 +8476,10 @@ msgid "Uploaded image URLs may become public, including for a draft."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Use a safe article URL for every node."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Use bibliography candidate"
 msgstr ""
 
@@ -8477,6 +8617,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "View formula: "
+msgstr ""
+
+#: plugin/i18n.js
+msgid "View full map"
 msgstr ""
 
 #: plugin/i18n.js
@@ -8659,6 +8803,14 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "manifest.json is missing, damaged, or has an unsupported version."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "off"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "on"
 msgstr ""
 
 #: plugin/i18n.js

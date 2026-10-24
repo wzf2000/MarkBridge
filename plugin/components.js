@@ -208,6 +208,25 @@
     )
       config.status = 'incompatible';
     if (!validParams(config.params)) config.status = 'invalid-params';
+    if (!config.provider && config.params?.format === 'relation-map/v1') return;
+    if (config.provider?.readerMode === 'relation-map/v1') {
+      if (config.status !== 'available' || window.MBB_COMPONENTS_READER !== true) return;
+      try {
+        const native = globalThis.MBBRelationMap.enhance(node, config.params);
+        const instance = {
+          ...native,
+          signature,
+          dispose() {
+            native.dispose();
+            instances.delete(node);
+          },
+        };
+        instances.set(node, instance);
+      } catch {
+        node.dataset.mbbComponentState = 'closed';
+      }
+      return;
+    }
     const diagram =
       window.MBB_COMPONENTS_READER === true && config.provider?.readerMode === 'diagram';
     let readerClosed = false,

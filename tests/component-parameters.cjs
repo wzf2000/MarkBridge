@@ -229,3 +229,56 @@ for (const name of ['toString', 'valueOf', 'hasOwnProperty']) {
   );
   assert.equal(value[name], 'literal');
 }
+
+const relationSchema = require('./fixtures/relation-map-schema.json');
+assert.equal(
+  support(relationSchema, {
+    format: 'relation-map/v1',
+    nodes: Array.from({ length: 64 }, () => ({ title: '题名', url: '#node' })),
+    edges: Array.from({ length: 128 }, () => ({ from: 'a', to: 'b', kind: 'compare' })),
+  }),
+  true,
+);
+assert.equal(
+  support(
+    {
+      ...relationSchema,
+      properties: { ...relationSchema.properties, format: { type: 'string', enum: ['other'] } },
+    },
+    { format: 'other', nodes: [], edges: [] },
+  ),
+  false,
+);
+console.log(
+  'Known relation-map form admits bounded selected-item editing without changing other schemas.',
+);
+
+const missingCollections = {
+  format: 'relation-map/v1',
+  title: 'Map',
+  nodes: [{ id: 'a', group: 'g', title: 'Topic', url: '#a' }],
+  edges: [{ from: 'a', to: 'b', kind: 'compare' }],
+};
+assert.equal(support(relationSchema, missingCollections), true);
+assert.equal(
+  support(relationSchema, {
+    format: 'relation-map/v1',
+    title: 'Map',
+    groups: [{ id: 'g', title: 'Group' }],
+    edges: missingCollections.edges,
+  }),
+  true,
+);
+assert.equal(
+  support(
+    {
+      ...relationSchema,
+      properties: { ...relationSchema.properties, unrelated: { type: 'string' } },
+    },
+    missingCollections,
+  ),
+  false,
+);
+console.log(
+  'Known relation-map schema stays repairable with missing collections; same-format unrelated schemas retain generic bounds.',
+);

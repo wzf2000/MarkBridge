@@ -264,3 +264,47 @@ test('readable labels, registered overview and quiet exact details fit a narrow 
     'literal',
   );
 });
+
+test('relation-map draft can repair missing groups or nodes without crashing reference fields', async ({
+  page,
+}) => {
+  await open(page);
+  const relationSchema = require('../fixtures/relation-map-schema.json');
+  const params = {
+    format: 'relation-map/v1',
+    title: 'Repairable map',
+    groups: [{ id: 'g', title: 'Group' }],
+    nodes: [
+      { id: 'a', group: 'g', title: 'First', url: '#a' },
+      { id: 'b', group: 'g', title: 'Second', url: '#b' },
+    ],
+    edges: [{ from: 'a', to: 'b', kind: 'recommended' }],
+  };
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await page.evaluate(
+    ({ schema, params }) => {
+      window.MBBComponents.find((p) => p.id === 'fixture').schema = schema;
+      taskRegistry
+        .dispatch('core/block-editor')
+        .updateBlockAttributes(taskBlocks[0].clientId, { params });
+    },
+    { schema: relationSchema, params },
+  );
+  await expect(page.getByRole('textbox', { name: 'Title', exact: true })).toHaveValue(params.title);
+  for (const missing of ['groups', 'nodes']) {
+    const draft = { ...params };
+    delete draft[missing];
+    await page.getByRole('button', { name: 'Advanced JSON', exact: true }).click();
+    await json(page).fill(JSON.stringify(draft));
+    await page.getByRole('button', { name: 'Parameter form', exact: true }).click();
+    await expect(
+      page.getByRole('button', {
+        name: 'Add field: ' + (missing === 'groups' ? 'Groups' : 'Nodes'),
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Apply parameters', exact: true })).toBeVisible();
+  }
+  expect(errors).toEqual([]);
+});

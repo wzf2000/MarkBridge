@@ -1,5 +1,6 @@
 <?php
 // Trusted, data-only derived views. Never alter canonical source or saved HTML.
+require_once __DIR__ . '/relation-map.php';
 if (!defined('ABSPATH') && PHP_SAPI !== 'cli') {
     exit();
 }
@@ -250,6 +251,37 @@ function mbb_component_projection_fingerprint(string $component, string $version
     $provider = function_exists('mbb_component_provider')
         ? mbb_component_provider($component, $version)
         : null;
+    if (
+        ($provider['readerMode'] ?? null) === 'relation-map/v1' &&
+        ($provider['status'] ?? null) === 'available'
+    ) {
+        $files = [];
+        foreach (
+            [
+                'relation-map.php',
+                'relation-map.js',
+                'relation-map.css',
+                'languages/messages.json',
+                'projections.php',
+                'projections.js',
+            ]
+            as $file
+        ) {
+            $files[$file] = hash_file('sha256', __DIR__ . '/' . $file);
+        }
+        return hash(
+            'sha256',
+            json_encode(
+                [
+                    $component,
+                    $version,
+                    markbridge_teaching_component_fingerprint($component, $provider),
+                    $files,
+                ],
+                JSON_THROW_ON_ERROR,
+            ),
+        );
+    }
     $d =
         $GLOBALS['mbb_projection_renderers'][$component . '@' . $version] ??
         ($GLOBALS['mbb_indexed_projection_renderers'][$component . '@' . $version] ?? null);
@@ -307,6 +339,28 @@ function mbb_component_projection_plan(
         $fingerprint = mbb_component_projection_fingerprint($a->component, $a->componentVersion);
         $tree = null;
         $provider = mbb_component_provider($a->component, $a->componentVersion);
+        if (mbb_relation_map_valid($a->params)) {
+            $native = mbb_relation_map_envelope($a->params, $locale);
+            $size = strlen(mbb_projection_json($native));
+            if ($total + $size > $budget) {
+                throw new RuntimeException('projection_aggregate');
+            }
+            $total += $size;
+            $items[] = [
+                'target' => $id,
+                'component' => $a->component,
+                'version' => $a->componentVersion,
+                'fingerprint' => $fingerprint,
+                'state' =>
+                    ($provider['readerMode'] ?? null) === 'relation-map/v1' &&
+                    ($provider['status'] ?? null) === 'available'
+                        ? 'available'
+                        : 'author-fallback',
+                'params' => $a->params,
+                'projection' => $native,
+            ];
+            continue;
+        }
         $state =
             isset(
                 $GLOBALS['mbb_projection_renderers'][$a->component . '@' . $a->componentVersion],
@@ -411,7 +465,7 @@ function mbb_component_projection_wire(string $serialized, string $locale, int &
 {
     $items = mbb_component_projection_plan($serialized, $locale, max(0, min(524288, $remaining)));
     foreach ($items as $item) {
-        if ($item['state'] === 'available') {
+        if (is_array($item['projection'])) {
             $remaining -= strlen(mbb_projection_json($item['projection']));
         }
     }
@@ -461,6 +515,21 @@ function mbb_projection_insert(DOMDocument $doc, DOMElement $root, array $items)
             $target->appendChild($wrapper);
         }
         try {
+            if (($item['projection']['schema'] ?? null) === 'relation-map/v1') {
+                if (
+                    !in_array($item['state'], ['available', 'author-fallback'], true) ||
+                    !mbb_component_equal($item['projection']['map'], $item['params'])
+                ) {
+                    throw new RuntimeException('relation_map_projection');
+                }
+                mbb_relation_map_append($doc, $wrapper, $item['projection']);
+                $bytes = strlen($doc->saveHTML($wrapper));
+                if ($bytes > MBB_PROJECTION_BYTES || $total + $bytes > 524288) {
+                    throw new RuntimeException('projection_output');
+                }
+                $total += $bytes;
+                continue;
+            }
             if ($item['state'] !== 'available' || !is_array($item['projection'])) {
                 throw new RuntimeException('projection_unavailable');
             }
