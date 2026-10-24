@@ -2,9 +2,11 @@ const { test, expect } = require('@playwright/test');
 const fs = require('node:fs'),
   path = require('node:path');
 const plugin = path.resolve(__dirname, '../../plugin');
-async function load(page, params = {}) {
+async function load(page, params = {}, resourceOverrides = {}) {
   const response = await page.request.get('/resource-v2-fixture');
   const { provider } = await response.json();
+  if (resourceOverrides === null) delete provider.resources.bundleUrl;
+  else Object.assign(provider.resources, resourceOverrides);
   await page.goto('/health');
   await page.setContent(
     `<meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; frame-src 'self'; connect-src 'self'; style-src 'unsafe-inline'"><style>${fs.readFileSync(path.join(plugin, 'teaching.css'), 'utf8')} body{font:16px/1.7 system-ui;margin:16px}article{max-width:760px;margin:auto}table{width:100%;border-collapse:collapse}th,td{border:1px solid #bbb;padding:6px;text-align:left}</style><article><h1>公开资源交互与静态说明</h1><p>合成固定资源；无 WordPress 数据库。</p><div id="demo" data-mbb-teaching="component"><div class="mbb-teaching-body"><h2>作者静态解释</h2><table><caption>固定公开数据</caption><tr><th>项目</th><th>数值</th></tr><tr><td>样本 A</td><td>42</td></tr></table></div></div></article>`,
@@ -89,17 +91,18 @@ test('v2 HTTP opaque frame under strict parent CSP transfers pinned data, denies
   await page.getByRole('button', { name: '启动交互演示' }).click();
   await expect(page.frameLocator('iframe').locator('#status')).toHaveText('公开资源已校验');
   const after = (await (await page.request.get('/resource-v2-fixture')).json()).count;
-  expect(after.manifest - before.manifest).toBe(2);
-  expect(after.data - before.data).toBe(1);
-  expect(after.program - before.program).toBe(1);
-  expect(after.binary - before.binary).toBe(1);
+  expect(after.bundle - before.bundle).toBe(1);
+  expect(after.manifest - before.manifest).toBe(0);
+  expect(after.data - before.data).toBe(0);
+  expect(after.program - before.program).toBe(0);
+  expect(after.binary - before.binary).toBe(0);
   expect(after.frame - before.frame).toBe(2);
 });
 test('v2 startup cancellation and bad pin retain static content; top-level frame cannot self initialize', async ({
   page,
 }) => {
   const provider = await load(page);
-  await page.route('**/manifest.json', async (route) => {
+  await page.route('**/component-resources/**', async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 300));
     try {
       await route.continue();
@@ -110,10 +113,13 @@ test('v2 startup cancellation and bad pin retain static content; top-level frame
   await page.waitForTimeout(400);
   await expect(page.locator('iframe')).toHaveCount(0);
   await expect(page.getByRole('heading', { name: '作者静态解释' })).toBeVisible();
-  await page.unroute('**/manifest.json');
-  await page.route('**/manifest.json', (route) =>
-    route.fulfill({ contentType: 'application/json', body: '{}' }),
-  );
+  await page.unroute('**/component-resources/**');
+  await page.route('**/component-resources/**', async (route) => {
+    const response = await route.fetch();
+    const body = await response.body();
+    body[12] ^= 1;
+    await route.fulfill({ response, body });
+  });
   await page.getByRole('button', { name: '启动交互演示' }).click();
   await expect(page.locator('#demo')).toHaveAttribute('data-mbb-failure-code', 'MANIFEST_SHA');
   await expect(page.locator('iframe')).toHaveCount(0);
@@ -176,4 +182,162 @@ test('default v2 budget-like provider errors do not inherit execution-profile bu
   await expect(page.locator('#demo')).toHaveAttribute('data-mbb-failure-code', 'EXECUTION');
   await expect(page.locator('iframe')).toHaveCount(1);
   expect(await page.evaluate(() => MarkBridgeComponents.activeCount())).toBe(0);
+});
+
+test('cold bundle plus slow HTTP navigation stays within the unchanged startup deadline', async ({
+  page,
+}, info) => {
+  await load(page);
+  let downloads = 0;
+  await page.route('**/component-resources/**', async (route) => {
+    downloads++;
+    await new Promise((resolve) => setTimeout(resolve, 1600));
+    await route.continue();
+  });
+  await page.route('**/component-frame/**', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 1700));
+    await route.continue();
+  });
+  const start = Date.now();
+  await page.getByRole('button', { name: '启动交互演示' }).click();
+  await expect(page.locator('#demo')).toHaveAttribute('data-mbb-component-state', 'ready');
+  expect(Date.now() - start).toBeGreaterThan(3000);
+  expect(downloads).toBe(1);
+  await page.screenshot({ path: info.outputPath('cold-resource-ready.png'), fullPage: true });
+});
+
+test('navigation cannot reset the total deadline and a late load cannot revive the frame', async ({
+  page,
+}) => {
+  await load(page);
+  await page.route('**/component-resources/**', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 1700));
+    await route.continue();
+  });
+  await page.route('**/component-frame/**', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 3500));
+    try {
+      await route.continue();
+    } catch {}
+  });
+  await page.getByRole('button', { name: '启动交互演示' }).click();
+  await expect(page.locator('#demo')).toHaveAttribute('data-mbb-failure-code', 'STARTUP_TIMEOUT');
+  await page.waitForTimeout(400);
+  await expect(page.locator('iframe')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: '作者静态解释' })).toBeVisible();
+});
+
+test('closing a delayed bundle then reopening starts a fresh generation without stale adoption', async ({
+  page,
+}) => {
+  await load(page);
+  let requests = 0;
+  await page.route('**/component-resources/**', async (route) => {
+    if (++requests === 1) await new Promise((resolve) => setTimeout(resolve, 500));
+    try {
+      await route.continue();
+    } catch {}
+  });
+  await page.getByRole('button', { name: '启动交互演示' }).click();
+  await expect.poll(() => requests).toBe(1);
+  await page.getByRole('button', { name: '关闭交互预览' }).click();
+  await page.getByRole('button', { name: '启动交互演示' }).click();
+  await expect(page.locator('#demo')).toHaveAttribute('data-mbb-component-state', 'ready');
+  await page.waitForTimeout(600);
+  await expect(page.locator('iframe')).toHaveCount(1);
+  expect(requests).toBe(2);
+});
+
+test('v2 keeps the no-bundle descriptor compatible with the original fixed resource path', async ({
+  page,
+}) => {
+  await load(page, {}, null);
+  await page.getByRole('button', { name: '启动交互演示' }).click();
+  await expect(page.locator('#demo')).toHaveAttribute('data-mbb-component-state', 'ready');
+});
+
+test('slow bundle body is canceled by the unchanged cumulative download limit', async ({
+  page,
+}) => {
+  const { provider } = await (await page.request.get('/resource-v2-fixture')).json();
+  await load(
+    page,
+    {},
+    { bundleUrl: new URL('/resource-v2-slow-bundle', provider.resources.bundleUrl).href },
+  );
+  const started = Date.now();
+  await page.getByRole('button', { name: '启动交互演示' }).click();
+  await expect(page.locator('#demo')).toHaveAttribute('data-mbb-failure-code', /.+/);
+  expect(Date.now() - started).toBeGreaterThan(2300);
+  expect(Date.now() - started).toBeLessThan(4500);
+  await expect(page.locator('iframe')).toHaveCount(0);
+});
+
+test('init to ready still has its own 1.5 second limit after navigation', async ({ page }) => {
+  await load(page);
+  await page.route('**/component-frame/**', async (route) => {
+    const response = await route.fetch();
+    const body = (await response.text()).replace(
+      "send('ready');",
+      "setTimeout(() => send('ready'), 1800);",
+    );
+    await route.fulfill({ response, body });
+  });
+  await page.getByRole('button', { name: '启动交互演示' }).click();
+  await expect(page.locator('#demo')).toHaveAttribute('data-mbb-failure-code', 'TRANSFER_TIMEOUT');
+  await page.waitForTimeout(400);
+  await expect(page.locator('iframe')).toHaveCount(0);
+});
+
+test('bundle length and HTTP redirects fail closed and retry without a partial cache', async ({
+  page,
+}) => {
+  for (const mode of ['length', 'redirect']) {
+    await load(page);
+    let requests = 0;
+    await page.route('**/component-resources/**', async (route) => {
+      requests++;
+      if (mode === 'redirect')
+        await route.fulfill({ status: 302, headers: { Location: '/health' } });
+      else {
+        const response = await route.fetch();
+        const body = await response.body();
+        await route.fulfill({ response, body: body.subarray(0, -1) });
+      }
+    });
+    await page.getByRole('button', { name: '启动交互演示' }).click();
+    await expect(page.locator('#demo')).toHaveAttribute(
+      'data-mbb-failure-code',
+      mode === 'length' ? 'BUNDLE_LENGTH' : 'NETWORK',
+    );
+    await expect(page.locator('iframe')).toHaveCount(0);
+    await page.unroute('**/component-resources/**');
+    await page.route('**/component-resources/**', async (route) => {
+      requests++;
+      await route.continue();
+    });
+    await page.getByRole('button', { name: '启动交互演示' }).click();
+    await expect(page.locator('#demo')).toHaveAttribute('data-mbb-component-state', 'ready');
+    expect(requests).toBe(2);
+    await page.unroute('**/component-resources/**');
+  }
+});
+
+test('v2 late frame callbacks cannot replace the current session and second navigation is denied', async ({
+  page,
+}) => {
+  await load(page);
+  await page.getByRole('button', { name: '启动交互演示' }).click();
+  await expect(page.locator('#demo')).toHaveAttribute('data-mbb-component-state', 'ready');
+  await page.locator('iframe').evaluate((frame) => {
+    window.previousV2Load = frame.onload;
+  });
+  await page.getByRole('button', { name: '关闭交互预览' }).click();
+  await page.getByRole('button', { name: '启动交互演示' }).click();
+  await expect(page.locator('#demo')).toHaveAttribute('data-mbb-component-state', 'ready');
+  await page.evaluate(() => previousV2Load());
+  await expect(page.locator('iframe')).toHaveCount(1);
+  await page.locator('iframe').evaluate((frame) => frame.onload());
+  await expect(page.locator('#demo')).toHaveAttribute('data-mbb-failure-code', 'NAVIGATION');
+  await expect(page.locator('iframe')).toHaveCount(0);
 });

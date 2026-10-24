@@ -631,6 +631,14 @@ function mbb_component_public(array $p): array
             'baseUrl' => $p['resourcePlan']['baseUrl'],
             'sha256' => $p['resources']['sha256'],
             'groupSha256' => $p['resourcePlan']['groupSha256'],
+            'bundleUrl' => rest_url(
+                'mbb/v2/component-resources/' .
+                    $p['id'] .
+                    '/' .
+                    $p['version'] .
+                    '/' .
+                    $p['resources']['sha256'],
+            ),
             'version' => $p['version'],
         ];
         $public['frameUrl'] = rest_url(

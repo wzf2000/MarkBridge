@@ -272,7 +272,11 @@ v2 iframe 的 `src` 指向公开固定 REST HTML 路由 `/mbb/v2/component-frame
 
 每实例 wire 为 `mbb-component/v2`，会话、来源、runId 及已有 `ready`／`run-request`／`grant`／`complete`／`cancel` 控制保持。v2 `init.resourceGroup` 为 `{version,sha256,identity,resources:[{spec,buffer}]}`；`buffer` 是 ArrayBuffer，元数据中的 spec 与固定清单一致。提供者须先拒绝 `parent===window`，再检查 `event.source===parent`、协议、固定会话、条目身份、长度与摘要；资源交付不是运行许可，计算仍需 `grant`。v2 初始化 JSON 元数据单独限制 40 KiB（v1 仍 20 KiB），参数仍 16 KiB，控制／结果仍 8 KiB；ArrayBuffer 另按八项／每项 1 MiB／合计 2 MiB 核对，不以 JSON 中的 `{}` 绕过预算。
 
-启动总期限最多五秒，覆盖加载、摘要、HTTP frame、交付和 ready；累计下载最多 2.5 秒、摘要最多一秒、frame 导航至 ready 最多 1.5 秒，任一先到即失败。ready 后的读者思考不消耗启动期限；每次 grant 仍独立最多两秒。父窗的移除与 deadline 是兜底，不是任意恶意程序的硬实时 CPU 隔离证明。
+启动总期限最多五秒，覆盖加载、摘要、HTTP frame 导航、交付和 ready；累计下载最多 2.5 秒、摘要最多一秒。3.4.1 起，HTTP frame 导航由该总期限约束，结构化交付最多 1.5 秒，从发送 init 前计至 ready；此前 1.5 秒包含导航。此处调整的是交付阶段的计时起点，不提高或重置启动总期限；任一适用期限先到即失败。ready 后的读者思考不消耗启动期限；每次 grant 仍独立最多两秒。父窗的移除与 deadline 是兜底，不是任意恶意程序的硬实时 CPU 隔离证明。
+
+3.4.1 的公开描述在 `resources` 中增加可选 `bundleUrl`，由 Main 生成，不改变扩展登记字段或固定文件。匿名 GET `mbb/v2/component-resources/{component}/{version}/{manifestSHA256}` 只定位已登记精确版本及固定清单摘要；不接受文章、路径、URL、代码、请求正文或额外查询参数（WordPress Plain 路由的 `rest_route` 除外）。响应为 `application/octet-stream`、`no-store`、`nosniff`：八字节 `MBBR2\0\r\n` magic、四字节大端清单长度、原始清单，再依清单声明顺序连接原资源字节。固定头 12 B，最多 16 KiB 清单及 2 MiB 原资源，不含 HTML；末次 raw serve 再核对所有字节和响应政策。
+
+浏览器一次有界读取后仍校验清单 pin、闭合结构、整组身份、依赖、类型、许可和每项长度／SHA-256，再按依赖顺序交付。仅完整通过且当前 generation 活跃才原子写入原 4 MiB LRU；清单作为内部 `manifest` 类型也占该预算，资源不另设缓存。重复打开重新核验缓存摘要并克隆交付；清单或任一资源已淘汰时重新读取整组。请求同源、不带凭据、拒绝重定向。没有 `bundleUrl` 的旧公开描述沿原逐项读取路径；v1 不受影响。
 
 受信 typed 投影可通过 `markbridge_teaching_resource_bytes($component,$version,$resourceId)` 读取固定 JSON／bin 数据；该接口不读文章 URL、不返回脚本，且重新校验全部登记文件。投影指纹及文集快照同时绑定数据身份，末次变更拒绝。静态输出保留投影和作者替代，不自动打包 HTML／JS 运行代码；不会因为启用了 v2 就把整个资源组作为离线运行程序导出。
 

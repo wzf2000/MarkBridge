@@ -226,6 +226,8 @@ try {
                 'data' => file_get_contents($data),
                 'program' => file_get_contents($program),
                 'binary' => base64_encode(file_get_contents($binary)),
+                'bundle' => base64_encode(mbb_component_bundle_body($registered)),
+                'bundleHeaders' => mbb_component_bundle_headers(),
             ],
             JSON_THROW_ON_ERROR,
         );
@@ -243,6 +245,57 @@ try {
         check_frame(
             mbb_component_frame_provider(new FrameRequest($request->attrs, [], 'GET', '')) !== null,
             'Explicit empty GET body rejected',
+        );
+        $bundleRequest = new FrameRequest([
+            ...$request->attrs,
+            'digest' => $p['resources']['sha256'],
+        ]);
+        $bundleResponse = mbb_component_bundle_response($bundleRequest);
+        check_frame($bundleResponse instanceof WP_REST_Response, 'Bundle did not resolve');
+        $serve = $GLOBALS['filters']['rest_pre_serve_request'];
+        $bundleServer = new class {
+            public array $headers = [];
+            public function send_header($k, $v)
+            {
+                $this->headers[$k] = $v;
+            }
+        };
+        ob_start();
+        $serve(false, $bundleResponse, $bundleRequest, $bundleServer);
+        $bundle = ob_get_clean();
+        $rawManifest = file_get_contents($manifest);
+        check_frame(
+            $bundle ===
+                "MBBR2\0\r\n" .
+                    pack('N', strlen($rawManifest)) .
+                    $rawManifest .
+                    file_get_contents($data),
+            'Bundle framing/raw bytes',
+        );
+        check_frame($bundleServer->headers === mbb_component_bundle_headers(), 'Bundle headers');
+        foreach (
+            [
+                new FrameRequest($bundleRequest->attrs, ['path' => 'assets/0.1.0/data.json']),
+                new FrameRequest($bundleRequest->attrs, [], 'POST'),
+                new FrameRequest($bundleRequest->attrs, [], 'GET', 'x'),
+                new FrameRequest([...$bundleRequest->attrs, 'digest' => $p['resource']['sha256']]),
+                new FrameRequest([...$bundleRequest->attrs, 'component' => 'unknown']),
+                new FrameRequest([...$bundleRequest->attrs, 'version' => '0.2.0']),
+            ]
+            as $bad
+        ) {
+            check_frame(
+                mbb_component_bundle_response($bad) instanceof WP_Error,
+                'Unfixed bundle request accepted',
+            );
+        }
+        check_frame(
+            mbb_component_bundle_response(
+                new FrameRequest($bundleRequest->attrs, [
+                    'rest_route' => '/mbb/v2/component-resources/x',
+                ]),
+            ) instanceof WP_REST_Response,
+            'Plain routing rejected',
         );
         $response = mbb_component_frame_response($request);
         check_frame(
@@ -345,7 +398,19 @@ try {
             'Snapshot fixed identity/provenance',
         );
         $response = mbb_component_frame_response($request);
+        $bundleResponse = mbb_component_bundle_response($bundleRequest);
         file_put_contents($data, '{"value":43}');
+        ob_start();
+        $serve(false, $bundleResponse, $bundleRequest, $bundleServer);
+        $staleBundle = ob_get_clean();
+        check_frame(
+            $staleBundle === '' && $GLOBALS['status'] === 404,
+            'Late changed bundle served',
+        );
+        check_frame(
+            mbb_component_bundle_response($bundleRequest) instanceof WP_Error,
+            'Changed bundle accepted',
+        );
         check_frame(
             mbb_component_projection_fingerprint('resource-fixture', '0.1.0') === null,
             'Changed data retained static projection fingerprint',

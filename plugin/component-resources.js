@@ -287,6 +287,7 @@
           signal: controller.signal,
         });
         if (!response.ok) throw fault('HTTP_STATUS');
+        if (response.redirected) throw fault('REDIRECT');
         if (response.url && response.url !== new URL(url, location.href).href)
           throw fault('REDIRECT');
         if (!response.body) throw fault('STREAM_REQUIRED');
@@ -333,7 +334,14 @@
     if (executionProfile !== null && executionProfile !== 'fixed-wasm/v1')
       throw fault('EXECUTION_PROFILE');
     if (
-      !closed(registration, ['url', 'baseUrl', 'sha256', 'groupSha256', 'version']) ||
+      !closed(registration, [
+        'url',
+        'baseUrl',
+        'sha256',
+        'groupSha256',
+        'version',
+        ...(Object.hasOwn(registration, 'bundleUrl') ? ['bundleUrl'] : []),
+      ]) ||
       typeof registration.url !== 'string' ||
       typeof registration.baseUrl !== 'string' ||
       typeof registration.version !== 'string' ||
@@ -351,13 +359,61 @@
       !/^[a-f0-9]{64}$/.test(registration.sha256)
     )
       throw fault('TRUSTED_REGISTRATION');
-    const raw = await readBounded(registration.url, LIMITS.manifest, context, fetcher);
+    if (Object.hasOwn(registration, 'bundleUrl')) {
+      if (typeof registration.bundleUrl !== 'string') throw fault('TRUSTED_REGISTRATION');
+      const url = new URL(registration.bundleUrl, location.href);
+      if (
+        url.origin !== location.origin ||
+        url.username ||
+        url.password ||
+        url.hash ||
+        (url.search &&
+          (Array.from(url.searchParams.keys()).join(',') !== 'rest_route' ||
+            !url.searchParams.get('rest_route').startsWith('/mbb/v2/component-resources/')))
+      )
+        throw fault('TRUSTED_REGISTRATION');
+    }
+    const manifestSpec = { type: 'manifest', sha256: registration.sha256 };
+    const decode = (buffer) =>
+      strictJSON(new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(buffer));
+    let raw,
+      bundle = null,
+      declarations;
+    if (registration.bundleUrl) {
+      raw = cache.get(registration.version, manifestSpec);
+      // A manifest can outlive some group entries after LRU eviction. Fetch the whole
+      // group once in that case, never add a second unbounded cache or partial commit.
+      let complete = false;
+      if (raw) {
+        if ((await digest(raw, context, cryptoProvider)) !== registration.sha256)
+          throw fault('MANIFEST_SHA');
+        complete = manifest(decode(raw), executionProfile).resources.every(
+          (spec) => cache.get(registration.version, spec) !== null,
+        );
+      }
+      if (!complete) {
+        bundle = await readBounded(
+          registration.bundleUrl,
+          12 + LIMITS.manifest + LIMITS.total,
+          context,
+          fetcher,
+        );
+        const bytes = new Uint8Array(bundle);
+        if (
+          bytes.byteLength < 12 ||
+          ![77, 66, 66, 82, 50, 0, 13, 10].every((v, i) => bytes[i] === v)
+        )
+          throw fault('BUNDLE_HEADER');
+        const length = new DataView(bundle).getUint32(8);
+        if (length < 1 || length > LIMITS.manifest || 12 + length > bytes.byteLength)
+          throw fault('BUNDLE_LENGTH');
+        raw = bundle.slice(12, 12 + length);
+      }
+    } else raw = await readBounded(registration.url, LIMITS.manifest, context, fetcher);
     if ((await digest(raw, context, cryptoProvider)) !== registration.sha256)
       throw fault('MANIFEST_SHA');
-    const plan = manifest(
-        strictJSON(new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(raw)),
-        executionProfile,
-      ),
+    const decoded = decode(raw);
+    const plan = manifest(decoded, executionProfile),
       group = [];
     if (plan.version !== registration.version) throw fault('MANIFEST_VERSION');
     const identity = await digest(
@@ -366,30 +422,45 @@
       cryptoProvider,
     );
     if (identity !== registration.groupSha256) throw fault('GROUP_SHA');
+    if (bundle) {
+      declarations = new Map();
+      let offset = 12 + raw.byteLength;
+      for (const spec of decoded.resources) {
+        if (offset + spec.bytes > bundle.byteLength) throw fault('BUNDLE_LENGTH');
+        declarations.set(spec.id, bundle.slice(offset, offset + spec.bytes));
+        offset += spec.bytes;
+      }
+      if (offset !== bundle.byteLength) throw fault('BUNDLE_LENGTH');
+    }
     let downloaded = 0,
       hits = 0;
     for (const spec of plan.resources) {
-      let buffer = cache.get(plan.version, spec);
-      if (buffer) hits++;
-      else {
+      let buffer = declarations ? declarations.get(spec.id) : cache.get(plan.version, spec);
+      if (buffer) {
+        if (declarations) downloaded++;
+        else hits++;
+      } else {
         buffer = await readBounded(
           new URL(spec.path, registration.baseUrl).href,
           spec.bytes,
           context,
           fetcher,
         );
-        if (buffer.byteLength !== spec.bytes) throw fault('RESOURCE_BYTES');
-        if ((await digest(buffer, context, cryptoProvider)) !== spec.sha256)
-          throw fault('RESOURCE_SHA');
         downloaded++;
       }
       if (buffer.byteLength !== spec.bytes) throw fault('RESOURCE_BYTES');
+      if ((await digest(buffer, context, cryptoProvider)) !== spec.sha256)
+        throw fault('RESOURCE_SHA');
       context.check();
       group.push({ spec, buffer });
     }
     const resources = group.map(({ spec, buffer }) => ({ spec, buffer: buffer.slice(0) }));
     context.check();
-    cache.commit(plan.version, group, () => context.check());
+    cache.commit(
+      plan.version,
+      registration.bundleUrl ? [{ spec: manifestSpec, buffer: raw }, ...group] : group,
+      () => context.check(),
+    );
     return {
       version: plan.version,
       groupSha256: registration.groupSha256,

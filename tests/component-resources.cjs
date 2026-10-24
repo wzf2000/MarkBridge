@@ -229,6 +229,161 @@ for (const raw of [
         url === registration.url ? new Response(raw) : new Response(Buffer.alloc(body.length + 1)),
     }),
   );
+  // One HTTP bundle, with declaration order distinct from dependency order.
+  const rawBundle = (m, payloads) => {
+    const bytes = Buffer.from(JSON.stringify(m)),
+      header = Buffer.alloc(12);
+    header.set([77, 66, 66, 82, 50, 0, 13, 10]);
+    header.writeUInt32BE(bytes.length, 8);
+    return Buffer.concat([header, bytes, ...payloads]);
+  };
+  const program = Buffer.from('fixed()'),
+    programSpec = item('program', {
+      path: 'assets/0.1.0/program.js',
+      type: 'javascript',
+      deps: ['data'],
+      bytes: program.length,
+      sha256: crypto.createHash('sha256').update(program).digest('hex'),
+    });
+  const bundleManifest = manifest([programSpec, spec]),
+    bundleRaw = Buffer.from(JSON.stringify(bundleManifest)),
+    bundleSha = crypto.createHash('sha256').update(bundleRaw).digest('hex'),
+    bundleRegistration = {
+      ...registration,
+      sha256: bundleSha,
+      groupSha256: crypto
+        .createHash('sha256')
+        .update('mbb-resources/v2\n0.1.0\n' + bundleSha)
+        .digest('hex'),
+      bundleUrl:
+        'http://component.invalid/?rest_route=/mbb/v2/component-resources/fixture/0.1.0/' +
+        bundleSha,
+    },
+    bundleBytes = rawBundle(bundleManifest, [program, body]),
+    bundleCache = new R.PublicCache();
+  let bundleRequests = 0,
+    hashes = 0;
+  const bundleOptions = {
+    cache: bundleCache,
+    fetcher: async (url, options) => {
+      assert.equal(url, bundleRegistration.bundleUrl);
+      assert.equal(options.credentials, 'omit');
+      assert.equal(options.redirect, 'error');
+      bundleRequests++;
+      return new Response(bundleBytes);
+    },
+    cryptoProvider: {
+      subtle: {
+        digest: (...args) => {
+          hashes++;
+          return crypto.webcrypto.subtle.digest(...args);
+        },
+      },
+    },
+  };
+  const bundled = await R.load(bundleRegistration, bundleOptions);
+  assert.deepEqual(
+    bundled.resources.map((r) => r.spec.id),
+    ['data', 'program'],
+  );
+  assert.equal(bundleRequests, 1);
+  assert.equal(bundleCache.stats().bytes, bundleRaw.length + body.length + program.length);
+  const warmed = await R.load(bundleRegistration, bundleOptions);
+  assert.equal(bundleRequests, 1, 'Warm group fetched again');
+  assert.equal(warmed.diagnostics.hits, 2);
+  assert(hashes >= 8, 'Warm manifest/resources were not rehashed');
+  structuredClone(bundled.resources[0].buffer, { transfer: [bundled.resources[0].buffer] });
+  assert.deepEqual(Buffer.from(warmed.resources[0].buffer), body);
+  // Never trust even a cache hit without a fresh hash, and never commit partial groups.
+  const corruptCache = new R.PublicCache();
+  corruptCache.commit('0.1.0', [
+    {
+      spec: { type: 'manifest', sha256: bundleSha },
+      buffer: bundleRaw.buffer.slice(
+        bundleRaw.byteOffset,
+        bundleRaw.byteOffset + bundleRaw.byteLength,
+      ),
+    },
+    { spec, buffer: new ArrayBuffer(body.length) },
+    {
+      spec: programSpec,
+      buffer: program.buffer.slice(program.byteOffset, program.byteOffset + program.byteLength),
+    },
+  ]);
+  await assert.rejects(
+    R.load(bundleRegistration, { ...bundleOptions, cache: corruptCache }),
+    (e) => e.code === 'RESOURCE_SHA',
+  );
+  for (const bad of [
+    Buffer.from('bad'),
+    bundleBytes.subarray(0, -1),
+    Buffer.concat([bundleBytes, Buffer.from('extra')]),
+    Buffer.from(bundleBytes).fill(0, 12, 13),
+    Buffer.concat([bundleBytes.subarray(0, -1), Buffer.from('!')]),
+    Buffer.from(bundleBytes).fill(255, 8, 12),
+    Buffer.alloc(12 + R.LIMITS.manifest + R.LIMITS.total + 1),
+  ]) {
+    const rejected = new R.PublicCache();
+    await assert.rejects(
+      R.load(bundleRegistration, {
+        cache: rejected,
+        fetcher: async () => new Response(bad),
+      }),
+    );
+    assert.deepEqual(rejected.stats(), { entries: 0, bytes: 0 });
+  }
+  await assert.rejects(
+    R.load({ ...bundleRegistration, groupSha256: 'f'.repeat(64) }, bundleOptions),
+  );
+  for (const bundleUrl of [
+    'https://evil.invalid/bundle',
+    'http://user@component.invalid/bundle',
+    'http://component.invalid/bundle?article=1',
+    'http://component.invalid/bundle#fragment',
+  ])
+    await assert.rejects(R.load({ ...bundleRegistration, bundleUrl }, bundleOptions));
+  for (const property of ['url', 'redirected']) {
+    const response = new Response(bundleBytes);
+    Object.defineProperty(response, property, {
+      value: property === 'url' ? 'http://component.invalid/redirected' : true,
+    });
+    await assert.rejects(R.load(bundleRegistration, { fetcher: async () => response }));
+  }
+  let clock = 0;
+  for (const elapsed of [2501, 5001]) {
+    clock = 0;
+    const rejected = new R.PublicCache();
+    await assert.rejects(
+      R.load(bundleRegistration, {
+        cache: rejected,
+        context: new R.Context({ now: () => clock }),
+        fetcher: async () => {
+          clock = elapsed;
+          return new Response(bundleBytes);
+        },
+      }),
+    );
+    assert.equal(rejected.stats().bytes, 0);
+  }
+  let live = true,
+    releaseBundle;
+  const waitBundle = new Promise((resolve) => {
+    releaseBundle = resolve;
+  });
+  const canceledBundleCache = new R.PublicCache();
+  const pendingBundle = R.load(bundleRegistration, {
+    cache: canceledBundleCache,
+    context: new R.Context({ current: () => live }),
+    fetcher: async () => {
+      await waitBundle;
+      return new Response(bundleBytes);
+    },
+  });
+  const canceledBundle = assert.rejects(pendingBundle, (e) => e.code === 'CANCELED');
+  live = false;
+  releaseBundle();
+  await canceledBundle;
+  assert.equal(canceledBundleCache.stats().bytes, 0);
   console.log(
     'Resource v2 PHP+JS closed/strict manifest, pins, omit/no-redirect, bounded stream, atomic cache/LRU, transfer copy, cancellation and late hash passed.',
   );
