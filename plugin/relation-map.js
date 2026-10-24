@@ -192,7 +192,7 @@
     root.append(list);
     return root;
   }
-  function enhance(node, raw) {
+  function enhance(node, raw, edgeIds = []) {
     const p = validate(raw),
       doc = node.ownerDocument,
       zh = (globalThis.MBB_UI_LOCALE || doc.documentElement.lang || 'zh').startsWith('zh'),
@@ -450,6 +450,8 @@
         line.dataset.from = e.from;
         line.dataset.to = e.to;
         line.dataset.kind = e.kind;
+        const edgeId = edgeIds[p.edges.indexOf(e)];
+        if (typeof edgeId === 'string' && /^e_[a-f0-9]{32}$/.test(edgeId)) line.dataset.id = edgeId;
         const why = doc.createElementNS(NS, 'title');
         why.textContent = kinds[e.kind] + (e.why ? '：' + e.why : '');
         line.append(why);

@@ -9,10 +9,10 @@ const catalog = JSON.parse(read('languages/messages.json'));
 const relationMessages = Object.fromEntries(
   [...relationSource.matchAll(/T\('([^']+)'\)/g)].map((match) => [match[1], catalog[match[1]]]),
 );
-const relationReader = relationSource.replace(
-  '/*__MBB_RELATION_MESSAGES__*/ {}',
-  JSON.stringify(relationMessages),
-);
+const relationReader =
+  read('relation-map-v2.js') +
+  '\n' +
+  relationSource.replace('/*__MBB_RELATION_MESSAGES__*/ {}', JSON.stringify(relationMessages));
 function asset(name, body = read(name)) {
   const ext = path.extname(name),
     file =

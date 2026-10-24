@@ -218,13 +218,32 @@ function relationParameterSchema(schema) {
     schema.properties.title?.type !== 'string' ||
     schema.properties.format?.type !== 'string' ||
     schema.properties.format.enum?.length !== 1 ||
-    schema.properties.format.enum[0] !== 'relation-map/v1'
+    !['relation-map/v1', 'relation-map/v2'].includes(schema.properties.format.enum[0])
+  )
+    return false;
+  const v2 = schema.properties.format.enum[0] === 'relation-map/v2';
+  const target = schema.properties.nodes?.items?.properties?.target;
+  if (
+    v2 &&
+    (!target ||
+      target.type !== 'object' ||
+      target.additionalProperties !== false ||
+      Object.keys(target.properties || {})
+        .sort()
+        .join(',') !== 'document,documentId,kind,namespace,site' ||
+      !Object.values(target.properties).every((s) => s.type === 'string'))
   )
     return false;
   return [
     ['groups', 8, ['id', 'title']],
-    ['nodes', 64, ['id', 'group', 'title', 'url', 'description']],
-    ['edges', 128, ['from', 'to', 'kind', 'why']],
+    [
+      'nodes',
+      64,
+      v2
+        ? ['id', 'group', 'title', 'target', 'description']
+        : ['id', 'group', 'title', 'url', 'description'],
+    ],
+    ['edges', 128, v2 ? ['id', 'from', 'to', 'kind', 'why'] : ['from', 'to', 'kind', 'why']],
   ].every(([name, max, fields]) => {
     const array = schema.properties[name],
       item = array?.items;
@@ -237,7 +256,7 @@ function relationParameterSchema(schema) {
       item.additionalProperties === false &&
       object(item.properties) &&
       Object.keys(item.properties).length === fields.length &&
-      fields.every((k) => item.properties[k]?.type === 'string')
+      fields.every((k) => item.properties[k]?.type === (k === 'target' ? 'object' : 'string'))
     );
   });
 }
@@ -356,6 +375,134 @@ export function createParameterEditor({
   const el = wp.element.createElement;
   const find = (component, version) =>
     providers().find((p) => p.id === component && p.version === version);
+  function ArticleTarget({ value, label, onChange, assertCurrent }) {
+    const [query, setQuery] = wp.element.useState('');
+    const [items, setItems] = wp.element.useState([]);
+    const [error, setError] = wp.element.useState('');
+    const [busy, setBusy] = wp.element.useState(false);
+    const [currentTarget, setCurrentTarget] = wp.element.useState({ state: 'loading' });
+    const currentGuard = wp.element.useRef(assertCurrent);
+    currentGuard.current = assertCurrent;
+    const alive = wp.element.useRef(true);
+    const queryGeneration = wp.element.useRef(0);
+    wp.element.useEffect(() => {
+      alive.current = true;
+      return () => {
+        alive.current = false;
+      };
+    }, []);
+    wp.element.useEffect(() => {
+      let active = true;
+      setCurrentTarget({ state: 'loading' });
+      wp.apiFetch({
+        path: '/mbb/v1/references/articles',
+        method: 'POST',
+        data: { target: value },
+      }).then(
+        (result) => {
+          if (active && alive.current) {
+            try {
+              currentGuard.current();
+              setCurrentTarget(result);
+            } catch {
+              setCurrentTarget({ state: 'unavailable' });
+            }
+          }
+        },
+        () => {
+          if (active && alive.current) setCurrentTarget({ state: 'unavailable' });
+        },
+      );
+      return () => {
+        active = false;
+      };
+    }, [JSON.stringify(value)]);
+    return el(
+      'fieldset',
+      {},
+      el('legend', {}, label),
+      el(
+        'p',
+        { 'data-mbb-current-article': '' },
+        T('Current article target') +
+          ': ' +
+          (currentTarget.state === 'available'
+            ? T('Available') + ' · ' + currentTarget.title
+            : currentTarget.state === 'loading'
+              ? T('Checking the current article target…')
+              : T('This article is unavailable.')),
+      ),
+      el(
+        'p',
+        {},
+        value?.kind === 'document'
+          ? T('Portable document reference')
+          : T('Local document reference'),
+      ),
+      el(wp.components.TextControl, {
+        label: T('Search managed articles'),
+        value: query,
+        onChange: (value) => {
+          queryGeneration.current++;
+          setQuery(value);
+          setItems([]);
+        },
+      }),
+      el(
+        wp.components.Button,
+        {
+          variant: 'secondary',
+          disabled: busy,
+          onClick: async () => {
+            setBusy(true);
+            setError('');
+            try {
+              assertCurrent();
+              const currentQuery = ++queryGeneration.current;
+              const result = await wp.apiFetch({
+                path: '/mbb/v1/references/articles?q=' + encodeURIComponent(query),
+              });
+              assertCurrent();
+              if (alive.current && currentQuery === queryGeneration.current)
+                setItems(result.items || []);
+            } catch (e) {
+              if (alive.current) setError(E(e));
+            } finally {
+              if (alive.current) setBusy(false);
+            }
+          },
+        },
+        T('Search articles'),
+      ),
+      error ? el('p', { role: 'alert' }, error) : null,
+      ...items.map((item, index) =>
+        el(
+          wp.components.Button,
+          {
+            key: index,
+            variant: 'secondary',
+            onClick: () => {
+              try {
+                assertCurrent();
+                onChange(clone(item.target));
+                setItems([]);
+              } catch (e) {
+                setError(E(e));
+              }
+            },
+          },
+          item.title,
+        ),
+      ),
+      el(
+        'p',
+        {},
+        T(
+          'Choose a currently readable managed article. Unavailable references remain stored without exposing their content to readers.',
+        ),
+      ),
+    );
+  }
   return function ParameterEditor({
     value,
     onCommit,
@@ -381,6 +528,11 @@ export function createParameterEditor({
       drafts.get(clientId)?.componentVersion ?? componentVersion,
     );
     useComponentDescriptor(wp, component, candidateVersion);
+    const relationUpgrade = useComponentDescriptor(
+      wp,
+      component === 'navigation-map' ? component : null,
+      '0.2.0',
+    );
     const provider = find(component, candidateVersion);
     const schema = provider?.schema;
     const [raw, setRaw] = wp.element.useState(drafts.get(clientId)?.raw ?? original);
@@ -388,6 +540,7 @@ export function createParameterEditor({
     const [mode, setMode] = wp.element.useState('form');
     const [selectedItems, setSelectedItems] = wp.element.useState({});
     const relationForm = relationParameterSchema(schema);
+    const relationV2 = relationForm && schema.properties.format.enum[0] === 'relation-map/v2';
     const authorSession = wp.element.useRef({});
     const authorLife = wp.element.useRef({ active: true, signature: '', generation: 0 });
     const [, refreshLocalDraft] = wp.element.useState(0);
@@ -579,14 +732,17 @@ export function createParameterEditor({
         const issues = validateParameterSchema(parsed, registered?.schema);
         if (issues.length)
           throw Error(parameterLabel(issues[0].path) + ': ' + T(issues[0].message));
-        if (relationForm && registered?.readerMode === 'relation-map/v1') {
+        if (
+          relationForm &&
+          ['relation-map/v1', 'relation-map/v2'].includes(registered?.readerMode)
+        ) {
           if (!globalThis.MBBRelationMap)
             throw Error(
               T(
                 'The relationship map validator is unavailable. Reload before applying parameters.',
               ),
             );
-          globalThis.MBBRelationMap.validate(parsed);
+          (relationV2 ? globalThis.MBBRelationMapV2 : globalThis.MBBRelationMap).validate(parsed);
         }
         if (author?.apiVersion === 2) author.validate(parsed, candidateActivity);
         const pending = drafts.get(clientId);
@@ -651,7 +807,17 @@ export function createParameterEditor({
         'aria-invalid': issue ? 'true' : undefined,
       };
       let control;
-      if (
+      if (relationV2 && path.length === 3 && path[0] === 'nodes' && path[2] === 'target') {
+        control = el(ArticleTarget, {
+          key: String(candidate.nodes?.[path[1]]?.id || keyOf(path)),
+          value: v,
+          label,
+          assertCurrent: assertAuthorCurrent,
+          onChange: (next) => set(path, next),
+        });
+      } else if (relationV2 && path.length === 3 && path[2] === 'id') {
+        control = el(wp.components.TextControl, { ...common, value: v, readOnly: true });
+      } else if (
         relationForm &&
         path.length === 3 &&
         ((path[0] === 'nodes' && path[2] === 'group') ||
@@ -677,7 +843,9 @@ export function createParameterEditor({
         const options = s.enum.map((item, i) => ({
           label:
             ['recommended', 'compare', 'optimization'].includes(item) &&
-            schema.properties?.format?.enum?.includes('relation-map/v1')
+            schema.properties?.format?.enum?.some((v) =>
+              ['relation-map/v1', 'relation-map/v2'].includes(v),
+            )
               ? {
                   recommended: T('Suggested reading order'),
                   compare: T('Compare ideas'),
@@ -731,7 +899,19 @@ export function createParameterEditor({
                     ' · ' +
                     (child.title ||
                       (child.from && child.to
-                        ? child.from + ' → ' + child.to + ' · ' + child.kind
+                        ? ((Array.isArray(candidate.nodes) &&
+                            candidate.nodes.find((n) => n.id === child.from)?.title) ||
+                            child.from) +
+                          ' → ' +
+                          ((Array.isArray(candidate.nodes) &&
+                            candidate.nodes.find((n) => n.id === child.to)?.title) ||
+                            child.to) +
+                          ' · ' +
+                          ({
+                            recommended: T('Suggested reading order'),
+                            compare: T('Compare ideas'),
+                            optimization: T('For further optimization'),
+                          }[child.kind] || child.kind)
                         : child.id || '')),
                 })),
                 onChange: (value) =>
@@ -770,7 +950,10 @@ export function createParameterEditor({
               disabled: v.length >= s.maxItems,
               onClick: () => {
                 if (paged) setSelectedItems({ ...selectedItems, [keyOf(path)]: v.length });
-                set(path, [...v, initialValue(s.items)]);
+                const item = initialValue(s.items);
+                if (relationV2 && ['groups', 'nodes', 'edges'].includes(path[0]))
+                  item.id = path[0].slice(0, -1) + '_' + crypto.randomUUID().replaceAll('-', '');
+                set(path, [...v, item]);
               },
             },
             T('Add item') + ': ' + label,
@@ -963,6 +1146,29 @@ export function createParameterEditor({
                     'These parameters use the JSON editor. All fields are preserved; the server verifies them when saving.',
                   ),
             }),
+      component === 'navigation-map' && candidateVersion === '0.1.0' && relationUpgrade?.schema
+        ? el(
+            wp.components.Button,
+            {
+              variant: 'secondary',
+              onClick: () => {
+                const next = clone(candidate);
+                next.format = 'relation-map/v2';
+                next.nodes = next.nodes.map(({ url, ...node }) => ({
+                  ...node,
+                  target: { kind: 'document', namespace: '', document: '' },
+                }));
+                next.edges = next.edges.map((edge) => ({
+                  ...edge,
+                  id: 'edge_' + crypto.randomUUID().replaceAll('-', ''),
+                }));
+                change(JSON.stringify(next, null, 2), '0.2.0');
+                setMode('form');
+              },
+            },
+            T('Prepare controlled document links upgrade'),
+          )
+        : null,
       upgrade
         ? el(
             wp.components.Button,

@@ -6,7 +6,7 @@
     "markbridge-zh_CN-mbb-editor-ui.json": "9cd2e1301c4eae6a0b66bf1d37ce33db027b93d5c16a3fa0dbfae92af1fc5950",
     "markbridge-zh_CN-mbb-emoji.json": "9cd2e1301c4eae6a0b66bf1d37ce33db027b93d5c16a3fa0dbfae92af1fc5950",
     "markbridge-zh_CN-mbb-export-ui.json": "9cd2e1301c4eae6a0b66bf1d37ce33db027b93d5c16a3fa0dbfae92af1fc5950",
-    "markbridge-zh_CN-mbb-i18n.json": "89b5687d60e5415aab496109d976d9445633b917a22b4e93e791f72cf50e9cbf",
+    "markbridge-zh_CN-mbb-i18n.json": "5fad59af6c2ad60eeaa17efdb1207d849a49b0f7509918ad55ee23cd0387423e",
     "markbridge-zh_CN-mbb-kernel.json": "9cd2e1301c4eae6a0b66bf1d37ce33db027b93d5c16a3fa0dbfae92af1fc5950",
     "markbridge-zh_CN-mbb-local-recovery.json": "9cd2e1301c4eae6a0b66bf1d37ce33db027b93d5c16a3fa0dbfae92af1fc5950",
     "markbridge-zh_CN-mbb-math-explorer.json": "9cd2e1301c4eae6a0b66bf1d37ce33db027b93d5c16a3fa0dbfae92af1fc5950",
@@ -17,10 +17,10 @@
     "markbridge-zh_CN-mbb-revisions-ui.json": "9cd2e1301c4eae6a0b66bf1d37ce33db027b93d5c16a3fa0dbfae92af1fc5950",
     "markbridge-zh_CN-mbb-static-export.json": "9cd2e1301c4eae6a0b66bf1d37ce33db027b93d5c16a3fa0dbfae92af1fc5950",
     "markbridge-zh_CN-mbb-teaching.json": "9cd2e1301c4eae6a0b66bf1d37ce33db027b93d5c16a3fa0dbfae92af1fc5950",
-    "markbridge-zh_CN.mo": "79c45e46c47ea8298453a41a550b378be66b75bab4f3049788d01db7ae8f3a59",
-    "markbridge-zh_CN.po": "82e74b92e9d1ce4fb2688bf844dba9c74b37cea0eb1fe8e3e28f2ac325a23efa",
-    "markbridge.pot": "0399629d2420cdb4dc485a167240dbfd6252594988509656bdcfc9eba578322a"
+    "markbridge-zh_CN.mo": "896629adb3682a016849540d97d0c2b15dce89942c22edccbca2f8534cdaf938",
+    "markbridge-zh_CN.po": "94a0175f2c741b9a2e7b93fd44e3ff96ff68fce76deb340090e3a645a880d76a",
+    "markbridge.pot": "cfc40362f25fe4f7b096501becae30069b1653c3871e4f674a0175f79d615fd3"
   },
   "schema": 1,
-  "sourceSha256": "82611bea516c2c24addcbba6df4a7de96bc87859e084870a172ba90d57a4980b"
+  "sourceSha256": "dc201c1eff0a43eae1153a0ab9e51a8acbbffb74b139a7d699c42a38436b7b23"
 }

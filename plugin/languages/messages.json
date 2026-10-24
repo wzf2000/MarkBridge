@@ -2189,5 +2189,16 @@
   "Every group must contain at least one node.": "每个分组至少保留一个节点。",
   "The relationship map validator is unavailable. Reload before applying parameters.": "关系图校验器尚未就绪，请刷新页面后再应用参数。",
   "Choose an existing item": "选择已有条目",
-  "Shorten node titles or article URLs, or reduce relationships to fit the static output budget.": "请缩短节点题名或文章链接，或减少连线，使完整静态关系说明不超出输出预算。"
+  "Shorten node titles or article URLs, or reduce relationships to fit the static output budget.": "请缩短节点题名或文章链接，或减少连线，使完整静态关系说明不超出输出预算。",
+  "Some articles may be unavailable.": "部分文章可能暂不可用。",
+  "Portable document reference": "可移植文档引用",
+  "Local document reference": "当前站点文档引用",
+  "Search managed articles": "搜索已托管文章",
+  "Search articles": "搜索文章",
+  "Choose a currently readable managed article. Unavailable references remain stored without exposing their content to readers.": "请选择当前可读的已托管文章。不可用引用会保留，读者不会收到其中的内容。",
+  "Prepare controlled document links upgrade": "准备受控文档引用升级",
+  "Invalid controlled relationship map configuration.": "受控关系图配置无效，请检查节点、文档引用和关系标识。",
+  "Current article target": "当前文章目标",
+  "Checking the current article target…": "正在核对当前文章目标…",
+  "Available": "可用"
 }

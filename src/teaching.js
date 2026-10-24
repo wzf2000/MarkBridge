@@ -1120,15 +1120,17 @@ export function registerTeaching() {
                 ),
               )
             : kind === 'component'
-              ? el(
-                  'p',
-                  {},
-                  (window.MBBComponents || []).find(
-                    (p) => p.id === a.component && p.version === a.componentVersion,
-                  )?.title ||
-                    a.component ||
-                    T('Choose a teaching component in the sidebar'),
-                )
+              ? a.params?.format === 'relation-map/v2'
+                ? null
+                : el(
+                    'p',
+                    {},
+                    (window.MBBComponents || []).find(
+                      (p) => p.id === a.component && p.version === a.componentVersion,
+                    )?.title ||
+                      a.component ||
+                      T('Choose a teaching component in the sidebar'),
+                  )
               : field('title'),
 
           el(
@@ -1161,11 +1163,15 @@ export function registerTeaching() {
                 ),
               )
             : kind === 'component'
-              ? el(
-                  'p',
-                  { 'data-mbb-generated': '', className: 'mbb-component-params' },
-                  btoa(String.fromCharCode(...new TextEncoder().encode(JSON.stringify(a.params)))),
-                )
+              ? a.params?.format === 'relation-map/v2'
+                ? null
+                : el(
+                    'p',
+                    { 'data-mbb-generated': '', className: 'mbb-component-params' },
+                    btoa(
+                      String.fromCharCode(...new TextEncoder().encode(JSON.stringify(a.params))),
+                    ),
+                  )
               : el('p', { className: 'mbb-teaching-title', 'data-mbb-generated': '' }, a.title),
           el('div', { className: 'mbb-teaching-body' }, el(wp.blockEditor.InnerBlocks.Content)),
         ),

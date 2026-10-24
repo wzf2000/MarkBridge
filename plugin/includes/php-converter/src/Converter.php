@@ -1155,10 +1155,12 @@ final class Converter
                         '</code></pre></div>';
                 }
             } elseif ($kind === 'component') {
-                $html .=
-                    '<p data-mbb-generated="" class="mbb-component-params">' .
-                    base64_encode(Teaching::encode($attrs['params'])) .
-                    '</p>';
+                if (($attrs['params']->format ?? null) !== 'relation-map/v2') {
+                    $html .=
+                        '<p data-mbb-generated="" class="mbb-component-params">' .
+                        base64_encode(Teaching::encode($attrs['params'])) .
+                        '</p>';
+                }
             } else {
                 $html .=
                     '<p class="mbb-teaching-title" data-mbb-generated="">' .

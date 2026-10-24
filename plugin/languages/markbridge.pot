@@ -989,6 +989,10 @@ msgid "Autosaves and revisions for this document cannot be written separately."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Available"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Awaiting selection"
 msgstr ""
 
@@ -1431,6 +1435,10 @@ msgid "Checking paired backups…"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Checking the current article target…"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Child slot must be empty"
 msgstr ""
 
@@ -1448,6 +1456,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Choose a batch item and a plain title of at most 200 characters."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Choose a currently readable managed article. Unavailable references remain stored without exposing their content to readers."
 msgstr ""
 
 #: plugin/i18n.js
@@ -2082,6 +2094,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Cross-site ZIP requires every image to be a verified local attachment of this article"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Current article target"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3477,6 +3493,10 @@ msgid "Invalid component/version"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Invalid controlled relationship map configuration."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Invalid cross-site media association map"
 msgstr ""
 
@@ -3774,6 +3794,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Local block restoration only restores a candidate. The header proposal is preserved. Use a separate bridge preview and confirmation to apply metadata."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Local document reference"
 msgstr ""
 
 #: plugin/i18n.js
@@ -4738,6 +4762,10 @@ msgid "Permissions changed while reading merge inputs"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Portable document reference"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Portable exports cannot carry local media attachment IDs"
 msgstr ""
 
@@ -4755,6 +4783,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Prepare conflict repair with a new identity"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Prepare controlled document links upgrade"
 msgstr ""
 
 #: plugin/i18n.js
@@ -5535,11 +5567,19 @@ msgid "Search"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Search articles"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Search editable articles"
 msgstr ""
 
 #: plugin/i18n.js
 msgid "Search for saved articles you can edit."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Search managed articles"
 msgstr ""
 
 #: plugin/i18n.js
@@ -5686,6 +5726,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Software"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Some articles may be unavailable."
 msgstr ""
 
 #: plugin/i18n.js

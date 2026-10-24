@@ -1,6 +1,7 @@
 <?php
 // Trusted, data-only derived views. Never alter canonical source or saved HTML.
 require_once __DIR__ . '/relation-map.php';
+require_once __DIR__ . '/relation-map-documents.php';
 if (!defined('ABSPATH') && PHP_SAPI !== 'cli') {
     exit();
 }
@@ -252,13 +253,16 @@ function mbb_component_projection_fingerprint(string $component, string $version
         ? mbb_component_provider($component, $version)
         : null;
     if (
-        ($provider['readerMode'] ?? null) === 'relation-map/v1' &&
+        in_array($provider['readerMode'] ?? null, ['relation-map/v1', 'relation-map/v2'], true) &&
         ($provider['status'] ?? null) === 'available'
     ) {
         $files = [];
         foreach (
             [
                 'relation-map.php',
+                'relation-map-v2.php',
+                'relation-map-v2.js',
+                'relation-map-documents.php',
                 'relation-map.js',
                 'relation-map.css',
                 'languages/messages.json',
@@ -339,6 +343,36 @@ function mbb_component_projection_plan(
         $fingerprint = mbb_component_projection_fingerprint($a->component, $a->componentVersion);
         $tree = null;
         $provider = mbb_component_provider($a->component, $a->componentVersion);
+        if (($a->params->format ?? null) === 'relation-map/v2') {
+            $view = mbb_relation_map_v2_view(
+                $a->params,
+                (string) (function_exists('get_the_ID') ? get_the_ID() : 0) . ':' . $id,
+            );
+            $native = [
+                'schema' => 'relation-map/public-v2',
+                'map' => $view['map'],
+                'edgeIds' => $view['edgeIds'],
+                'locale' => str_starts_with($locale, 'zh') ? 'zh' : 'en',
+                'interactive' =>
+                    ($provider['readerMode'] ?? null) === 'relation-map/v2' &&
+                    ($provider['status'] ?? null) === 'available',
+            ];
+            $size = strlen(mbb_projection_json($native));
+            if ($total + $size > $budget) {
+                throw new RuntimeException('projection_aggregate');
+            }
+            $total += $size;
+            $items[] = [
+                'target' => $id,
+                'component' => $a->component,
+                'version' => $a->componentVersion,
+                'fingerprint' => $fingerprint,
+                'state' => 'author-fallback',
+                'params' => $view['map'] ?? (object) [],
+                'projection' => $native,
+            ];
+            continue;
+        }
         if (mbb_relation_map_valid($a->params)) {
             $native = mbb_relation_map_envelope($a->params, $locale);
             $size = strlen(mbb_projection_json($native));
@@ -515,6 +549,61 @@ function mbb_projection_insert(DOMDocument $doc, DOMElement $root, array $items)
             $target->appendChild($wrapper);
         }
         try {
+            if (($item['projection']['schema'] ?? null) === 'relation-map/public-v2') {
+                $view = $item['projection'];
+                if (
+                    !in_array($item['state'], ['available', 'author-fallback'], true) ||
+                    !mbb_component_equal($view['map'] ?? (object) [], $item['params'])
+                ) {
+                    throw new RuntimeException('relation_map_projection');
+                }
+                // Consume the fresh final plan: an earlier render_block result is never authority.
+                foreach (iterator_to_array($target->childNodes) as $child) {
+                    if (
+                        $child instanceof DOMElement &&
+                        $child !== $wrapper &&
+                        ($child->getAttribute('class') === 'mbb-projection' ||
+                            $child->hasAttribute('data-mbb-relation-notice'))
+                    ) {
+                        $target->removeChild($child);
+                    }
+                }
+                $target->setAttribute(
+                    'data-mbb-teaching-config',
+                    mbb_component_json([
+                        'reader' => 'relation-map/public-v2',
+                        'publicView' => $view['map'],
+                        'edgeIds' => $view['edgeIds'],
+                        'status' =>
+                            $view['interactive'] && $view['map'] ? 'available' : 'unavailable',
+                    ]),
+                );
+                $notice = $doc->createElement('p');
+                $notice->setAttribute('data-mbb-generated', '');
+                $notice->setAttribute('data-mbb-relation-notice', '');
+                $notice->appendChild(
+                    $doc->createTextNode(
+                        mbb_relation_map_message(
+                            'Some articles may be unavailable.',
+                            $view['locale'],
+                        ),
+                    ),
+                );
+                $target->insertBefore($notice, $wrapper);
+                if ($view['map']) {
+                    mbb_relation_map_append(
+                        $doc,
+                        $wrapper,
+                        mbb_relation_map_envelope($view['map'], $view['locale']),
+                    );
+                }
+                $bytes = strlen($doc->saveHTML($wrapper)) + strlen($doc->saveHTML($notice));
+                if ($bytes > MBB_PROJECTION_BYTES || $total + $bytes > 524288) {
+                    throw new RuntimeException('projection_output');
+                }
+                $total += $bytes;
+                continue;
+            }
             if (($item['projection']['schema'] ?? null) === 'relation-map/v1') {
                 if (
                     !in_array($item['state'], ['available', 'author-fallback'], true) ||

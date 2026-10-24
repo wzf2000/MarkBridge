@@ -178,6 +178,28 @@
     } catch {
       return;
     }
+    if (config.reader === 'relation-map/public-v2') {
+      if (
+        config.status !== 'available' ||
+        window.MBB_COMPONENTS_READER !== true ||
+        !config.publicView
+      )
+        return;
+      try {
+        const native = globalThis.MBBRelationMap.enhance(node, config.publicView, config.edgeIds);
+        instances.set(node, {
+          ...native,
+          signature,
+          dispose() {
+            native.dispose();
+            instances.delete(node);
+          },
+        });
+      } catch {
+        node.dataset.mbbComponentState = 'static';
+      }
+      return;
+    }
     // Resource authority comes from the server registry, never an article descriptor.
     config.provider = (window.MBBComponents || []).find(
       (p) => p.id === config.component && p.version === config.componentVersion,

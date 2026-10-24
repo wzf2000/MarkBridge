@@ -131,21 +131,45 @@
       wrapper.className = 'mbb-projection';
       wrapper.setAttribute('data-mbb-generated', '');
       try {
-        if (item.projection?.schema === 'relation-map/v1') {
+        if (['relation-map/v1', 'relation-map/public-v2'].includes(item.projection?.schema)) {
+          const v2 = item.projection.schema === 'relation-map/public-v2';
           if (
             !['available', 'author-fallback'].includes(item.state) ||
-            !closed(item.projection, ['schema', 'map', 'locale']) ||
+            !closed(
+              item.projection,
+              v2
+                ? ['schema', 'map', 'locale', 'edgeIds', 'interactive']
+                : ['schema', 'map', 'locale'],
+            ) ||
             !['zh', 'en'].includes(item.projection.locale) ||
-            JSON.stringify(item.projection.map) !== JSON.stringify(item.params)
+            JSON.stringify(item.projection.map ?? {}) !== JSON.stringify(item.params)
           )
             fail();
-          wrapper.append(
-            globalThis.MBBRelationMap.staticView(
-              doc,
-              item.projection.map,
-              item.projection.locale === 'zh',
-            ),
-          );
+          if (
+            v2 &&
+            (!Array.isArray(item.projection.edgeIds) ||
+              typeof item.projection.interactive !== 'boolean' ||
+              item.projection.edgeIds.length !== (item.projection.map?.edges?.length || 0) ||
+              item.projection.edgeIds.some(
+                (id) => typeof id !== 'string' || !/^e_[a-f0-9]{32}$/.test(id),
+              ))
+          )
+            fail();
+          if (v2) {
+            const notice = doc.createElement('p');
+            notice.textContent =
+              globalThis.MBBI18n?.t('Some articles may be unavailable.') ||
+              'Some articles may be unavailable.';
+            wrapper.append(notice);
+          }
+          if (item.projection.map)
+            wrapper.append(
+              globalThis.MBBRelationMap.staticView(
+                doc,
+                item.projection.map,
+                item.projection.locale === 'zh',
+              ),
+            );
           const bytes = new TextEncoder().encode(wrapper.outerHTML).length;
           if (bytes > 131072 || total + bytes > 524288) fail();
           total += bytes;
