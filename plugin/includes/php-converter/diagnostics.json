@@ -1391,6 +1391,7 @@
   "Server paired backups",
   "Server title: %1$s; status: %2$s.",
   "Set current version as default",
+  "Shorten node titles or article URLs, or reduce relationships to fit the static output budget.",
   "Show all code versions",
   "Show copy buttons in frontend code toolbars. Highlighting and language labels remain available.",
   "Show diagram",

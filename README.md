@@ -40,7 +40,7 @@ flowchart LR
 
 ## 开始使用
 
-当前候选为 **3.5.0-rc.1**，新增原生可导航关系图；当前正式版仍为 **3.4.1**。使用说明见 [文档索引](docs/index.md) 与在线 Wiki；版本对应的完整文档随 Release 源码提供。
+当前候选为 **3.5.0-rc.1**，新增原生可导航关系图；当前正式版仍为 **3.4.0**。使用说明见 [文档索引](docs/index.md) 与在线 Wiki；版本对应的完整文档随 Release 源码提供。
 
 安装请使用对应 [Release](https://github.com/wzf2000/MarkBridge/releases) 的插件 ZIP，版本变化见[更新记录](CHANGELOG.md)。新安装在 WordPress 7.1.x、PHP 8.2+ 且具备 DOM／mbstring 扩展时使用包内 PHP 转换器，基础编辑不要求额外 Node 运行环境。已有 Node 配置升级后继续使用 Node；管理员可在 **设置 → MarkBridge** 选择 PHP／Node，Node 需预先准备环境并通过验证。尚未提交 WordPress.org 插件目录。
 

@@ -114,8 +114,40 @@ const urls = [
   'http://999.999/',
   'https://例子.test/',
 ];
-const maps = [base, boundary, cycle, ...bad];
-const expected = [true, true, true, ...bad.map(() => false)];
+// Dense repeated endpoints must fit the complete static fallback, not just input JSON.
+const dense = clone(base);
+dense.nodes = Array.from({ length: 8 }, (_, i) => ({
+  id: 'n' + i,
+  group: 'g',
+  title: '中'.repeat(159) + i,
+  url: '#n' + i,
+}));
+dense.edges = [];
+for (const a of dense.nodes)
+  for (const b of dense.nodes)
+    if (a !== b)
+      for (const kind of ['recommended', 'compare', 'optimization'])
+        if (dense.edges.length < 128) dense.edges.push({ from: a.id, to: b.id, kind });
+const longURL = clone(dense);
+longURL.nodes.forEach((n) => {
+  n.title = '节点';
+  n.url = '#' + '&'.repeat(180);
+});
+const escapedTitles = clone(dense);
+escapedTitles.nodes.forEach((n) => {
+  n.title = '&<>"\''.repeat(32);
+});
+for (const p of [dense, longURL, escapedTitles]) {
+  assert(Buffer.byteLength(JSON.stringify(p)) < 16384);
+  assert.throws(() => M.validate(p), /static output budget/);
+  bad.push(p);
+}
+const acceptedDense = clone(dense);
+while (M.staticBytes(acceptedDense) > 122880) acceptedDense.edges.pop();
+assert(acceptedDense.edges.length > 0 && acceptedDense.edges.length < 128);
+M.validate(acceptedDense);
+const maps = [base, boundary, cycle, acceptedDense, ...bad];
+const expected = [true, true, true, true, ...bad.map(() => false)];
 assert.deepEqual(
   maps.map((p) => {
     try {
@@ -127,7 +159,12 @@ assert.deepEqual(
   }),
   expected,
 );
-const wire = JSON.stringify({ maps, urls });
+const wire = JSON.stringify({
+  maps,
+  urls,
+  budgets: [dense, longURL, escapedTitles, acceptedDense, boundary],
+  render: [acceptedDense, boundary],
+});
 const php = JSON.parse(
   cp.execFileSync(
     process.env.MARKBRIDGE_TEST_PHP || 'php',
@@ -136,6 +173,19 @@ const php = JSON.parse(
   ),
 );
 assert.deepEqual(php.maps, expected);
+assert.deepEqual(
+  php.estimates,
+  [dense, longURL, escapedTitles, acceptedDense, boundary].map(M.staticBytes),
+);
+for (const rendered of php.rendered) {
+  assert(rendered.bytes < 131072);
+  assert(rendered.bytes <= rendered.estimate);
+  assert.equal(rendered.links, rendered.expectedLinks);
+}
+console.log(
+  'Dense Chinese titles / long escaped URLs / HTML text: JS/PHP reject oversized fallback; accepted boundary retains all links in both locales.',
+  php.rendered,
+);
 assert.deepEqual(php.urls, urls.map(M.safeURL));
 assert(M.safeURL('/' + '中'.repeat(341)));
 assert(!M.safeURL('/' + '中'.repeat(342)));

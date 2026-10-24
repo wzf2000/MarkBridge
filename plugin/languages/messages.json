@@ -2188,5 +2188,6 @@
   "Each pair may contain each relationship kind only once.": "同一对节点的同一种关系只能出现一次。",
   "Every group must contain at least one node.": "每个分组至少保留一个节点。",
   "The relationship map validator is unavailable. Reload before applying parameters.": "关系图校验器尚未就绪，请刷新页面后再应用参数。",
-  "Choose an existing item": "选择已有条目"
+  "Choose an existing item": "选择已有条目",
+  "Shorten node titles or article URLs, or reduce relationships to fit the static output budget.": "请缩短节点题名或文章链接，或减少连线，使完整静态关系说明不超出输出预算。"
 }

@@ -46,6 +46,25 @@ function mbb_relation_map_url(mixed $v): bool
     }
     return !str_contains($v, ':') && !str_starts_with($v, '?//');
 }
+/** Same conservative escaped-byte estimate as JS; URL bytes allow entity/URI expansion. */
+function mbb_relation_map_static_bytes(stdClass $p): int
+{
+    $escaped = static fn($s) => strlen(preg_replace('/[&<>"\']/u', '&&&&&&', $s));
+    $link = static fn($n) => $escaped($n->title) + 6 * strlen($n->url);
+    $nodes = [];
+    $total = 16384 + $escaped($p->title);
+    foreach ($p->groups as $g) {
+        $total += 128 + $escaped($g->title);
+    }
+    foreach ($p->nodes as $n) {
+        $nodes[$n->id] = $n;
+        $total += 128 + $link($n) + $escaped($n->description ?? '');
+    }
+    foreach ($p->edges as $e) {
+        $total += 128 + $link($nodes[$e->from]) + $link($nodes[$e->to]) + $escaped($e->why ?? '');
+    }
+    return $total;
+}
 function mbb_relation_map_valid(mixed $p): bool
 {
     $closed = static fn($v, $keys, $optional = []) => $v instanceof stdClass &&
@@ -127,7 +146,7 @@ function mbb_relation_map_valid(mixed $p): bool
         }
         $edges[$key] = true;
     }
-    return !in_array(0, $groups, true);
+    return !in_array(0, $groups, true) && mbb_relation_map_static_bytes($p) <= 122880;
 }
 function markbridge_teaching_supports_relation_map(): bool
 {

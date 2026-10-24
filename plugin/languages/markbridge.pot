@@ -5613,6 +5613,10 @@ msgid "Set current version as default"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Shorten node titles or article URLs, or reduce relationships to fit the static output budget."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Show all code versions"
 msgstr ""
 

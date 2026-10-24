@@ -47,9 +47,23 @@
     }
     return !v.includes(':') && !v.startsWith('?//');
   };
+  // Bound the full static fallback, including repeated endpoint links. Reserve 16 KiB
+  // for the wrapper, fixed markup and either locale; leave 8 KiB below the core gate.
+  function staticBytes(p) {
+    const bytes = (s) => new TextEncoder().encode(s).length;
+    const escaped = (s) => bytes(s.replace(/[&<>"']/g, '&&&&&&'));
+    const link = (n) => escaped(n.title) + 6 * bytes(n.url);
+    const nodes = new Map(p.nodes.map((n) => [n.id, n]));
+    let total = 16384 + escaped(p.title);
+    for (const g of p.groups) total += 128 + escaped(g.title);
+    for (const n of p.nodes) total += 128 + link(n) + escaped(n.description || '');
+    for (const e of p.edges)
+      total += 128 + link(nodes.get(e.from)) + link(nodes.get(e.to)) + escaped(e.why || '');
+    return total;
+  }
   function validate(p) {
     const fail = (message = 'Invalid relationship map configuration.') => {
-      throw Error(message);
+      throw Error(globalThis.MBBI18n?.t(message) || message);
     };
     if (
       !closed(p, ['format', 'title', 'groups', 'nodes', 'edges']) ||
@@ -111,6 +125,10 @@
     }
     if (p.groups.some((g) => !p.nodes.some((n) => n.group === g.id)))
       fail('Every group must contain at least one node.');
+    if (staticBytes(p) > 122880)
+      fail(
+        'Shorten node titles or article URLs, or reduce relationships to fit the static output budget.',
+      );
     return p;
   }
   const messages = /*__MBB_RELATION_MESSAGES__*/ {};
@@ -600,6 +618,7 @@
     format: FORMAT,
     validate,
     safeURL,
+    staticBytes,
     staticView,
     enhance,
   });

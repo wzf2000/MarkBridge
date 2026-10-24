@@ -5613,6 +5613,10 @@ msgid "Set current version as default"
 msgstr "将当前版本设为默认"
 
 #: plugin/i18n.js
+msgid "Shorten node titles or article URLs, or reduce relationships to fit the static output budget."
+msgstr "请缩短节点题名或文章链接，或减少连线，使完整静态关系说明不超出输出预算。"
+
+#: plugin/i18n.js
 msgid "Show all code versions"
 msgstr "显示全部代码版本"
 
