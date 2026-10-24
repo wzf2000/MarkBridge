@@ -101,7 +101,7 @@ function mbb_component_frame_body(array $p): string
         ) .
         '</script>';
 }
-function mbb_component_frame_provider($request): ?array
+function mbb_component_frame_provider($request, bool $bundle = false): ?array
 {
     if ($request->get_method() !== 'GET' || ($request->get_body() ?? '') !== '') {
         return null;
@@ -115,25 +115,82 @@ function mbb_component_frame_provider($request): ?array
     return $p &&
         $p['protocolVersion'] === 2 &&
         $p['status'] === 'available' &&
-        hash_equals($p['resource']['sha256'], (string) $request['digest'])
+        hash_equals(
+            $bundle ? $p['resources']['sha256'] : $p['resource']['sha256'],
+            (string) $request['digest'],
+        )
         ? $p
         : null;
 }
+/** Fixed framing: 8-byte magic, uint32 big-endian manifest length, original manifest,
+ * then original resource bytes in declaration order (not dependency traversal order). */
+function mbb_component_bundle_body(array $p): string
+{
+    $checked = mbb_component_v2_check($p);
+    $raw = file_get_contents($checked['plan']['manifestFile'], false, null, 0, 16385);
+    if (
+        $raw === false ||
+        strlen($raw) > 16384 ||
+        !hash_equals($p['resources']['sha256'], hash('sha256', $raw))
+    ) {
+        throw new RuntimeException('MANIFEST_SHA');
+    }
+    $manifest = mbb_component_resource_json($raw);
+    $plan = mbb_component_resource_manifest($manifest, $p['executionProfile'] ?? null);
+    $files = array_column($checked['plan']['resources'], 'file', 'id');
+    $body = "MBBR2\0\r\n" . pack('N', strlen($raw)) . $raw;
+    foreach ($manifest->resources as $item) {
+        $bytes = file_get_contents($files[$item->id], false, null, 0, $item->bytes + 1);
+        if (
+            $bytes === false ||
+            strlen($bytes) !== (int) $item->bytes ||
+            !hash_equals($item->sha256, hash('sha256', $bytes))
+        ) {
+            throw new RuntimeException('RESOURCE_CHANGED');
+        }
+        $body .= $bytes;
+    }
+    if (strlen($body) !== 12 + strlen($raw) + $plan['bytes'] || strlen($body) > 2113548) {
+        throw new RuntimeException('GROUP_LIMIT');
+    }
+    return $body;
+}
+function mbb_component_bundle_headers(): array
+{
+    return [
+        'Content-Type' => 'application/octet-stream',
+        'Cache-Control' => 'no-store',
+        'X-Content-Type-Options' => 'nosniff',
+        'Referrer-Policy' => 'no-referrer',
+        'Content-Security-Policy' => "default-src 'none'; frame-ancestors 'none'",
+    ];
+}
 function mbb_component_frame_response($request)
 {
+    return mbb_component_http_response($request, false);
+}
+function mbb_component_bundle_response($request)
+{
+    return mbb_component_http_response($request, true);
+}
+function mbb_component_http_response($request, bool $bundle)
+{
     try {
-        $p = mbb_component_frame_provider($request);
+        $p = mbb_component_frame_provider($request, $bundle);
         if (!$p) {
             throw new RuntimeException('FRAME_NOT_FOUND');
         }
-        $body = mbb_component_frame_body($p);
-        $headers = mbb_component_frame_headers($p['executionProfile'] ?? null);
+        $body = $bundle ? mbb_component_bundle_body($p) : mbb_component_frame_body($p);
+        $headers = $bundle
+            ? mbb_component_bundle_headers()
+            : mbb_component_frame_headers($p['executionProfile'] ?? null);
         $response = new WP_REST_Response(null, 200, $headers);
         $GLOBALS['mbb_component_frame_responses'][spl_object_id($response)] = [
             $response,
             $request,
             $body,
             $headers,
+            $bundle,
         ];
         return $response;
     } catch (Throwable $e) {
@@ -145,6 +202,15 @@ function mbb_component_frame_response($request)
     }
 }
 add_action('rest_api_init', static function () {
+    register_rest_route(
+        'mbb/v2',
+        '/component-resources/(?P<component>[a-z][a-z0-9-]{0,63})/(?P<version>[0-9]+\.[0-9]+\.[0-9]+)/(?P<digest>[a-f0-9]{64})',
+        [
+            'methods' => 'GET',
+            'permission_callback' => '__return_true',
+            'callback' => 'mbb_component_bundle_response',
+        ],
+    );
     register_rest_route(
         'mbb/v2',
         '/component-frame/(?P<component>[a-z][a-z0-9-]{0,63})/(?P<version>[0-9]+\.[0-9]+\.[0-9]+)/(?P<digest>[a-f0-9]{64})',
@@ -166,11 +232,15 @@ if (function_exists('add_filter')) {
                 return $served;
             }
             try {
-                $p = mbb_component_frame_provider($request);
+                $bundle = $entry[4];
+                $p = mbb_component_frame_provider($request, $bundle);
                 if (
                     !$p ||
-                    mbb_component_frame_body($p) !== $entry[2] ||
-                    mbb_component_frame_headers($p['executionProfile'] ?? null) !== $entry[3]
+                    ($bundle ? mbb_component_bundle_body($p) : mbb_component_frame_body($p)) !==
+                        $entry[2] ||
+                    ($bundle
+                        ? mbb_component_bundle_headers()
+                        : mbb_component_frame_headers($p['executionProfile'] ?? null)) !== $entry[3]
                 ) {
                     throw new RuntimeException('FRAME_STALE');
                 }

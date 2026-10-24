@@ -17,6 +17,8 @@ module.exports = (port) => {
       response
         .writeHead(200, { 'Content-Type': 'application/json' })
         .end(JSON.stringify({ provider: f.provider, network }));
+    else if (name === new URL(f.provider.resources.bundleUrl).pathname)
+      response.writeHead(200, f.bundleHeaders).end(Buffer.from(f.bundle, 'base64'));
     else if (name === new URL(f.provider.frameUrl).pathname)
       response.writeHead(200, f.headers).end(f.html);
     else if (name === '/plugins/execution/assets/0.1.0/manifest.json')

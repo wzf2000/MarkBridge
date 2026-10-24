@@ -196,6 +196,8 @@ try {
                 'headers' => $execution,
                 'html' => mbb_component_frame_body($p),
                 'manifest' => file_get_contents($manifest),
+                'bundle' => base64_encode(mbb_component_bundle_body($p)),
+                'bundleHeaders' => mbb_component_bundle_headers(),
                 'worker' => $bytes['worker'],
                 'module' => base64_encode($bytes['module']),
                 'data' => $bytes['data'],

@@ -592,7 +592,12 @@
           initialized = true;
           if (resourceV2) {
             try {
-              resourceContext.check('transfer');
+              resourceContext.check();
+              resourceContext.running = { phase: 'transfer', start: performance.now() };
+              resourceTransferTimer = setTimeout(() => {
+                if (current === generation)
+                  failure(T('Component initialization timed out.'), 'TRANSFER_TIMEOUT');
+              }, resourceContext.remaining('transfer'));
             } catch {
               failure(T('Component initialization timed out.'), 'TRANSFER_TIMEOUT');
               return;
@@ -640,11 +645,6 @@
             frameUrl.password
           )
             throw coded('RESOURCE_ORIGIN', 'Only registered local resources are allowed');
-          resourceContext.running = { phase: 'transfer', start: performance.now() };
-          resourceTransferTimer = setTimeout(() => {
-            if (current === generation)
-              failure(T('Component initialization timed out.'), 'TRANSFER_TIMEOUT');
-          }, resourceContext.remaining('transfer'));
           frame.src = frameUrl.href;
         } else
           frame.srcdoc =
