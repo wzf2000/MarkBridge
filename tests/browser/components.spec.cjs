@@ -428,15 +428,14 @@ test('oversized initialization envelopes fail closed before public data is sent'
   expect(await page.evaluate(() => MarkBridgeComponents.frameCount())).toBe(0);
 });
 
-test('a first dynamically inserted teaching component uses the prepublished server registry', async ({
+test('a dynamically inserted component uses only its declared article dependency', async ({
   page,
 }) => {
   await page.goto('/component-dynamic');
   expect(
-    await page.evaluate(
-      () => Array.isArray(window.MBBComponents) && window.MBBComponents[0]?.id === 'fixture',
-    ),
-  ).toBe(true);
+    await page.evaluate(() => window.MBBComponents.map(({ id, version }) => ({ id, version }))),
+  ).toEqual([{ id: 'fixture', version: '0.1.0' }]);
+  expect(await page.evaluate(() => window.MBBComponentCatalog)).toBeUndefined();
   expect(await page.evaluate(() => !!window.MarkBridgeComponents)).toBe(false);
   await page.locator('#dynamic').evaluate((node) => {
     const element = document.createElement('div');
@@ -811,4 +810,38 @@ test('verified layout includes natural body padding and collapsed final margins 
   await page.screenshot({
     path: info.outputPath('body-natural-height-' + info.project.name + '.png'),
   });
+});
+
+test('v1 arbitrary budget-like error codes remain ordinary execution failures', async ({
+  page,
+}) => {
+  await load(page);
+  await page.getByRole('button', { name: '启动交互演示' }).click();
+  const frame = page.frameLocator('iframe');
+  await expect(frame.locator('#status')).toHaveText('Ready');
+  const runId = 'c'.repeat(32);
+  await frame.locator('body').evaluate((n, id) => {
+    const init = JSON.parse(document.getElementById('init').textContent);
+    parent.postMessage(
+      { protocol: init.protocol, session: init.session, type: 'run-request', runId: id },
+      '*',
+    );
+  }, runId);
+  await expect.poll(() => page.evaluate(() => MarkBridgeComponents.activeCount())).toBe(1);
+  await frame.locator('body').evaluate((n, id) => {
+    const init = JSON.parse(document.getElementById('init').textContent);
+    parent.postMessage(
+      {
+        protocol: init.protocol,
+        session: init.session,
+        type: 'error',
+        runId: id,
+        code: 'RUN_LIMIT',
+      },
+      '*',
+    );
+  }, runId);
+  await expect(page.locator('#demo-0')).toHaveAttribute('data-mbb-failure-code', 'EXECUTION');
+  await expect(page.locator('iframe')).toHaveCount(1);
+  expect(await page.evaluate(() => MarkBridgeComponents.activeCount())).toBe(0);
 });

@@ -216,5 +216,50 @@
       }
     ],
     "normalizesInlineGT": true
+  },
+  {
+    "source": ":::mbb:v2 code-tabs {\"id\":\"examples\",\"defaultTab\":\"variant4\",\"tabs\":[{\"id\":\"variant0\",\"title\":\"\",\"terminalNewline\":false,\"startLine\":12,\"highlights\":\"\"},{\"id\":\"variant1\",\"title\":\"版本 1\",\"terminalNewline\":false,\"startLine\":12,\"highlights\":\"\"},{\"id\":\"variant2\",\"title\":\"\",\"terminalNewline\":true,\"startLine\":12,\"highlights\":\"\"},{\"id\":\"variant3\",\"title\":\"版本 3\",\"terminalNewline\":true,\"startLine\":12,\"highlights\":\"\"},{\"id\":\"variant4\",\"title\":\"\",\"terminalNewline\":false,\"startLine\":12,\"highlights\":\"\"}]}\n\n```javascript\n\n```\n\n```python\nx\n```\n\n```javascript\na\n```\n\n```python\n\talpha  \r\n\tbeta\n\r\n```\n\n```javascript\na\rb\r\n```\n\n:::mbb:end\n",
+    "tabs": [
+      {
+        "id": "variant0",
+        "title": "",
+        "language": "javascript",
+        "code": "",
+        "startLine": 12,
+        "highlights": ""
+      },
+      {
+        "id": "variant1",
+        "title": "版本 1",
+        "language": "python",
+        "code": "x",
+        "startLine": 12,
+        "highlights": ""
+      },
+      {
+        "id": "variant2",
+        "title": "",
+        "language": "javascript",
+        "code": "a\n",
+        "startLine": 12,
+        "highlights": ""
+      },
+      {
+        "id": "variant3",
+        "title": "版本 3",
+        "language": "python",
+        "code": "\talpha  \r\n\tbeta\n\r\n",
+        "startLine": 12,
+        "highlights": ""
+      },
+      {
+        "id": "variant4",
+        "title": "",
+        "language": "javascript",
+        "code": "a\rb\r",
+        "startLine": 12,
+        "highlights": ""
+      }
+    ]
   }
 ]

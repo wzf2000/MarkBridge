@@ -6,6 +6,8 @@ const fixturePort = Number(process.env.MARKBRIDGE_TEST_BROWSER_PORT || 8765);
 if (!Number.isInteger(fixturePort) || fixturePort < 1024 || fixturePort > 65535)
   throw Error('MARKBRIDGE_TEST_BROWSER_PORT must be a local unprivileged port.');
 
+const resourceV2Fixture = require('./resource-v2-fixture.cjs')(fixturePort);
+const executionV2Fixture = require('./execution-v2-fixture.cjs')(fixturePort);
 const plugin = process.env.MARKBRIDGE_TEST_PLUGIN_ROOT
   ? fs.realpathSync(process.env.MARKBRIDGE_TEST_PLUGIN_ROOT)
   : path.resolve(__dirname, '../../plugin');
@@ -383,6 +385,8 @@ function batchFixture(request, response, pathname) {
 
 http
   .createServer((request, response) => {
+    if (executionV2Fixture(request, response)) return;
+    if (resourceV2Fixture(request, response)) return;
     const pathname = new URL(request.url, 'http://localhost').pathname;
     const locale =
       new URL(request.url, 'http://localhost').searchParams.get('locale') === 'en_US'
@@ -542,6 +546,14 @@ http
     }
     if (pathname === '/wp/v2/types')
       return response.writeHead(200, { 'Content-Type': 'application/json' }).end('{}');
+    if (pathname === '/code-literals-fixture') {
+      const fixture = execFileSync(
+        'php',
+        [path.join(__dirname, '../code-literals.php'), '--fixture'],
+        { encoding: 'utf8' },
+      );
+      return response.writeHead(200, { 'Content-Type': 'application/json' }).end(fixture);
+    }
     if (pathname === '/front') {
       const query = new URL(request.url, 'http://localhost').searchParams;
       const settings =

@@ -88,6 +88,13 @@
     "tabs": "array",
     "version": "integer"
   },
+  "core/group": {
+    "tagName": "string",
+    "anchor": "string",
+    "ariaLabel": "string",
+    "className": "string",
+    "layout": "array"
+  },
   "core/details": {
     "summary": "string",
     "showContent": "boolean",
@@ -136,5 +143,13 @@
     "namespace": "string",
     "document": "string",
     "version": "integer"
+  },
+  "core/code": {
+    "anchor": "string",
+    "className": "string"
+  },
+  "core/preformatted": {
+    "anchor": "string",
+    "className": "string"
   }
 }

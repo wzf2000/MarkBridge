@@ -1,6 +1,9 @@
 /* Preview-only source provenance. Input must be the already validated source/block pair.
  * No rendered text search, source normalization, or block attribute mutation occurs here. */
 const NATIVE = {
+  'native-code': 'core/code',
+  preformatted: 'core/preformatted',
+  group: 'core/group',
   image: 'core/image',
   gallery: 'core/gallery',
   details: 'core/details',

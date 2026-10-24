@@ -101,6 +101,21 @@ function mbb_runtime_manifest($runtime)
     return is_array($manifest) ? $manifest : null;
 }
 
+// Match node --version exactly; the manifest pins the same stable executable version.
+function mbb_runtime_node_supported($version)
+{
+    return is_string($version) &&
+        preg_match('/^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/D', $version) === 1 &&
+        version_compare(substr($version, 1), '24.22.1', '>=');
+}
+
+function mbb_runtime_node_matches($version, $expected)
+{
+    return mbb_runtime_node_supported($version) &&
+        is_string($expected) &&
+        hash_equals($expected, $version);
+}
+
 function mbb_runtime_node_version($runtime)
 {
     if (
@@ -248,11 +263,7 @@ function mbb_runtime_diagnostics($candidate = null, $smoke = false)
     }
     $node = $runtime . '/node/bin/node';
     $node_version = mbb_runtime_node_version($runtime);
-    $node_major = (int) explode('.', ltrim($node_version, 'v'))[0];
-    $node_ok =
-        $node_version !== '' &&
-        version_compare(ltrim($node_version, 'v'), '24.15.0', '>=') &&
-        (!$manifest_ok || hash_equals((string) $manifest['node'], $node_version));
+    $node_ok = $manifest_ok && mbb_runtime_node_matches($node_version, $manifest['node']);
     $add(
         'node',
         'Node.js',

@@ -1,0 +1,36 @@
+{
+  "schema": "mbb-resources/v2",
+  "version": "0.1.0",
+  "resources": [
+    {
+      "id": "data",
+      "path": "assets/0.1.0/data.json",
+      "type": "json",
+      "bytes": 16,
+      "sha256": "4a421daa81852b3fc555af5110f6f445b526186b8b11b32a58fe54b7fa4f1f16",
+      "deps": [],
+      "license": "CC0-1.0",
+      "version": "0.1.0"
+    },
+    {
+      "id": "program",
+      "path": "assets/0.1.0/program.js",
+      "type": "javascript",
+      "bytes": 48,
+      "sha256": "9ca9e3065264d545317742d86577f3c06adebbeae9afabe251a5d95bf2b3421e",
+      "deps": ["data"],
+      "license": "CC0-1.0",
+      "version": "0.1.0"
+    },
+    {
+      "id": "values",
+      "path": "assets/0.1.0/values.bin",
+      "type": "public-data",
+      "bytes": 2,
+      "sha256": "a12871fee210fb8619291eaea194581cbd2531e4b23759d225f6806923f63222",
+      "deps": [],
+      "license": "CC0-1.0",
+      "version": "0.1.0"
+    }
+  ]
+}

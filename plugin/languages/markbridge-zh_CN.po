@@ -513,6 +513,10 @@ msgid "A gallery requires 1 to 32 direct native images"
 msgstr "图库需要 1–32 个直接隶属的原生图片区块"
 
 #: plugin/i18n.js
+msgid "A group label must be single-line plain text"
+msgstr "组容器标签必须为单行纯文字。"
+
+#: plugin/i18n.js
 msgid "A link button must be a direct leaf of a button group"
 msgstr "链接按钮只能是按钮组直接叶节点"
 
@@ -927,6 +931,10 @@ msgstr "最多支持 256 种本地图引用；真实图片仍最多 32 张"
 #: plugin/i18n.js
 msgid "At most 32 actual images may be exported"
 msgstr "最多导出 32 张实际图片"
+
+#: plugin/i18n.js
+msgid "At most 32 highlighted ranges are allowed"
+msgstr "重点行最多允许 32 个范围"
 
 #: plugin/i18n.js
 msgid "At most 32 image targets"
@@ -1635,6 +1643,10 @@ msgid "Code line numbers"
 msgstr "代码行号"
 
 #: plugin/i18n.js
+msgid "Code line numbers must remain between 1 and 999999"
+msgstr "代码显示行号须在 1 至 999999 之间"
+
+#: plugin/i18n.js
 msgid "Code markup only supports plain text"
 msgstr "代码标记只支持纯文字"
 
@@ -1975,6 +1987,10 @@ msgstr "复制诊断摘要"
 #: plugin/i18n.js
 msgid "Copy identity metadata"
 msgstr "身份元数据"
+
+#: plugin/i18n.js
+msgid "Copy line link"
+msgstr "复制行链接"
 
 #: plugin/i18n.js
 msgid "Copy revision content into the current identity"
@@ -2908,8 +2924,20 @@ msgid "Go"
 msgstr "跳转"
 
 #: plugin/i18n.js
+msgid "Go to highlighted lines"
+msgstr "跳到重点行"
+
+#: plugin/i18n.js
 msgid "Go to line"
 msgstr "跳转行号"
+
+#: plugin/i18n.js
+msgid "Groups only support div or section tags"
+msgstr "组容器仅支持 div 或 section 标签。"
+
+#: plugin/i18n.js
+msgid "Groups only support flow or constrained layout"
+msgstr "组容器仅支持 flow 或 constrained 布局。"
 
 #: plugin/i18n.js
 msgid "HTML blocks cannot contain child blocks"
@@ -2970,6 +2998,23 @@ msgstr "重点行超出对应代码范围"
 #: plugin/i18n.js
 msgid "Highlighted lines must be unique positive integers separated by commas"
 msgstr "重点行需为不重复的正整数，以逗号分隔"
+
+#: plugin/i18n.js
+msgid "Highlighted lines or ranges"
+msgstr "重点行或范围"
+
+#, php-format
+#: plugin/i18n.js
+msgid "Highlighted lines: %1$s"
+msgstr "重点行：%1$s"
+
+#: plugin/i18n.js
+msgid "Highlighted ranges must be ordered, disjoint and within the code"
+msgstr "重点行范围须按顺序排列、不重叠且位于代码内"
+
+#: plugin/i18n.js
+msgid "Highlights require comma-separated lines or closed ranges"
+msgstr "重点行须使用逗号分隔的行号或闭区间"
 
 #: plugin/i18n.js
 msgid "Hint"
@@ -3138,6 +3183,10 @@ msgstr "独立正文变化已组合。未修改的元数据采用服务器最新
 #: plugin/i18n.js
 msgid "Index status"
 msgstr "索引状态"
+
+#: plugin/i18n.js
+msgid "Indexed component versions"
+msgstr "按需解析的组件版本"
 
 #: plugin/i18n.js
 msgid "Initial values"
@@ -3320,6 +3369,14 @@ msgid "Invalid code language"
 msgstr "代码语言非法"
 
 #: plugin/i18n.js
+msgid "Invalid code line metadata"
+msgstr "代码行设置无效"
+
+#: plugin/i18n.js
+msgid "Invalid component catalog request."
+msgstr "组件目录请求无效。"
+
+#: plugin/i18n.js
 msgid "Invalid component name or version"
 msgstr "组件名称或版本非法"
 
@@ -3366,6 +3423,10 @@ msgstr "链接 target 非法"
 #: plugin/i18n.js
 msgid "Invalid local author draft"
 msgstr "本地作者草稿无效"
+
+#: plugin/i18n.js
+msgid "Invalid native block class names"
+msgstr "原生区块类名无效。"
 
 #: plugin/i18n.js
 msgid "Invalid native block nesting"
@@ -3484,6 +3545,10 @@ msgid "Keep my changes and continue from the latest version"
 msgstr "保留我的修改，基于最新版继续"
 
 #: plugin/i18n.js
+msgid "Kind"
+msgstr "类型"
+
+#: plugin/i18n.js
 msgid "Label"
 msgstr "标签"
 
@@ -3540,6 +3605,10 @@ msgid "Line differences: "
 msgstr "行级差异："
 
 #: plugin/i18n.js
+msgid "Line link copied"
+msgstr "行链接已复制"
+
+#: plugin/i18n.js
 msgid "Link rel must be text"
 msgstr "链接 rel 需为文字"
 
@@ -3590,6 +3659,14 @@ msgstr "原文姓名不会自动拆分。切换到人名字段时从空字段开
 #: plugin/i18n.js
 msgid "Literature citation"
 msgstr "文献引用"
+
+#: plugin/i18n.js
+msgid "Loading activity templates…"
+msgstr "正在加载自测模板…"
+
+#: plugin/i18n.js
+msgid "Loading component description…"
+msgstr "正在加载组件描述…"
 
 #: plugin/i18n.js
 msgid "Loading your active batches…"
@@ -4022,6 +4099,10 @@ msgid "Native blocks cannot round-trip exactly through Markdown. No candidate wa
 msgstr "原生区块无法精确往返为 Markdown，候选未创建；请下载保留或调整区块。"
 
 #: plugin/i18n.js
+msgid "Native code and preformatted blocks only support plain text"
+msgstr "原生代码和预格式化区块仅支持纯文本。"
+
+#: plugin/i18n.js
 msgid "Native details are limited to 8 nested levels"
 msgstr "原生详情最多嵌套 8 层"
 
@@ -4052,6 +4133,18 @@ msgstr "原生保存未完成，已回滚。"
 #: plugin/i18n.js
 msgid "Native saving only preserves header proposals. Apply metadata by selecting fields, previewing, and confirming in the editing bridge."
 msgstr "原生保存只保留头部提案；应用元数据请在编辑桥中逐项选择、预览并确认。"
+
+#: plugin/i18n.js
+msgid "Native text HTML must match the canonical core save"
+msgstr "原生文本 HTML 须与核心保存格式完全一致。"
+
+#: plugin/i18n.js
+msgid "Native text leaves cannot contain body content"
+msgstr "原生文本叶子不能包含内部正文。"
+
+#: plugin/i18n.js
+msgid "Native text requires bounded plain text with LF line endings"
+msgstr "原生文本须在容量范围内，并使用 LF 换行。"
 
 #: plugin/i18n.js
 msgid "Near serialized block character "
@@ -4111,8 +4204,12 @@ msgid "Next match"
 msgstr "下一个匹配"
 
 #: plugin/i18n.js
+msgid "Next numbered lines"
+msgstr "后一段行号"
+
+#: plugin/i18n.js
 msgid "Next page"
-msgstr "Next page"
+msgstr "下一页"
 
 #: plugin/i18n.js
 msgid "Next stage"
@@ -4193,6 +4290,11 @@ msgstr "不可省略前缀"
 #: plugin/i18n.js
 msgid "Nothing is stored by default. When enabled, drafts are stored as unencrypted text in this browser and may be accessible to other users of a shared device. At most 8 records and 1 MiB total, expiring after 7 days. This is not a substitute for saving to the site."
 msgstr "默认不保存。启用后，草稿以未加密文字保存在这个浏览器；共享设备上的其他使用者可能访问。最多 8 条、合计 1 MiB，7 天到期；不能替代站点保存。"
+
+#, php-format
+#: plugin/i18n.js
+msgid "Numbered lines %1$s–%2$s; the complete code remains visible."
+msgstr "当前标注第 %1$s–%2$s 行；完整代码仍可阅读。"
 
 #: plugin/i18n.js
 msgid "Numbered object"
@@ -4674,6 +4776,14 @@ msgstr "已预览，尚未保存"
 #: plugin/i18n.js
 msgid "Previous match"
 msgstr "上一个匹配"
+
+#: plugin/i18n.js
+msgid "Previous numbered lines"
+msgstr "前一段行号"
+
+#: plugin/i18n.js
+msgid "Previous page"
+msgstr "上一页"
 
 #: plugin/i18n.js
 msgid "Previous stage"
@@ -5328,6 +5438,11 @@ msgstr "点击预览对象，或使用 Tab 和 Enter，定位其源码。"
 msgid "Select at least one article before preparing a snapshot."
 msgstr "请至少选择一篇文章再准备快照。"
 
+#, php-format
+#: plugin/i18n.js
+msgid "Select code line %1$s"
+msgstr "选择代码第 %1$s 行"
+
 #: plugin/i18n.js
 msgid "Select editable public articles without passwords, or explicitly include selected private drafts. Password-protected articles are not supported."
 msgstr "请选择可编辑且无密码的公开文章，或明确包含所选私人草稿。本期不支持密码保护文章。"
@@ -5400,6 +5515,10 @@ msgstr "显示全文"
 #: plugin/i18n.js
 msgid "Show line numbers beside frontend code blocks."
 msgstr "在前台代码块旁显示行号。"
+
+#: plugin/i18n.js
+msgid "Show more code lines"
+msgstr "显示更多代码行"
 
 #: plugin/i18n.js
 msgid "Show more differences"
@@ -5562,6 +5681,15 @@ msgstr "开始日期"
 #: plugin/i18n.js
 msgid "Start interactive demonstration"
 msgstr "启动交互演示"
+
+#: plugin/i18n.js
+msgid "Starting line number"
+msgstr "起始行号"
+
+#, php-format
+#: plugin/i18n.js
+msgid "Starting line: %1$s"
+msgstr "起始行号：%1$s"
 
 #, php-format
 #: plugin/i18n.js
@@ -6063,6 +6191,10 @@ msgid "The article does not exist."
 msgstr "文章不存在。"
 
 #: plugin/i18n.js
+msgid "The article exceeds the component description budget."
+msgstr "文章引用的组件版本或描述总量超限。"
+
+#: plugin/i18n.js
 msgid "The article has more than 32 related images; silent truncation is not allowed"
 msgstr "文章关联资源超过 32 张，不能静默截取"
 
@@ -6337,6 +6469,10 @@ msgstr "提交结果无法可靠确认；已保留当前源稿、媒体和导入
 #: plugin/i18n.js
 msgid "The commit result could not be reliably confirmed. Verify the article before saving again."
 msgstr "提交结果无法可靠确认，请重新核对文章，勿直接重复保存。"
+
+#: plugin/i18n.js
+msgid "The component catalog changed. Refresh the list before continuing."
+msgstr "组件目录已变化，请刷新列表后继续。"
 
 #: plugin/i18n.js
 msgid "The component changed while this candidate was open. Review or discard the candidate."
@@ -6790,6 +6926,10 @@ msgstr "静态导出所需的公式预览引擎不可用"
 #: plugin/i18n.js
 msgid "The formula syntax cannot be typeset"
 msgstr "公式语法无法排版"
+
+#: plugin/i18n.js
+msgid "The group label differs from its HTML"
+msgstr "组容器标签与保存 HTML 不一致。"
 
 #: plugin/i18n.js
 msgid "The header proposal changed. Previous metadata selections were reset; choose them again."
@@ -7902,6 +8042,10 @@ msgid "Tolerance"
 msgstr "容差"
 
 #: plugin/i18n.js
+msgid "Too many highlighted ranges"
+msgstr "重点行范围过多"
+
+#: plugin/i18n.js
 msgid "Too many media files were generated"
 msgstr "生成的媒体文件数超限"
 
@@ -8198,6 +8342,10 @@ msgstr "上传图片的地址可能公开，即使文章仍为草稿。"
 #: plugin/i18n.js
 msgid "Use bibliography candidate"
 msgstr "使用文献候选"
+
+#: plugin/i18n.js
+msgid "Use displayed line numbers, for example 12,15-18."
+msgstr "使用显示行号，例如 12,15-18。"
 
 #: plugin/i18n.js
 msgid "Use label for rename"

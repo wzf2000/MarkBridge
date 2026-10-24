@@ -25,6 +25,8 @@ runs:
           --wordpress "$MARKBRIDGE_TEST_WORDPRESS_ROOT" \
           --downloads "$RUNNER_TEMP/markbridge-downloads" \
           --wp-cli "$MARKBRIDGE_TEST_WPCLI" --with-test-locales
+        php tests/plugin-bootstrap.php "$MARKBRIDGE_TEST_WORDPRESS_ROOT"
+        php tests/component-execution.php --core "$MARKBRIDGE_TEST_WORDPRESS_ROOT"
         version="$(node -p "require('./package.json').version")"
         "$MARKBRIDGE_TEST_WPCLI" --path="$MARKBRIDGE_TEST_WORDPRESS_ROOT" plugin install "dist/markbridge-$version.zip" --activate
         python3 scripts/verify_package.py "$MARKBRIDGE_TEST_PLUGIN_ROOT" --manifest "dist/markbridge-$version.manifest.json"

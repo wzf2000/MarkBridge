@@ -16,9 +16,25 @@ test('static HTML uses real CHTML, data images and fonts; reopens offline with t
     await descriptor(page),
   );
   expect(result.type).toContain('text/html');
-  expect(result.text).not.toMatch(
-    /PRIVATE_|<script|<iframe|<form|srcset=|data-mbb-teaching|mbb-component-params/,
-  );
+  expect(result.text).not.toMatch(/PRIVATE_/);
+  const structure = await page.evaluate((html) => {
+    const forbidden = 'script,iframe,form,[srcset],[data-mbb-teaching],.mbb-component-params';
+    const inspect = (value) =>
+      new DOMParser().parseFromString(value, 'text/html').querySelectorAll(forbidden).length;
+    return {
+      actual: inspect(html),
+      negativeControls: [
+        '<script>bad()</script>',
+        '<iframe></iframe>',
+        '<form></form>',
+        '<img srcset="private.png 1x">',
+        '<div data-mbb-teaching="component"></div>',
+        '<p class="mbb-component-params">private configuration</p>',
+      ].map(inspect),
+    };
+  }, result.text);
+  expect(structure.actual).toBe(0);
+  expect(structure.negativeControls).toEqual([1, 1, 1, 1, 1, 1]);
   const hash = require('node:crypto').createHash('sha256').update(result.text).digest('hex');
   await require('node:fs/promises').writeFile(info.outputPath('offline.sha256'), hash + '\n');
   await require('node:fs/promises').writeFile(info.outputPath('offline.html'), result.text);

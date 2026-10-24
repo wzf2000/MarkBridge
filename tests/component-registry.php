@@ -412,7 +412,7 @@ try {
         'Rejected provider poisoned public JSON',
     );
     $unsupported = $provider;
-    $unsupported['protocolVersion'] = 2;
+    $unsupported['protocolVersion'] = 3;
     registry_assert(
         markbridge_register_teaching_component('future-protocol', $unsupported),
         'Incompatible provider could not retain diagnostics',

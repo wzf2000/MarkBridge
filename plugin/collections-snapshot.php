@@ -3,7 +3,9 @@ if (!defined('ABSPATH') && PHP_SAPI !== 'cli') {
     exit();
 }
 require_once __DIR__ . '/collections-store.php';
+require_once __DIR__ . '/component-catalog.php';
 /** Trusted PHP registration only. There is deliberately no client callback/path interface. */
+
 function mbb_register_publication_adapter(string $id, array $descriptor): bool
 {
     if (
@@ -54,6 +56,7 @@ function mbb_collections_renderer(string $adapter): array
             'export.php',
             'resource-import.php',
             'components.php',
+            'component-catalog.php',
             'projections.php',
             'projections.js',
             'projections-profile.json',
@@ -255,10 +258,18 @@ function mbb_collections_references(array $edges, array $selected, array &$outsi
 }
 function mbb_collections_components(string $serialized): array
 {
+    if (!mbb_component_document_within_budget($serialized)) {
+        mbb_collections_fail('collection_quota', 413);
+    }
     $items = [];
     foreach (mbb_component_descriptors($serialized) as $id => $a) {
         $p = mbb_component_provider($a->component, $a->componentVersion);
+        if (!empty($p['integrityChanged'])) {
+            mbb_collections_fail('collection_changed');
+        }
         $sha = null;
+        $identity = null;
+        $group = null;
         $status = $p['status'] ?? 'missing';
         if ($status === 'available') {
             $file = $p['resource']['file'];
@@ -271,6 +282,22 @@ function mbb_collections_components(string $serialized): array
                 mbb_collections_fail('collection_changed');
             }
             $sha = $p['resource']['sha256'];
+            if (($p['protocolVersion'] ?? 1) === 2) {
+                try {
+                    $checked = mbb_component_v2_check($p);
+                    $identity = mbb_component_identity($p);
+                    $group = [
+                        'manifestSha256' => $checked['plan']['manifestSha256'],
+                        'groupSha256' => $checked['plan']['groupSha256'],
+                        'resources' => array_map(
+                            static fn($r) => array_diff_key($r, ['file' => true]),
+                            $checked['plan']['resources'],
+                        ),
+                    ];
+                } catch (Throwable) {
+                    mbb_collections_fail('collection_changed');
+                }
+            }
         }
         $items[] = [
             'id' => $id,
@@ -278,6 +305,10 @@ function mbb_collections_components(string $serialized): array
             'version' => $a->componentVersion,
             'paramsSha256' => hash('sha256', mbb_component_json($a->params)),
             'resourceSha256' => $sha,
+            ...$identity !== null
+                ? ['componentIdentity' => $identity, 'resourceGroup' => $group]
+                : [],
+            ...isset($p['executionProfile']) ? ['executionProfile' => $p['executionProfile']] : [],
             'status' => $status,
             'representation' => 'author-static-fallback',
             'projectionFingerprint' => function_exists('mbb_component_projection_fingerprint')
@@ -629,6 +660,7 @@ function mbb_collections_snapshot(array $config, string $adapter, ?string $direc
         'session' => $session,
         'renderer' => $renderer,
     ];
+    mbb_component_publication_budget($result['componentChecks']);
     mbb_collections_final($result, $config, $adapter);
     return $result;
 }
@@ -689,6 +721,19 @@ function mbb_collections_final(array $snapshot, array $config, string $adapter):
                 : null)
         ) {
             mbb_collections_fail('collection_changed');
+        }
+        if (($component['componentIdentity'] ?? null) !== null) {
+            try {
+                mbb_component_v2_check($p);
+                if (
+                    !hash_equals($component['componentIdentity'], mbb_component_identity($p)) ||
+                    ($component['executionProfile'] ?? null) !== ($p['executionProfile'] ?? null)
+                ) {
+                    throw new RuntimeException('component_changed');
+                }
+            } catch (Throwable) {
+                mbb_collections_fail('collection_changed');
+            }
         }
         if (($p['status'] ?? 'missing') !== $component['status']) {
             mbb_collections_fail('collection_changed');

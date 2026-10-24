@@ -1,0 +1,30 @@
+[
+  {
+    "id": "unicode-line-separator",
+    "text": "before\u2028https://example.invalid/one\u2028after"
+  },
+  {
+    "id": "unicode-paragraph-separator",
+    "text": "before\u2029https://example.invalid/one\u2029after"
+  },
+  {
+    "id": "em-space",
+    "text": "\u2003https://example.invalid/one\u2003"
+  },
+  {
+    "id": "bom-space",
+    "text": "\ufeffhttps://example.invalid/one\ufeff"
+  },
+  {
+    "id": "ordinary-lf",
+    "text": "before\nhttps://example.invalid/one\nafter"
+  },
+  {
+    "id": "mixed-lf-unicode",
+    "text": "before\n\u2028\ufeffhttps://example.invalid/first\ufeff\u2029https://example.invalid/second\nend"
+  },
+  {
+    "id": "multiple-urls",
+    "text": "https://example.invalid/first\nhttps://example.invalid/second\nhttps://example.invalid/third"
+  }
+]

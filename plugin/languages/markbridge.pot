@@ -513,6 +513,10 @@ msgid "A gallery requires 1 to 32 direct native images"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "A group label must be single-line plain text"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "A link button must be a direct leaf of a button group"
 msgstr ""
 
@@ -926,6 +930,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "At most 32 actual images may be exported"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "At most 32 highlighted ranges are allowed"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1635,6 +1643,10 @@ msgid "Code line numbers"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Code line numbers must remain between 1 and 999999"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Code markup only supports plain text"
 msgstr ""
 
@@ -1974,6 +1986,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Copy identity metadata"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Copy line link"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2908,7 +2924,19 @@ msgid "Go"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Go to highlighted lines"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Go to line"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Groups only support div or section tags"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Groups only support flow or constrained layout"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2969,6 +2997,23 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Highlighted lines must be unique positive integers separated by commas"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Highlighted lines or ranges"
+msgstr ""
+
+#, php-format
+#: plugin/i18n.js
+msgid "Highlighted lines: %1$s"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Highlighted ranges must be ordered, disjoint and within the code"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Highlights require comma-separated lines or closed ranges"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3137,6 +3182,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Index status"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Indexed component versions"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3320,6 +3369,14 @@ msgid "Invalid code language"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Invalid code line metadata"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Invalid component catalog request."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Invalid component name or version"
 msgstr ""
 
@@ -3365,6 +3422,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Invalid local author draft"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Invalid native block class names"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3484,6 +3545,10 @@ msgid "Keep my changes and continue from the latest version"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Kind"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Label"
 msgstr ""
 
@@ -3540,6 +3605,10 @@ msgid "Line differences: "
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Line link copied"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Link rel must be text"
 msgstr ""
 
@@ -3589,6 +3658,14 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Literature citation"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Loading activity templates…"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Loading component description…"
 msgstr ""
 
 #: plugin/i18n.js
@@ -4022,6 +4099,10 @@ msgid "Native blocks cannot round-trip exactly through Markdown. No candidate wa
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Native code and preformatted blocks only support plain text"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Native details are limited to 8 nested levels"
 msgstr ""
 
@@ -4051,6 +4132,18 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Native saving only preserves header proposals. Apply metadata by selecting fields, previewing, and confirming in the editing bridge."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Native text HTML must match the canonical core save"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Native text leaves cannot contain body content"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Native text requires bounded plain text with LF line endings"
 msgstr ""
 
 #: plugin/i18n.js
@@ -4108,6 +4201,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Next match"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Next numbered lines"
 msgstr ""
 
 #: plugin/i18n.js
@@ -4192,6 +4289,11 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Nothing is stored by default. When enabled, drafts are stored as unencrypted text in this browser and may be accessible to other users of a shared device. At most 8 records and 1 MiB total, expiring after 7 days. This is not a substitute for saving to the site."
+msgstr ""
+
+#, php-format
+#: plugin/i18n.js
+msgid "Numbered lines %1$s–%2$s; the complete code remains visible."
 msgstr ""
 
 #: plugin/i18n.js
@@ -4673,6 +4775,14 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Previous match"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Previous numbered lines"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Previous page"
 msgstr ""
 
 #: plugin/i18n.js
@@ -5328,6 +5438,11 @@ msgstr ""
 msgid "Select at least one article before preparing a snapshot."
 msgstr ""
 
+#, php-format
+#: plugin/i18n.js
+msgid "Select code line %1$s"
+msgstr ""
+
 #: plugin/i18n.js
 msgid "Select editable public articles without passwords, or explicitly include selected private drafts. Password-protected articles are not supported."
 msgstr ""
@@ -5399,6 +5514,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Show line numbers beside frontend code blocks."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Show more code lines"
 msgstr ""
 
 #: plugin/i18n.js
@@ -5561,6 +5680,15 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Start interactive demonstration"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Starting line number"
+msgstr ""
+
+#, php-format
+#: plugin/i18n.js
+msgid "Starting line: %1$s"
 msgstr ""
 
 #, php-format
@@ -6063,6 +6191,10 @@ msgid "The article does not exist."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "The article exceeds the component description budget."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "The article has more than 32 related images; silent truncation is not allowed"
 msgstr ""
 
@@ -6336,6 +6468,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "The commit result could not be reliably confirmed. Verify the article before saving again."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The component catalog changed. Refresh the list before continuing."
 msgstr ""
 
 #: plugin/i18n.js
@@ -6789,6 +6925,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "The formula syntax cannot be typeset"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The group label differs from its HTML"
 msgstr ""
 
 #: plugin/i18n.js
@@ -7902,6 +8042,10 @@ msgid "Tolerance"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Too many highlighted ranges"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Too many media files were generated"
 msgstr ""
 
@@ -8197,6 +8341,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Use bibliography candidate"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Use displayed line numbers, for example 12,15-18."
 msgstr ""
 
 #: plugin/i18n.js

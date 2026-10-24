@@ -1,3 +1,8 @@
+import {
+  createComponentSelector,
+  useComponentDescriptor,
+  resolveDefaultComponent,
+} from './component-catalog.js';
 import { activityRelations, validateActivity, activityParts } from './activities.js';
 import { mediaKinds, mediaAttributes, assembleMedia, validateMedia } from './native-media.js';
 import {
@@ -11,6 +16,8 @@ import { createParameterEditor } from './component-parameters.js';
 import { translate as T, format as F } from './i18n.js';
 import {
   nativeAdapterKind,
+  nativeTextKind,
+  nativeContentText,
   nativeAdapterName,
   nativeAdapterKinds,
   nativeAttributes,
@@ -29,6 +36,9 @@ export const teachingSchemas = {
   image: {},
   gallery: {},
   ...technicalSchemas,
+  'native-code': {},
+  preformatted: {},
+  group: {},
   details: { summary: 'string', showContent: 'boolean' },
   buttons: {},
   button: { url: 'string' },
@@ -65,7 +75,14 @@ export const teachingKind = (name) =>
   (name?.startsWith('mbb/') && Object.hasOwn(teachingSchemas, name.slice(4))
     ? name.slice(4)
     : null);
-export function teachingAttributes(kind, attrs, fail, source = false, blockName = null) {
+export function teachingAttributes(
+  kind,
+  attrs,
+  fail,
+  source = false,
+  blockName = null,
+  sourceVersion = 1,
+) {
   if (mediaKinds.has(kind)) return mediaAttributes(kind, attrs, fail, source);
   if (nativeAdapterKinds.has(kind)) return nativeAttributes(kind, attrs, fail, source);
   if (kind === 'adapter') {
@@ -110,7 +127,7 @@ export function teachingAttributes(kind, attrs, fail, source = false, blockName 
   if (
     !source &&
     attrs.version !== 1 &&
-    !(['bibliography', 'component'].includes(kind) && attrs.version === 2)
+    !(['bibliography', 'component', 'code-tabs'].includes(kind) && attrs.version === 2)
   )
     fail('TEACHING_VERSION', 'The teaching block version must be 1');
   if (Object.values(attrs).some((v) => typeof v === 'string' && /[\uD800-\uDFFF]/u.test(v)))
@@ -125,7 +142,8 @@ export function teachingAttributes(kind, attrs, fail, source = false, blockName 
     return out;
   }
   if (technicalKind('mbb/' + kind)) technicalAttributes(kind, out, fail);
-  if (kind === 'code-tabs') out.tabs = codeTabsAttributes(out, source, fail);
+  if (kind === 'code-tabs')
+    out.tabs = codeTabsAttributes(source ? { ...out, version: sourceVersion } : out, source, fail);
   if (!/^[A-Za-z][A-Za-z0-9_-]{0,63}$/.test(out.id))
     fail(
       'TEACHING_ID',
@@ -286,9 +304,16 @@ export function teachingSource(source, fail, ignored = new Set(), nonce, fences 
   for (let i = 0; i < lines.length; i++) {
     if (ignored.has(i) || protectedHTML.some(([a, b]) => offsets[i] >= a && offsets[i] < b))
       continue;
-    const match = /^:::mbb:v1 code-tabs (\{[^\r\n]*\})$/.exec(text(i));
+    const match = /^:::mbb:v([12]) code-tabs (\{[^\r\n]*\})$/.exec(text(i));
     if (!match) continue;
-    const a = teachingAttributes('code-tabs', teachingJSON(match[1], fail), fail, true);
+    const a = teachingAttributes(
+      'code-tabs',
+      teachingJSON(match[2], fail),
+      fail,
+      true,
+      null,
+      Number(match[1]),
+    );
     let next = i + 1;
     for (const tab of a.tabs) {
       while (next < lines.length && /^[ \t]*$/.test(text(next))) next++;
@@ -370,7 +395,7 @@ export function teachingSource(source, fail, ignored = new Set(), nonce, fences 
       if (line === ':::mbb:end') data = { end: true };
       else {
         const match =
-          /^:::mbb:v([12]) (identity|collapse|steps|step|code-compare|component|code-tabs|details|buttons|button|adapter|object|statement|bibliography|image|gallery) (\{[^\r\n]*\})$/.exec(
+          /^:::mbb:v([12]) (identity|collapse|steps|step|code-compare|component|code-tabs|native-code|preformatted|group|details|buttons|button|adapter|object|statement|bibliography|image|gallery) (\{[^\r\n]*\})$/.exec(
             line,
           );
         if (!match)
@@ -384,7 +409,7 @@ export function teachingSource(source, fail, ignored = new Set(), nonce, fences 
         } catch {
           fail('TEACHING_ATTRIBUTES', 'Teaching attributes must be a valid JSON object');
         }
-        if (match[1] === '2' && !['bibliography', 'component'].includes(match[2]))
+        if (match[1] === '2' && !['bibliography', 'component', 'code-tabs'].includes(match[2]))
           fail('TEACHING_VERSION', 'The teaching block version must be 1');
         if (match[2] === 'component' && (match[1] === '2') !== Object.hasOwn(attrs, 'activity'))
           fail(
@@ -399,7 +424,7 @@ export function teachingSource(source, fail, ignored = new Set(), nonce, fences 
         data = {
           kind: match[2],
           version: Number(match[1]),
-          attrs: teachingAttributes(match[2], attrs, fail, true),
+          attrs: teachingAttributes(match[2], attrs, fail, true, null, Number(match[1])),
         };
       }
       const hex = [...new TextEncoder().encode(JSON.stringify(data))]
@@ -450,6 +475,8 @@ export function assembleTeaching(blocks, make, fail) {
     }
     if (nativeAdapterKinds.has(item.kind)) {
       let attrs = nativeBlockAttributes(item.kind, item.attrs, fail);
+      if (nativeTextKind(item.kind) && item.children.length)
+        fail('ADAPTER_STRUCTURE', 'Native text leaves cannot contain body content');
       if (item.kind === 'button') {
         if (
           item.children.length !== 1 ||
@@ -493,6 +520,7 @@ export function assembleTeaching(blocks, make, fail) {
         title: t.title,
         language: item.children[i].attributes.language,
         code: item.children[i].attributes.code,
+        ...(item.attrs.version === 2 ? { startLine: t.startLine, highlights: t.highlights } : {}),
       }));
       item.children = [];
     }
@@ -553,6 +581,8 @@ export function validateTeaching(blocks, fail) {
             fail('ADAPTER_STRUCTURE', 'A button group requires 1–32 direct link buttons');
           if (kind === 'button' && (parent !== 'buttons' || inner.length))
             fail('ADAPTER_STRUCTURE', 'A link button must be a direct leaf of a button group');
+          if (nativeTextKind(kind) && inner.length)
+            fail('ADAPTER_STRUCTURE', 'Native text leaves cannot contain body content');
           if (kind === 'adapter' && inner.length)
             fail('ADAPTER_STRUCTURE', 'Static adapters must not contain nested blocks');
           walk(inner, kind, depth + 1, collapseDepth, detailsDepth + (kind === 'details' ? 1 : 0));
@@ -626,8 +656,12 @@ export function teachingMarkdown(b, body, fail) {
   const kind = teachingKind(b.name);
   const a = teachingAttributes(kind, b.attributes, fail, false, b.name);
   if (nativeAdapterKinds.has(kind) || kind === 'adapter') {
-    const header =
-      kind === 'adapter'
+    const header = nativeTextKind(kind)
+      ? {
+          ...Object.fromEntries(Object.entries(a).filter(([key]) => key !== 'content')),
+          text: nativeContentText(a.content, kind, fail),
+        }
+      : kind === 'adapter'
         ? {
             name: staticAdapterKind(b.name).name,
             version: a.mbbAdapterVersion,
@@ -678,7 +712,22 @@ export function teachingMarkdown(b, body, fail) {
 export function registerTeaching() {
   if (!wp.blocks.getBlockType('mbb/code-tabs')) registerCodeTabs();
   const el = wp.element.createElement;
-  const drafts = new Map();
+  class DraftRegistry extends Map {
+    revision = 0;
+    set(key, value) {
+      this.revision++;
+      return super.set(key, value);
+    }
+    delete(key) {
+      this.revision++;
+      return super.delete(key);
+    }
+    clear() {
+      this.revision++;
+      return super.clear();
+    }
+  }
+  const drafts = new DraftRegistry();
   const syncDraftLock = () => {
     window.MarkBridgeParameterDrafts = { pending: () => drafts.size > 0 };
     try {
@@ -740,6 +789,7 @@ export function registerTeaching() {
     };
   };
   registerTechnical({ drafts, syncDraftLock, retainDraftOwner });
+  const ComponentSelector = createComponentSelector(wp);
   const ParameterEditor = createParameterEditor({
     wp,
     drafts,
@@ -799,6 +849,7 @@ export function registerTeaching() {
       supports: { html: false, customClassName: false, anchor: false },
       edit: ({ attributes: a, setAttributes, clientId }) => {
         const registry = wp.data.useRegistry();
+        useComponentDescriptor(wp, a.component, a.componentVersion);
         const currentBlock = wp.data.useSelect(
           (select) => select('core/block-editor').getBlock(clientId),
           [clientId],
@@ -810,11 +861,11 @@ export function registerTeaching() {
             if (a[key] === undefined)
               initial[key] =
                 key === 'params'
-                  ? window.MBBComponents?.[0]?.defaults || {}
+                  ? {}
                   : key === 'component'
-                    ? window.MBBComponents?.[0]?.id || ''
+                    ? ''
                     : key === 'componentVersion'
-                      ? window.MBBComponents?.[0]?.version || ''
+                      ? ''
                       : key === 'id'
                         ? 'mbb-' + clientId
                         : type === 'boolean'
@@ -832,6 +883,30 @@ export function registerTeaching() {
             for (const key of Object.keys(sourceFields))
               if (a[key] === undefined) initial[key] = key.startsWith('code') ? '\n' : '';
           if (Object.keys(initial).length) setAttributes(initial);
+          if (kind === 'component' && !a.component && !a.componentVersion) {
+            const id =
+              Object.keys(globalThis.MBBComponentCatalog?.defaults || {})[0] ||
+              window.MBBComponents?.[0]?.id;
+            if (id)
+              resolveDefaultComponent(id).then(
+                (p) => {
+                  const live = registry.select('core/block-editor').getBlock(clientId)?.attributes;
+                  if (
+                    p &&
+                    live &&
+                    !live.component &&
+                    !live.componentVersion &&
+                    !Object.keys(live.params || {}).length
+                  )
+                    setAttributes({
+                      component: p.id,
+                      componentVersion: p.version,
+                      params: p.defaults,
+                    });
+                },
+                () => {},
+              );
+          }
         }, []);
         const controls = Object.entries({
           ...schema,
@@ -973,41 +1048,19 @@ export function registerTeaching() {
               wp.components.PanelBody,
               { title: T('Teaching settings'), initialOpen: true },
               kind === 'component'
-                ? el(wp.components.SelectControl, {
-                    label: T('Registered teaching component'),
+                ? el(ComponentSelector, {
+                    draftFingerprint: JSON.stringify(a),
+                    draftGeneration: () => drafts.revision,
+                    component: a.component || '',
+                    version: a.componentVersion || '',
+                    clientId,
                     disabled: !!a.activity,
-                    value: (a.component || '') + '@' + (a.componentVersion || ''),
-                    options: [
-                      ...((window.MBBComponents || []).some(
-                        (p) => p.id === a.component && p.version === a.componentVersion,
-                      )
-                        ? []
-                        : [
-                            {
-                              label:
-                                T('Preserve current component ') +
-                                (a.component || T('Awaiting selection')) +
-                                ' ' +
-                                (a.componentVersion || ''),
-                              value: (a.component || '') + '@' + (a.componentVersion || ''),
-                            },
-                          ]),
-                      ...(window.MBBComponents || []).map((p) => ({
-                        label: p.title + ' ' + p.version,
-                        value: p.id + '@' + p.version,
-                      })),
-                    ],
-                    onChange: (key) => {
-                      const p = (window.MBBComponents || []).find(
-                        (p) => p.id + '@' + p.version === key,
-                      );
-                      if (p)
-                        setAttributes({
-                          component: p.id,
-                          componentVersion: p.version,
-                          params: p.defaults,
-                        });
-                    },
+                    onChange: (p) =>
+                      setAttributes({
+                        component: p.id,
+                        componentVersion: p.version,
+                        params: p.defaults,
+                      }),
                   })
                 : null,
               ...controls.filter((control) => !visible.includes(control.key)),

@@ -7,6 +7,22 @@ if (!defined('ABSPATH')) {
     }
 }
 
+// Protect literal shortcode syntax in derived code-tabs JSON strings, not array syntax.
+// JSON decoding still yields exactly the same configuration and original code bytes.
+function mbb_code_tabs_config_json(array $config): string
+{
+    return preg_replace_callback(
+        '/"(?:[^"\\\\]|\\\\.)*"/s',
+        static fn($match) => str_replace('[', '\\u005b', $match[0]),
+        mbb_component_json($config),
+    );
+}
+// Derived labels use the current locale; canonical paired markup remains locale independent.
+function mbb_code_tabs_summary_text(int $startLine, string $highlights): string
+{
+    return sprintf(mbb_t('Starting line: %1$s'), $startLine) .
+        ($highlights !== '' ? '; ' . sprintf(mbb_t('Highlighted lines: %1$s'), $highlights) : '');
+}
 // Frontend enhancement never changes stored markup or paragraph identity.
 add_action('init', static function () {
     $schemas = json_decode(
@@ -54,7 +70,7 @@ function mbb_enqueue_teaching_assets()
             'mbb-components',
             'window.MBBComponents=' .
                 mbb_component_json(
-                    mbb_component_available(),
+                    mbb_component_page_providers(),
                     JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT,
                 ) .
                 ';window.MBB_COMPONENTS_READER=' .
@@ -130,6 +146,31 @@ add_filter(
         );
         if ($kind === 'code-tabs') {
             $config = array_intersect_key($attrs, array_flip(['defaultTab', 'tabs']));
+            if (($attrs['version'] ?? 1) === 2) {
+                $config['version'] = 2;
+            }
+            if (($attrs['version'] ?? 1) === 2) {
+                $summaryIndex = 0;
+                $html = preg_replace_callback(
+                    '/<p data-mbb-generated="" class="mbb-code-line-summary">[^<]*<\/p>/',
+                    static function ($match) use (&$summaryIndex, $attrs) {
+                        $tab = $attrs['tabs'][$summaryIndex++] ?? null;
+                        return is_array($tab) &&
+                            is_int($tab['startLine'] ?? null) &&
+                            is_string($tab['highlights'] ?? null)
+                            ? '<p data-mbb-generated="" class="mbb-code-line-summary">' .
+                                    esc_html(
+                                        mbb_code_tabs_summary_text(
+                                            $tab['startLine'],
+                                            $tab['highlights'],
+                                        ),
+                                    ) .
+                                    '</p>'
+                            : $match[0];
+                    },
+                    $html,
+                );
+            }
         }
         if ($kind === 'component') {
             $paramsConsistent = true;
@@ -196,7 +237,11 @@ add_filter(
             '$1<div data-mbb-teaching="' .
                 esc_attr($kind) .
                 '" data-mbb-teaching-config="' .
-                esc_attr(mbb_component_json($config)) .
+                esc_attr(
+                    $kind === 'code-tabs'
+                        ? mbb_code_tabs_config_json($config)
+                        : mbb_component_json($config),
+                ) .
                 '"',
             $html,
             1,

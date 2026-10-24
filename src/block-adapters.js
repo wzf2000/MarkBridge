@@ -1,6 +1,13 @@
 import { translate as T, format as F, translateError as E } from './i18n.js';
 // Closed native containers and trusted declarative static leaves; never execute article code.
-const nativeNames = { details: 'core/details', buttons: 'core/buttons', button: 'core/button' };
+const nativeNames = {
+  'native-code': 'core/code',
+  preformatted: 'core/preformatted',
+  group: 'core/group',
+  details: 'core/details',
+  buttons: 'core/buttons',
+  button: 'core/button',
+};
 const bytes = (v) => new TextEncoder().encode(v).length;
 const nonblank = (v) =>
   v.replace(
@@ -115,9 +122,41 @@ const nativeRichText = (value) =>
   globalThis.wp?.richText?.RichTextData && value instanceof wp.richText.RichTextData
     ? value.toString()
     : value;
+export const nativeTextKind = (kind) => ['native-code', 'preformatted'].includes(kind);
+export function nativePlainText(value, fail) {
+  plain(value, 262144, fail);
+  if (/[\x00-\x08\x0b-\x1f\x7f]/.test(value) || bytes(value) > 262144)
+    fail('ADAPTER_TEXT', 'Native text requires bounded plain text with LF line endings');
+  return value;
+}
+const nativeTextRichText = (html) => {
+  const element = document.createElement('span');
+  element.innerHTML = html;
+  return wp.richText.RichTextData.fromHTMLElement(element, { preserveWhiteSpace: true });
+};
+const nativeTextHTML = (text, kind) => {
+  const html = escapeAdapterText(text).replaceAll('\u00a0', '&nbsp;');
+  return kind === 'preformatted' ? html.replaceAll('\n', '<br>') : html;
+};
+export function nativeContentText(value, kind, fail) {
+  const html = nativeRichText(value);
+  if (typeof html !== 'string' || html.includes('\r'))
+    fail('ADAPTER_TEXT', 'Native text requires bounded plain text with LF line endings');
+  const root = fragment(html);
+  let text = '';
+  for (const n of root.childNodes) {
+    if (n.nodeType === 3) text += n.textContent;
+    else if (n.nodeType === 1 && n.localName === 'br' && !n.attributes.length) text += '\n';
+    else fail('ADAPTER_TEXT', 'Native code and preformatted blocks only support plain text');
+  }
+  return nativePlainText(text, fail);
+}
 export function nativeAttributes(kind, attrs, fail, source = false) {
   if (!nativeAdapterKinds.has(kind)) fail('ADAPTER_KIND', 'Unknown native adapter type');
   const keys = {
+    'native-code': ['anchor', 'className', source ? 'text' : 'content'],
+    preformatted: ['anchor', 'className', source ? 'text' : 'content'],
+    group: ['tagName', 'anchor', 'ariaLabel', 'className', 'layout'],
     details: ['summary', 'showContent', 'anchor', ...(!source ? ['name'] : [])],
     buttons: ['anchor', 'layout'],
     button: [
@@ -132,17 +171,64 @@ export function nativeAttributes(kind, attrs, fail, source = false) {
   closed(
     attrs,
     keys,
-    kind === 'details'
-      ? ['summary']
-      : kind === 'button'
-        ? ['url', ...(!source ? ['text'] : [])]
-        : [],
+    nativeTextKind(kind)
+      ? [source ? 'text' : 'content']
+      : kind === 'details'
+        ? ['summary']
+        : kind === 'button'
+          ? ['url', ...(!source ? ['text'] : [])]
+          : [],
     fail,
   );
   const out = {};
   if (Object.hasOwn(attrs, 'anchor') && adapterAnchor(attrs.anchor, fail))
     out.anchor = attrs.anchor;
-  if (kind === 'details') {
+  if (nativeTextKind(kind)) {
+    const text = source
+      ? nativePlainText(attrs.text, fail)
+      : nativeContentText(attrs.content, kind, fail);
+    out[source ? 'text' : 'content'] = source ? text : nativeTextHTML(text, kind);
+  }
+  if (nativeTextKind(kind)) {
+    if (Object.hasOwn(attrs, 'className')) {
+      if (
+        typeof attrs.className !== 'string' ||
+        attrs.className.length > 200 ||
+        (attrs.className !== '' &&
+          !/^[A-Za-z][A-Za-z0-9_-]*(?: [A-Za-z][A-Za-z0-9_-]*)*$/.test(attrs.className))
+      )
+        fail('ADAPTER_ATTRIBUTES', 'Invalid native block class names');
+      out.className = attrs.className;
+    }
+  }
+  if (kind === 'group') {
+    out.tagName = Object.hasOwn(attrs, 'tagName') ? attrs.tagName : 'div';
+    if (!['div', 'section'].includes(out.tagName))
+      fail('ADAPTER_ATTRIBUTES', 'Groups only support div or section tags');
+    if (Object.hasOwn(attrs, 'ariaLabel')) {
+      out.ariaLabel = plain(attrs.ariaLabel, 200, fail);
+      if (/[\x00-\x1f\x7f\u0085\u2028\u2029]/.test(out.ariaLabel))
+        fail('ADAPTER_ATTRIBUTES', 'A group label must be single-line plain text');
+    }
+    if (Object.hasOwn(attrs, 'className')) {
+      if (
+        typeof attrs.className !== 'string' ||
+        attrs.className.length > 200 ||
+        (attrs.className !== '' &&
+          !/^[A-Za-z][A-Za-z0-9_-]*(?: [A-Za-z][A-Za-z0-9_-]*)*$/.test(attrs.className))
+      )
+        fail('ADAPTER_ATTRIBUTES', 'Invalid native block class names');
+      out.className = attrs.className;
+    }
+    if (Object.hasOwn(attrs, 'layout')) {
+      closed(attrs.layout, ['type'], ['type'], fail);
+      if (!['flow', 'constrained'].includes(attrs.layout.type))
+        fail('ADAPTER_ATTRIBUTES', 'Groups only support flow or constrained layout');
+      out.layout = { type: attrs.layout.type };
+    }
+  } else if (nativeTextKind(kind)) {
+    // Plain native leaves have no other fields.
+  } else if (kind === 'details') {
     if (Object.hasOwn(attrs, 'name') && attrs.name !== '')
       fail('ADAPTER_ATTRIBUTES', 'Exclusive details groups are not supported');
     out.summary = source
@@ -199,6 +285,13 @@ export function nativeAttributes(kind, attrs, fail, source = false) {
 }
 export function nativeBlockAttributes(kind, attrs, fail) {
   const a = nativeAttributes(kind, attrs, fail, true);
+  if (nativeTextKind(kind)) {
+    const { text, ...rest } = a;
+    return {
+      ...rest,
+      content: nativeTextRichText(nativeTextHTML(text, kind)),
+    };
+  }
   return kind === 'details' ? { ...a, summary: escapeAdapterText(a.summary) } : a;
 }
 export const escapeAdapterText = (value) =>
@@ -605,6 +698,9 @@ export function validateAdaptersSerialized(serialized, fail, parse = JSON.parse)
       closed(
         a,
         {
+          'native-code': ['anchor', 'className'],
+          preformatted: ['anchor', 'className'],
+          group: ['tagName', 'anchor', 'ariaLabel', 'className', 'layout'],
           details: ['showContent', 'anchor', 'name'],
           buttons: ['anchor', 'layout'],
           button: ['anchor', 'tagName', 'type'],
@@ -612,6 +708,24 @@ export function validateAdaptersSerialized(serialized, fail, parse = JSON.parse)
         [],
         fail,
       );
+      if (kind === 'group') nativeAttributes(kind, a, fail, true);
+      if (nativeTextKind(kind)) {
+        nativeAttributes(kind, { ...a, text: '' }, fail, true);
+        const end = serialized.indexOf('<!-- /wp:' + m[1] + ' -->', m.index + m[0].length);
+        if (end < 0) fail('ADAPTER_STRUCTURE', 'Invalid native block wrapper structure');
+        const raw = serialized.slice(m.index + m[0].length, end);
+        if (raw.includes('\r'))
+          fail('ADAPTER_TEXT', 'Native text requires bounded plain text with LF line endings');
+        const block = wp.blocks.parse(m[0] + raw + '<!-- /wp:' + m[1] + ' -->')[0];
+        const attrs = nativeAttributes(kind, block.attributes, fail);
+        const canonicalAttrs = {
+          ...attrs,
+          content: nativeTextRichText(attrs.content),
+        };
+        const coreHTML = wp.blocks.getSaveContent(name, canonicalAttrs, []);
+        if (raw !== '\n' + coreHTML + '\n')
+          fail('ADAPTER_TEXT', 'Native text HTML must match the canonical core save');
+      }
       if (Object.hasOwn(a, 'anchor')) adapterAnchor(a.anchor, fail);
       if (
         kind === 'details' &&

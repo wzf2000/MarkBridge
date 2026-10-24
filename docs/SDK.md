@@ -2,6 +2,47 @@
 
 This API is for installed, reviewed PHP and JavaScript code. Authored Markdown and parameters cannot name a callback, path, URL or script. Normal article preview, Apply, paired save, revision and source-file guards remain authoritative. The SDK has no separate article save endpoint.
 
+## Indexed exact component definitions (Main 3.4)
+
+Feature-detect `markbridge_teaching_supports_component_catalog()`. Call
+`markbridge_register_teaching_component_catalog($id, $index, $resolver)` from installed trusted PHP.
+The closed index is `{title, defaultVersion, versions}`; each version is `{version, title, fingerprint}` with optional `activityVersion:1`.
+`defaultVersion` must be the first item. Generate portable definition pins with
+`markbridge_teaching_component_fingerprint($id, $provider)` from fixed build data, including fixed
+resource/manifest SHA-256 values. Never recompute expected resource hashes from mutable installed files
+on each request. The resolver receives only an already declared type/exact version and returns the
+existing provider shape. Core validates the full provider, its definition pin, title and declared activity capability before use.
+
+The combined legacy/indexed directory admits 256 exact keys, 64 types and 64 versions per type within
+128 KiB, with 32 KiB per atomic declaration. Directory pages default to 20, allow at most 50 items and
+32 KiB; directory reads never resolve factories. Exact public descriptors are limited to 64 KiB;
+request caches hold at most 256 attempted keys / 4 MiB and recheck resources on reuse. Each article
+retains a 32-distinct-key / 512 KiB descriptor bound. Publications process chapters separately and
+admit at most 256 exact keys / 4 MiB across chapters, alongside the existing publication limits.
+The legacy provider, projection renderer and JavaScript author callback registries each keep their
+original 32-entry bounds. Defaults follow first successful type registration across both APIs;
+existing article versions never change implicitly.
+
+The resolver may register a fixed typed projection for its currently resolving exact key through
+`mbb_register_component_projection()`. These indexed renderers use a separate bounded namespace;
+renderer files, trees and fingerprints retain their existing validation. Generic schema authoring
+works without a dedicated JavaScript author callback. The local runnable 40-version example is
+[`sdk/examples/indexed-components`](../sdk/examples/indexed-components/README.md).
+
+Author REST routes are `GET mbb/v2/components/catalog` (`page`, `per_page`, `type`) and
+`GET mbb/v2/components/descriptor/{component}/{version}` (required `fingerprint`). Both require editing
+capability; a supplied `post_id` also requires permission to edit that article. Responses are private,
+no-store, and omit local paths/factories. Descriptor requests bind the directory fingerprint before
+and after resolution. Core loads existing block attributes directly and discards late selection
+results when article scope, selection, draft attributes or generation changed. Reader delivery
+contains only the current page's exact dependencies, never the complete directory.
+
+From 3.4.0-rc.2, the self-check insertion menu intersects trusted author template keys with lightweight
+`activityVersion:1` entries. It reads at most six 50-item catalog pages, stopping once all registered
+author keys are found; a page-byte overflow falls back to at most thirteen 20-item pages. Opening
+the menu never resolves full providers. The selected exact descriptor is fetched only for insertion.
+Unregistered author keys and non-activity replay templates are omitted.
+
 ## Author candidates
 
 `window.MarkBridgeAuthorTools.register({id,version,slot:"bibliography/v2",Editor})` registers up to 32 exact tools. `Editor` receives a cloned current `draft`, a bounded `change(patch)`, `generation`, `baseline`, `registry`, `clientId` and `session`. Patches may contain only `entries`, `origins`, and `style`, within 256 KiB. A patch is accepted only for the current candidate generation and opening article baseline/source digest. A successful patch invalidates its generation. Core validates the complete candidate and owns Apply/Undo/save. An asynchronous tool must keep its own cancellation token too; a rejected stale patch must preserve current input.
@@ -31,7 +72,7 @@ Each node has exactly `tag`, `attrs`, `children`, optionally `key`. Children are
 
 The shared, closed allowlist is `plugin/projections-profile.json`. Ordinary semantic HTML/tables and only `svg,g,line,polyline,polygon,rect,circle,text,title,desc` are admitted. SVG attributes have per-tag numeric/color bounds; points have at most 256 coordinate pairs. URLs, CSS strings, events, `path`, `use`, `defs`, animation and foreign content are rejected. This **does not enable SVG in authored Markdown/HTML**. There is no extension CSS-string interface; use core classes/tokens.
 
-A tree is limited to 128 KiB of its normalized UTF-8 JSON, 4096 nodes and 16 nesting levels. JSON uses JavaScript-compatible finite-number spelling, unescaped Unicode/slashes/U+2028, empty-object/list distinction, and no whitespace. Serialized derived HTML is also limited to 128 KiB per component, 512 KiB per document. Document budgets reset on each render; they are not global counters. Original 256 KiB body, 16 KiB params, 32 MiB single export and collection budgets remain unchanged. The SDK adds no arbitrary document component-count cap.
+A tree is limited to 128 KiB of its normalized UTF-8 JSON, 4096 nodes and 16 nesting levels. JSON uses JavaScript-compatible finite-number spelling, unescaped Unicode/slashes/U+2028, empty-object/list distinction, and no whitespace. Serialized derived HTML is also limited to 128 KiB per component, 512 KiB per document. Document budgets reset on each render; they are not global counters. Original 256 KiB body, 16 KiB params, 32 MiB single export and collection budgets remain unchanged. Repeated instances reuse a descriptor within the 32-distinct-exact-dependency bound; the SDK adds no separate instance-count cap.
 
 `mbb_component_projection_plan($serialized,$locale)` returns items `{target,component,version,fingerprint,state,params,projection}`. States are `available`, `unavailable`, and quiet `author-fallback` for an installed legacy component without a renderer. Missing/broken renderers retain the author's innerBlocks plus a clear message and closed, escaped read-only configuration. Normal legacy fallback gets no new error paragraph. Derived output is never stored as a second writable body.
 
@@ -43,7 +84,7 @@ Minimum-core declarations accept `x.y.z`, `x.y.z-dev.N`, and (from Main 2.9.0-rc
 
 Settings → MarkBridge → Extensions combines the compatibility catalog with explicitly scoped usage. The former Tools teaching URL redirects there. Trusted plugins can register `mbb_register_extension_manifest($id,['version'=>...,'title'=>...,'minMarkBridge'=>...,'capabilities'=>[...]])` on `markbridge_register_extensions` (32 registrations max).
 
-`GET /mbb/v1/extensions` requires current `manage_options`. `POST /mbb/v1/extensions/usage` additionally checks current editing permission for every requested article, with raw JSON exactly `{"post_ids":[1,2]}`. The field must be a real array of 1–50 distinct positive integer IDs. Duplicate/unknown fields, numeric-key objects, empty scopes and coercion are rejected. Responses cover only that scope (up to 64 groups/128 KiB); overflow explicitly requests a smaller scope. There is no hidden scan, global total, cursor or bulk mutation. Every included article/session is checked again before output; losing permission fails the whole report. Both routes are private/no-store, and expose no server paths or article bodies.
+`GET /mbb/v1/extensions` requires current `manage_options` and pages lightweight versions with `page` / `per_page` (20 by default, at most 50, within 32 KiB); it does not resolve indexed factories. `POST /mbb/v1/extensions/usage` additionally checks current editing permission for every requested article, with raw JSON exactly `{"post_ids":[1,2]}`. The field must be a real array of 1–50 distinct positive integer IDs. Duplicate/unknown fields, numeric-key objects, empty scopes and coercion are rejected. Usage responses cover only that scope (up to 64 groups/128 KiB); overflow explicitly requests a smaller scope. There is no hidden scan, global total, cursor or bulk mutation. Every included article/session is checked again before output; losing permission fails the whole report. Both routes are private/no-store, and expose no server paths or article bodies.
 
 ## Scaffold and conformance
 
@@ -64,3 +105,9 @@ The ordinary source sanitizer still refuses MathML/SVG. StaticExport alone marks
 ## Generic author presentation
 
 The schema stays data-only. Core uses display-only field labels and one-based array item numbers, with registered localized component titles. Unknown keys are humanized without deleting or remapping data; exact keys/implementation version remain in advanced configuration details. No component-specific algorithm is dispatched by these labels. Sparse-x bars in the chart-static sample follow row order with equal group spacing; line/scatter retain numeric x. The research provider and its immutable resources are not changed by the sample bridge.
+
+## Fixed public resource protocol v2
+
+Main 3.2.0-rc.3 adds opt-in `protocolVersion:2`, `mbb-component/v2`, a pinned public manifest and an independent HTTP opaque frame. v1 stays on srcdoc; authored component/activity attributes are unchanged. The closed registration, resource types, transport/deadline budgets, Cookie/navigation distinction, static data reader and complete identity contract are specified in [教学扩展接口](TEACHING-EXTENSIONS.md#固定公开资源-v2320-rc3). `markbridge_teaching_resource_bytes(component,version,resourceId)` supplies only registered fixed JSON/bin bytes to trusted typed projections; it never returns JavaScript or accepts article URLs. No WASM/Worker/network permission is granted by v2. The local-only synthetic provider is `tests/fixtures/resource-v2-provider`; it exercises JSON/bin delivery and a pinned JavaScript blob under the frame's own CSP.
+
+Main 3.2.0-rc.5 adds the explicit trusted `fixed-wasm/v1` execution profile to protocol v2; the default profile still rejects WASM and Workers. See [the exact profile contract](TEACHING-EXTENSIONS.md#固定审核执行-profile320-rc5). It permits one pinned Worker JavaScript and one WebAssembly resource only in its own HTTP frame CSP, with unchanged byte/startup/grant budgets and no editor/site CSP change. Article source and attrs remain unchanged; the fixed-data reader never returns executable resources. Providers must independently pin, validate and terminate their audited program; this is not a general sandbox.

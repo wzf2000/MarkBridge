@@ -793,6 +793,60 @@
         ],
         "unmapped": []
       }
+    },
+    {
+      "id": "native-group-text-leaves",
+      "source": ":::mbb:v1 group {}\n:::mbb:v1 native-code {\"text\":\"A\\nB\"}\n:::mbb:end\n:::mbb:v1 preformatted {\"text\":\"C\\tD\"}\n:::mbb:end\n:::mbb:end\n",
+      "blocks": [
+        {
+          "name": "core/group",
+          "innerBlocks": [
+            {
+              "name": "core/code"
+            },
+            {
+              "name": "core/preformatted"
+            }
+          ]
+        }
+      ],
+      "expected": {
+        "schema": 1,
+        "offsetUnit": "utf16",
+        "ranges": [
+          {
+            "id": "r0",
+            "blockPath": [0],
+            "kind": "teaching",
+            "start": 0,
+            "end": 129,
+            "startLine": 1,
+            "endLine": 6,
+            "precision": "coarse"
+          },
+          {
+            "id": "r1",
+            "blockPath": [0, 0],
+            "kind": "teaching",
+            "start": 19,
+            "end": 68,
+            "startLine": 2,
+            "endLine": 3,
+            "precision": "coarse"
+          },
+          {
+            "id": "r2",
+            "blockPath": [0, 1],
+            "kind": "teaching",
+            "start": 68,
+            "end": 118,
+            "startLine": 4,
+            "endLine": 5,
+            "precision": "coarse"
+          }
+        ],
+        "unmapped": []
+      }
     }
   ]
 }

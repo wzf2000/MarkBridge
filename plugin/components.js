@@ -18,6 +18,9 @@
     instances = new Map(),
     active = new Set(),
     slots = new Set();
+  const resourceCache = globalThis.MarkBridgeResources
+    ? new MarkBridgeResources.PublicCache()
+    : null;
   const automaticStarting = new Set();
   let readerPageActive = true,
     readerPumpScheduled = false;
@@ -179,7 +182,15 @@
     config.provider = (window.MBBComponents || []).find(
       (p) => p.id === config.component && p.version === config.componentVersion,
     );
-    if (!config.provider || config.provider.protocolVersion !== 1) config.status = 'missing';
+    const PROTOCOL =
+      config.provider?.protocolVersion === 2 ? 'mbb-component/v2' : 'mbb-component/v1';
+    const resourceV2 = config.provider?.protocolVersion === 2;
+    if (
+      !config.provider ||
+      ![1, 2].includes(config.provider.protocolVersion) ||
+      (resourceV2 && !resourceCache)
+    )
+      config.status = 'missing';
     const limits = {
       resourceBytes: 524288,
       startupMs: 5000,
@@ -222,7 +233,9 @@
       startupDeadline = 0,
       runDeadline = 0,
       activityProjection = null,
-      layoutHeight = 0;
+      layoutHeight = 0,
+      resourceContext = null,
+      resourceTransferTimer = null;
     const activityHandles = new Map();
     const activityParts = () =>
       [...node.querySelectorAll('[id]')].filter(
@@ -287,19 +300,45 @@
         explanation: handle(a.explanation),
       };
     }
-    const send = (type, extra = {}) => {
+    const send = (type, extra = {}, transfer = []) => {
       if (!frame?.contentWindow) return false;
       const message = { protocol: PROTOCOL, session, type, ...extra };
       try {
+        if (resourceV2 && type === 'init') {
+          const items = extra.resourceGroup?.resources;
+          let size = 0;
+          if (
+            !Array.isArray(items) ||
+            items.length < 1 ||
+            items.length > 8 ||
+            transfer.length !== items.length ||
+            new Set(transfer).size !== transfer.length ||
+            items.some((item, i) => {
+              if (
+                !(item.buffer instanceof ArrayBuffer) ||
+                item.buffer !== transfer[i] ||
+                !Number.isSafeInteger(item.spec?.bytes) ||
+                item.spec.bytes < 1 ||
+                item.spec.bytes > 1048576 ||
+                item.buffer.byteLength !== item.spec.bytes
+              )
+                return true;
+              size += item.buffer.byteLength;
+              return false;
+            }) ||
+            size > 2097152
+          )
+            throw new Error('RESOURCE_TRANSFER');
+        } else if (transfer.length) throw new Error('RESOURCE_TRANSFER');
         if (
           new TextEncoder().encode(JSON.stringify(message)).length >
-          (type === 'init' ? 20480 : 8192)
+          (type === 'init' ? (resourceV2 ? 40960 : 20480) : 8192)
         ) {
           if (type !== 'cancel')
             failure(T('The component initialization envelope exceeds its budget.'), 'PROTOCOL');
           return false;
         }
-        frame.contentWindow.postMessage(message, '*');
+        frame.contentWindow.postMessage(message, '*', transfer);
         return true;
       } catch {
         if (type !== 'cancel') failure(T('The component message could not be sent.'), 'PROTOCOL');
@@ -321,6 +360,9 @@
       layoutHeight = 0;
       abort?.abort();
       abort = null;
+      resourceContext?.cancel();
+      resourceContext = null;
+      clearTimeout(resourceTransferTimer);
       clearTimeout(timer);
       clearTimeout(startup);
       active.delete(node);
@@ -503,17 +545,31 @@
           failure(T('Component initialization timed out.'), 'STARTUP_TIMEOUT');
       }, budgets.startupMs);
       try {
-        const url = new URL(config.provider.resource.url, location.href);
-        if (url.origin !== location.origin)
-          throw coded('RESOURCE_ORIGIN', 'Only registered local resources are allowed');
-        const bytes = await readResource(url, abort.signal);
-        diagnostic?.stage('integrity');
-        const digest = Array.from(
-          new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)),
-          (v) => v.toString(16).padStart(2, '0'),
-        ).join('');
-        if (digest !== config.provider.resource.sha256)
-          throw coded('DIGEST', 'The component resource digest does not match');
+        let bytes, group;
+        if (resourceV2) {
+          resourceContext = new MarkBridgeResources.Context({
+            signal: abort.signal,
+            current: () => current === generation && node.isConnected,
+            limits: { totalMs: budgets.startupMs },
+          });
+          group = await MarkBridgeResources.load(config.provider.resources, {
+            context: resourceContext,
+            cache: resourceCache,
+            executionProfile: config.provider.executionProfile ?? null,
+          });
+        } else {
+          const url = new URL(config.provider.resource.url, location.href);
+          if (url.origin !== location.origin)
+            throw coded('RESOURCE_ORIGIN', 'Only registered local resources are allowed');
+          bytes = await readResource(url, abort.signal);
+          diagnostic?.stage('integrity');
+          const digest = Array.from(
+            new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)),
+            (v) => v.toString(16).padStart(2, '0'),
+          ).join('');
+          if (digest !== config.provider.resource.sha256)
+            throw coded('DIGEST', 'The component resource digest does not match');
+        }
         if (current !== generation || !node.isConnected) return;
         diagnostic?.stage('initialization');
         session = random();
@@ -534,35 +590,79 @@
             return;
           }
           initialized = true;
-          send('init', {
-            params: config.params,
-            ...(activityProjection ? { activity: activityProjection } : {}),
-            execution: EXECUTION_ENABLED,
-            ...(diagram ? { presentation: 'diagram' } : {}),
-            ...(config.provider.supportsUiLocale === true
-              ? { uiLocale: window.MBB_UI_LOCALE === 'zh_CN' ? 'zh_CN' : 'en_US' }
-              : {}),
-            component: config.component,
-            componentVersion: config.componentVersion,
-            budgets,
-          });
+          if (resourceV2) {
+            try {
+              resourceContext.check('transfer');
+            } catch {
+              failure(T('Component initialization timed out.'), 'TRANSFER_TIMEOUT');
+              return;
+            }
+          }
+          send(
+            'init',
+            {
+              params: config.params,
+              ...(activityProjection ? { activity: activityProjection } : {}),
+              execution: EXECUTION_ENABLED,
+              ...(diagram ? { presentation: 'diagram' } : {}),
+              ...(config.provider.supportsUiLocale === true
+                ? { uiLocale: window.MBB_UI_LOCALE === 'zh_CN' ? 'zh_CN' : 'en_US' }
+                : {}),
+              component: config.component,
+              componentVersion: config.componentVersion,
+              budgets,
+              ...(config.provider.executionProfile
+                ? { executionProfile: config.provider.executionProfile }
+                : {}),
+              ...(resourceV2
+                ? {
+                    resourceGroup: {
+                      version: group.version,
+                      sha256: group.groupSha256,
+                      identity: config.provider.identity,
+                      resources: group.resources,
+                    },
+                  }
+                : {}),
+            },
+            resourceV2 ? group.resources.map((r) => r.buffer) : [],
+          );
         };
-        frame.srcdoc =
-          '<meta http-equiv="Content-Security-Policy" content="' +
-          CSP +
-          '">' +
-          new TextDecoder().decode(bytes) +
-          readingStyle +
-          '<script>(' +
-          readingLayout.toString() +
-          ')(' +
-          JSON.stringify(PROTOCOL) +
-          ',' +
-          JSON.stringify(session) +
-          ',' +
-          JSON.stringify(!!config.activity) +
-          ')</scr' +
-          'ipt>';
+        if (resourceV2) {
+          const frameUrl = new URL(config.provider.frameUrl, location.href);
+          if (
+            frameUrl.origin !== location.origin ||
+            (frameUrl.search &&
+              (Array.from(frameUrl.searchParams.keys()).join(',') !== 'rest_route' ||
+                !frameUrl.searchParams.get('rest_route').startsWith('/mbb/v2/component-frame/'))) ||
+            frameUrl.hash ||
+            frameUrl.username ||
+            frameUrl.password
+          )
+            throw coded('RESOURCE_ORIGIN', 'Only registered local resources are allowed');
+          resourceContext.running = { phase: 'transfer', start: performance.now() };
+          resourceTransferTimer = setTimeout(() => {
+            if (current === generation)
+              failure(T('Component initialization timed out.'), 'TRANSFER_TIMEOUT');
+          }, resourceContext.remaining('transfer'));
+          frame.src = frameUrl.href;
+        } else
+          frame.srcdoc =
+            '<meta http-equiv="Content-Security-Policy" content="' +
+            CSP +
+            '">' +
+            new TextDecoder().decode(bytes) +
+            readingStyle +
+            '<script>(' +
+            readingLayout.toString() +
+            ')(' +
+            JSON.stringify(PROTOCOL) +
+            ',' +
+            JSON.stringify(session) +
+            ',' +
+            JSON.stringify(!!config.activity) +
+            ')</scr' +
+            'ipt>';
         controls.append(frame);
         close.hidden = false;
         status.textContent = T('Initializing the isolated component…');
@@ -571,7 +671,7 @@
         if (current === generation)
           failure(
             error.mbbCode ? error.message : T('The component could not be loaded.'),
-            error.mbbCode || 'NETWORK',
+            error.mbbCode || error.code || 'NETWORK',
           );
       }
     }
@@ -715,6 +815,17 @@
         return;
       }
       if (data.type === 'ready' && !ready) {
+        if (resourceV2) {
+          try {
+            resourceContext.check('transfer');
+          } catch {
+            failure(T('Component initialization timed out.'), 'TRANSFER_TIMEOUT');
+            return;
+          }
+          resourceContext.running = null;
+          clearTimeout(resourceTransferTimer);
+          resourceContext = null;
+        }
         clearTimeout(startup);
         automaticStarting.delete(node);
         pumpReaders();
@@ -769,6 +880,11 @@
         active.delete(node);
         runId = null;
         status.classList.toggle('mbb-component-complete', data.type === 'complete');
+        const reportedBudget =
+          data.type === 'error' &&
+          resourceV2 &&
+          config.provider.executionProfile === 'fixed-wasm/v1' &&
+          ['RUN_LIMIT', 'COMPILE_LIMIT'].includes(data.code);
         status.textContent =
           data.type === 'complete'
             ? diagram
@@ -776,12 +892,14 @@
               : T('Component execution completed.')
             : data.type === 'stopped'
               ? T('Execution stopped.')
-              : T('Execution failed. Static fallback content remains readable.');
+              : reportedBudget
+                ? T('Execution exceeded its time budget and was terminated.')
+                : T('Execution failed. Static fallback content remains readable.');
         pumpReaders();
         if (data.type === 'error') {
           if (diagram) readerFailed = true;
-          node.dataset.mbbFailureCode = 'EXECUTION';
-          const record = diagnostic?.failure('EXECUTION');
+          node.dataset.mbbFailureCode = reportedBudget ? 'RUN_BUDGET' : 'EXECUTION';
+          const record = diagnostic?.failure(reportedBudget ? 'RUN_BUDGET' : 'EXECUTION');
           if (record) window.MBB_DIAGNOSTICS?.show(controls, record);
         }
       }

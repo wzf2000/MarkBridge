@@ -46,9 +46,11 @@ test('managed conversion hints show unsupported blocks without changing them', a
   });
   await expect(page.locator('.mbb-capabilities summary')).toHaveText('转换支持与当前内容');
   await page.evaluate(() => {
+    if (!wp.blocks.getBlockType('core/audio') || MBB.supportedBlocks.includes('core/audio'))
+      throw Error('The fixture requires a registered core/audio block unsupported by MarkBridge');
     taskRegistry
       .dispatch('core/block-editor')
-      .insertBlocks(wp.blocks.createBlock('core/code', { content: 'KEEP_UNSUPPORTED' }));
+      .insertBlocks(wp.blocks.createBlock('core/audio', { caption: 'KEEP_UNSUPPORTED' }));
     window.capabilityBefore = wp.blocks.serialize(
       taskRegistry.select('core/block-editor').getBlocks(),
     );

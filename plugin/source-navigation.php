@@ -414,6 +414,9 @@ function mbb_source_navigation(string $source, array $blocks): array
         }
     };
     $native = [
+        'native-code' => 'core/code',
+        'preformatted' => 'core/preformatted',
+        'group' => 'core/group',
         'details' => 'core/details',
         'buttons' => 'core/buttons',
         'button' => 'core/button',

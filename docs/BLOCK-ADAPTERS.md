@@ -1,6 +1,40 @@
 # 原生区块与静态适配接口
 
-适用于 MarkBridge **3.0.0 正式稳定版**。本页定义原生折叠、链接按钮和受信静态扩展的内容合同；实际验收范围见[验证说明](VALIDATION.md)。交互教学组件使用独立的[教学扩展接口](TEACHING-EXTENSIONS.md)，不能通过本接口运行脚本。
+本页适用于 MarkBridge **3.1.0-rc.2** 候选；原生组和纯文本叶子为本轮新增能力。本页定义原生结构容器、纯文本叶子、折叠、链接按钮和受信静态扩展的内容合同；实际验收范围见[验证说明](VALIDATION.md)。交互教学组件使用独立的[教学扩展接口](TEACHING-EXTENSIONS.md)，不能通过本接口运行脚本。
+
+## 原生纯文本代码和预格式化
+
+`native-code` 对应 `core/code`，`preformatted` 对应 `core/preformatted`，保留原生身份，不转换成围栏代码所用的 `mbb/code`。两种叶子共用闭合 JSON 字段：必填 `text` 和可选 `anchor`、`className`。内部不能另写正文或区块；普通围栏代码的既有语言／高亮功能保持原合同。
+
+```markdown
+:::mbb:v1 native-code {"text":" const value = 1;\n\treturn value;\n","anchor":"example-code"}
+:::mbb:end
+
+:::mbb:v1 preformatted {"text":"名称\t数值\n甲\t1\n\n","className":"plain-data"}
+:::mbb:end
+```
+
+`text` 为纯文字，精确保留 LF、制表符、首尾空格、空行、特殊字符和不换行空格（NBSP）；JSON 的 `\n`／`\t` 表示正文字符。拒绝 CR、除 LF／tab 外的 ASCII 控制字符以及超出整篇容量的内容。锚点与类名沿用本页组容器的闭合规则；全篇锚点唯一、字节／节点／深度预算仍适用，也可嵌入组。
+
+本批只接受真实核心解析后 RichTextData 的固定保存形态：文本使用 `&amp;`／`&lt;`／`&gt;`／`&nbsp;`，代码换行写为 LF，预格式化换行写为 `<br>`。代码区块还沿用核心的短代码／自动嵌入保护：`[` 写为 `&#91;`，首个独立 http(s) URL 行的 `//` 写为 `&#47;&#47;`，行边界与空白集合按核心 ECMAScript 规则处理（包括 U+2028／U+2029、FEFF）；这些固定转义仍对应原来的文字。通过核心 DOM 构建的该形态可精确 parse／save；不同实体写法、CR、额外 HTML 或其他不能按此形态精确重存的原始 HTML 会明确拒绝，不能以 DOM 等价放行。原生编辑器／插件产生的 strong、em、链接、样式、语言字段、绑定、锁定和其他未知属性也不在本批范围内，不静默删除。预格式化区块在 WordPress 本身可带 RichText 格式，这一能力尚未接入本合同。
+
+## 原生组容器
+
+使用 WordPress 自带的组区块 `core/group`，不另建组编辑器。Markdown 使用 `:::mbb:v1 group {...}`，内部仍为已支持的普通正文和登记静态适配：
+
+```markdown
+:::mbb:v1 group {"tagName":"section","anchor":"overview","ariaLabel":"内容概览","className":"reading-group","layout":{"type":"constrained"}}
+
+这里可以放段落、列表、公式、代码、图片、原生折叠，或继续嵌套一个组。
+
+:::mbb:end
+```
+
+闭合字段为 anchor、tagName、ariaLabel、className、layout，均可省略。tagName 默认 div，也可为 section。layout 只接受单字段 `{type:"flow"}` 或 `{type:"constrained"}`，不接收宽度或其他布局设置。ariaLabel 为最多 200 个 Unicode 码点、不含控制字符及换行的文字；className 为最多 200 个 ASCII 字符的类名序列，类名以字母开头，仅含字母、数字、下划线和连字符，以单个空格分隔。明确的空 ariaLabel／className 保留在属性中，核心保存 HTML 不产生空 aria-label 或附加类名。anchor 沿用全文唯一、1–64 位 ASCII 锚点规则。
+
+保存 HTML 遵循实际 WordPress 核心：div 或 section 外壳带 wp-block-group，可携带 id、非空 aria-label 和自定义类；flow/constrained 只保存为注释属性，不凭空添加服务器渲染时的 is-layout 类。原始注释先校验字段和类型，再由核心解析；未知属性、样式、颜色、宽度、排版、metadata（含 bindings）、锁定、allowedBlocks、非支持标签及任意 HTML 外壳差异明确拒绝，不依赖核心归一化后静默删除。
+
+允许空组和嵌套组，沿用每种正文 256 KiB、10,000 节点及 32 层整篇预算。锚点、技术对象编号、文献与逻辑身份仍是全文约束；逻辑身份、文献表和阶段组必须遵守原顶层规则，阶段组放入结构组仍明确拒绝。缺少静态适配提供者时不能转换其嵌套内容。组的外观由当前主题和核心决定，本合同不新增主题样式或任意原生区块支持。新增转换类型时，须同时检查保存／恢复所用的独立服务器区块白名单，并通过真实核心解析器和 KSES 壳测试；转换模型通过不能代替这一层。
 
 ## 原生折叠和链接按钮
 

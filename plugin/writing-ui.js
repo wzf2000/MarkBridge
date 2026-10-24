@@ -289,21 +289,47 @@
       insert,
     );
     const activities = el('select');
+    let activityGeneration = 0;
+    activities.onchange = () => {
+      activityGeneration++;
+    };
     activities.setAttribute('aria-label', T('Activity template'));
-    const updateActivities = () => {
+    let activityListGeneration = 0;
+    const updateActivities = async () => {
+      const generation = ++activityListGeneration;
+      activityGeneration++;
       activities.replaceChildren();
-      for (const a of globalThis.MarkBridgeComponentAuthors?.templates?.() || []) {
-        const p = (window.MBBComponents || []).find(
-          (p) =>
-            p.id === a.component && p.version === a.componentVersion && p.activityVersion === 1,
-        );
-        if (!p) continue;
-        const option = el('option', p.title);
-        option.value = a.component + '@' + a.componentVersion;
-        activities.append(option);
+      insertActivity.disabled = true;
+      activityEmpty.hidden = false;
+      activityEmpty.textContent = T('Loading activity templates…');
+      try {
+        const registered = globalThis.MarkBridgeComponentAuthors?.templates?.() || [];
+        const templates = window.MarkBridgeComponentCatalog?.activities
+          ? await window.MarkBridgeComponentCatalog.activities(registered)
+          : registered.filter((a) =>
+              (window.MBBComponents || []).some(
+                (p) =>
+                  p.id === a.component &&
+                  p.version === a.componentVersion &&
+                  p.activityVersion === 1,
+              ),
+            );
+        if (generation !== activityListGeneration || !activityGroup.open) return;
+        for (const a of templates) {
+          const option = el('option', a.title || a.component + ' ' + a.componentVersion);
+          option.value = a.component + '@' + a.componentVersion;
+          activities.append(option);
+        }
+        insertActivity.disabled = !activities.options.length;
+        activityEmpty.hidden = !!activities.options.length;
+      } catch (error) {
+        if (generation === activityListGeneration) status.textContent = error.message;
+      } finally {
+        if (generation === activityListGeneration)
+          activityEmpty.textContent = T(
+            'No compatible self-check templates are registered. Existing static content remains readable.',
+          );
       }
-      insertActivity.disabled = !activities.options.length;
-      activityEmpty.hidden = !!activities.options.length;
     };
     const activityEmpty = el(
       'p',
@@ -311,9 +337,29 @@
         'No compatible self-check templates are registered. Existing static content remains readable.',
       ),
     );
-    const insertActivity = button('Insert activity', () => {
+    const insertActivity = button('Insert activity', async () => {
       try {
-        const [id, version] = activities.value.split('@');
+        const key = activities.value;
+        const generation = ++activityGeneration;
+        const [id, version] = key.split('@');
+        const opening = adapter.stamp();
+        const openingSelection = JSON.stringify(adapter.selection?.());
+        const selected = globalThis.wp?.data
+          ?.select?.('core/block-editor')
+          ?.getSelectedBlockClientId?.();
+        const openingScope = window.MarkBridgeComponentCatalog?.scope();
+        if (window.MarkBridgeComponentCatalog)
+          await window.MarkBridgeComponentCatalog.resolve(id, version);
+        if (
+          activities.value !== key ||
+          generation !== activityGeneration ||
+          opening !== adapter.stamp() ||
+          openingSelection !== JSON.stringify(adapter.selection?.()) ||
+          selected !==
+            globalThis.wp?.data?.select?.('core/block-editor')?.getSelectedBlockClientId?.() ||
+          openingScope !== window.MarkBridgeComponentCatalog?.scope()
+        )
+          return;
         adapter.insert(window.MBB.createActivity(id, version));
         refresh();
       } catch (error) {
@@ -331,6 +377,10 @@
     );
     activityGroup.ontoggle = () => {
       if (activityGroup.open) updateActivities();
+      else {
+        activityListGeneration++;
+        activityGeneration++;
+      }
     };
     panel.append(activityGroup);
     if (window.MBBReferences) panel.append(window.MBBReferences.create(adapter));

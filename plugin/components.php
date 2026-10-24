@@ -8,6 +8,7 @@ if (!defined('ABSPATH')) {
 }
 
 require_once __DIR__ . '/includes/i18n.php';
+require_once __DIR__ . '/component-resources.php';
 /** Trusted, local provider registration. Conversion remains provider-independent. */
 function mbb_component_registry(): array
 {
@@ -16,12 +17,7 @@ function mbb_component_registry(): array
 /** Resolve authored versions exactly; first registration remains the legacy/default entry. */
 function mbb_component_provider(string $id, string $version): ?array
 {
-    foreach (mbb_component_registry() as $provider) {
-        if ($provider['id'] === $id && $provider['version'] === $version) {
-            return $provider;
-        }
-    }
-    return null;
+    return mbb_component_resolve($id, $version);
 }
 function mbb_component_json(mixed $value, int $flags = 0): string|false
 {
@@ -362,12 +358,25 @@ function mbb_component_domain_valid(
         return false;
     }
 }
-function mbb_component_register_checked(string $id, array $provider): bool
-{
+function mbb_component_register_checked(
+    string $id,
+    array $provider,
+    bool $resolved = false,
+): array|bool {
     $registry = mbb_component_registry();
     if (
+        array_key_exists('executionProfile', $provider) &&
+        (($provider['protocolVersion'] ?? null) !== 2 ||
+            $provider['executionProfile'] !== 'fixed-wasm/v1' ||
+            !is_string($provider['minMarkBridge'] ?? null) ||
+            version_compare($provider['minMarkBridge'], '3.2.0-rc.5', '<'))
+    ) {
+        return mbb_component_reject($id, 'invalid-execution-profile');
+    }
+    if (
+        !$resolved &&
         is_string($provider['version'] ?? null) &&
-        mbb_component_provider($id, $provider['version'])
+        mbb_component_index_has($id, $provider['version'])
     ) {
         return mbb_component_reject($id, 'duplicate-provider');
     }
@@ -382,12 +391,16 @@ function mbb_component_register_checked(string $id, array $provider): bool
         'budgets',
     ];
     if (
-        count($registry) >= 32 ||
+        (!$resolved &&
+            (count($registry) >= 32 ||
+                !mbb_component_index_room($id, $provider['version'] ?? ''))) ||
         array_diff(array_keys($provider), [
             ...$fields,
             'supportsUiLocale',
             'readerMode',
             'activityVersion',
+            'resources',
+            'executionProfile',
         ]) ||
         (array_key_exists('supportsUiLocale', $provider) &&
             !is_bool($provider['supportsUiLocale'])) ||
@@ -399,6 +412,7 @@ function mbb_component_register_checked(string $id, array $provider): bool
         !preg_match('/^\d+\.\d+\.\d+$/D', $provider['version']) ||
         !is_int($provider['protocolVersion']) ||
         $provider['protocolVersion'] < 1 ||
+        ($provider['protocolVersion'] === 2) !== array_key_exists('resources', $provider) ||
         !is_string($provider['minMarkBridge']) ||
         !preg_match('/^\d+\.\d+\.\d+(?:-(?:dev|rc)\.\d+)?$/D', $provider['minMarkBridge']) ||
         !is_string($provider['title']) ||
@@ -477,20 +491,33 @@ function mbb_component_register_checked(string $id, array $provider): bool
         file_get_contents(__DIR__ . '/markdown-block-bridge.php'),
         $version,
     );
+    if ($provider['protocolVersion'] === 2) {
+        try {
+            $provider['resourcePlan'] = mbb_component_resource_group($provider);
+        } catch (Throwable $e) {
+            return mbb_component_reject($id, 'invalid-resource-group');
+        }
+    }
     $provider['id'] = $id;
     $provider['defaults'] = $defaults;
-    $provider['status'] =
-        $provider['protocolVersion'] !== 1
-            ? 'protocol-incompatible'
-            : (version_compare($version[1] ?? '0.0.0', $provider['minMarkBridge'], '<')
-                ? 'version-incompatible'
-                : (!$path || !is_file($path) || !is_readable($path)
-                    ? 'resource-unavailable'
-                    : (filesize($path) > $provider['budgets']['resourceBytes']
-                        ? 'resource-limit'
-                        : (hash_equals($provider['resource']['sha256'], hash_file('sha256', $path))
-                            ? 'available'
-                            : 'resource-integrity'))));
+    $provider['status'] = !in_array($provider['protocolVersion'], [1, 2], true)
+        ? 'protocol-incompatible'
+        : (version_compare($version[1] ?? '0.0.0', $provider['minMarkBridge'], '<')
+            ? 'version-incompatible'
+            : (!$path || !is_file($path) || !is_readable($path)
+                ? 'resource-unavailable'
+                : (filesize($path) > $provider['budgets']['resourceBytes']
+                    ? 'resource-limit'
+                    : (hash_equals($provider['resource']['sha256'], hash_file('sha256', $path))
+                        ? 'available'
+                        : 'resource-integrity'))));
+    if ($resolved) {
+        return $provider;
+    }
+    if (!mbb_component_index_definition_fits($provider)) {
+        return mbb_component_reject($id, 'catalog-limit');
+    }
+    $GLOBALS['mbb_component_defaults'][$id] ??= $provider['version'];
     $GLOBALS['mbb_components'][
         isset($registry[$id]) ? $id . '@' . $provider['version'] : $id
     ] = $provider;
@@ -515,6 +542,13 @@ function mbb_component_descriptors(string $serialized): array
 }
 function mbb_component_admit(string $serialized, string $base)
 {
+    if (!mbb_component_document_within_budget($serialized)) {
+        return mbb_error(
+            'component_limit',
+            mbb_t('The article exceeds the component description budget.'),
+            422,
+        );
+    }
     $original = mbb_component_descriptors($base);
     foreach (mbb_component_descriptors($serialized) as $id => $a) {
         $old = $original[$id] ?? null;
@@ -529,7 +563,20 @@ function mbb_component_admit(string $serialized, string $base)
             continue;
         }
         $p = mbb_component_provider($a->component, $a->componentVersion);
-        if (!$p || $p['status'] !== 'available' || $p['version'] !== $a->componentVersion) {
+        $resourcesValid = true;
+        if (($p['protocolVersion'] ?? null) === 2) {
+            try {
+                mbb_component_v2_check($p);
+            } catch (Throwable) {
+                $resourcesValid = false;
+            }
+        }
+        if (
+            !$p ||
+            $p['status'] !== 'available' ||
+            $p['version'] !== $a->componentVersion ||
+            !$resourcesValid
+        ) {
             return mbb_error(
                 'component_unavailable',
                 mbb_t(
@@ -559,7 +606,7 @@ function mbb_component_admit(string $serialized, string $base)
 }
 function mbb_component_public(array $p): array
 {
-    return array_intersect_key(
+    $public = array_intersect_key(
         $p,
         array_flip([
             'id',
@@ -573,10 +620,30 @@ function mbb_component_public(array $p): array
             'supportsUiLocale',
             'readerMode',
             'activityVersion',
+            'executionProfile',
         ]),
     ) + [
         'resource' => ['url' => $p['resource']['url'], 'sha256' => $p['resource']['sha256']],
     ];
+    if ($p['protocolVersion'] === 2) {
+        $public['resources'] = [
+            'url' => $p['resources']['url'],
+            'baseUrl' => $p['resourcePlan']['baseUrl'],
+            'sha256' => $p['resources']['sha256'],
+            'groupSha256' => $p['resourcePlan']['groupSha256'],
+            'version' => $p['version'],
+        ];
+        $public['frameUrl'] = rest_url(
+            'mbb/v2/component-frame/' .
+                $p['id'] .
+                '/' .
+                $p['version'] .
+                '/' .
+                $p['resource']['sha256'],
+        );
+        $public['identity'] = mbb_component_identity($p);
+    }
+    return $public;
 }
 function mbb_component_available(): array
 {
@@ -588,7 +655,7 @@ function mbb_component_available(): array
     );
 }
 add_action('enqueue_block_editor_assets', static function () {
-    $providers = mbb_component_available();
+    $providers = mbb_component_page_providers();
     wp_enqueue_script(
         'mbb-components',
         plugins_url(mbb_asset('components.js'), __FILE__),
@@ -603,11 +670,20 @@ add_action('enqueue_block_editor_assets', static function () {
                 $providers,
                 JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT,
             ) .
+            ';window.MBBComponentCatalog=' .
+            mbb_component_json(
+                mbb_component_catalog_bootstrap(),
+                JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT,
+            ) .
             ';',
         'before',
     );
 });
 
+require_once __DIR__ . '/component-catalog.php';
+
 require_once __DIR__ . '/component-diagnostics.php';
 
 require_once __DIR__ . '/projections.php';
+
+require_once __DIR__ . '/component-frame.php';

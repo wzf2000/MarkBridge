@@ -22,6 +22,7 @@ SKIP = {
 
 
 def main():
+    subprocess.run(["php", str(ROOT / "scripts/check_php_symbols.php")], check=True)
     tracked = set(subprocess.check_output(["git", "ls-files"], cwd=ROOT, text=True).splitlines())
     required_sources = [
         "plugin/markdown-block-bridge.php",

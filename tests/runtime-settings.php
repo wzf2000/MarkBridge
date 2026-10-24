@@ -90,12 +90,12 @@ try {
         __DIR__ . '/../plugin/kernel.js',
         $runtime . '/site/wp-content/plugins/markdown-block-bridge/kernel.js',
     );
-    file_put_contents($runtime . '/node/bin/node', "#!/usr/bin/sh\necho v24.21.0\n");
+    file_put_contents($runtime . '/node/bin/node', "#!/usr/bin/sh\necho v24.22.1\n");
     chmod($runtime . '/node/bin/node', 0750);
     $manifest = [
         'format' => 1,
         'wordpress' => '6.9.2',
-        'node' => 'v24.21.0',
+        'node' => 'v24.22.1',
         'core_sha256' => [
             '/wp-includes/js/example.js' => hash_file(
                 'sha256',
@@ -118,6 +118,61 @@ try {
     $valid = mbb_runtime_diagnostics();
     $failed = array_column(array_filter($valid['checks'], fn($check) => !$check['ok']), 'code');
     mbb_test_assert($valid['ok'], 'valid runtime rejected: ' . implode(',', $failed));
+
+    foreach (
+        [
+            'v24.22.0',
+            'v24.15.0',
+            'v22.22.2',
+            '',
+            '24.22.1',
+            'v24.22',
+            'v24.22.1-rc.1',
+            'v24.22.1junk',
+            'vv24.22.1',
+            'v024.22.1',
+        ]
+        as $version
+    ) {
+        mbb_test_assert(
+            !mbb_runtime_node_supported($version),
+            'unsupported version accepted: ' . $version,
+        );
+    }
+    foreach (['v24.22.1', 'v24.22.2', 'v25.0.0', 'v26.0.0'] as $version) {
+        mbb_test_assert(
+            mbb_runtime_node_supported($version),
+            'supported version rejected: ' . $version,
+        );
+    }
+    foreach (['v24.22.2', 'v24.22.0', 'v24.22.1-rc.1', 'damaged'] as $version) {
+        $manifest['node'] = $version;
+        file_put_contents($runtime . '/manifest.json', json_encode($manifest));
+        $result = mbb_runtime_diagnostics($runtime);
+        $node_check = array_values(
+            array_filter($result['checks'], fn($check) => $check['code'] === 'node'),
+        );
+        mbb_test_assert(
+            !$result['ok'] && !$node_check[0]['ok'],
+            'manifest version mismatch accepted: ' . $version,
+        );
+    }
+    foreach (['v24.22.0', 'v24.22.1-rc.1', 'damaged'] as $version) {
+        file_put_contents($runtime . '/node/bin/node', "#!/usr/bin/sh\necho " . $version . "\n");
+        $manifest['node'] = $version;
+        file_put_contents($runtime . '/manifest.json', json_encode($manifest));
+        $result = mbb_runtime_diagnostics($runtime);
+        $node_check = array_values(
+            array_filter($result['checks'], fn($check) => $check['code'] === 'node'),
+        );
+        mbb_test_assert(
+            !$result['ok'] && !$node_check[0]['ok'],
+            'invalid matching executable accepted: ' . $version,
+        );
+    }
+    file_put_contents($runtime . '/node/bin/node', "#!/usr/bin/sh\necho v24.22.1\n");
+    $manifest['node'] = 'v24.22.1';
+    file_put_contents($runtime . '/manifest.json', json_encode($manifest));
 
     $public = ABSPATH . 'runtime';
     mkdir($public);

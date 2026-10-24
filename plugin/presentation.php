@@ -208,7 +208,7 @@ add_action(
             'mbb-presentation-loader',
             'window.MBBComponents=' .
                 mbb_component_json(
-                    mbb_component_available(),
+                    mbb_component_page_providers(),
                     JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT,
                 ) .
                 ';',

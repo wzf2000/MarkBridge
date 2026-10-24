@@ -66,6 +66,10 @@ function admin_url($path)
 {
     return '/wp-admin/' . $path;
 }
+function rest_url($path = '')
+{
+    return 'https://settings.invalid/wp-json/' . ltrim($path, '/');
+}
 function wp_safe_redirect($url)
 {
     throw new MbbSettingsStop($url);
@@ -433,8 +437,17 @@ $GLOBALS['mbb_components'] = [
             'properties' => ['text' => ['type' => 'string', 'enum' => [$special]]],
         ],
         'defaults' => (object) ['text' => $special],
-        'resource' => ['url' => '/fixed-fixture.html', 'sha256' => str_repeat('a', 64)],
+        'resource' => [
+            'file' => __FILE__,
+            'url' => '/fixed-fixture.html',
+            'sha256' => hash_file('sha256', __FILE__),
+        ],
     ],
+];
+$post = (object) [
+    'ID' => 42,
+    'post_content' =>
+        '<!-- wp:mbb/component {"id":"fixture","component":"html-fixture","componentVersion":"0.1.0"} -->',
 ];
 foreach (
     [
@@ -490,11 +503,24 @@ foreach (
             'Actual enqueue changed its admin/reader state for ' . $handle,
         );
         $encoded = substr($registries[0], strlen($prefix), -strlen($suffix));
+        if ($admin_context) {
+            $parts = explode(';window.MBBComponentCatalog=', $encoded);
+            mbb_settings_assert(count($parts) === 2, 'Editor omitted its catalog bootstrap');
+            [$encoded, $catalogEncoded] = $parts;
+            $catalog = json_decode($catalogEncoded, true, 16, JSON_THROW_ON_ERROR);
+            mbb_settings_assert(
+                $catalog === mbb_component_catalog_bootstrap() &&
+                    $catalog['url'] === 'https://settings.invalid/wp-json/mbb/v2/components/' &&
+                    $catalog['postId'] === 42 &&
+                    !preg_match('/[<>&\']/', $catalogEncoded),
+                'Catalog bootstrap changed its REST URL, article identity or safe encoding',
+            );
+        }
         mbb_settings_assert(
             !preg_match('/[<>&\']/', $encoded) &&
                 str_contains($encoded, '\\u0022') &&
                 json_decode($encoded, true, 16, JSON_THROW_ON_ERROR) ===
-                    json_decode(mbb_component_json(mbb_component_available()), true),
+                    json_decode(mbb_component_json(mbb_component_page_providers()), true),
             'Registry inline exposed HTML script syntax or changed its decoded provider data',
         );
     }

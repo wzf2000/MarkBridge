@@ -1,6 +1,6 @@
 # 教学扩展接口
 
-本页描述当前 MarkBridge 3.0 候选的扩展结构、教学脚本维护方式，以及 v1 组件与显式 v2 活动合同。作者操作见[教学内容](TEACHING.md)。主插件保存教学结构、引用、参数和静态替代；算法、课程样例、Worker 与播放控制由独立受信插件提供。文章不能自行登记脚本或运行地址。
+本页描述当前 MarkBridge 的扩展结构、教学脚本维护方式，以及 v1 组件与显式 v2 活动合同。作者操作见[教学内容](TEACHING.md)。主插件保存教学结构、引用、参数和静态替代；算法、课程样例、Worker 与播放控制由独立受信插件提供。文章不能自行登记脚本或运行地址。
 
 通用作者工具、权限范围兼容目录和 typed 静态投影见 [SDK](SDK.md)；原组件登记与精确版本合同继续有效。
 
@@ -15,7 +15,7 @@
 | 精确组件版本     | `insertion-sort@0.1.0`、`insertion-sort@0.2.0` | 同一类型的两个运行合同；保留旧版供原文章使用            |
 | 文章实例         | 一篇文章中的两道单选题                         | 各自保存稳定 ID、题干、参数和静态解释，复用同一组件程序 |
 
-因此，一篇新教程通常不需要安装新插件，也不需要新建一种组件类型。目录中看到多个算法名称，不表示每篇教程都有一个独立插件；同名不同版本也不表示安装了两份 WordPress 插件。当前目录最多容纳 32 个精确类型／版本组合，不应按题目逐个登记。
+因此，一篇新教程通常不需要安装新插件，也不需要新建一种组件类型。目录中看到多个算法名称，不表示每篇教程都有一个独立插件；同名不同版本也不表示安装了两份 WordPress 插件。旧登记接口最多容纳 32 个精确类型／版本组合；Main 3.4 起可声明有界轻量索引并按需解析更多精确版本，仍不应按题目逐个登记。
 
 当前配套扩展的职责如下；是否安装仍由站点决定：
 
@@ -111,6 +111,51 @@ npm run package:source
 
 配置不是第二份正文。配对保存、原生区块保存、修订与文件来源更新继续共用权限、指纹与事务链。保存前先验证完整历史配对，再判断配置是否保持原样；不能仅凭客户端声称存在旧配置而绕过登记校验。扩展停用时，已经核验的原配置可保留，静态替代可编辑；新配置或参数变化会拒绝。精确的已验证配对修订仍可恢复，不能借恢复许可接受任意修改。
 
+## 轻量版本目录与按需解析（Main 3.4）
+
+先检测 `markbridge_teaching_supports_component_catalog()`。受信扩展调用
+`markbridge_register_teaching_component_catalog($id, $index, $resolver)`，每类型只声明一次。
+`$index` 是闭合的 `title`、`defaultVersion`、`versions`；每版本项含 `version`、`title`、
+`fingerprint`，可声明 `activityVersion:1`。默认版本必须是版本列表首项。同类型跨新旧接口的第一次成功登记决定默认值；
+目录翻页、安装新版本、重开文章不会升级已有精确版本。
+
+每项 `fingerprint` 由 `markbridge_teaching_component_fingerprint($id, $provider)` 生成。
+它递归规范化 provider 数据，包含 schema、defaults、协议、预算、可选 flags、固定 HTML SHA-256
+及 v2 manifest SHA-256，排除本地路径、部署 URL、运行状态和派生资源计划。
+发布构建应将资源摘要及索引固定到包内；请求中不能重新计算“期望摘要”来接受变更后的资源。
+
+本地 `$resolver($id, $version)` 只能接到已登记的精确键，返回原 v1/v2 provider 数组。
+主包重新执行原 schema、默认值、资源路径／摘要／组校验，再核对定义 pin、标题及声明的自测能力。
+异常、递归、未登记版本或 pin 不符均解析失败。作者配置及静态正文保留。
+保存准入、阅读、静态投影、出版、资源路由和启动共用此入口；客户端选过版本不是服务器准入条件。
+可运行的 40 版本样例位于 `sdk/examples/indexed-components/provider.php`，详见其 README。
+
+| 范围         | 预算与超额行为                                                                                |
+| ------------ | --------------------------------------------------------------------------------------------- |
+| 新旧联合目录 | 256 精确键、64 类型、每类型 64 版本；总索引 128 KiB；单声明 32 KiB；整笔拒绝，不部分登记      |
+| 目录响应     | 默认每页 20、最多 50 项、32 KiB；只交付轻量项，不执行 resolver                                |
+| 按需描述     | 单个公开描述 64 KiB；请求内最多 256 个解析键及 4 MiB 描述缓存，失败也记忆；复用时复核实际资源 |
+| 每篇文章     | 最多 32 个不同精确键、公开描述合计 512 KiB；重复实例复用版本；原活动／预览／参数预算保持      |
+| 多章出版     | 每章沿文章预算，总计最多 256 键／4 MiB；沿原章节、投影、资源及快照总预算                      |
+| 阅读归档页   | 只交付页面实际文章引用项，聚合最多 256 键／4 MiB；实例静态替代仍独立存在                      |
+| 旧接口       | 原提供者、静态 renderer、作者 callback 分别保留原 32 上限，不因索引扩大                       |
+
+索引 resolver 可以按需调用 `mbb_register_component_projection()` 为当前正在解析的同一精确键
+登记固定 renderer，使用独立的 256 项请求内空间；其他键不借此绕过旧 32 上限。
+renderer 文件、返回树及出版指纹仍执行原校验。新索引没有专用作者 callback 时可使用通用 schema 表单。
+
+后台使用 WordPress 原有选择与翻页控件；打开已有块会直接按其属性解析，无需先打开选择器。
+精确描述通过有编辑权限的私有 REST 请求获取：`GET mbb/v2/components/catalog` 与
+`GET mbb/v2/components/descriptor/{component}/{version}`。前者支持 `page`、`per_page`、`type`；
+后者必须携带目录的 `fingerprint`。可带 `post_id`，服务器另查文章编辑权限。
+响应不包含文件路径或工厂，且 `private, no-store`；目录变更须刷新。
+作者异步选择同时核对当前文章、选区、块属性／草稿代次与目录指纹，迟到结果不能应用到新草稿。
+
+3.4.0-rc.2 起，插入自测菜单只列出作者模板与轻量目录中 `activityVersion:1` 精确键的交集。
+打开菜单最多读取六页、每页 50 项，作者键都已找到即可停止；页字节超额时改用最多十三页、
+每页 20 项。此过程不解析完整提供者，选定插入时才获取精确描述。未登记作者和普通回放不会
+出现在自测列表中，模板、文章或选区变化仍会使迟到插入失效。
+
 ## 登记 v1 提供者
 
 独立插件订阅 `markbridge_register_teaching_components`，调用 `markbridge_register_teaching_component($id, $provider)`。返回 `true` 表示登记成功，不代表资源可运行；查询 `mbb_component_registry()` 中的状态。协议、最低版本或资源不兼容时保留诊断条目；结构非法及重复登记返回 `false`，拒绝原因进入只读报告。
@@ -164,7 +209,7 @@ add_action('markbridge_register_teaching_components', static function () {
 
 `$fixedBuildManifest` 来自扩展构建产物，不是用户输入。资源摘要必须由已审阅构建生成；不要每次请求对当前资源重新计算“期望摘要”，那会失去检查构建内容的意义。
 
-每个提供者必须声明全部上述字段，未知字段拒绝。类型标识为 1–64 个小写 ASCII 字母、数字或连字符，以字母开头；最多登记 32 个精确类型／版本组合；同类型可同时登记多个不同版本，精确版本重复仍拒绝。首个登记是新插入的默认项，已有文章按类型和版本精确查找。组件版本为 `X.Y.Z`；协议当前为 `1`，最低主插件版本可为 `X.Y.Z` 或本地 `X.Y.Z-dev.N`。升级不自动改写文章的组件版本；扩展须先检测 `markbridge_teaching_supports_component_versions()` 存在且返回 true，才登记同类型的额外版本。旧主插件只登记原版本，避免占用类型导致旧文章失去提供者。
+每个提供者必须声明全部上述字段，未知字段拒绝。类型标识为 1–64 个小写 ASCII 字母、数字或连字符，以字母开头；此旧接口最多登记 32 个精确类型／版本组合；同类型可同时登记多个不同版本，精确版本重复仍拒绝。首个登记是新插入的默认项，已有文章按类型和版本精确查找。组件版本为 `X.Y.Z`；协议当前为 `1`，最低主插件版本可为 `X.Y.Z` 或本地 `X.Y.Z-dev.N`。升级不自动改写文章的组件版本；扩展须先检测 `markbridge_teaching_supports_component_versions()` 存在且返回 true，才登记同类型的额外版本。旧主插件只登记原版本，避免占用类型导致旧文章失去提供者。
 
 资源必须是插件目录内的固定本地 `.html` 或（2.0.3 起）`.html.txt`，URL 与其 WordPress 插件地址一致。登记检查真实路径、可读性、大小及固定 SHA-256；浏览器在加载前再次有界读取并核对摘要。资源不写入正文，不从参数取得地址，不下载或自动安装远端提供者。缺失、超限或摘要错误时显示静态替代，管理员可修复对应扩展后重新启动。
 
@@ -180,7 +225,60 @@ add_action('markbridge_register_teaching_components', static function () {
 
 作者的参数输入暂存在编辑器内存中；明确应用后更新区块，未应用或无效时阻止保存与导出，撤销恢复原配置。切换选区不能静默丢弃候选。应用仍不取代服务端 schema 校验。播放位置、读者输入与执行输出永不写回参数或正文。
 
-## 隔离加载与消息协议
+## 固定公开资源 v2（3.2.0-rc.3）
+
+这是显式选择的另一种资源交付协议，与“活动关系 v2”及作者工具合同分别编号。文章仍保存原 `component`、精确版本、`params` 与可选 `activity`，不保存协议、URL、清单或运行结果。原 v1 的资源及 srcdoc 加载保留。
+
+提供者先检查 `markbridge_teaching_supports_resource_groups()`，将 `protocolVersion` 设为 `2`、`minMarkBridge` 设为 `3.2.0-rc.3` 或以后，再增加闭合登记字段：
+
+```php
+'resources' => [
+    'file' => __DIR__ . '/assets/0.1.0/manifest.json',
+    'url' => plugins_url('assets/0.1.0/manifest.json', __FILE__),
+    'sha256' => $reviewedBuildPins['manifest.json'],
+],
+```
+
+原 `resource:{file,url,sha256}` 仍指向该提供者固定 HTML 引导，单项最多 512 KiB；它不进入额外资源列表。摘要应来自审阅构建的固定 pin，不从文章、网络响应或每次请求动态计算为新信任值。所有文件必须位于同一插件真实目录，清单和条目不允许 symlink、路径逃逸、查询或外部 URL。
+
+清单最多 16 KiB，严格拒绝重复 JSON 键、无效 Unicode、非有限数与未知字段，结构如下：
+
+```json
+{
+  "schema": "mbb-resources/v2",
+  "version": "0.1.0",
+  "resources": [
+    {
+      "id": "data",
+      "path": "assets/0.1.0/data.json",
+      "type": "json",
+      "bytes": 12,
+      "sha256": "<64 lowercase hexadecimal characters>",
+      "deps": [],
+      "license": "CC0-1.0",
+      "version": "0.1.0"
+    }
+  ]
+}
+```
+
+`version` 为无前导零的稳定 `x.y.z`，须同时等于精确组件版本及路径版本。条目 ID 为最多 24 个小写字母／数字／连字符，首字符为字母；路径只接受 `assets/<version>/<小写字母开头的字母数字连字符文件名>.<json|js|bin>`。类型与后缀一一对应：`json`、`javascript`、`public-data`。许可枚举为 `CC0-1.0`、`GPL-3.0-or-later`、`Apache-2.0`。依赖为本组已登记 ID，无重复、缺失或环；交付按稳定拓扑顺序。最多八项，每项 1 MiB，资源条目原始字节合计 2 MiB；清单的 16 KiB 与 HTML 引导的 512 KiB 分别计量，不扣入该资源合计；不接受 WASM、Worker 或任意附加类型。清单不能列入自身。
+
+父窗每次启动都以 `credentials:'omit'`、`redirect:'error'` 重新读取并校验固定清单；缓存命中也不省略此步。只有整组下载、字节数、SHA 和当前 generation 均有效后才提交原始字节 LRU，页面内最多 4 MiB。交付副本可 transfer，缓存原件不被 detach；取消或晚 SHA 结果不能提交半组或复活旧实例，并发实例各有上下文。
+
+v2 iframe 的 `src` 指向公开固定 REST HTML 路由 `/mbb/v2/component-frame/<id>/<version>/<bootstrap-sha256>`，采用 `sandbox="allow-scripts"`、无同源权限。端点只接受登记元组，拒绝额外查询／正文／nonce／任意文件或脚本（WordPress 的 `rest_route` 路由参数除外）。响应为原始 HTML，不是 JSON；发送前重读本地引导及整组摘要，返回 `no-store`、`nosniff` 与独立 CSP：只允许本站嵌入、固定内联／blob 脚本与内联样式，`connect-src 'none'`、`worker-src 'none'`，不授予 WASM 编译权限。不会调整编辑器或整站 CSP。iframe 导航可能携带浏览器 Cookie；端点不读取账户／文章身份来生成正文，opaque 子文档也不能读取 Cookie。不要把父窗 fetch 的 omit 误写成导航 omit。
+
+端点 URL 的摘要只绑定提供者固定 HTML；最终响应另附 Main 固定布局桥。完整组件身份同时绑定 ID、精确版本、协议、引导 SHA、资源组及 Main 桥／CSP／校验代码摘要。布局桥只负责有界自然高度和活动布局，不替提供者验证资源消息或计算。
+
+每实例 wire 为 `mbb-component/v2`，会话、来源、runId 及已有 `ready`／`run-request`／`grant`／`complete`／`cancel` 控制保持。v2 `init.resourceGroup` 为 `{version,sha256,identity,resources:[{spec,buffer}]}`；`buffer` 是 ArrayBuffer，元数据中的 spec 与固定清单一致。提供者须先拒绝 `parent===window`，再检查 `event.source===parent`、协议、固定会话、条目身份、长度与摘要；资源交付不是运行许可，计算仍需 `grant`。v2 初始化 JSON 元数据单独限制 40 KiB（v1 仍 20 KiB），参数仍 16 KiB，控制／结果仍 8 KiB；ArrayBuffer 另按八项／每项 1 MiB／合计 2 MiB 核对，不以 JSON 中的 `{}` 绕过预算。
+
+启动总期限最多五秒，覆盖加载、摘要、HTTP frame、交付和 ready；累计下载最多 2.5 秒、摘要最多一秒、frame 导航至 ready 最多 1.5 秒，任一先到即失败。ready 后的读者思考不消耗启动期限；每次 grant 仍独立最多两秒。父窗的移除与 deadline 是兜底，不是任意恶意程序的硬实时 CPU 隔离证明。
+
+受信 typed 投影可通过 `markbridge_teaching_resource_bytes($component,$version,$resourceId)` 读取固定 JSON／bin 数据；该接口不读文章 URL、不返回脚本，且重新校验全部登记文件。投影指纹及文集快照同时绑定数据身份，末次变更拒绝。静态输出保留投影和作者替代，不自动打包 HTML／JS 运行代码；不会因为启用了 v2 就把整个资源组作为离线运行程序导出。
+
+本地 HTTP 合成提供者位于 `tests/fixtures/resource-v2-provider`，含固定 HTML、JSON、JS、bin、字面 pin 与 typed 表格；只在 `WP_ENVIRONMENT_TYPE=local`、loopback home、`MARKBRIDGE_TEST_RESOURCE_V2=true` 时登记。它是测试夹具，不是已发行扩展或生产数据源。
+
+## 隔离加载与消息协议（v1）
 
 静态文章预览继续使用不允许脚本的沙箱。交互组件必须显式启动，运行在单独 `sandbox="allow-scripts"` 的无同源权限 iframe 中。主插件前置 CSP，禁止网络连接、表单、外部资源和基准 URL；只允许登记资源中的内联脚本／样式及 blob Worker。资源请求不带凭据、禁止重定向；运行 iframe 不取得编辑器 REST nonce、Cookie、私人正文或服务器执行接口。
 
@@ -266,3 +364,15 @@ add_action('markbridge_register_teaching_components', static function () {
 WordPress REST 的块钩子可能把 JSON `1e-8` 写为 `1.0e-8`、把空对象投影为空数组。托管原生保存仅在唯一实例 ID、对应位置与祖先身份、完整组件子树的实际 core 投影精确一致，且预备内容已是 core 序列化定点时恢复浏览器原始组件开注释。所有资格比较先于替换；不恢复 HTML，也不覆盖真正属性、metadata、类型或结构变化。恢复后仍经原严格转换及权限／基线保存链。源码、CLI 和转换器 canonical 不变。
 
 临时 core 投影工作串最多 1,500,000 B、10,000 个块、32 层；这不是可保存预算。作者源稿和最终配对仍各最多 256 KiB，接近上限的指数拼写膨胀仅在临时阶段容纳。
+
+## 固定审核执行 profile（3.2.0-rc.5）
+
+资源 v2 的默认行为保持拒绝 WASM／Worker。受信插件可先检查 `markbridge_teaching_supports_execution_profile('fixed-wasm/v1')`，再在 protocolVersion2 的登记上显式增加 `executionProfile: 'fixed-wasm/v1'`，最低 Main 不得早于3.2.0-rc.5。v1、未知／null profile、旧最低版本均拒绝登记；文章 attrs、参数、活动与源语法不新增执行权限字段。
+
+该首版 profile 的固定清单必须恰有一项 `javascript`（固定 Worker JS）和一项 `webassembly`（`.wasm`）；其余仅可为已有 JSON／bin 数据。原16KiB清单、8项、单项1MiB、组2MiB、HTML512KiB、4MiB原始 LRU、startup5s／grant2s预算保持。PHP 与 JS 都按受信登记的 profile 验证类型／数量，默认 `.wasm` 仍拒绝。`markbridge_teaching_resource_bytes` 明确只允许 `json`／`public-data`，不返回 JS 或 WASM；静态出版不自动附运行程序。
+
+只有该登记元组的 HTTP frame 响应 CSP 增加 `script-src` 的 `'wasm-unsafe-eval'` 和 `worker-src blob:`；不增加 `'unsafe-eval'`、`allow-same-origin`，不放宽父页面、编辑器或整站 CSP，connect-src 仍为none。固定引导与新增资源都由注册 pin 控制；Main 只提供这种受信固定载荷的运行环境，不能据此宣称任意 WASM／Worker 是安全沙箱。提供者仍须独立固定 Worker／模块预期 pin、输入／输出、imports 与内存，不能只相信父消息声称的摘要。
+
+profile 出现在公开 provider 和 init 元数据中，并参与完整组件 identity、快照、CSP／桥代码指纹。HTTP body 的 Main 桥内嵌服务端登记 profile，不能由 init、query 或文章选择；桥只控制布局，不能替代提供者对资源交付的自验。最终 raw serve 再核对 body 与实际响应 headers，拒绝中途变化。
+
+只有该 profile 的已 ready、当前 grant 的 `RUN_LIMIT`／`COMPILE_LIMIT` error 映射为 RUN_BUDGET／现有本实验预算文案，并释放 grant、保留 frame；提供者可先终止自己的 Worker 并保留先前结果。v1／默认v2 的同名任意 code 仍是普通执行失败。父级2s超时会销毁 frame，届时仅保证原静态解释可读；不承诺保留临时读者结果。迟到或不同 runId 的结果仍不采纳。

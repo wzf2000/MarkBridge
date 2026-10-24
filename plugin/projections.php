@@ -193,11 +193,13 @@ function mbb_register_component_projection(
     array $d,
 ): bool {
     $key = $component . '@' . $componentVersion;
+    $indexed = isset($GLOBALS['mbb_component_resolving'][$key]);
+    $namespace = $indexed ? 'mbb_indexed_projection_renderers' : 'mbb_projection_renderers';
     if (
         !preg_match('/\A[a-z][a-z0-9-]{0,63}\z/D', $component) ||
         !preg_match('/\A\d+\.\d+\.\d+\z/D', $componentVersion) ||
-        isset($GLOBALS['mbb_projection_renderers'][$key]) ||
-        count($GLOBALS['mbb_projection_renderers'] ?? []) >= 32 ||
+        isset($GLOBALS[$namespace][$key]) ||
+        count($GLOBALS[$namespace] ?? []) >= ($indexed ? 256 : 32) ||
         !mbb_projection_closed($d, ['contract', 'version', 'render', 'files']) ||
         $d['contract'] !== 'mbb-component-projection/v1' ||
         !is_string($d['version']) ||
@@ -240,16 +242,32 @@ function mbb_register_component_projection(
     } catch (Throwable) {
         return false;
     }
-    $GLOBALS['mbb_projection_renderers'][$key] = $d;
+    $GLOBALS[$namespace][$key] = $d;
     return true;
 }
 function mbb_component_projection_fingerprint(string $component, string $version): ?string
 {
-    $d = $GLOBALS['mbb_projection_renderers'][$component . '@' . $version] ?? null;
+    $provider = function_exists('mbb_component_provider')
+        ? mbb_component_provider($component, $version)
+        : null;
+    $d =
+        $GLOBALS['mbb_projection_renderers'][$component . '@' . $version] ??
+        ($GLOBALS['mbb_indexed_projection_renderers'][$component . '@' . $version] ?? null);
     if (!$d) {
         return null;
     }
     $files = [];
+    $provider = function_exists('mbb_component_provider')
+        ? mbb_component_provider($component, $version)
+        : null;
+    if (($provider['protocolVersion'] ?? null) === 2) {
+        try {
+            mbb_component_v2_check($provider);
+            $files[] = mbb_component_identity($provider);
+        } catch (Throwable) {
+            return null;
+        }
+    }
     foreach ($d['files'] as $f) {
         if (
             !is_file($f['file']) ||
@@ -277,6 +295,12 @@ function mbb_component_projection_plan(
     string $locale = 'en',
     int $budget = 524288,
 ): array {
+    if (
+        function_exists('mbb_component_document_within_budget') &&
+        !mbb_component_document_within_budget($serialized)
+    ) {
+        throw new RuntimeException('component_limit');
+    }
     $items = [];
     $total = 0;
     foreach (mbb_component_descriptors($serialized) as $id => $a) {
@@ -286,6 +310,11 @@ function mbb_component_projection_plan(
         $state =
             isset(
                 $GLOBALS['mbb_projection_renderers'][$a->component . '@' . $a->componentVersion],
+            ) ||
+            isset(
+                $GLOBALS['mbb_indexed_projection_renderers'][
+                    $a->component . '@' . $a->componentVersion
+                ],
             ) ||
             !$provider ||
             $provider['status'] !== 'available'
@@ -309,6 +338,9 @@ function mbb_component_projection_plan(
                 }
                 $d =
                     $GLOBALS['mbb_projection_renderers'][
+                        $a->component . '@' . $a->componentVersion
+                    ] ??
+                    $GLOBALS['mbb_indexed_projection_renderers'][
                         $a->component . '@' . $a->componentVersion
                     ];
                 $tree = $d['render'](json_decode(mbb_component_json($a->params)), [
@@ -337,6 +369,11 @@ function mbb_component_projection_plan(
                 $state =
                     isset(
                         $GLOBALS['mbb_projection_renderers'][
+                            $a->component . '@' . $a->componentVersion
+                        ],
+                    ) ||
+                    isset(
+                        $GLOBALS['mbb_indexed_projection_renderers'][
                             $a->component . '@' . $a->componentVersion
                         ],
                     ) ||
@@ -415,6 +452,14 @@ function mbb_projection_insert(DOMDocument $doc, DOMElement $root, array $items)
         $wrapper = $doc->createElement('section');
         $wrapper->setAttribute('class', 'mbb-projection');
         $wrapper->setAttribute('data-mbb-generated', '');
+        // libxml reconciles namespaces when a detached subtree is attached. Build
+        // each node in its connected parent so SVG never gains default: aliases
+        // that HTML readers would interpret as unknown, non-SVG elements.
+        if ($item['state'] === 'available') {
+            $target->insertBefore($wrapper, $target->firstChild);
+        } else {
+            $target->appendChild($wrapper);
+        }
         try {
             if ($item['state'] !== 'available' || !is_array($item['projection'])) {
                 throw new RuntimeException('projection_unavailable');
@@ -430,9 +475,14 @@ function mbb_projection_insert(DOMDocument $doc, DOMElement $root, array $items)
                 $used[$id] = true;
                 $map[$key] = $id;
             }
-            $make = static function ($node, $svg = false) use (&$make, $doc, $map) {
+            $make = static function (DOMNode $parent, $node, $svg = false) use (
+                &$make,
+                $doc,
+                $map,
+            ) {
                 if (is_string($node)) {
-                    return $doc->createTextNode($node);
+                    $parent->appendChild($doc->createTextNode($node));
+                    return;
                 }
                 $svg = $svg || $node['tag'] === 'svg';
                 $out = $svg
@@ -454,13 +504,13 @@ function mbb_projection_insert(DOMDocument $doc, DOMElement $root, array $items)
                     }
                     $out->setAttribute($k, (string) $v);
                 }
+                $parent->appendChild($out);
                 foreach ($node['children'] as $child) {
-                    $out->appendChild($make($child, $svg));
+                    $make($out, $child, $svg);
                 }
-                return $out;
             };
             foreach ($item['projection']['tree'] as $node) {
-                $wrapper->appendChild($make($node));
+                $make($wrapper, $node);
             }
             $bytes = strlen($doc->saveHTML($wrapper));
             if ($bytes > MBB_PROJECTION_BYTES || $total + $bytes > 524288) {
@@ -486,12 +536,7 @@ function mbb_projection_insert(DOMDocument $doc, DOMElement $root, array $items)
             }
         }
         if (!$wrapper->hasChildNodes()) {
-            continue;
-        }
-        if ($item['state'] === 'available') {
-            $target->insertBefore($wrapper, $target->firstChild);
-        } else {
-            $target->appendChild($wrapper);
+            $target->removeChild($wrapper);
         }
     }
 }

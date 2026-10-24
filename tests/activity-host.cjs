@@ -45,6 +45,7 @@ function context(options = {}) {
     },
     performance: { now: () => c.clock },
     clock: 0,
+    resourceV2: false,
     ready: true,
     startupDeadline: 5000,
     runDeadline: 2000,

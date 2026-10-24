@@ -141,19 +141,26 @@ try {
     component_assert(!is_wp_error($pair), 'Opaque component pair could not reopen');
     $rendered = do_blocks($serialized);
     $priorGetPost = $_GET['post'] ?? null;
-    $_GET['post'] = $id;
-    do_action('enqueue_block_editor_assets');
-    if ($priorGetPost === null) {
-        unset($_GET['post']);
-    } else {
-        $_GET['post'] = $priorGetPost;
-    }
+    $priorPost = $GLOBALS['post'] ?? null;
     $priorQuery = $GLOBALS['wp_query'];
-    $GLOBALS['wp_query'] = new WP_Query();
-    $GLOBALS['wp_query']->queried_object = $post;
-    $GLOBALS['wp_query']->queried_object_id = $id;
-    do_action('enqueue_block_assets');
-    $GLOBALS['wp_query'] = $priorQuery;
+    try {
+        $_GET['post'] = $id;
+        $GLOBALS['post'] = $post;
+        $GLOBALS['wp_query'] = new WP_Query();
+        $GLOBALS['wp_query']->posts = [$post];
+        $GLOBALS['wp_query']->queried_object = $post;
+        $GLOBALS['wp_query']->queried_object_id = $id;
+        do_action('enqueue_block_editor_assets');
+        do_action('enqueue_block_assets');
+    } finally {
+        if ($priorGetPost === null) {
+            unset($_GET['post']);
+        } else {
+            $_GET['post'] = $priorGetPost;
+        }
+        $GLOBALS['post'] = $priorPost;
+        $GLOBALS['wp_query'] = $priorQuery;
+    }
     $mathStyle = wp_styles()->registered['mbb-math'] ?? null;
     component_assert(
         $mathStyle &&
@@ -168,11 +175,43 @@ try {
         'Actual WordPress math stylesheet lost its CSS URL, media or cache version',
     );
     $scripts = wp_scripts();
-    $registryInline = implode("\n", $scripts->get_data('mbb-components', 'before') ?: []);
+    $registryInlines = array_values(
+        array_filter(
+            $scripts->get_data('mbb-components', 'before') ?: [],
+            static fn($script) => is_string($script) &&
+                str_starts_with($script, 'window.MBBComponents=') &&
+                str_contains($script, ';window.MBBComponentCatalog='),
+        ),
+    );
     component_assert(
-        str_contains($registryInline, 'window.MBBComponents=') &&
-            str_contains($registryInline, 'protocolVersion'),
-        'Actual WordPress discarded the registry inline before its script handle was registered',
+        count($registryInlines) === 1 &&
+            preg_match(
+                '/^window\.MBBComponents=(.+);window\.MBBComponentCatalog=(.+);$/D',
+                $registryInlines[0],
+                $bootstrap,
+            ) === 1,
+        'Actual WordPress omitted or duplicated the component registry/catalog inline',
+    );
+    $providers = json_decode($bootstrap[1], true, 32, JSON_THROW_ON_ERROR);
+    $catalog = json_decode($bootstrap[2], true, 32, JSON_THROW_ON_ERROR);
+    component_assert(
+        $providers ===
+            json_decode(
+                mbb_component_json([
+                    mbb_component_public(mbb_component_provider('fixed-fixture', '0.1.0')),
+                ]),
+                true,
+            ) && !str_contains($registryInlines[0], WP_PLUGIN_DIR),
+        'Editor bootstrap changed its exact article dependency or exposed a private resource path',
+    );
+    component_assert(
+        $catalog === [
+            'fingerprint' => mbb_component_registry_fingerprint(),
+            'url' => rest_url('mbb/v2/components/'),
+            'postId' => $id,
+            'defaults' => mbb_component_default_versions(),
+        ],
+        'Editor bootstrap changed its catalog fingerprint, route, article or defaults',
     );
     component_assert(
         in_array('mbb-components', $scripts->registered['mbb-kernel']->deps ?? [], true),

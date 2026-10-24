@@ -1176,3 +1176,27 @@ body:has(#mbb-toolbar:not([hidden]):not(.mbb-keyboard-open) #mbb-recovery-open:n
   white-space: nowrap;
   color: #646970;
 }
+
+.mbb-activity-insert {
+  margin-block: 1rem;
+  padding: 0.75rem;
+  border: 1px solid #dcdcde;
+  border-radius: 5px;
+}
+.mbb-activity-insert > summary {
+  cursor: pointer;
+  font-weight: 600;
+  min-height: 28px;
+}
+.mbb-activity-insert > select {
+  width: 100%;
+  min-width: 0;
+  margin-block: 0.75rem;
+  min-height: 36px;
+  padding-inline-end: 2rem;
+}
+.mbb-activity-insert > button {
+  min-height: 36px;
+  height: auto;
+  white-space: normal;
+}

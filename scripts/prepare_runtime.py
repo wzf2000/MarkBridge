@@ -4,10 +4,18 @@ import argparse
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import subprocess
 import tempfile
+
+
+def supported_node_version(version):
+    """Accept stable Node versions at the package minimum; no major-version ceiling."""
+    if not re.fullmatch(r"v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)", version):
+        return False
+    return tuple(int(part) for part in version[1:].split(".")) >= (24, 22, 1)
 
 
 def main():
@@ -30,8 +38,8 @@ def main():
         parser.error("Node.js and npm run build are required")
     node = Path(args.node).resolve()
     version = subprocess.check_output([str(node), "--version"], text=True).strip()
-    if tuple(int(part) for part in version.lstrip("v").split(".")[:3]) < (24, 15, 0):
-        parser.error("Use Node.js 24 LTS (24.15.0 or newer)")
+    if not supported_node_version(version):
+        parser.error("Use a stable Node.js version >=24.22.1 (vMAJOR.MINOR.PATCH)")
     command = [
         args.wp_cli,
         "--path=" + str(wordpress),

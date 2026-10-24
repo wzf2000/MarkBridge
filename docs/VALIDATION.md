@@ -1,5 +1,61 @@
 # 当前验证范围
 
+## 3.2.0-rc.5：固定审核执行 profile
+
+`tests/component-execution.cjs` 与 PHP 模型验证封闭 profile、默认拒WASM、恰一 Worker／一模块、扩展名／依赖／原预算一致；`tests/component-execution.php --core <只读核心目录>` 使用真实WP_REST_Request并捕获最终raw serve headers/body，检查登记与快照身份、v1／默认／旧最低版拒绝及执行载荷不得通过数据API返回。完整入口的旧早期检查继续保留，CI 在安装前串行执行新增真实请求类检查。
+
+真实HTTP浏览器两尺寸验证固定profile可以在Worker编译WASM，严格父页面仍不能；Worker的no-cors联网被拒且服务器未收请求，JavaScript Function/eval仍被拒。旧默认v2继续拒WASM／Worker；仅固定执行profile的当前grant限额错误映射为预算中止、保留frame并释放grant，迟到结果拒绝。v1／默认v2同名错误不会获得该映射。Dataset／Kind仅新增中文显示标签，不改变schema、枚举或已保存参数。实际WordPress安装／Scientific固定模块与出版链在对应包上另验，不能用这个合成探针冒充正式模块验收。
+
+## 3.2.0-rc.4：PHP 静态 SVG 命名空间
+
+PHP 8.2／8.5 均复现：脱离文档构造的普通 wrapper 中包含 SVG 子树，再接入 HTML 文档时，libxml 将其重命名为 `default:svg` 等前缀；HTML 浏览器不将它识别为 SVG。已有 DOM 中按 localName 查找的断言未覆盖序列化后重新打开的结果。修复在已连接的父节点中逐节点构造，保留类型白名单、作者 fallback、单项／整篇字节预算和局部 ID 保护。
+
+`tests/projection-svg.php` 使用正式 `mbb_component_static_document` 出口验证两张图、标题／说明／形状标记、ID／ARIA、旧文本投影、失败与字节预算；`tests/browser/projection-svg.spec.cjs` 重新打开 PHP 导出的无脚本 HTML，检查真实 SVG namespaceURI、几何 bbox、完整值及本地引用。`sdk-projections.spec.cjs` 继续覆盖独立的 JavaScript 静态导出构建器，不将其原有通过冒称 PHP 出口曾正确。独立本地 WordPress 已安装 rc.4，旧 Scientific 文章双格式／媒体／文档标识未变、配对重开通过；PageNest 1440／390 的真实禁脚本前台图形命名空间、形状、title／desc／ARIA 与无横溢出均通过。纯模型仍不加载数据库。
+
+## 3.2.0-rc.3：真实 REST 空正文语义
+
+rc.2 的实际保存入口发现，真实核心 `WP_REST_Request` 未调用 set_body 时 get_body 返回 null，而 HTTP GET 显式设置空串；旧单元模型只模拟空串，导致内部 REST 请求被拒绝。rc.3 将两者统一按空正文处理，仍拒绝任何非空正文。`tests/plugin-bootstrap.php` 现在同时使用真实核心请求类覆盖默认 null／显式空串正例及非空负例；`tests/component-frame.php` 默认也改为 null。旧实际失败记录保留。rc.3 最终 ZIP 已在独立本地 WordPress 完成 PHP→Node→PHP 保存、原生编辑／重开／修订恢复与迟到数据拒绝，PHP 8.5 对应入口也通过；PageNest 两尺寸的真实 HTTP 运行／关闭／重开、v1 同页与匿名／登录响应正文一致通过。默认主题证据按 rc.2 未变 JavaScript／HTML 的范围复用，不扩写为生产验收。
+
+## 3.2.0-rc.2：完整入口集成检查
+
+rc.1 的独立 WordPress 安装发现 `mbb_resource_file` 与旧媒体导入 API 重名，完整入口发生 fatal；先前纯模型和合成浏览器没有加载完整插件，不能证明实际安装可用。rc.2 将新增助手统一为 `mbb_component_resource_*`，不使用 function_exists 隐藏重名，也不修改旧媒体 API。
+
+`php scripts/check_php_symbols.php` 使用 PHP tokens 扫描全部第一方全局函数／类，区分 namespace、类方法和匿名类；`php tests/php-symbols.php` 保留原重名、大小写冲突及作用域负例。扫描接入正常 build、test 与发行源码检查起点。`php tests/plugin-bootstrap.php <WordPress核心目录> [候选plugin目录]` 加载真实核心 hooks／functions／wpdb 类定义及完整 Main 入口；仅通过公开 pre_option filter 提供空的 active_plugins，不加载 wp-load／wp-settings／wp-config，不创建数据库对象。CI 在安装候选前执行该入口；实际数据库保存、匿名／登录 HTTP 和主题组合仍由独立隔离站验收另记。
+
+## 3.2.0-rc.1：固定公开资源 v2
+
+本批入口为 `tests/component-resources.cjs`（`MARKBRIDGE_TEST_PHP=php82`／`php85` 分别运行；默认 `php`）、`tests/component-frame.php` 与 `tests/browser/component-resources-v2.spec.cjs`。纯模型覆盖严格 JSON／封闭 manifest、许可／依赖／路径／类型、字节与 SHA、omit／拒绝重定向、有界响应流、整组缓存／4 MiB LRU、副本 transfer、取消、晚 SHA 与并发 generation；PHP 模型还覆盖 raw REST 响应钩子、独立 CSP、固定请求元组、末次文件变更／symlink 拒绝、固定数据 typed 投影和快照身份。v1 的实际 iframe ready／执行回归单独保留有效证据。
+
+浏览器为合成 HTTP fixture，无 WordPress 数据库；桌面／手机覆盖严格父 CSP 下的 v2 opaque HTTP frame、固定 JSON／JavaScript／bin 交付、blob 脚本、no-cors 网络探针、WASM／Worker 拒绝、生命周期、坏摘要、warm manifest 重验、近 16 KiB 合法登记参数与静态说明。截图通过 Playwright 的 outputPath 输出，由调用方指定证据目录；手机尺寸模拟不是物理设备验收。
+
+`tests/fixtures/resource-v2-provider` 是供独立 local WordPress 安装的固定合成插件；须显式设置 `MARKBRIDGE_TEST_RESOURCE_V2=true`，且环境与 home 都通过 local／loopback guard。`tests/component-resources-save.php` 是受 CLI／WP_CLI／ROOT／HOME／local 共同保护的实际登记、匿名 REST、配对保存、原生修改、重开、修订与末次数据拒绝入口，串行加入既有 PHP→Node→PHP CI 保存序列。本地仅 lint；真实 WordPress HTTP、账户响应一致性、保存与安装 ZIP 由独立集成验收另记，不从模型或 fixture 推断通过。
+
+## 3.1.0-rc.2：前置嵌入保护
+
+rc.1 的额外实际 WordPress 检查发现，`WP_Embed::run_shortcode`／`autoembed` 在 priority 8 处理嵌入，早于原代码保护。rc.2 在 priority 7 先保护原始 pre／code 文本，再在 priority 10 保护区块渲染后的内容；`[` 与 http(s) 的 `//` 仅在代码文字中作显示等价的实体转义，不改标签、属性、普通段落或保存双格式。只读核心模型加入真实 `WP_Embed` 调度和固定内存 handler；实际保存入口同样覆盖代码不展开、正常段落仍展开及原文不变，不进行外部抓取。rc.1 包与原失败证据保留，不作为本轮最终候选。
+
+## 3.1.0-rc.1：阅读时的字面短代码
+
+`tests/code-literals.php` 加载只读 WordPress 核心的 HTML token、block parser、shortcode／KSES 库，在显式合成上下文检查 pre／code、原生代码／预格式化、行内代码、代码分页及比较代码。普通段落仍执行短代码，非托管文章不改。配置属性执行问题由代码分页派生 JSON 的字符串转义修复，解码配置及保存双格式保持原字节。
+
+保护使用插件最低依赖 WordPress 7.1 的 Tag Processor；当前无公开原始 token 字节偏移 API，小子类通过 protected bookmark span 取得范围，不读私有属性或使用 Reflection。单次线性扫描只持有一个 bookmark、最多 32 层栈及一个溢出计数，输出不超过输入五倍，不截断全文。未闭合 pre／code 延续字面文本至末尾；无法完成的 HTML token 尾段原样保留，不猜测其标签／属性。脚本、样式、注释、标签与属性字节不在文本替换范围内，已编码方括号及重复调用保持。
+
+`tests/browser/code-literals.spec.cjs` 以该真实核心投影的合成 HTML 验证实际 Prism、原代码／分页复制与两尺寸；`tests/code-literals-save.php` 是 guarded local 安装入口，由独立 WordPress 验证实际过滤链和存储未变，串行接入现有 PHP→Node→PHP 验收，不由无数据库模型替代。
+
+## 3.1.0-rc.1：原生纯文本叶子
+
+`tests/native-text.cjs` 使用真实核心脚本与双 PHP 转换模型，检查 core/code／preformatted 身份、空内容、首尾 LF／tab／空行、NBSP／特殊字符、组内嵌套、原生修改重开、配对恢复、未知属性／格式／非规范 HTML 拒绝、重复锚点和容量。共享 Unicode URL 夹具另覆盖 U+2028／U+2029、em-space、FEFF、LF、混合分隔与多 URL，仅首个独立 URL 使用核心转义。服务器边界复用只读核心 parser／KSES 壳；转换模型不能代替实际数据库保存。
+
+`tests/browser/native-text.spec.cjs` 为真实核心编辑器的合成 fixture；桌面／手机检查编辑、导出、重开与格式拒绝。`tests/native-text-save.php` 仅供显式 local 隔离站运行，覆盖预览、双格式保存、原生修改、拒写与修订，已串行接入现有 CI 的 PHP→Node→PHP 保存轮次。实际 WordPress 结果须单独记录，不由本地模型／fixture 推断。
+
+## 3.1.0-rc.1：原生结构组
+
+本批为本地组合候选。`tests/native-group.cjs` 使用真实 WordPress 核心区块脚本，覆盖默认／空组、section、标签／类名／布局、嵌套公式／代码／图片／折叠／静态适配、编辑重开与图片改写；PHP 8.2／8.5 与 Node 之间精确往返通过。未知注释属性、HTML 篡改、重复锚点、技术编号冲突、嵌套阶段组／身份／文献、深度／字节预算与缺提供者均明确拒绝。
+
+`tests/native-group-kses.php` 在只读真实核心库中检查服务器独立白名单、KSES 与子块递归：组外壳可通过，脚本、事件属性、危险样式与未知嵌套块仍被拒绝。该回归补足实际 WordPress 首轮预览发现的漏列 `core/group`，并不将首次真实保存失败记录改写为成功。
+
+`tests/browser/native-group.spec.cjs` 在合成 fixture 中使用真实核心编辑器新建组、修改组内段落、导出并重开；旧原生折叠／按钮与静态适配回归同时执行。桌面／手机截图用于检查界面和溢出，不代表真实数据库或物理设备验收。`tests/native-group-save.php` 是仅接受显式 local 安装的实际保存／修订入口，须另在隔离 WordPress 中运行；独立 WordPress 7.1.3 的 PHP→Node→PHP 保存、原生修改、精确重开、拒写、修订及评论／私人元数据保留已通过；测试时使用核验过的源码副本，最终安装 ZIP 的验收另行记录。
+
 ## 3.0.0：正式发行范围
 
 正式版沿用已审阅的 rc.9 主插件与 Teaching rc.2 功能，仅调整包版本、发行说明和文档入口。历史浏览器与双引擎证据按未变实现复用；完整公开 CI 以本次正式提交的实际运行结果为准。组件精确版本、旧资源载荷、文章身份及管理员引擎选择保持。下文保留各轮原始验证范围，不将候选历史记录改写为新增验收。

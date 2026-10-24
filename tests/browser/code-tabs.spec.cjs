@@ -36,6 +36,7 @@ const knownLanguages = [
 ];
 async function highlight(page) {
   await page.evaluate(() => (window.Prism = { manual: true }));
+  await page.addScriptTag({ path: path.join(plugin, 'vendor/clipboard/clipboard.min.js') });
   for (const file of [
     'prism.js',
     'plugins/line-numbers/prism-line-numbers.js',
@@ -52,7 +53,7 @@ async function highlight(page) {
         codeStyles: [],
         codeScripts: [],
         lineNumbers: true,
-        languages: '/wp-content/plugins/markdown-block-bridge/vendor/prism/components/',
+        languages: '/plugin/vendor/prism/components/',
         images: [],
       }),
     knownLanguages,
@@ -285,10 +286,10 @@ test('language tabs retain visible full-height line-number gutters after theme h
   }));
   await load(page, true, markup('examples', values));
   await highlight(page);
-  await expect(page.locator('#javascript .line-numbers-rows > span')).toHaveCount(18);
+  await expect(page.locator('#javascript .mbb-code-line-number')).toHaveCount(18);
   await page.evaluate(() => Prism.highlightAll());
   await page.getByRole('tab', { name: 'Python', exact: true }).click();
-  await expect(page.locator('#python .line-numbers-rows > span')).toHaveCount(18);
+  await expect(page.locator('#python .mbb-code-line-number')).toHaveCount(18);
   await expect(page.locator('.mbb-code-scroll-hint')).toHaveCount(0);
   // A theme's generic pre padding must not clip the separately positioned gutter.
   await page.addStyleTag({
@@ -296,11 +297,14 @@ test('language tabs retain visible full-height line-number gutters after theme h
   });
   const gutter = await page.locator('#python pre').evaluate((pre) => {
     const code = pre.querySelector('code').getBoundingClientRect();
-    const rows = pre.querySelector('.line-numbers-rows').getBoundingClientRect();
+    const numbers = [...pre.querySelectorAll('.mbb-code-line-number')].map((n) =>
+      n.getBoundingClientRect(),
+    );
+    const rows = { left: numbers[0].left, height: numbers.at(-1).bottom - numbers[0].top };
     return {
       codeHeight: code.height,
       rowHeight: rows.height,
-      codeLeft: code.left,
+      codeLeft: pre.querySelector('.mbb-compare-source').getBoundingClientRect().left,
       rowLeft: rows.left,
       preLeft: pre.getBoundingClientRect().left,
     };
@@ -316,27 +320,34 @@ test('compact gutters fit three and five digit line numbers without covering sou
 }, info) => {
   const values = tabs.map((tab) => ({
     ...tab,
+    startLine: tab.id === 'javascript' ? 10000 : 1,
+    highlights: '',
     code: Array.from({ length: 130 }, (_, i) => `const value${i} = ${i};`).join('\n'),
   }));
-  await load(page, true, markup('examples', values));
-  await page.locator('#javascript pre').evaluate((pre) => (pre.dataset.start = '10000'));
+  const html = markup('examples', values).replace(
+    /data-mbb-teaching-config="[^"]*"/,
+    'data-mbb-teaching-config="' +
+      escape(JSON.stringify({ version: 2, defaultTab: values[0].id, tabs: values })) +
+      '"',
+  );
+  await load(page, true, html);
   await highlight(page);
   const measure = (locator) =>
     locator.evaluate((pre) => {
-      const rows = pre.querySelector('.line-numbers-rows');
-      const rowStyle = getComputedStyle(rows.firstElementChild, '::before');
+      const rows = pre.querySelector('.mbb-code-line-number');
+      const rowStyle = getComputedStyle(rows, '::before');
       const canvas = document.createElement('canvas').getContext('2d');
       canvas.font = rowStyle.font;
-      const digits = pre.dataset.start ? '10129' : '130';
+      const digits = pre.closest('.mbb-code-tab').id === 'javascript' ? '10129' : '130';
       return {
-        padding: parseFloat(getComputedStyle(pre).paddingLeft),
+        padding: parseFloat(getComputedStyle(pre.querySelector('.mbb-code-line')).paddingLeft),
         fontSize: parseFloat(getComputedStyle(pre).fontSize),
         numberFits:
           canvas.measureText(digits).width + parseFloat(rowStyle.paddingRight) <=
           rows.getBoundingClientRect().width,
         inset: rows.getBoundingClientRect().left - pre.getBoundingClientRect().left,
         separation:
-          pre.querySelector('code').getBoundingClientRect().left -
+          pre.querySelector('.mbb-compare-source').getBoundingClientRect().left -
           rows.getBoundingClientRect().right,
       };
     });
@@ -351,4 +362,129 @@ test('compact gutters fit three and five digit line numbers without covering sou
   expect(three.inset).toBeGreaterThanOrEqual(-1);
   expect(five.padding).toBeGreaterThan(three.padding);
   await page.screenshot({ path: `test-results/compact-code-gutter-${info.project.name}.png` });
+});
+
+test('v2 displayed line ranges keep original bytes and a bounded window across history and Prism', async ({
+  page,
+}) => {
+  const values = [
+    {
+      id: 'long-code',
+      title: 'long.py',
+      language: 'python',
+      code: Array.from(
+        { length: 1200 },
+        (_, i) => (i === 701 ? 'print("&#13;")' : 'print(' + i + ')') + '\r\n',
+      ).join(''),
+      startLine: 120,
+      highlights: '821-823',
+    },
+  ];
+  // Build the closed v2 configuration without changing the inert original source.
+  const original = markup('line-group', values);
+  const config = escape(JSON.stringify({ version: 2, defaultTab: 'long-code', tabs: values }));
+  await load(
+    page,
+    false,
+    original.replace(
+      /data-mbb-teaching-config="[^"]*"/,
+      'data-mbb-teaching-config="' + config + '"',
+    ),
+  );
+  await page.addScriptTag({ content: fs.readFileSync(path.join(plugin, 'teaching.js'), 'utf8') });
+  await expect(page.locator('.mbb-code-line')).toHaveCount(400);
+  await page.evaluate(() => {
+    location.hash = '#mbb-code/line-group/long-code/L821-L823';
+  });
+  await expect(page.locator('.mbb-code-line[data-mbb-selected]')).toHaveCount(3);
+  expect(await page.locator('.mbb-code-line').count()).toBeLessThanOrEqual(400);
+  await highlight(page);
+  await page.evaluate(() => Prism.highlightAll());
+  expect(await page.locator('#long-code pre code').textContent()).toBe(values[0].code);
+  await page.locator('.mbb-code-line-number[data-line="821"]').click();
+  await page.locator('.mbb-code-line-number[data-line="823"]').click({ modifiers: ['Shift'] });
+  await expect(page).toHaveURL(/#mbb-code\/line-group\/long-code\/L821-L823$/);
+  await page.goBack();
+  await expect(page).toHaveURL(/#mbb-code\/line-group\/long-code\/L821$/);
+  await page.goForward();
+  await expect(page.locator('.mbb-code-line[data-mbb-selected]')).toHaveCount(3);
+  const before = await page.locator('#long-code pre code').innerHTML();
+  await page.evaluate(() => {
+    location.hash = '#mbb-code/line-group/long-code/L999999';
+  });
+  expect(await page.locator('#long-code pre code').innerHTML()).toBe(before);
+  await page.evaluate(() =>
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: async () => {
+          throw Error('denied');
+        },
+      },
+    }),
+  );
+  await page.getByRole('button', { name: '复制行链接', exact: true }).click();
+  const manualLink = page.getByRole('textbox', { name: '复制行链接', exact: true });
+  await expect(manualLink).toBeVisible();
+  await expect(manualLink).toHaveValue(
+    new URL('#mbb-code/line-group/long-code/L821-L823', page.url()).href,
+  );
+  await page.getByRole('button', { name: '复制 Python', exact: true }).click();
+  const manualCode = page.getByRole('textbox', {
+    name: '代码文本手动复制（换行可能规范化）',
+    exact: true,
+  });
+  await expect(manualCode).toBeVisible();
+  await expect(manualCode).toHaveValue(values[0].code.replace(/\r\n/g, '\n'));
+  await page.getByRole('button', { name: '复制行链接', exact: true }).click();
+  await expect(manualLink).toBeVisible();
+  await expect(page.locator('#long-code textarea')).toHaveCount(1);
+});
+
+test('v2 compact actions leave a long title readable and keep the static summary for print', async ({
+  page,
+}, info) => {
+  const values = [
+    {
+      id: 'titled-code',
+      title: '保持原缩进的 Python 实现',
+      language: 'python',
+      code: 'a\nb\nc\nd\n',
+      startLine: 120,
+      highlights: '121-123',
+    },
+  ];
+  let body = markup('titled-group', values).replace(
+    /data-mbb-teaching-config="[^"]*"/,
+    'data-mbb-teaching-config="' +
+      escape(JSON.stringify({ version: 2, defaultTab: 'titled-code', tabs: values })) +
+      '"',
+  );
+  body = body.replace(
+    '<pre>',
+    '<p data-mbb-generated="" class="mbb-code-line-summary">Starting line: 120; highlights: 121-123</p><pre>',
+  );
+  await load(page, true, '<style>article{max-width:260px;margin-inline:auto}</style>' + body);
+  await expect(page.locator('.mbb-code-line-summary')).toBeHidden();
+  await expect(page.getByRole('button', { name: '跳到重点行', exact: true })).toBeHidden();
+  const link = page.getByRole('button', { name: '复制行链接', exact: true });
+  await expect(link).toBeVisible();
+  await expect(link).toHaveText('');
+  const geometry = await page.locator('#titled-code').evaluate((panel) => {
+    const range = document.createRange();
+    range.selectNodeContents(panel.querySelector('.mbb-code-tab-title'));
+    const title = range.getBoundingClientRect(),
+      tools = panel.querySelector('.mbb-code-panel-tools').getBoundingClientRect();
+    return {
+      titleRight: title.right,
+      toolsLeft: tools.left,
+      pageWidth: document.documentElement.scrollWidth,
+      viewport: innerWidth,
+    };
+  });
+  expect(geometry.titleRight).toBeLessThanOrEqual(geometry.toolsLeft - 2);
+  expect(geometry.pageWidth).toBeLessThanOrEqual(geometry.viewport);
+  await page.screenshot({ path: info.outputPath('compact-line-actions.png') });
+  await page.emulateMedia({ media: 'print' });
+  await expect(page.locator('.mbb-code-line-summary')).toBeVisible();
 });

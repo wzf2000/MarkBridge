@@ -94,7 +94,20 @@ if (($GLOBALS['argv'][1] ?? '') === 'empty-component') {
         'schema' => ['type' => 'object', 'properties' => [], 'additionalProperties' => false],
         'defaults' => (object) [],
         'budgets' => mbb_component_budget_limits(),
-        'resource' => ['url' => '/component-fixture.html', 'sha256' => hash('sha256', $raw)],
+        'resource' => [
+            'file' => __DIR__ . '/fixtures/component.html',
+            'url' => '/component-fixture.html',
+            'sha256' => hash('sha256', $raw),
+        ],
+    ];
+    $GLOBALS['mbb_components']['unreferenced-fixture'] = array_replace(
+        $GLOBALS['mbb_components']['fixture'],
+        ['id' => 'unreferenced-fixture', 'version' => '0.2.0'],
+    );
+    $GLOBALS['post'] = (object) [
+        'ID' => 12,
+        'post_content' =>
+            '<!-- wp:mbb/component {"id":"dynamic","component":"fixture","componentVersion":"0.1.0"} -->',
     ];
 }
 require $plugin . '/presentation.php';
