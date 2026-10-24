@@ -316,6 +316,13 @@
     list.setAttribute('aria-label', T('Code versions'));
     const lineViews = [];
     const tabs = panels.map((panel, index) => {
+      const pre = panel.querySelector('pre');
+      let codeAnchor = pre;
+      while (codeAnchor && codeAnchor.parentElement !== panel)
+        codeAnchor = codeAnchor.parentElement;
+      const prismWrapper = pre?.closest('.code-toolbar');
+      if (prismWrapper && panel.contains(prismWrapper))
+        for (const toolbar of prismWrapper.querySelectorAll(':scope > .toolbar')) toolbar.remove();
       const tab = button(languageLabel(values[index].language), () => select(panel, true));
       let suffix = 0;
       do {
@@ -382,7 +389,7 @@
       const heading = panel.querySelector('.mbb-code-tab-title');
       if (heading) heading.hidden = !values[index].title;
       panel.classList.toggle('mbb-code-no-title', !values[index].title);
-      panel.insertBefore(copyControls, panel.querySelector('pre'));
+      panel.insertBefore(copyControls, codeAnchor);
       const code = panel.querySelector('pre code');
       if (code && node.id && values[index].id) {
         const value = values[index],
@@ -484,7 +491,7 @@
         };
         const lineNavigation = generated();
         lineNavigation.classList.add('mbb-code-line-navigation');
-        panel.insertBefore(lineNavigation, panel.querySelector('pre'));
+        panel.insertBefore(lineNavigation, codeAnchor);
         const highlightRanges = (value.highlights || '')
           .split(',')
           .filter(Boolean)
@@ -748,12 +755,15 @@
   function highlightCompare(code) {
     const prism = window.Prism;
     const language = code.className.match(/language-([\w+-]+)/)?.[1];
-    const grammar = prism?.languages[language];
-    if (!grammar) return;
+    const grammar = prism?.languages?.[language];
+    if (!grammar || typeof prism.highlight !== 'function') return;
     // Tokenize the whole original code once so multiline comments/strings keep their syntax.
     // Split encoded token spans at line boundaries without altering source text or diff wrappers.
     const fragment = document.createElement('div');
-    fragment.innerHTML = prism.highlight(code.textContent, grammar, language);
+    // Character references retain CR bytes through HTML fragment parsing.
+    fragment.innerHTML = prism
+      .highlight(code.textContent, grammar, language)
+      .replace(/\r/g, '&#13;');
     const rows = [[]];
     function split(node, ancestors = []) {
       if (node.nodeType === Node.TEXT_NODE) {

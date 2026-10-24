@@ -36,6 +36,7 @@ const knownLanguages = [
 ];
 async function highlight(page) {
   await page.evaluate(() => (window.Prism = { manual: true }));
+  await page.addScriptTag({ path: path.join(plugin, 'vendor/clipboard/clipboard.min.js') });
   for (const file of [
     'prism.js',
     'plugins/line-numbers/prism-line-numbers.js',
@@ -52,7 +53,7 @@ async function highlight(page) {
         codeStyles: [],
         codeScripts: [],
         lineNumbers: true,
-        languages: '/wp-content/plugins/markdown-block-bridge/vendor/prism/components/',
+        languages: '/plugin/vendor/prism/components/',
         images: [],
       }),
     knownLanguages,
@@ -371,7 +372,10 @@ test('v2 displayed line ranges keep original bytes and a bounded window across h
       id: 'long-code',
       title: 'long.py',
       language: 'python',
-      code: Array.from({ length: 1200 }, (_, i) => 'print(' + i + ')\r\n').join(''),
+      code: Array.from(
+        { length: 1200 },
+        (_, i) => (i === 701 ? 'print("&#13;")' : 'print(' + i + ')') + '\r\n',
+      ).join(''),
       startLine: 120,
       highlights: '821-823',
     },

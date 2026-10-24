@@ -48,7 +48,11 @@ test('managed conversion hints show unsupported blocks without changing them', a
   await page.evaluate(() => {
     taskRegistry
       .dispatch('core/block-editor')
-      .insertBlocks(wp.blocks.createBlock('core/code', { content: 'KEEP_UNSUPPORTED' }));
+      .insertBlocks(
+        wp.blocks.createBlock('core/cover', {}, [
+          wp.blocks.createBlock('core/paragraph', { content: 'KEEP_UNSUPPORTED' }),
+        ]),
+      );
     window.capabilityBefore = wp.blocks.serialize(
       taskRegistry.select('core/block-editor').getBlocks(),
     );

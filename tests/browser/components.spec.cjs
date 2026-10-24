@@ -428,15 +428,14 @@ test('oversized initialization envelopes fail closed before public data is sent'
   expect(await page.evaluate(() => MarkBridgeComponents.frameCount())).toBe(0);
 });
 
-test('a first dynamically inserted teaching component uses the prepublished server registry', async ({
+test('a dynamically inserted component uses only its declared article dependency', async ({
   page,
 }) => {
   await page.goto('/component-dynamic');
   expect(
-    await page.evaluate(
-      () => Array.isArray(window.MBBComponents) && window.MBBComponents[0]?.id === 'fixture',
-    ),
-  ).toBe(true);
+    await page.evaluate(() => window.MBBComponents.map(({ id, version }) => ({ id, version }))),
+  ).toEqual([{ id: 'fixture', version: '0.1.0' }]);
+  expect(await page.evaluate(() => window.MBBComponentCatalog)).toBeUndefined();
   expect(await page.evaluate(() => !!window.MarkBridgeComponents)).toBe(false);
   await page.locator('#dynamic').evaluate((node) => {
     const element = document.createElement('div');
