@@ -919,6 +919,7 @@ test('native relation-map: native links, mobile branch/full view and drag lifecy
     content: fs.readFileSync(path.join(plugin, assets['components.js']), 'utf8'),
   });
   await expect(page.locator('#native-map')).toHaveAttribute('data-mbb-component-state', 'ready');
+  await expect(page.locator('.mbb-relation-map')).toHaveAttribute('data-mbb-generated', '');
   const mobile = page.viewportSize().width <= 700;
   await expect(page.locator('.mbb-relation-node')).toHaveCount(mobile ? 6 : 15);
   await expect(page.locator('iframe')).toHaveCount(0);

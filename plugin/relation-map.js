@@ -196,6 +196,7 @@
           'Open an article by its title. Connections suggest reading paths; choose your own starting point.',
         ),
       );
+    ui.setAttribute('data-mbb-generated', '');
     heading.append(title, help);
     ui.append(heading);
     const legend = el('ul', 'mbb-relation-legend');
