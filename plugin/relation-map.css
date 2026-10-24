@@ -145,6 +145,7 @@
   color: var(--rm-ink);
   text-decoration: none;
   text-align: center;
+  text-wrap: balance;
   line-height: 1.5;
   overflow-wrap: anywhere;
   white-space: normal;
