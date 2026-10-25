@@ -3,7 +3,7 @@ Tags: markdown, blocks, editor, mathjax, revisions
 Requires at least: 7.1
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 3.5.0-rc.2
+Stable tag: 3.5.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -14,7 +14,7 @@ MarkBridge provides paired Markdown/block editing, previews, revisions, local Ma
 
 New installations use the bundled PHP converter with PHP 8.2+, DOM and mbstring on WordPress 7.1.x. No Node.js runtime or subprocess is required for supported content. Existing non-empty runtime settings retain Node until an administrator explicitly switches; unsupported environments or content are rejected without fallback.
 
-This readme applies to the MarkBridge 3.5.0-rc.2 candidate; the current stable release remains 3.4.0. WordPress.org submission and approval are separate from a GitHub release. Download reviewed installation packages from GitHub Releases; source archives are not installation packages. Chinese and English interface text follows the WordPress user language in the editor and the site language for readers.
+This readme applies to MarkBridge 3.5.0. Teaching Components 1.5.0 adds configurable navigation maps with controlled document targets, native article links and mobile branch/full-map views. WordPress.org submission and approval are separate from a GitHub release. Download reviewed installation packages from GitHub Releases; source archives are not installation packages. Chinese and English interface text follows the WordPress user language in the editor and the site language for readers.
 
 Private paired candidate backups for existing managed articles are stored in non-autoloaded database options, up to 10 per account/article for 7 days within a 32 MiB site quota. They never save a post or write a source file. Core Markdown editing does not call an external service. Local recovery is off until an author explicitly enables browser storage; it is not encrypted or a server backup. Optional ZIP images use normal WordPress media storage: a draft or private article does not make the media URL private. Bound-file writeback requires separate trusted server configuration. A GitHub updater, if chosen, is a separate plugin requiring explicit consent; it is not included in this package.
 
@@ -24,6 +24,11 @@ Private paired candidate backups for existing managed articles are stored in non
 3. Import a test Markdown draft, preview, save and reopen. Existing Node installations should review the upgrade guide before changing their backend.
 
 == Changelog ==
+
+= 3.5.0 =
+* 新增原生可导航关系图，支持分组、多父与跨组关系、原生文章链接及手机分支／全图阅读。
+* 配合 Teaching Components 1.5.0，通过现有表单维护稳定节点和关系标识，搜索选择文章，沿用预览、撤销与配对保存。
+* 受控目标由服务器按当前权限派生；不可读或删除的目标与相关关系不会出现在公开图、无脚本替代或静态导出中。旧精确版本和隔离权限保持。
 
 = 3.4.1 =
 Fixed public resource groups use a bounded single-request delivery path. HTTP frame navigation shares the startup deadline; the 1.5-second structured delivery budget starts immediately before init.
