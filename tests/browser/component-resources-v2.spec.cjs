@@ -2,26 +2,34 @@ const { test, expect } = require('@playwright/test');
 const fs = require('node:fs'),
   path = require('node:path');
 const plugin = path.resolve(__dirname, '../../plugin');
-async function load(page, params = {}, resourceOverrides = {}) {
+async function load(page, params = {}, resourceOverrides = {}, setup = {}) {
   const response = await page.request.get('/resource-v2-fixture');
   const { provider } = await response.json();
   if (resourceOverrides === null) delete provider.resources.bundleUrl;
   else Object.assign(provider.resources, resourceOverrides);
+  Object.assign(provider, setup.provider || {});
   await page.goto('/health');
   await page.setContent(
     `<meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; frame-src 'self'; connect-src 'self'; style-src 'unsafe-inline'"><style>${fs.readFileSync(path.join(plugin, 'teaching.css'), 'utf8')} body{font:16px/1.7 system-ui;margin:16px}article{max-width:760px;margin:auto}table{width:100%;border-collapse:collapse}th,td{border:1px solid #bbb;padding:6px;text-align:left}</style><article><h1>公开资源交互与静态说明</h1><p>合成固定资源；无 WordPress 数据库。</p><div id="demo" data-mbb-teaching="component"><div class="mbb-teaching-body"><h2>作者静态解释</h2><table><caption>固定公开数据</caption><tr><th>项目</th><th>数值</th></tr><tr><td>样本 A</td><td>42</td></tr></table></div></div></article>`,
   );
   await page.locator('#demo').evaluate(
     (node, p) => {
-      node.dataset.mbbTeachingConfig = JSON.stringify({
-        status: 'available',
-        component: p.id,
-        componentVersion: p.version,
-        params: p.testParams,
-      });
+      window.MBB_COMPONENTS_READER = p.testInstances > 0;
+      for (let i = 1; i < p.testInstances; i++) {
+        const clone = node.cloneNode(true);
+        clone.id = 'demo-' + i;
+        node.after(clone);
+      }
+      for (const target of document.querySelectorAll('[data-mbb-teaching="component"]'))
+        target.dataset.mbbTeachingConfig = JSON.stringify({
+          status: 'available',
+          component: p.id,
+          componentVersion: p.version,
+          params: p.testParams,
+        });
       window.MBBComponents = [p];
     },
-    { ...provider, testParams: params },
+    { ...provider, testParams: params, testInstances: setup.instances || 0 },
   );
   await page.addScriptTag({ url: '/fixture-localization.js?locale=zh_CN' });
   await page.addScriptTag({ url: '/plugin/component-resources.js' });
@@ -130,6 +138,79 @@ test('v2 startup cancellation and bad pin retain static content; top-level frame
   await expect(page.locator('#status')).toHaveText('等待宿主');
 });
 
+for (const action of ['hide', 'remove', 'replace']) {
+  test(`v2 ${action} during preparation rejects late bytes and releases the slot`, async ({
+    page,
+  }) => {
+    await load(page);
+    let received, release;
+    const requested = new Promise((resolve) => {
+      received = resolve;
+    });
+    const held = new Promise((resolve) => {
+      release = resolve;
+    });
+    await page.route('**/component-resources/**', async (route) => {
+      const response = await route.fetch();
+      received();
+      await held;
+      await route.fulfill({ response }).catch(() => {});
+    });
+    await page.getByRole('button', { name: '启动交互演示' }).click();
+    await requested;
+    await page.locator('#demo').evaluate((node, action) => {
+      if (action === 'remove') node.remove();
+      else if (action === 'hide') {
+        node.hidden = true;
+        document.dispatchEvent(new CustomEvent('mbb:teaching-change'));
+      } else {
+        const config = JSON.parse(node.dataset.mbbTeachingConfig);
+        config.params = { changed: true };
+        node.dataset.mbbTeachingConfig = JSON.stringify(config);
+      }
+    }, action);
+    await expect.poll(() => page.evaluate(() => MarkBridgeComponents.frameCount())).toBe(0);
+    release();
+    await page.waitForTimeout(200);
+    await expect(page.locator('iframe')).toHaveCount(0);
+    expect(await page.evaluate(() => MarkBridgeComponents.activeCount())).toBe(0);
+  });
+}
+
+test('automatic diagrams hold only two preparation slots and offscreen cancellation frees them', async ({
+  page,
+}) => {
+  let requests = 0,
+    release;
+  const held = new Promise((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/component-resources/**', async (route) => {
+    requests++;
+    await held;
+    await route.abort().catch(() => {});
+  });
+  await load(page, {}, {}, { provider: { readerMode: 'diagram' }, instances: 3 });
+  try {
+    await expect.poll(() => requests).toBe(2);
+    expect(await page.evaluate(() => MarkBridgeComponents.frameCount())).toBe(2);
+    await page.locator('#demo').evaluate((node) => {
+      node.style.position = 'absolute';
+      node.style.top = '-10000px';
+      dispatchEvent(new Event('scroll'));
+    });
+    await expect.poll(() => requests).toBe(3);
+    await expect(page.locator('#demo')).toHaveAttribute('data-mbb-component-state', 'suspended');
+    expect(await page.evaluate(() => MarkBridgeComponents.frameCount())).toBe(2);
+    await page.evaluate(() => dispatchEvent(new PageTransitionEvent('pagehide')));
+    await expect.poll(() => page.evaluate(() => MarkBridgeComponents.frameCount())).toBe(0);
+  } finally {
+    release();
+  }
+  await page.waitForTimeout(200);
+  await expect(page.locator('iframe')).toHaveCount(0);
+});
+
 test('v2 accepts near-limit pure params without changing the 16KiB author limit', async ({
   page,
 }) => {
@@ -184,9 +265,7 @@ test('default v2 budget-like provider errors do not inherit execution-profile bu
   expect(await page.evaluate(() => MarkBridgeComponents.activeCount())).toBe(0);
 });
 
-test('cold bundle plus slow HTTP navigation stays within the unchanged startup deadline', async ({
-  page,
-}, info) => {
+test('cold bundle plus slow HTTP navigation stays within preparation', async ({ page }, info) => {
   await load(page);
   let downloads = 0;
   await page.route('**/component-resources/**', async (route) => {
@@ -206,9 +285,7 @@ test('cold bundle plus slow HTTP navigation stays within the unchanged startup d
   await page.screenshot({ path: info.outputPath('cold-resource-ready.png'), fullPage: true });
 });
 
-test('navigation cannot reset the total deadline and a late load cannot revive the frame', async ({
-  page,
-}) => {
+test('closing during navigation discards the frame and its late load', async ({ page }) => {
   await load(page);
   await page.route('**/component-resources/**', async (route) => {
     await new Promise((resolve) => setTimeout(resolve, 1700));
@@ -221,8 +298,9 @@ test('navigation cannot reset the total deadline and a late load cannot revive t
     } catch {}
   });
   await page.getByRole('button', { name: '启动交互演示' }).click();
-  await expect(page.locator('#demo')).toHaveAttribute('data-mbb-failure-code', 'STARTUP_TIMEOUT');
-  await page.waitForTimeout(400);
+  await expect(page.locator('iframe')).toHaveCount(1);
+  await page.getByRole('button', { name: '关闭交互预览' }).click();
+  await page.waitForTimeout(3800);
   await expect(page.locator('iframe')).toHaveCount(0);
   await expect(page.getByRole('heading', { name: '作者静态解释' })).toBeVisible();
 });
@@ -256,9 +334,7 @@ test('v2 keeps the no-bundle descriptor compatible with the original fixed resou
   await expect(page.locator('#demo')).toHaveAttribute('data-mbb-component-state', 'ready');
 });
 
-test('slow bundle body is canceled by the unchanged cumulative download limit', async ({
-  page,
-}) => {
+test('slow bundle body is canceled by the finite preparation limit', async ({ page }) => {
   const { provider } = await (await page.request.get('/resource-v2-fixture')).json();
   await load(
     page,
@@ -267,9 +343,90 @@ test('slow bundle body is canceled by the unchanged cumulative download limit', 
   );
   const started = Date.now();
   await page.getByRole('button', { name: '启动交互演示' }).click();
-  await expect(page.locator('#demo')).toHaveAttribute('data-mbb-failure-code', /.+/);
-  expect(Date.now() - started).toBeGreaterThan(2300);
-  expect(Date.now() - started).toBeLessThan(4500);
+  await expect(page.locator('#demo')).toHaveAttribute('data-mbb-failure-code', /.+/, {
+    timeout: 18000,
+  });
+  expect(Date.now() - started).toBeGreaterThan(14500);
+  expect(Date.now() - started).toBeLessThan(18000);
+  await expect(page.locator('iframe')).toHaveCount(0);
+});
+
+test('three second bundle and three second frame share preparation without consuming init', async ({
+  page,
+}) => {
+  await load(page);
+  for (const pattern of ['**/component-resources/**', '**/component-frame/**']) {
+    await page.route(pattern, async (route) => {
+      const response = await route.fetch();
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      await route.fulfill({ response });
+    });
+  }
+  const started = Date.now();
+  await page.getByRole('button', { name: '启动交互演示' }).click();
+  await expect(page.locator('#demo')).toHaveAttribute('data-mbb-component-state', 'ready');
+  expect(Date.now() - started).toBeGreaterThan(5900);
+  await page.frameLocator('iframe').getByRole('button', { name: '计算固定数据' }).click();
+  await expect(page.locator('.mbb-component-status')).toHaveClass(/mbb-component-complete/);
+});
+
+test('bundle plus frame cannot refresh the fifteen second preparation deadline', async ({
+  page,
+}) => {
+  await load(page);
+  await page.route('**/component-resources/**', async (route) => {
+    const response = await route.fetch();
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+    await route.fulfill({ response });
+  });
+  let release;
+  const held = new Promise((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/component-frame/**', async (route) => {
+    await held;
+    await route.abort().catch(() => {});
+  });
+  const started = Date.now();
+  await page.getByRole('button', { name: '启动交互演示' }).click();
+  try {
+    await expect(page.locator('#demo')).toHaveAttribute(
+      'data-mbb-failure-code',
+      'STARTUP_TIMEOUT',
+      { timeout: 18000 },
+    );
+    expect(Date.now() - started).toBeGreaterThan(14500);
+    expect(Date.now() - started).toBeLessThan(17500);
+    await expect(page.locator('iframe')).toHaveCount(0);
+  } finally {
+    release();
+  }
+});
+
+test('pre-ready run requests are denied and a granted endless v2 run retains two second limit', async ({
+  page,
+}) => {
+  await load(page);
+  await page.route('**/component-frame/**', async (route) => {
+    const response = await route.fetch();
+    const body = (await response.text())
+      .replace(
+        "send('ready');",
+        "send('run-request', {runId: 'a'.repeat(32)}); setTimeout(() => send('ready'), 300);",
+      )
+      .replace("status.textContent = '计算完成';", "status.textContent = '计算完成'; return;");
+    await route.fulfill({ response, body });
+  });
+  await page.getByRole('button', { name: '启动交互演示' }).click();
+  await expect(page.frameLocator('iframe').locator('#status')).toHaveText('公开资源已校验');
+  expect(await page.evaluate(() => MarkBridgeComponents.activeCount())).toBe(0);
+  await expect(page.locator('#demo')).toHaveAttribute('data-mbb-component-state', 'ready');
+  const started = Date.now();
+  await page.frameLocator('iframe').getByRole('button', { name: '计算固定数据' }).click();
+  await expect.poll(() => page.evaluate(() => MarkBridgeComponents.activeCount())).toBe(1);
+  await expect(page.locator('#demo')).toHaveAttribute('data-mbb-failure-code', 'RUN_BUDGET');
+  expect(Date.now() - started).toBeGreaterThan(1800);
+  expect(Date.now() - started).toBeLessThan(3500);
   await expect(page.locator('iframe')).toHaveCount(0);
 });
 

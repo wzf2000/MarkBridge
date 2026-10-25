@@ -26,12 +26,13 @@ Private paired candidate backups for existing managed articles are stored in non
 == Changelog ==
 
 = 3.5.0 =
+* v2 资源读取与 HTTP frame 导航共用最多 15 秒的网络准备期限，再独立初始化；摘要 1 秒、交付 1.5 秒及实际执行 2 秒保持，取消与迟到响应不会复活预览。
 * 新增原生可导航关系图，支持分组、多父与跨组关系、原生文章链接及手机分支／全图阅读。
 * 配合 Teaching Components 1.5.0，通过现有表单维护稳定节点和关系标识，搜索选择文章，沿用预览、撤销与配对保存。
 * 受控目标由服务器按当前权限派生；不可读或删除的目标与相关关系不会出现在公开图、无脚本替代或静态导出中。旧精确版本和隔离权限保持。
 
 = 3.4.1 =
-Fixed public resource groups use a bounded single-request delivery path. HTTP frame navigation shares the startup deadline; the 1.5-second structured delivery budget starts immediately before init.
+Fixed public resource groups use a bounded single-request delivery path. The 1.5-second structured delivery budget starts immediately before init. The unissued preparation design is superseded by the separate bounded preparation in 3.5.0.
 
 = 3.4.0 =
 * 支持有界原生分组、代码与预格式化文本往返，保护代码中的短代码与嵌入字面量。

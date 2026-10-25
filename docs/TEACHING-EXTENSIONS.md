@@ -272,7 +272,7 @@ v2 iframe 的 `src` 指向公开固定 REST HTML 路由 `/mbb/v2/component-frame
 
 每实例 wire 为 `mbb-component/v2`，会话、来源、runId 及已有 `ready`／`run-request`／`grant`／`complete`／`cancel` 控制保持。v2 `init.resourceGroup` 为 `{version,sha256,identity,resources:[{spec,buffer}]}`；`buffer` 是 ArrayBuffer，元数据中的 spec 与固定清单一致。提供者须先拒绝 `parent===window`，再检查 `event.source===parent`、协议、固定会话、条目身份、长度与摘要；资源交付不是运行许可，计算仍需 `grant`。v2 初始化 JSON 元数据单独限制 40 KiB（v1 仍 20 KiB），参数仍 16 KiB，控制／结果仍 8 KiB；ArrayBuffer 另按八项／每项 1 MiB／合计 2 MiB 核对，不以 JSON 中的 `{}` 绕过预算。
 
-启动总期限最多五秒，覆盖加载、摘要、HTTP frame 导航、交付和 ready；累计下载最多 2.5 秒、摘要最多一秒。3.4.1 起，HTTP frame 导航由该总期限约束，结构化交付最多 1.5 秒，从发送 init 前计至 ready；此前 1.5 秒包含导航。此处调整的是交付阶段的计时起点，不提高或重置启动总期限；任一适用期限先到即失败。ready 后的读者思考不消耗启动期限；每次 grant 仍独立最多两秒。父窗的移除与 deadline 是兜底，不是任意恶意程序的硬实时 CPU 隔离证明。
+3.5.0 起，v2 的资源组读取和 HTTP frame 导航共用一次最多 15 秒的网络准备期限；逐项读取、缓存检查和导航不重新计时，摘要累计仍最多一秒。frame load 后、发送 init 前，开始提供者声明的初始化期限（最多五秒），交付至 ready 另受 1.5 秒上限约束；网络等待不占用此阶段。固定 frame 引导脚本可在 load 前执行，不能将准备阶段视作完全没有代码执行；算法仍须在 ready 后获得宿主 grant，每次实际运行仍独立最多两秒。关闭、隐藏、移除、配置变化或取消会废弃该代准备及迟到响应，不会获得新的期限或复活旧预览。ready 后的读者思考不消耗启动期限。v1 继续沿用原五秒启动总期限，旧 v2 无 bundle 描述也使用同一有界准备规则；不增加提供者 budgets 必填字段。父窗的移除与 deadline 是兜底，不是任意恶意程序的硬实时 CPU 隔离证明。
 
 3.4.1 的公开描述在 `resources` 中增加可选 `bundleUrl`，由 Main 生成，不改变扩展登记字段或固定文件。匿名 GET `mbb/v2/component-resources/{component}/{version}/{manifestSHA256}` 只定位已登记精确版本及固定清单摘要；不接受文章、路径、URL、代码、请求正文或额外查询参数（WordPress Plain 路由的 `rest_route` 除外）。响应为 `application/octet-stream`、`no-store`、`nosniff`：八字节 `MBBR2\0\r\n` magic、四字节大端清单长度、原始清单，再依清单声明顺序连接原资源字节。固定头 12 B，最多 16 KiB 清单及 2 MiB 原资源，不含 HTML；末次 raw serve 再核对所有字节和响应政策。
 

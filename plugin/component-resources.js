@@ -8,6 +8,7 @@
     total: 2097152,
     cache: 4194304,
     output: 16384,
+    preparationMs: 15000,
     totalMs: 5000,
     download: 2500,
     hash: 1000,
@@ -174,12 +175,23 @@
     return { version: value.version, resources: order, bytes: sum };
   }
   class Context {
-    constructor({ limits = {}, signal, current = () => true, now = () => performance.now() } = {}) {
+    constructor({
+      stage = 'initialization',
+      limits = {},
+      signal,
+      current = () => true,
+      now = () => performance.now(),
+    } = {}) {
+      if (!['preparation', 'initialization'].includes(stage)) throw fault('LIMIT_CONFIG');
+      const caps =
+        stage === 'preparation'
+          ? { ...LIMITS, totalMs: LIMITS.preparationMs, download: LIMITS.preparationMs }
+          : LIMITS;
       if (Object.keys(limits).some((k) => !['totalMs', 'download', 'hash', 'transfer'].includes(k)))
         throw fault('LIMIT_CONFIG');
-      this.limits = { ...LIMITS, ...limits };
+      this.limits = { ...caps, ...limits };
       for (const [k, v] of Object.entries(this.limits))
-        if (!Number.isFinite(v) || v <= 0 || v > LIMITS[k]) throw fault('LIMIT_CONFIG');
+        if (!Number.isFinite(v) || v <= 0 || v > caps[k]) throw fault('LIMIT_CONFIG');
       this.now = now;
       this.current = current;
       this.started = now();
