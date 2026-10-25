@@ -342,7 +342,18 @@
               )
           : Math.max(240, viewport.clientWidth),
         gap = 16,
-        head = 72 + crossEdges.length * 12,
+        head =
+          84 +
+          crossEdges.filter((e) => {
+            const a = visibleGroups.findIndex(
+              (g) => g.id === p.nodes.find((n) => n.id === e.from).group,
+            );
+            const b = visibleGroups.findIndex(
+              (g) => g.id === p.nodes.find((n) => n.id === e.to).group,
+            );
+            return Math.abs(a - b) > 1;
+          }).length *
+            12,
         boxes = new Map();
       width = visibleGroups.length * (laneWidth + gap) - gap;
       height = head;
@@ -384,7 +395,7 @@
           if (n.description) a.title = n.description;
           board.append(a);
           const h = Math.max(64, a.offsetHeight);
-          boxes.set(n.id, { x: x + 36, y, w: laneWidth - 72, h, lane: column });
+          boxes.set(n.id, { id: n.id, x: x + 36, y, w: laneWidth - 72, h, lane: column });
           y += h + 32;
         }
         height = Math.max(height, y);
@@ -396,56 +407,158 @@
       svg.setAttribute('height', height);
       svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
       const NS = 'http://www.w3.org/2000/svg',
-        trackCounts = new Map(),
-        tracks = new Map();
+        tracks = new Map(),
+        ports = new Map(),
+        portTotals = new Map(),
+        corridors = new Map();
+      const adjacent = (a, b) =>
+        a.lane === b.lane &&
+        b.y >= a.y + a.h &&
+        ![...boxes.values()].some((n) => n.lane === a.lane && n.y > a.y && n.y < b.y);
+      // Only overlapping spans need separate side tracks. Reuse a track after its
+      // destination so unrelated short branches do not drift toward the lane edge.
+      const reserve = (box, side, start, end) => {
+        const key = box.lane + ':' + side,
+          lanes = tracks.get(key) || [],
+          lo = Math.min(start, end) - 8,
+          hi = Math.max(start, end) + 8;
+        let index = lanes.findIndex((spans) => spans.every(([a, b]) => hi < a || lo > b));
+        if (index < 0) index = lanes.length;
+        (lanes[index] ||= []).push([lo, hi]);
+        tracks.set(key, lanes);
+        return side > 0 ? box.x + box.w + 12 + index * 7 : box.x - 12 - index * 7;
+      };
+      const port = (box, side) => {
+        const key = box.id + ':' + side,
+          index = ports.get(key) || 0;
+        ports.set(key, index + 1);
+        const total = portTotals.get(key),
+          spacing = Math.min(10, (box.h - 24) / Math.max(1, total - 1)),
+          offset = (index - (total - 1) / 2) * spacing;
+        return [side > 0 ? box.x + box.w : box.x, box.y + box.h / 2 + offset];
+      };
+      const roundedPath = (points) => {
+        let d = `M ${points[0].join(' ')}`;
+        for (let i = 1; i < points.length - 1; i++) {
+          const a = points[i - 1],
+            b = points[i],
+            c = points[i + 1],
+            before = Math.hypot(b[0] - a[0], b[1] - a[1]),
+            after = Math.hypot(c[0] - b[0], c[1] - b[1]),
+            radius = Math.min(6, before / 2, after / 2);
+          if (!before || !after) continue;
+          const entry = b.map((v, k) => v + ((a[k] - v) * radius) / before),
+            exit = b.map((v, k) => v + ((c[k] - v) * radius) / after);
+          d += ` L ${entry.join(' ')} Q ${b.join(' ')} ${exit.join(' ')}`;
+        }
+        return d + ` L ${points.at(-1).join(' ')}`;
+      };
+      const bypass = visibleEdges.filter((e) => {
+          const a = boxes.get(e.from),
+            b = boxes.get(e.to);
+          return a.lane === b.lane && !(e.kind === 'recommended' && adjacent(a, b));
+        }),
+        sides = new Map();
+      // Interleaving spans on the same side look like a false merge. Keep each
+      // source's branches together and move the next interleaving source across.
+      for (const e of [...bypass].sort((a, b) => boxes.get(a.from).y - boxes.get(b.from).y)) {
+        if (sides.has(e.from)) continue;
+        const a = boxes.get(e.from),
+          peers = bypass.filter((n) => n.from === e.from),
+          interleaves = (other) =>
+            peers.some((peer) => {
+              const b = boxes.get(peer.to),
+                c = boxes.get(other.from),
+                d = boxes.get(other.to),
+                lo = Math.min(a.y, b.y),
+                hi = Math.max(a.y, b.y),
+                left = Math.min(c.y, d.y),
+                right = Math.max(c.y, d.y);
+              return (
+                a.lane === c.lane &&
+                ((lo < left && left < hi && hi < right) || (left < lo && lo < right && right < hi))
+              );
+            });
+        const previous = bypass.filter((n) => sides.has(n.from) && interleaves(n));
+        const next = bypass.some((n) => n.from !== e.from && interleaves(n));
+        sides.set(e.from, previous.length ? -sides.get(previous[0].from) : next ? -1 : 1);
+      }
+      const bypassTracks = new Map();
+      for (const e of [...bypass].sort(
+        (a, b) =>
+          Math.abs(boxes.get(a.from).y - boxes.get(a.to).y) -
+          Math.abs(boxes.get(b.from).y - boxes.get(b.to).y),
+      )) {
+        const a = boxes.get(e.from),
+          b = boxes.get(e.to),
+          side = e.kind === 'compare' ? -1 : sides.get(e.from);
+        bypassTracks.set(e, reserve(a, side, a.y + a.h / 2, b.y + b.h / 2));
+      }
+      for (const e of visibleEdges) {
+        const a = boxes.get(e.from),
+          b = boxes.get(e.to);
+        if (a.lane === b.lane && e.kind === 'recommended' && adjacent(a, b)) continue;
+        const side =
+          a.lane !== b.lane
+            ? Math.sign(b.lane - a.lane)
+            : e.kind === 'compare'
+              ? -1
+              : sides.get(e.from);
+        for (const [box, direction] of [
+          [a, side],
+          [b, a.lane === b.lane ? side : -side],
+        ]) {
+          const key = box.id + ':' + direction;
+          portTotals.set(key, (portTotals.get(key) || 0) + 1);
+        }
+      }
+      let crossing = 0;
       for (const e of visibleEdges) {
         const a = boxes.get(e.from),
           b = boxes.get(e.to),
-          s = e.kind === 'compare' ? -1 : 1;
-        const keys = a.lane === b.lane ? [a.lane + ':' + s] : [a.lane + ':1', b.lane + ':-1'];
-        for (const k of keys) trackCounts.set(k, (trackCounts.get(k) || 0) + 1);
-      }
-      const reserve = (box, side) => {
-        const k = box.lane + ':' + side,
-          index = (tracks.get(k) || 0) + 1;
-        tracks.set(k, index);
-        const offset = 10 + (20 * index) / (trackCounts.get(k) + 1);
-        return side > 0 ? box.x + box.w + offset : box.x - offset;
-      };
-      let crossing = 0;
-      for (const [i, e] of visibleEdges.entries()) {
-        const a = boxes.get(e.from),
-          b = boxes.get(e.to),
-          isCross = a.lane !== b.lane,
-          side = e.kind === 'compare' ? -1 : 1,
-          ax = side > 0 ? a.x + a.w : a.x,
-          bx = side > 0 ? b.x + b.w : b.x,
-          ay = a.y + a.h / 2 + (e.kind === 'optimization' ? 7 : e.kind === 'compare' ? -7 : 0),
-          by = b.y + b.h / 2 + (e.kind === 'optimization' ? 7 : e.kind === 'compare' ? -7 : 0);
+          isCross = a.lane !== b.lane;
         let points;
-        if (isCross) {
-          const sx = reserve(a, 1),
-            tx = reserve(b, -1),
-            top = 54 + crossing++ * 12;
+        if (!isCross && e.kind === 'recommended' && adjacent(a, b)) {
           points = [
-            [a.x + a.w, ay],
-            [sx, ay],
-            [sx, top],
-            [tx, top],
-            [tx, by],
-            [b.x, by],
+            [a.x + a.w / 2, a.y + a.h],
+            [b.x + b.w / 2, b.y],
           ];
+        } else if (isCross) {
+          const direction = Math.sign(b.lane - a.lane),
+            start = port(a, direction),
+            end = port(b, -direction);
+          if (Math.abs(a.lane - b.lane) === 1) {
+            const key = Math.min(a.lane, b.lane),
+              spans = corridors.get(key) || [],
+              lo = Math.min(start[1], end[1]) - 8,
+              hi = Math.max(start[1], end[1]) + 8;
+            let index = spans.findIndex((items) => items.every(([x, y]) => hi < x || lo > y));
+            if (index < 0) index = spans.length;
+            (spans[index] ||= []).push([lo, hi]);
+            corridors.set(key, spans);
+            const middle =
+              (start[0] + end[0]) / 2 + Math.ceil(index / 2) * 7 * (index % 2 ? 1 : -1);
+            points = [start, [middle, start[1]], [middle, end[1]], end];
+          } else {
+            const top = 60 + crossing++ * 12,
+              sx = reserve(a, direction, top, start[1]),
+              tx = reserve(b, -direction, top, end[1]);
+            points = [start, [sx, start[1]], [sx, top], [tx, top], [tx, end[1]], end];
+          }
         } else {
-          const track = reserve(a, side);
-          points = [
-            [ax, ay],
-            [track, ay],
-            [track, by],
-            [bx, by],
-          ];
+          const side = e.kind === 'compare' ? -1 : sides.get(e.from),
+            start = port(a, side),
+            end = port(b, side),
+            track = bypassTracks.get(e);
+          points = [start, [track, start[1]], [track, end[1]], end];
         }
-        const line = doc.createElementNS(NS, 'polyline');
-        line.setAttribute('points', points.map((p) => p.join(',')).join(' '));
+        // Zero-length legs are unnecessary and would obscure the final vector.
+        points = points.filter(
+          (point, index) =>
+            !index || point[0] !== points[index - 1][0] || point[1] !== points[index - 1][1],
+        );
+        const line = doc.createElementNS(NS, 'path');
+        line.setAttribute('d', roundedPath(points));
         line.setAttribute('class', 'edge ' + e.kind);
         line.dataset.from = e.from;
         line.dataset.to = e.to;
@@ -458,11 +571,13 @@
         svg.append(line);
         const end = points.at(-1),
           prev = points.at(-2),
-          dir = end[0] >= prev[0] ? 1 : -1,
+          length = Math.hypot(end[0] - prev[0], end[1] - prev[1]),
+          dx = (end[0] - prev[0]) / length,
+          dy = (end[1] - prev[1]) / length,
           arrow = doc.createElementNS(NS, 'polygon');
         arrow.setAttribute(
           'points',
-          `${end[0]},${end[1]} ${end[0] - dir * 8},${end[1] - 4} ${end[0] - dir * 8},${end[1] + 4}`,
+          `${end[0]},${end[1]} ${end[0] - dx * 8 - dy * 4},${end[1] - dy * 8 + dx * 4} ${end[0] - dx * 8 + dy * 4},${end[1] - dy * 8 - dx * 4}`,
         );
         arrow.setAttribute('class', 'arrow ' + e.kind);
         svg.append(arrow);

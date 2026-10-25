@@ -4,7 +4,7 @@
   <a href="LICENSE"><img alt="License: GPL-3.0-or-later" src="https://img.shields.io/badge/license-GPL--3.0--or--later-818cf8"></a>
   <img alt="WordPress 7.1" src="https://img.shields.io/badge/WordPress-7.1-21759b">
   <img alt="PHP 8.2+" src="https://img.shields.io/badge/PHP-8.2%2B-777bb4">
-  <img alt="Version 3.5.0" src="https://img.shields.io/badge/version-3.5.0-818cf8">
+  <img alt="Version 3.5.1" src="https://img.shields.io/badge/version-3.5.1-818cf8">
 </p>
 
 <p align="center"><strong>用 Markdown 写作，用区块调整。保存时，让两种格式保持一致。</strong></p>
@@ -40,7 +40,7 @@ flowchart LR
 
 ## 开始使用
 
-**3.5.0** 新增可导航关系图。配合 Teaching Components **1.5.0**，作者可维护分组、文章节点与多父／跨组关系，通过搜索选择当前可读的托管文章；手机默认按分支阅读，也可切换全图平移和缩放。旧图与已有文章保持精确版本。使用说明见 [文档索引](docs/index.md) 与在线 Wiki；版本对应的完整文档随 Release 源码提供。
+**3.5.1** 优化关系图连线：相邻课程使用短直箭头，分叉按通道分开，跨组关系就近连接。**3.5.0** 新增可导航关系图。配合 Teaching Components **1.5.0**，作者可维护分组、文章节点与多父／跨组关系，通过搜索选择当前可读的托管文章；手机默认按分支阅读，也可切换全图平移和缩放。旧图与已有文章保持精确版本。使用说明见 [文档索引](docs/index.md) 与在线 Wiki；版本对应的完整文档随 Release 源码提供。
 
 安装请使用对应 [Release](https://github.com/wzf2000/MarkBridge/releases) 的插件 ZIP，版本变化见[更新记录](CHANGELOG.md)。新安装在 WordPress 7.1.x、PHP 8.2+ 且具备 DOM／mbstring 扩展时使用包内 PHP 转换器，基础编辑不要求额外 Node 运行环境。已有 Node 配置升级后继续使用 Node；管理员可在 **设置 → MarkBridge** 选择 PHP／Node，Node 需预先准备环境并通过验证。尚未提交 WordPress.org 插件目录。
 

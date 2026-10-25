@@ -125,7 +125,7 @@
   background: var(--rm-lane-3, #eef3f6);
   border-color: #dfe7eb;
 }
-.mbb-relation-lane h4 {
+.mbb-relation-map .mbb-relation-board .mbb-relation-lane > h4 {
   text-align: center;
   font-size: 1rem;
   line-height: 1.4;
