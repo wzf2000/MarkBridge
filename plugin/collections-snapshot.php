@@ -4,6 +4,7 @@ if (!defined('ABSPATH') && PHP_SAPI !== 'cli') {
 }
 require_once __DIR__ . '/collections-store.php';
 require_once __DIR__ . '/component-catalog.php';
+require_once __DIR__ . '/relation-map-documents.php';
 /** Trusted PHP registration only. There is deliberately no client callback/path interface. */
 
 function mbb_register_publication_adapter(string $id, array $descriptor): bool
@@ -61,6 +62,13 @@ function mbb_collections_renderer(string $adapter): array
             'projections.js',
             'projections-profile.json',
             'projections.css',
+            'relation-map.php',
+            'relation-map-v2.php',
+            'relation-map-v2.js',
+            'relation-map-documents.php',
+            'relation-map.js',
+            'relation-map.css',
+            'languages/messages.json',
             'php-converter-manifest.json',
             'static-export.css',
             'technical.css',
@@ -303,7 +311,14 @@ function mbb_collections_components(string $serialized): array
             'id' => $id,
             'component' => $a->component,
             'version' => $a->componentVersion,
-            'paramsSha256' => hash('sha256', mbb_component_json($a->params)),
+            'paramsSha256' => hash(
+                'sha256',
+                mbb_component_json(
+                    ($a->params->format ?? null) === 'relation-map/v2'
+                        ? mbb_relation_map_v2_view($a->params, 'publication:' . $id)['map']
+                        : $a->params,
+                ),
+            ),
             'resourceSha256' => $sha,
             ...$identity !== null
                 ? ['componentIdentity' => $identity, 'resourceGroup' => $group]
@@ -493,6 +508,7 @@ function mbb_collections_snapshot(array $config, string $adapter, ?string $direc
         }
         unset($s);
     }
+    $relationStamps = [];
     $outside = [];
     $resources = [];
     $total = 0;
@@ -569,6 +585,9 @@ function mbb_collections_snapshot(array $config, string $adapter, ?string $direc
         if (mbb_collections_stamp($s) !== $stamps[$chapter['key']]) {
             mbb_collections_fail('collection_changed');
         }
+        $relationStamps[(int) $s['post']->ID] = mbb_relation_map_v2_stamp(
+            $s['document']['serialized'],
+        );
         $map = mbb_collections_references($s['projection']['edges'], $selected, $outside);
         $plan = mbb_collections_media($s);
         foreach ($plan['resources'] as $r) {
@@ -654,6 +673,7 @@ function mbb_collections_snapshot(array $config, string $adapter, ?string $direc
         'bytes' => $total,
         'stamps' => $stamps,
         'outside' => $dependencies,
+        'relationStamps' => $relationStamps,
         'assets' => $assets,
         'componentChecks' => array_merge(...array_column($chapters, 'components')),
         'owner' => $owner,
@@ -675,6 +695,12 @@ function mbb_collections_final(array $snapshot, array $config, string $adapter):
     }
     foreach ($snapshot['stamps'] as $stamp) {
         if (!mbb_collections_final_stamp($stamp, true, $config['privateOptIn'])) {
+            mbb_collections_fail('collection_changed');
+        }
+    }
+    foreach ($snapshot['relationStamps'] ?? [] as $id => $stamp) {
+        $post = mbb_references_fresh_post((int) $id);
+        if (!$post || !hash_equals($stamp, mbb_relation_map_v2_stamp($post->post_content))) {
             mbb_collections_fail('collection_changed');
         }
     }
@@ -753,6 +779,12 @@ function mbb_collections_final(array $snapshot, array $config, string $adapter):
     // Later attachment checks may invoke capability filters. Recheck every source immediately before return.
     foreach ($snapshot['stamps'] as $stamp) {
         if (!mbb_collections_final_stamp($stamp, true, $config['privateOptIn'])) {
+            mbb_collections_fail('collection_changed');
+        }
+    }
+    foreach ($snapshot['relationStamps'] ?? [] as $id => $stamp) {
+        $post = mbb_references_fresh_post((int) $id);
+        if (!$post || !hash_equals($stamp, mbb_relation_map_v2_stamp($post->post_content))) {
             mbb_collections_fail('collection_changed');
         }
     }

@@ -11,6 +11,7 @@ require_once __DIR__ . '/includes/i18n.php';
 // Read-only saved-document export. No source-file reads and no article writes.
 require_once __DIR__ . '/includes/php-converter/ResourceImages.php';
 require_once __DIR__ . '/static-export.php';
+require_once __DIR__ . '/relation-map-documents.php';
 use MarkBridge\Probe\ResourceImages;
 
 function mbb_export_config(): array
@@ -505,6 +506,7 @@ function mbb_export_plan(
                 'files' => $files,
                 'sidecar' => '',
                 'referenceMap' => $referenceMap,
+                'relationStamp' => mbb_relation_map_v2_stamp($document['serialized']),
             ];
         }
         $projected = mbb_convert([
@@ -588,6 +590,7 @@ function mbb_export_plan_digest(array $plan): string
             $plan['mappings'],
             $plan['sidecar'],
             $plan['referenceMap'] ?? [],
+            $plan['relationStamp'] ?? null,
             array_map(static fn($file) => array_diff_key($file, ['file' => true]), $plan['files']),
         ]),
     );

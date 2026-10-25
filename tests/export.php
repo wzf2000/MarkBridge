@@ -235,6 +235,24 @@ function check($condition, $message): void
         throw new RuntimeException($message);
     }
 }
+// Standalone exports intentionally load no component registry or projection planner.
+check(!function_exists('mbb_component_descriptors'), 'Standalone registry unexpectedly loaded');
+check(
+    mbb_relation_map_v2_stamp('<!-- wp:paragraph --><p>Saved</p><!-- /wp:paragraph -->') ===
+        hash('sha256', mbb_component_json([])),
+    'Plain saved HTML export requires no component subsystem',
+);
+foreach (['relation-map/v2', 'relation-map\\/v2', 'relation-map\\u002fv2'] as $format) {
+    $closed = false;
+    try {
+        mbb_relation_map_v2_stamp(
+            '<!-- wp:mbb/component {"id":"map","params":{"format":"' . $format . '"}} -->',
+        );
+    } catch (RuntimeException $error) {
+        $closed = $error->getMessage() === 'relation_map_component_registry';
+    }
+    check($closed, 'Component export bypassed a missing registry');
+}
 function prepareExport($format = 'markdown')
 {
     return mbb_export_prepare(

@@ -380,3 +380,13 @@ WordPress REST 的块钩子可能把 JSON `1e-8` 写为 `1.0e-8`、把空对象�
 profile 出现在公开 provider 和 init 元数据中，并参与完整组件 identity、快照、CSP／桥代码指纹。HTTP body 的 Main 桥内嵌服务端登记 profile，不能由 init、query 或文章选择；桥只控制布局，不能替代提供者对资源交付的自验。最终 raw serve 再核对 body 与实际响应 headers，拒绝中途变化。
 
 只有该 profile 的已 ready、当前 grant 的 `RUN_LIMIT`／`COMPILE_LIMIT` error 映射为 RUN_BUDGET／现有本实验预算文案，并释放 grant、保留 frame；提供者可先终止自己的 Worker 并保留先前结果。v1／默认v2 的同名任意 code 仍是普通执行失败。父级2s超时会销毁 frame，届时仅保证原静态解释可读；不承诺保留临时读者结果。迟到或不同 runId 的结果仍不采纳。
+
+## 原生关系图（Main 3.5）
+
+受登记提供者可声明闭集 `readerMode: relation-map/v1`；Main 验证纯数据后在前台创建自己的 HTML 链接与数值 SVG 连线，不在 iframe 中放宽顶层导航，也不接受扩展父页面脚本或作者 HTML/SVG/坐标。Teaching 的通用 `navigation-map@0.1.0` 是首个提供者。原 diagram 模式不变，编辑器安全预览保持静态。
+
+同一 `params` 的 `format: relation-map/v1` 可派生安全静态链接信封，即使扩展缺失仍可阅读。此降级只接受 `available` 与 `author-fallback` 状态，不授予未知提供者可用性或绕过保存校验。闭合信封复用 projection plan/wire/insert，未扩展通用 HTML/SVG 标签白名单。快照与 frame 身份包含原生模型、阅读器、样式和消息目录；提供者仍使用固定构建定义与资源摘要。
+
+模型最多 8 组、64 节点、128 关系且仍受 16 KiB 参数上限；推荐环按有界确定顺序显示，多父和同端点不同关系合法。推荐是建议，不是必修前置。URL 为有界安全 http(s)、本地相对或锚点，禁止协议相对、凭据、控制字符与反斜杠。
+
+关系图还须通过两后端一致的联合静态输出预算：按 HTML 转义后的题名／说明、每次重复的端点链接（URL 每 UTF-8 字节预留六字节）、各项结构及双语文案余量估算，最多 120 KiB，低于通用 128 KiB 投影上限。密集连线搭配长题名／长链接可能先达到此预算；此时缩短题名或链接，或减少连线。数量上限不保证任意满组合都可用；超界拒绝，不截断关系或文章链接。

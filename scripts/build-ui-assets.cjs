@@ -4,6 +4,15 @@ const fs = require('fs'),
   root = path.resolve(__dirname, '../plugin');
 const read = (n) => fs.readFileSync(path.join(root, n), 'utf8');
 const map = {};
+const relationSource = read('relation-map.js');
+const catalog = JSON.parse(read('languages/messages.json'));
+const relationMessages = Object.fromEntries(
+  [...relationSource.matchAll(/T\('([^']+)'\)/g)].map((match) => [match[1], catalog[match[1]]]),
+);
+const relationReader =
+  read('relation-map-v2.js') +
+  '\n' +
+  relationSource.replace('/*__MBB_RELATION_MESSAGES__*/ {}', JSON.stringify(relationMessages));
 function asset(name, body = read(name)) {
   const ext = path.extname(name),
     file =
@@ -38,11 +47,15 @@ asset('references-ui.js');
 asset('resource-ui.js');
 asset(
   'projections.js',
-  read('projections.js').replace('__MBB_PROJECTION_PROFILE__', read('projections-profile.json')),
+  relationReader +
+    '\n' +
+    read('projections.js').replace('__MBB_PROJECTION_PROFILE__', read('projections-profile.json')),
 );
 asset(
   'static-export.js',
-  read('projections.js').replace('__MBB_PROJECTION_PROFILE__', read('projections-profile.json')) +
+  relationReader +
+    '\n' +
+    read('projections.js').replace('__MBB_PROJECTION_PROFILE__', read('projections-profile.json')) +
     '\n' +
     read('static-export.js'),
 );
@@ -59,8 +72,11 @@ asset('editor-ui.css');
 asset('math.css');
 asset('footnotes.css');
 asset('teaching.js');
-asset('components.js', read('component-resources.js') + '\n' + read('components.js'));
-asset('teaching.css');
+asset(
+  'components.js',
+  relationReader + '\n' + read('component-resources.js') + '\n' + read('components.js'),
+);
+asset('teaching.css', read('teaching.css') + '\n' + read('relation-map.css'));
 asset('technical.css');
 asset('media-presentation.css');
 asset('media-presentation.js');

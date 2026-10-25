@@ -228,6 +228,28 @@ function mbb_references_replace_tuples(string $source, array $mappings): string
                 $block['attrs']['namespace'] = $after['namespace'];
                 $block['attrs']['document'] = $after['document'];
             }
+            if (
+                $block['blockName'] === 'mbb/component' &&
+                ($block['attrs']['params']['format'] ?? null) === 'relation-map/v2'
+            ) {
+                foreach ($block['attrs']['params']['nodes'] as &$node) {
+                    $target = $node['target'] ?? [];
+                    if (
+                        ($target['kind'] ?? null) === 'document' &&
+                        ($after =
+                            $map[
+                                ($target['namespace'] ?? '') . '/' . ($target['document'] ?? '')
+                            ] ?? null)
+                    ) {
+                        $node['target'] = [
+                            'kind' => 'document',
+                            'namespace' => $after['namespace'],
+                            'document' => $after['document'],
+                        ];
+                    }
+                }
+                unset($node);
+            }
             foreach ($block['innerContent'] as &$html) {
                 if (!is_string($html) || !str_contains($html, 'data-mbb-version="2"')) {
                     continue;

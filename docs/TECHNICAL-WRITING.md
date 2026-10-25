@@ -396,3 +396,9 @@ tools available.
 摘要取完整合法v2条目去掉文章key，递归按ASCII字段排序；数组顺序保留，UTF-8 JSON无缩进，不转义Unicode、斜线、U+2028／U+2029，不作Unicode归一化。PHP `mbb_bibliography_entry_hash($entry)`、JS `MBB.bibliographyEntryCanonical(entry)`／异步 `MBB.bibliographyEntryHash(entry)`共享规范。手改造成失配保留声明、显示本地修改，不阻保存；删除引用键删对应来源，显式rename同步来源key且hash不变。正常配对、修订、来源同步和移植携带该字段，无旁路postmeta提交。
 
 主编辑器供该扩展使用的最小可信hook为 `window.MBBScholarlyTool` React组件，参数 `{draft,change,registry,clientId,session}`。draft是当前未应用文献候选，change只准备候选；不得直接setAttributes或另行保存文章。异步结果须绑定当前候选、选择块与opening文章expected/source_sha256，最终Apply仍走原有全篇校验和基线保护。该入口仅供安装的受信插件，不接受文章提供任意脚本或HTTP地址。
+
+### 受控关系图的文章目标
+
+`navigation-map@0.2.0` 的 `relation-map/v2` 将节点目标定义为闭合 `{kind:"document",namespace,document}`，或闭合 `{kind:"local-document",site,documentId}`。前者复用现有文档 tuple 的唯一占用、配对摘要和实时阅读权限，不要求对象 target；后者只在同一 site namespace 下精确解析历史 ID，最多取两个 distinct postID 判重，不按可读性过滤唯一性。旧 `documentId`、课程私有映射标识、WP postID 和 portable document 互不替代。旧 ID 为有界 UTF-8 文本，不套用锚点标识规则，不规范化或写回目标文章。
+
+关系图作者参数沿同一 Markdown／块源及配对保存链；node、edge 各有独立稳定 id。复制／批量导入的 tuple 映射同时改写图内 portable target，local site/ID 原样保留。原始配置不复制到 v2 持久 HTML，也不进入公开投影／data 属性。服务器每次解析当前可读节点并移除不可读节点及其关系，派生 HMAC 标识不依赖题名、顺序、类型或配对摘要。文章搜索接口 `GET /mbb/v1/references/articles?q=...` 沿现有作者鉴权；最多扫描 200 篇合成或实际托管文档、返回 20 项当前可读结果，返回前再次核对，无完整课程登记表。静态导出及多章出版准备／下载绑定实时目标依赖，不允许将旧授权投影从共享缓存返给其他读者。

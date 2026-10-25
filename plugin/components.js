@@ -178,6 +178,28 @@
     } catch {
       return;
     }
+    if (config.reader === 'relation-map/public-v2') {
+      if (
+        config.status !== 'available' ||
+        window.MBB_COMPONENTS_READER !== true ||
+        !config.publicView
+      )
+        return;
+      try {
+        const native = globalThis.MBBRelationMap.enhance(node, config.publicView, config.edgeIds);
+        instances.set(node, {
+          ...native,
+          signature,
+          dispose() {
+            native.dispose();
+            instances.delete(node);
+          },
+        });
+      } catch {
+        node.dataset.mbbComponentState = 'static';
+      }
+      return;
+    }
     // Resource authority comes from the server registry, never an article descriptor.
     config.provider = (window.MBBComponents || []).find(
       (p) => p.id === config.component && p.version === config.componentVersion,
@@ -208,6 +230,25 @@
     )
       config.status = 'incompatible';
     if (!validParams(config.params)) config.status = 'invalid-params';
+    if (!config.provider && config.params?.format === 'relation-map/v1') return;
+    if (config.provider?.readerMode === 'relation-map/v1') {
+      if (config.status !== 'available' || window.MBB_COMPONENTS_READER !== true) return;
+      try {
+        const native = globalThis.MBBRelationMap.enhance(node, config.params);
+        const instance = {
+          ...native,
+          signature,
+          dispose() {
+            native.dispose();
+            instances.delete(node);
+          },
+        };
+        instances.set(node, instance);
+      } catch {
+        node.dataset.mbbComponentState = 'closed';
+      }
+      return;
+    }
     const diagram =
       window.MBB_COMPONENTS_READER === true && config.provider?.readerMode === 'diagram';
     let readerClosed = false,

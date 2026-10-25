@@ -7,6 +7,7 @@ if (!defined('ABSPATH')) {
     }
 }
 
+require_once __DIR__ . '/relation-map-documents.php';
 // Protect literal shortcode syntax in derived code-tabs JSON strings, not array syntax.
 // JSON decoding still yields exactly the same configuration and original code bytes.
 function mbb_code_tabs_config_json(array $config): string
@@ -173,6 +174,9 @@ add_filter(
             }
         }
         if ($kind === 'component') {
+            if (($attrs['params']['format'] ?? null) === 'relation-map/v2') {
+                return mbb_relation_map_v2_render($html, $attrs);
+            }
             $paramsConsistent = true;
             if (
                 preg_match(

@@ -14,6 +14,13 @@ function mbb_component_frame_profile(?string $executionProfile = null): string
             'component-resources.js',
             'components.php',
             'components.js',
+            'relation-map.php',
+            'relation-map-v2.php',
+            'relation-map-v2.js',
+            'relation-map-documents.php',
+            'relation-map.js',
+            'relation-map.css',
+            'languages/messages.json',
         ]
         as $file
     ) {
