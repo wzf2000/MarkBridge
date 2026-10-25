@@ -366,6 +366,8 @@ function snapshot($id, $status = 'publish')
         'post_status' => $status,
         'post_password' => '',
         'post_title' => 'Chapter ' . $id,
+        'post_content' => '<p>Chapter ' . $id . '</p>',
+        'post_content_filtered' => '# Chapter ' . $id,
     ];
     return [
         'post' => $p,

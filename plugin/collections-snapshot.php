@@ -4,6 +4,7 @@ if (!defined('ABSPATH') && PHP_SAPI !== 'cli') {
 }
 require_once __DIR__ . '/collections-store.php';
 require_once __DIR__ . '/component-catalog.php';
+require_once __DIR__ . '/relation-map-documents.php';
 /** Trusted PHP registration only. There is deliberately no client callback/path interface. */
 
 function mbb_register_publication_adapter(string $id, array $descriptor): bool

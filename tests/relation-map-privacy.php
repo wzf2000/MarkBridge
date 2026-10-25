@@ -16,6 +16,15 @@ function mbb_component_equal($a, $b)
 }
 function mbb_component_descriptors($s)
 {
+    if (str_starts_with($s, '<!-- wp:mbb/component ')) {
+        preg_match_all('/<!-- wp:mbb\/component (\{[\s\S]*?\}) -->/', $s, $matches);
+        $result = [];
+        foreach ($matches[1] as $raw) {
+            $attrs = json_decode($raw, false, 32, JSON_THROW_ON_ERROR);
+            $result[$attrs->id] = $attrs;
+        }
+        return $result;
+    }
     return json_decode($s);
 }
 function mbb_component_provider(...$args)
@@ -178,6 +187,26 @@ $attrs = [
     'params' => $p,
 ];
 $source = mbb_component_json(['map' => $attrs]);
+// All legal JSON spellings must bind the same controlled targets and revoke together.
+$canonicalBlock = '<!-- wp:mbb/component ' . mbb_component_json($attrs) . ' -->';
+$stamp = mbb_relation_map_v2_stamp($canonicalBlock);
+foreach (
+    ['relation-map/v2', 'relation-map\\/v2', 'relation-map\\u002fv2', 'relation-map/v\\u0032']
+    as $format
+) {
+    $escaped = str_replace('relation-map/v2', $format, $canonicalBlock);
+    privacy_check(
+        mbb_relation_map_v2_stamp($escaped) === $stamp,
+        'escaped format same dependencies',
+    );
+    $GLOBALS['privacy_authorized'] = false;
+    privacy_check(
+        mbb_relation_map_v2_stamp($escaped) !== $stamp,
+        'escaped format revocation changes stamp',
+    );
+    $GLOBALS['privacy_authorized'] = true;
+}
+
 $body =
     '<div class="wp-block-mbb-component" id="map"><div class="mbb-teaching-body"><p>Author body</p><p class="mbb-component-params">RAW_CARRIER_CANARY</p></div></div>';
 $early = mbb_relation_map_v2_render($body, json_decode(mbb_component_json($attrs), true));

@@ -253,6 +253,14 @@ function mbb_relation_map_v2_render(string $html, array $attrs): string
 /** Non-public fingerprint for prepared exports. Re-resolves permissions, identity and pairs. */
 function mbb_relation_map_v2_stamp(string $serialized): string
 {
+    // Plain saved documents need no component registry. Inspect the block marker,
+    // never the raw format value: valid JSON may escape its slash or Unicode.
+    if (!preg_match('/<!--\s*wp:mbb\/component(?:\s|-->)/', $serialized)) {
+        return hash('sha256', mbb_component_json([]));
+    }
+    if (!function_exists('mbb_component_descriptors')) {
+        throw new RuntimeException('relation_map_component_registry');
+    }
     $parts = [];
     foreach (mbb_component_descriptors($serialized) as $id => $attrs) {
         if (($attrs->params->format ?? null) === 'relation-map/v2') {

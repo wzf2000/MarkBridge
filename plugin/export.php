@@ -11,6 +11,7 @@ require_once __DIR__ . '/includes/i18n.php';
 // Read-only saved-document export. No source-file reads and no article writes.
 require_once __DIR__ . '/includes/php-converter/ResourceImages.php';
 require_once __DIR__ . '/static-export.php';
+require_once __DIR__ . '/relation-map-documents.php';
 use MarkBridge\Probe\ResourceImages;
 
 function mbb_export_config(): array
