@@ -215,6 +215,56 @@ for (const raw of [
   now = 5001;
   assert.throws(() => total.check());
 
+  // Network preparation is one bounded stage, never a restarted execution clock.
+  for (const options of [
+    { stage: 'other' },
+    { stage: 'preparation', limits: { totalMs: 15001 } },
+    { stage: 'preparation', limits: { download: 15001 } },
+    { stage: 'preparation', limits: { hash: 1001 } },
+    { stage: 'preparation', limits: { transfer: 1501 } },
+    { limits: { totalMs: 5001 } },
+  ])
+    assert.throws(
+      () => new R.Context(options),
+      (e) => e.code === 'LIMIT_CONFIG',
+    );
+  now = 0;
+  const preparation = new R.Context({ stage: 'preparation', now: () => now });
+  await preparation.measure('download', async () => {
+    now += 3000;
+  });
+  await preparation.measure('hash', async () => {
+    now += 500;
+  });
+  await preparation.measure('download', async () => {
+    now += 3000;
+  });
+  assert.equal(preparation.remaining('download'), 8500);
+  now = 15001; // Includes both requests, hash, and the later frame navigation wait.
+  assert.throws(
+    () => preparation.check(),
+    (e) => e.code === 'TOTAL_LIMIT',
+  );
+  now = 0;
+  const hashPreparation = new R.Context({ stage: 'preparation', now: () => now });
+  await assert.rejects(
+    hashPreparation.measure('hash', async () => {
+      now = 1001;
+    }),
+    (e) => e.code === 'PHASE_LIMIT',
+  );
+  preparation.cancel();
+  assert.throws(
+    () => preparation.check(),
+    (e) => e.code === 'CANCELED',
+  );
+  const initialization = new R.Context({ limits: { totalMs: 5000 }, now: () => now });
+  now += 1501;
+  assert.throws(
+    () => initialization.check('transfer', 1501),
+    (e) => e.code === 'PHASE_LIMIT',
+  );
+
   const lru = new R.PublicCache();
   for (let i = 0; i < 5; i++)
     lru.commit('0.1.0', [

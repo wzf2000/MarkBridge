@@ -21,7 +21,7 @@ module.exports = (port) => {
       const bytes = Buffer.from(fixture.bundle, 'base64');
       response.writeHead(200, fixture.bundleHeaders);
       response.write(bytes.subarray(0, 12));
-      const timer = setTimeout(() => response.end(bytes.subarray(12)), 2800);
+      const timer = setTimeout(() => response.end(bytes.subarray(12)), 16000);
       response.on('close', () => clearTimeout(timer));
     } else if (pathname === new URL(fixture.provider.resources.bundleUrl).pathname) {
       count.bundle++;

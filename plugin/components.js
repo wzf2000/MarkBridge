@@ -571,7 +571,9 @@
       }
       slots.add(node);
       loading = true;
-      startupDeadline = performance.now() + budgets.startupMs;
+      startupDeadline =
+        performance.now() +
+        (resourceV2 ? MarkBridgeResources.LIMITS.preparationMs : budgets.startupMs);
       node.dataset.mbbComponentState = 'loading';
       launch.setAttribute('aria-expanded', 'true');
       close.setAttribute('aria-expanded', 'true');
@@ -581,17 +583,20 @@
       close.hidden = false;
       status.textContent = T('Verifying component resources…');
       abort = new AbortController();
-      startup = setTimeout(() => {
-        if (current === generation)
-          failure(T('Component initialization timed out.'), 'STARTUP_TIMEOUT');
-      }, budgets.startupMs);
+      startup = setTimeout(
+        () => {
+          if (current === generation)
+            failure(T('Component initialization timed out.'), 'STARTUP_TIMEOUT');
+        },
+        resourceV2 ? MarkBridgeResources.LIMITS.preparationMs : budgets.startupMs,
+      );
       try {
         let bytes, group;
         if (resourceV2) {
           resourceContext = new MarkBridgeResources.Context({
+            stage: 'preparation',
             signal: abort.signal,
             current: () => current === generation && node.isConnected,
-            limits: { totalMs: budgets.startupMs },
           });
           group = await MarkBridgeResources.load(config.provider.resources, {
             context: resourceContext,
@@ -633,7 +638,28 @@
           initialized = true;
           if (resourceV2) {
             try {
+              // Resource downloads and HTTP navigation share one bounded preparation.
+              // The fixed frame bootstrap can run before load; algorithm runs still
+              // require a later host grant. Initialization starts only now.
               resourceContext.check();
+              if (performance.now() > startupDeadline) throw Error('PREPARATION_TIMEOUT');
+            } catch {
+              failure(T('Component initialization timed out.'), 'STARTUP_TIMEOUT');
+              return;
+            }
+            try {
+              resourceContext.cancel();
+              resourceContext = new MarkBridgeResources.Context({
+                signal: abort.signal,
+                current: () => current === generation && node.isConnected,
+                limits: { totalMs: budgets.startupMs },
+              });
+              clearTimeout(startup);
+              startupDeadline = performance.now() + budgets.startupMs;
+              startup = setTimeout(() => {
+                if (current === generation)
+                  failure(T('Component initialization timed out.'), 'STARTUP_TIMEOUT');
+              }, budgets.startupMs);
               resourceContext.running = { phase: 'transfer', start: performance.now() };
               resourceTransferTimer = setTimeout(() => {
                 if (current === generation)
