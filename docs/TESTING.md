@@ -200,5 +200,5 @@ wp --path="$MARKBRIDGE_TEST_WORDPRESS_ROOT" eval-file tests/integration/document
 Repeat under each configured PHP/Node conversion backend. This creates and removes only its own
 synthetic author/draft; it does not initialize the reference index or touch other articles. Run the
 browser suite after building, with one worker, and inspect desktop/mobile screenshots separately.
-The 3.9 initial source preparation has only syntax/model validation: build, real database integration
-and browser/visual acceptance are pending and must not be inferred from those model checks.
+Current executed checks and pending acceptance are recorded in [VALIDATION](VALIDATION.md);
+model checks do not establish build, database, authenticated native editing or visual acceptance.

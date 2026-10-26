@@ -1,5 +1,15 @@
 # 当前验证范围
 
+## 3.9.0-rc.1：正文候选 SDK
+
+当前为源码候选，继承 Main 3.8.0 的知识图与课程接口，新增通用正文候选和受控 `File[]` 交接。已有正式版本和安装包保持原样。
+
+已运行：`node tests/document-tools.cjs`、`php tests/document-candidates.php`、相关 PHP／JavaScript 语法检查、定向格式检查、`git diff --check` 及本地化覆盖检查。会话模型覆盖关闭、迟到响应、编辑后撤销仍失效、取消保留工具草稿与应用不调用保存；PHP 模型覆盖 receipt 篡改／过期／会话、原文与组件指纹变化、封闭 JSON 字段、普通／转义重复键、query 覆盖隔离及最大正文的 JSON 转义预算。
+
+错误码契约区分 WordPress 核心与插件入口：核心先解析 HTTP JSON，语法无效或非法 UTF-8 返回原生 `rest_invalid_json`／400；合法 JSON 的非对象、未知／缺失／重复字段、类型及正文／原始请求容量错误返回 422；合法请求的未授权沿原权限回调返回 403，候选过期、失效或 receipt 无效返回 409。直接调用插件 parser 的模型会将无效 JSON 返回 422，不代表 HTTP 绕过了核心前置解析。真实 REST 用例已补这一区别，尚未执行。
+
+尚未运行：当前源码完整构建及包检查、真实 WordPress PHP／Node 双后端的 `tests/integration/document-candidates.php`、`tests/browser/document-tools.spec.cjs` 与文件交接的浏览器用例、桌面／手机截图人工审看。SDK 浏览器用例使用合成 REST，不能代替实际 WordPress 身份鉴权、原生编辑器保存重开或视觉验收。验证入口与所需独立实验环境见 [TESTING](TESTING.md#document-candidate-sdk)；不以模型通过或继承版本的旧证据填补这些缺项。
+
 ## 3.2.0-rc.5：固定审核执行 profile
 
 `tests/component-execution.cjs` 与 PHP 模型验证封闭 profile、默认拒WASM、恰一 Worker／一模块、扩展名／依赖／原预算一致；`tests/component-execution.php --core <只读核心目录>` 使用真实WP_REST_Request并捕获最终raw serve headers/body，检查登记与快照身份、v1／默认／旧最低版拒绝及执行载荷不得通过数据API返回。完整入口的旧早期检查继续保留，CI 在安装前串行执行新增真实请求类检查。
