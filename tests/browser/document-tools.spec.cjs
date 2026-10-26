@@ -110,17 +110,20 @@ test('document tool keeps its draft on cancel and explicitly applies without sav
   await page.getByRole('button', { name: 'Propose candidate' }).click();
   await page.getByRole('button', { name: 'Apply to editor' }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
-  expect(await page.evaluate(() => ({ applied, disposed, calls }))).toEqual({
-    applied: 1,
-    disposed: 1,
-    calls: [
-      'document-tools/capture',
-      'document-tools/preview',
-      'document-tools/preview',
-      'document-tools/preview',
-      'document-tools/preview',
-    ],
-  });
+  // The dialog hides synchronously; its close event disposes the tool afterward.
+  await expect
+    .poll(() => page.evaluate(() => ({ applied, disposed, calls })))
+    .toEqual({
+      applied: 1,
+      disposed: 1,
+      calls: [
+        'document-tools/capture',
+        'document-tools/preview',
+        'document-tools/preview',
+        'document-tools/preview',
+        'document-tools/preview',
+      ],
+    });
 });
 
 test('Main source application uses existing byte-preserving Undo and never saves', async ({
