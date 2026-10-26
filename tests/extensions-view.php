@@ -27,6 +27,21 @@ function wp_unslash($s)
 {
     return $s;
 }
+function rest_url($path)
+{
+    return 'http://127.0.0.1:' .
+        (getenv('MARKBRIDGE_TEST_BROWSER_PORT') ?: '8765') .
+        '/wp-json/' .
+        $path;
+}
+function wp_create_nonce($action)
+{
+    return 'synthetic-nonce';
+}
+function esc_url($url)
+{
+    return esc_attr($url);
+}
 function wp_nonce_field($s) {}
 function submit_button($s)
 {

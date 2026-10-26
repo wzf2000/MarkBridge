@@ -149,7 +149,7 @@ const taskEditor = (source = '- [ ] Browser task\n- ordinary\n', options = {}) =
 <script>
 const e = wp.element.createElement;
 // Stable resolved assets keep attribute edits from navigating the canvas iframe.
-const taskEditorSettings = {allowedBlockTypes:true,__unstableResolvedAssets:{styles:'<link rel="stylesheet" href="/wp-includes/css/dist/block-editor/style.min.css">',scripts:''}};
+const taskEditorSettings = {allowedBlockTypes:true,__unstableResolvedAssets:{styles:'<link rel="stylesheet" href="/wp-includes/css/dist/block-editor/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-library/style.min.css"><link rel="stylesheet" href="/wp-includes/css/dist/block-library/editor.min.css">',scripts:''}};
 ${
   options.history
     ? `wp.data.dispatch('core').addEntities([{kind:'postType',name:'mbb-activity-fixture',baseURL:'/fixture/entities',key:'id',rawAttributes:['content'],transientEdits:{blocks:true,selection:true},mergedEdits:{meta:true}}]);

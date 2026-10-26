@@ -33,6 +33,65 @@ vm.runInNewContext(
 );
 (async () => {
   const api = sandbox.module.exports;
+  const entries = [
+    { id: 'same', version: '0.2.0', title: 'Flow' },
+    { id: 'same', version: '0.7.0', title: 'Sequence' },
+    { id: 'same', version: '0.8.0', title: 'Class' },
+    { id: 'other', version: '1.0.0', title: 'Old title', authoringGroup: 'shared' },
+    { id: 'other', version: '2.0.0', title: 'New title', authoringGroup: 'shared' },
+    {
+      id: 'other',
+      version: '3.0.0',
+      title: 'Bad',
+      authoringGroup: 'shared',
+      status: 'version-incompatible',
+    },
+  ];
+  assert.deepEqual(
+    Array.from(api.latestComponentChoices(entries), (p) => p.version),
+    ['0.2.0', '0.7.0', '0.8.0', '2.0.0'],
+  );
+  const blocks = [
+    {
+      name: 'core/group',
+      innerBlocks: [
+        {
+          name: 'mbb/component',
+          clientId: 'flow',
+          attributes: { component: 'same', componentVersion: '0.2.0' },
+        },
+        {
+          name: 'mbb/component',
+          clientId: 'missing',
+          attributes: { component: 'gone', componentVersion: '1.0.0' },
+        },
+        {
+          name: 'mbb/component',
+          clientId: 'old',
+          attributes: { component: 'other', componentVersion: '1.0.0' },
+        },
+      ],
+    },
+  ];
+  const deps = api.componentDependencies(blocks, entries);
+  assert.equal(deps[0].status, 'current', 'Another variant was misclassified as an upgrade');
+  assert.equal(deps[1].status, 'missing');
+  assert.equal(deps[2].status, 'newer', 'A newer same-family version must not imply a migration');
+  sandbox.MarkBridgeComponentAuthors.register({
+    apiVersion: 1,
+    component: 'other',
+    componentVersion: '1.0.0',
+    supports: (params) => params.canUpgrade === true,
+    upgrade: { componentVersion: '2.0.0', migrate: (params) => params },
+  });
+  blocks[0].innerBlocks[2].attributes.params = { canUpgrade: true };
+  assert.equal(api.componentDependencies(blocks, entries)[2].status, 'upgrade');
+  blocks[0].innerBlocks[2].attributes.params.canUpgrade = false;
+  assert.equal(
+    api.componentDependencies(blocks, entries)[2].status,
+    'newer',
+    'Parameter-dependent author support stayed stale',
+  );
   const a = api.resolveComponent('fixture', '1.0.0');
   const b = api.resolveComponent('fixture', '1.0.0');
   assert.equal(calls.length, 1, 'same exact request did not deduplicate');

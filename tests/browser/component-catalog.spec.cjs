@@ -3,7 +3,7 @@ test.skip(
   !process.env.MARKBRIDGE_TEST_RUNTIME,
   'Needs the sanitized real WordPress editor runtime.',
 );
-async function open(page, plain = false) {
+async function open(page, plain = false, history = true) {
   await page.route('**/component-editor*', async (route) => {
     const response = await route.fetch();
     const html = (await response.text()).replace(
@@ -22,19 +22,23 @@ async function open(page, plain = false) {
   await page.route('**/catalog-fixture/catalog?*', async (route) => {
     const query = new URL(route.request().url()).searchParams;
     const pageNo = Number(query.get('page'));
-    const items = Array.from({ length: 40 }, (_, i) => ({
+    let items = Array.from({ length: 40 }, (_, i) => ({
       id: 'fixture',
       version: '1.' + i + '.0',
       title: 'Indexed fixture',
       fingerprint: 'a'.repeat(64),
+      purposes: ['Explore'],
     }));
+    if (query.get('view') === 'latest') items = items.slice(-1);
+    if (query.get('purpose') && query.get('purpose') !== 'Explore') items = [];
     await route.fulfill({
       json: {
         fingerprint: 'fixed-index',
         items: items.slice((pageNo - 1) * 20, pageNo * 20),
         page: pageNo,
         perPage: 20,
-        total: 40,
+        total: items.length,
+        purposes: ['Explore'],
         defaults: { fixture: '0.1.0' },
       },
     });
@@ -45,18 +49,19 @@ async function open(page, plain = false) {
       const path = url.searchParams.get('rest_route');
       if (path === '/catalog-fixture/catalog') {
         const pageNo = Number(url.searchParams.get('page'));
-        const items = Array.from({ length: 40 }, (_, i) => ({
+        let items = Array.from({ length: 40 }, (_, i) => ({
           id: 'fixture',
           version: '1.' + i + '.0',
           title: 'Indexed fixture',
         }));
+        if (url.searchParams.get('view') === 'latest') items = items.slice(-1);
         await route.fulfill({
           json: {
             fingerprint: 'fixed-index',
             items: items.slice((pageNo - 1) * 20, pageNo * 20),
             page: pageNo,
             perPage: 20,
-            total: 40,
+            total: items.length,
             defaults: { fixture: '0.1.0' },
           },
         });
@@ -71,7 +76,13 @@ async function open(page, plain = false) {
   await page.evaluate(() =>
     taskRegistry.dispatch('core/block-editor').selectBlock(taskBlocks[0].clientId),
   );
-  await expect(page.getByRole('button', { name: 'Next page', exact: true })).toBeEnabled();
+  await expect(
+    page.getByRole('combobox', { name: 'Registered teaching component', exact: true }),
+  ).toBeEnabled();
+  if (history) {
+    await page.getByRole('checkbox', { name: 'Choose a historical version', exact: true }).check();
+    await expect(page.getByRole('button', { name: 'Next page', exact: true })).toBeEnabled();
+  }
 }
 function provider(version) {
   return {
@@ -489,4 +500,101 @@ test('empty article self-check menu intersects lightweight capabilities and reso
   await panel.getByRole('button', { name: 'Insert activity', exact: true }).click();
   await expect.poll(() => page.evaluate(() => menuInsertions.length)).toBe(1);
   expect(requests).toEqual(['list', 'list', 'descriptor']);
+});
+
+test('latest discovery keeps the saved version and exposes history and nested missing dependencies', async ({
+  page,
+}, info) => {
+  const catalogRequests = [];
+  page.on('request', (request) => {
+    if (request.url().includes('/catalog?')) catalogRequests.push(request.url());
+  });
+  await open(page, false, false);
+  const select = page.getByRole('combobox', { name: 'Registered teaching component', exact: true });
+  await expect(select.locator('option')).toHaveCount(2);
+  await expect(select).toHaveValue('fixture@0.1.0');
+  await expect(select.locator('option[value="fixture@1.39.0"]')).toHaveCount(1);
+  expect(await page.evaluate(() => taskBlocks[0].attributes.componentVersion)).toBe('0.1.0');
+  await page
+    .getByRole('combobox', { name: 'Component purpose', exact: true })
+    .selectOption('Explore');
+  await expect(select).toHaveValue('fixture@0.1.0');
+  await page.evaluate(() => {
+    const missing = wp.blocks.createBlock('mbb/component', {
+      id: 'nested-missing',
+      version: 1,
+      component: 'missing-extension',
+      componentVersion: '9.0.0',
+      params: {},
+      title: 'Nested',
+    });
+    const group = wp.blocks.createBlock('core/group', {}, [missing]);
+    taskRegistry.dispatch('core/block-editor').insertBlocks(group);
+    taskRegistry.dispatch('core/block-editor').selectBlock(taskBlocks[0].clientId);
+  });
+  expect(
+    catalogRequests.filter((url) => new URL(url).searchParams.get('view') === 'all'),
+  ).toHaveLength(0);
+  const details = page.locator('.mbb-component-dependencies');
+  await details.locator('summary').click();
+  await expect(details).toContainText('missing-extension 9.0.0');
+  await expect(details).toContainText('Exact version is missing');
+  const loadedPages = catalogRequests.filter(
+    (url) => new URL(url).searchParams.get('view') === 'all',
+  ).length;
+  expect(loadedPages).toBe(2);
+  await details.locator('summary').click();
+  await details.locator('summary').click();
+  await expect(details).toContainText('missing-extension 9.0.0');
+  expect(
+    catalogRequests.filter((url) => new URL(url).searchParams.get('view') === 'all'),
+  ).toHaveLength(loadedPages);
+  await page.screenshot({ path: info.outputPath('component-discovery.png'), fullPage: true });
+  await page.getByRole('checkbox', { name: 'Choose a historical version', exact: true }).check();
+  await expect(select.locator('option[value="fixture@1.0.0"]')).toHaveCount(1);
+  expect(await page.evaluate(() => taskBlocks[0].attributes.componentVersion)).toBe('0.1.0');
+});
+
+test('current parameter changes refresh declared upgrade availability', async ({ page }) => {
+  await page.route('**/catalog-fixture/descriptor/**', async (route) => {
+    const version = new URL(route.request().url()).pathname.split('/').at(-1);
+    await route.fulfill({ json: { fingerprint: 'fixed-index', provider: provider(version) } });
+  });
+  await open(page, false, false);
+  await page.route('**/catalog-fixture/catalog?*', async (route) => {
+    await route.fulfill({
+      json: {
+        fingerprint: 'fixed-index',
+        page: 1,
+        perPage: 20,
+        total: 2,
+        items: ['0.1.0', '1.39.0'].map((version) => ({
+          id: 'fixture',
+          version,
+          title: 'Fixture',
+          status: 'available',
+        })),
+        defaults: { fixture: '0.1.0' },
+      },
+    });
+  });
+  await page.evaluate(() => {
+    MarkBridgeComponentAuthors.register({
+      apiVersion: 1,
+      component: 'fixture',
+      componentVersion: '0.1.0',
+      supports: (params) => params.value === 42,
+      upgrade: { componentVersion: '1.39.0', migrate: (params) => params },
+    });
+  });
+  const details = page.locator('.mbb-component-dependencies');
+  await details.locator('summary').click();
+  await expect(details).toContainText('Upgrade candidate available');
+  await page.evaluate(() =>
+    taskRegistry.dispatch('core/block-editor').updateBlockAttributes(taskBlocks[0].clientId, {
+      params: { value: 43, behavior: 'complete' },
+    }),
+  );
+  await expect(details).toContainText('A newer version exists; no migration is declared');
+  await expect(details).not.toContainText('Upgrade candidate available');
 });

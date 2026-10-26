@@ -716,6 +716,8 @@ final class Teaching
         'native-code' => [],
         'preformatted' => [],
         'group' => [],
+        'columns' => [],
+        'column' => [],
         'details' => [],
         'buttons' => [],
         'button' => [],
@@ -1535,7 +1537,7 @@ final class Teaching
             } else {
                 if (
                     !preg_match(
-                        '/^:::mbb:v([12]) (identity|collapse|steps|step|code-compare|component|code-tabs|native-code|preformatted|group|details|buttons|button|adapter|object|statement|bibliography|image|gallery) (\{.*\})$/D',
+                        '/^:::mbb:v([12]) (identity|collapse|steps|step|code-compare|component|code-tabs|native-code|preformatted|group|columns|column|details|buttons|button|adapter|object|statement|bibliography|image|gallery) (\{.*\})$/D',
                         $line,
                         $m,
                     )
@@ -1816,6 +1818,25 @@ final class Teaching
                             self::fail(
                                 'ADAPTER_STRUCTURE',
                                 'A button group requires 1–32 direct link buttons',
+                            );
+                        }
+                        if (
+                            $kind === 'columns' &&
+                            (count($inner) > 6 ||
+                                array_filter(
+                                    $inner,
+                                    fn($child) => $child['name'] !== 'core/column',
+                                ))
+                        ) {
+                            self::fail(
+                                'ADAPTER_STRUCTURE',
+                                'Columns may contain only 0–6 direct column blocks',
+                            );
+                        }
+                        if ($kind === 'column' && $parent !== 'columns') {
+                            self::fail(
+                                'ADAPTER_STRUCTURE',
+                                'A column must be a direct child of columns',
                             );
                         }
                         if ($kind === 'button' && ($parent !== 'buttons' || $inner)) {

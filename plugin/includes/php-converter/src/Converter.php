@@ -1028,6 +1028,17 @@ final class Converter
         if (($native = BlockAdapters::kind($name)) !== null) {
             $a = BlockAdapters::nativeAttrs($native, $attrs);
             $comment = [];
+            if (in_array($native, ['columns', 'column'], true)) {
+                if (isset($a['verticalAlignment'])) {
+                    $comment['verticalAlignment'] = $a['verticalAlignment'];
+                }
+                if ($native === 'columns' && !$a['isStackedOnMobile']) {
+                    $comment['isStackedOnMobile'] = false;
+                }
+                if ($native === 'column' && isset($a['width'])) {
+                    $comment['width'] = $a['width'];
+                }
+            }
             if ($native === 'group' && $a['tagName'] !== 'div') {
                 $comment['tagName'] = $a['tagName'];
             }
@@ -1037,7 +1048,11 @@ final class Converter
             if (isset($a['anchor'])) {
                 $comment['anchor'] = $a['anchor'];
             }
-            if (BlockAdapters::textKind($native) && array_key_exists('className', $a)) {
+            if (
+                (BlockAdapters::textKind($native) ||
+                    in_array($native, ['columns', 'column'], true)) &&
+                array_key_exists('className', $a)
+            ) {
                 $comment['className'] = $a['className'];
             }
             if ($native === 'group') {

@@ -4,6 +4,8 @@ const nativeNames = {
   'native-code': 'core/code',
   preformatted: 'core/preformatted',
   group: 'core/group',
+  columns: 'core/columns',
+  column: 'core/column',
   details: 'core/details',
   buttons: 'core/buttons',
   button: 'core/button',
@@ -47,7 +49,7 @@ export function adapterURL(value, fail) {
   return value;
 }
 export function adapterAnchor(value, fail) {
-  if (typeof value !== 'string' || !/^(?:[A-Za-z][A-Za-z0-9_-]{0,63})?$/.test(value))
+  if (typeof value !== 'string' || !/^(?:[A-Za-z][A-Za-z0-9_-]{0,63})?(?![\s\S])/.test(value))
     fail(
       'ADAPTER_ANCHOR',
       'An anchor must begin with a letter and contain 1–64 ASCII letters, digits, underscores, or hyphens',
@@ -157,6 +159,8 @@ export function nativeAttributes(kind, attrs, fail, source = false) {
     'native-code': ['anchor', 'className', source ? 'text' : 'content'],
     preformatted: ['anchor', 'className', source ? 'text' : 'content'],
     group: ['tagName', 'anchor', 'ariaLabel', 'className', 'layout'],
+    columns: ['verticalAlignment', 'isStackedOnMobile', 'anchor', 'className'],
+    column: ['verticalAlignment', 'width', 'anchor', 'className'],
     details: ['summary', 'showContent', 'anchor', ...(!source ? ['name'] : [])],
     buttons: ['anchor', 'layout'],
     button: [
@@ -201,6 +205,39 @@ export function nativeAttributes(kind, attrs, fail, source = false) {
       out.className = attrs.className;
     }
   }
+  if (kind === 'columns' || kind === 'column') {
+    if (Object.hasOwn(attrs, 'className')) {
+      if (
+        typeof attrs.className !== 'string' ||
+        attrs.className.length > 200 ||
+        (attrs.className !== '' &&
+          !/^[A-Za-z][A-Za-z0-9_-]*(?: [A-Za-z][A-Za-z0-9_-]*)*(?![\s\S])/.test(attrs.className))
+      )
+        fail('ADAPTER_ATTRIBUTES', 'Invalid native block class names');
+      out.className = attrs.className;
+    }
+    if (Object.hasOwn(attrs, 'verticalAlignment')) {
+      if (!['top', 'center', 'bottom'].includes(attrs.verticalAlignment))
+        fail('ADAPTER_ATTRIBUTES', 'Column alignment must be top, center or bottom');
+      out.verticalAlignment = attrs.verticalAlignment;
+    }
+    if (kind === 'columns') {
+      if (Object.hasOwn(attrs, 'isStackedOnMobile') && typeof attrs.isStackedOnMobile !== 'boolean')
+        fail('ADAPTER_ATTRIBUTES', 'Mobile column stacking must be boolean');
+      out.isStackedOnMobile = attrs.isStackedOnMobile ?? true;
+    } else if (Object.hasOwn(attrs, 'width')) {
+      if (
+        typeof attrs.width !== 'string' ||
+        !/^(?:(?:0|[1-9][0-9]?)(?:\.[0-9]{1,3})?|100(?:\.0{1,3})?)%(?![\s\S])/.test(attrs.width) ||
+        parseFloat(attrs.width) <= 0
+      )
+        fail(
+          'ADAPTER_ATTRIBUTES',
+          'Column width must be a percentage greater than 0 and at most 100',
+        );
+      out.width = attrs.width;
+    }
+  }
   if (kind === 'group') {
     out.tagName = Object.hasOwn(attrs, 'tagName') ? attrs.tagName : 'div';
     if (!['div', 'section'].includes(out.tagName))
@@ -226,7 +263,8 @@ export function nativeAttributes(kind, attrs, fail, source = false) {
         fail('ADAPTER_ATTRIBUTES', 'Groups only support flow or constrained layout');
       out.layout = { type: attrs.layout.type };
     }
-  } else if (nativeTextKind(kind)) {
+  } else if (nativeTextKind(kind) || kind === 'columns' || kind === 'column') {
+    // Closed native leaves and columns have no other fields.
     // Plain native leaves have no other fields.
   } else if (kind === 'details') {
     if (Object.hasOwn(attrs, 'name') && attrs.name !== '')
@@ -701,6 +739,8 @@ export function validateAdaptersSerialized(serialized, fail, parse = JSON.parse)
           'native-code': ['anchor', 'className'],
           preformatted: ['anchor', 'className'],
           group: ['tagName', 'anchor', 'ariaLabel', 'className', 'layout'],
+          columns: ['verticalAlignment', 'isStackedOnMobile', 'anchor', 'className'],
+          column: ['verticalAlignment', 'width', 'anchor', 'className'],
           details: ['showContent', 'anchor', 'name'],
           buttons: ['anchor', 'layout'],
           button: ['anchor', 'tagName', 'type'],
@@ -708,7 +748,7 @@ export function validateAdaptersSerialized(serialized, fail, parse = JSON.parse)
         [],
         fail,
       );
-      if (kind === 'group') nativeAttributes(kind, a, fail, true);
+      if (['group', 'columns', 'column'].includes(kind)) nativeAttributes(kind, a, fail, true);
       if (nativeTextKind(kind)) {
         nativeAttributes(kind, { ...a, text: '' }, fail, true);
         const end = serialized.indexOf('<!-- /wp:' + m[1] + ' -->', m.index + m[0].length);

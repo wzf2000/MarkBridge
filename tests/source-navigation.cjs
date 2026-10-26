@@ -46,6 +46,28 @@ for (const item of fixtures) {
     assert(['exact', 'coarse'].includes(range.precision));
   }
 }
+const columnsSource =
+  ':::mbb:v1 columns {}\n\n:::mbb:v1 column {}\n\nLeft.\n\n:::mbb:end\n\n:::mbb:v1 column {}\n\nRight.\n\n:::mbb:end\n\n:::mbb:end\n';
+const columnsBlocks = [
+  {
+    name: 'core/columns',
+    innerBlocks: [
+      { name: 'core/column', innerBlocks: [{ name: 'core/paragraph' }] },
+      { name: 'core/column', innerBlocks: [{ name: 'core/paragraph' }] },
+    ],
+  },
+];
+const columnsMap = navigate(columnsSource, columnsBlocks);
+assert.deepEqual(
+  columnsMap.ranges.map((range) => range.blockPath),
+  [[0], [0, 0], [0, 0, 0], [0, 1], [0, 1, 0]],
+);
+assert.equal(columnsMap.unmapped.length, 0);
+assert.deepEqual(
+  php(columnsSource, wordpressShape(columnsBlocks)),
+  columnsMap,
+  'Column source provenance must match both backends',
+);
 assert.equal(navigate('x\0y', []).unmapped[0].reason, 'invalid-input');
 assert.equal(navigate('\ud800', []).unmapped[0].reason, 'invalid-input');
 assert.equal(navigate('x'.repeat(262145), []).unmapped[0].reason, 'invalid-input');

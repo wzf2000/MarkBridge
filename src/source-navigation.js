@@ -4,6 +4,8 @@ const NATIVE = {
   'native-code': 'core/code',
   preformatted: 'core/preformatted',
   group: 'core/group',
+  columns: 'core/columns',
+  column: 'core/column',
   image: 'core/image',
   gallery: 'core/gallery',
   details: 'core/details',

@@ -259,6 +259,8 @@ function mbb_html_allowed($blocks)
             'core/code',
             'core/preformatted',
             'core/group',
+            'core/columns',
+            'core/column',
             'core/details',
             'core/buttons',
             'core/button',

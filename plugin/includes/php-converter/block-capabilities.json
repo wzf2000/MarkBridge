@@ -151,5 +151,17 @@
   "core/preformatted": {
     "anchor": "string",
     "className": "string"
+  },
+  "core/columns": {
+    "verticalAlignment": "string",
+    "isStackedOnMobile": "boolean",
+    "anchor": "string",
+    "className": "string"
+  },
+  "core/column": {
+    "verticalAlignment": "string",
+    "width": "string",
+    "anchor": "string",
+    "className": "string"
   }
 }

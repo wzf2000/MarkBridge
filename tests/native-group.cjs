@@ -163,6 +163,133 @@ try {
     assert.throws(() => w.MBB.importDocument(bad, 'bad-group'));
     assert.equal(php({ mode: 'markdown', source: bad, documentId: 'bad-group' }).ok, false);
   }
+  // Closed native columns reuse the same recursive pair and KSES contracts.
+  const column = (attrs = {}, children = []) =>
+    w.wp.blocks.createBlock('core/column', attrs, children);
+  const para = (text) => w.wp.blocks.createBlock('core/paragraph', { content: text });
+  const columnCases = [
+    [{}, []],
+    [{}, [column()]],
+    [
+      {},
+      [
+        column({ width: '40%' }, [para('Column first.')]),
+        column({ width: '60%' }, [para('Column second.')]),
+      ],
+    ],
+    ...['top', 'center', 'bottom'].map((verticalAlignment) => [
+      { verticalAlignment },
+      [column({ verticalAlignment }, [para('Aligned.')])],
+    ]),
+    [
+      { anchor: 'columns-anchor', className: 'learning-columns compact', isStackedOnMobile: false },
+      [
+        column(
+          {
+            width: '33.333%',
+            verticalAlignment: 'bottom',
+            anchor: 'column-anchor',
+            className: 'learning-column',
+          },
+          [para('Sized.')],
+        ),
+      ],
+    ],
+    [{ isStackedOnMobile: true }, [column({ width: '100%' })]],
+    [{}, [column({ width: '0.125%' })]],
+    [{}, Array.from({ length: 6 }, () => column())],
+  ];
+  for (const [attrs, children] of columnCases) {
+    const block = w.wp.blocks.createBlock('core/columns', attrs, children);
+    const serialized = w.wp.blocks.serialize([block]);
+    const source = w.MBB.toMarkdown([block], { origin: 'markdown_import' });
+    const doc = roundtrip(source);
+    assert.equal(doc.serialized, serialized, 'Columns must match genuine core serialization');
+    const reversed = php(serialized, true);
+    assert(reversed.ok, JSON.stringify(reversed));
+    assert.equal(reversed.document.serialized, serialized);
+  }
+  const columnSource =
+    ':::mbb:v1 columns {"isStackedOnMobile":false}\n\n:::mbb:v1 column {"width":"40%"}\n\nColumn original.\n\n:::mbb:v1 group {}\n\nNested group.\n\n:::mbb:end\n\n:::mbb:end\n\n:::mbb:v1 column {"width":"60%"}\n\n![Nested diagram](https://example.invalid/a.png)\n\n:::mbb:end\n\n:::mbb:end\n';
+  const columnBase = roundtrip(columnSource);
+  const columnBlocks = w.wp.blocks.parse(columnBase.serialized);
+  flatten(columnBlocks).find((b) => b.name === 'core/paragraph').attributes.content =
+    'Column edited.';
+  const columnEdited = w.wp.blocks.serialize(columnBlocks);
+  const columnExport = w.MBB.exportDocument(columnBase, columnEdited);
+  const columnPHP = php({
+    mode: 'blocks',
+    base: columnBase,
+    serialized: columnEdited,
+    documentId: columnBase.documentId,
+  });
+  assert(columnPHP.ok, JSON.stringify(columnPHP));
+  assert.equal(columnPHP.document.source, columnExport);
+  assert(columnExport.includes('Column edited'));
+  const columnRewrite = w.MBB.rewriteDocumentImages(columnBase, mappings);
+  const rewritePHP = php({
+    mode: 'resource_images',
+    base: columnBase,
+    mappings,
+    documentId: columnBase.documentId,
+  });
+  assert(rewritePHP.ok, JSON.stringify(rewritePHP));
+  assert.equal(rewritePHP.document.source, columnRewrite.source);
+  for (const width of [
+    '0%',
+    '101%',
+    '-1%',
+    '40px',
+    'calc(50%)',
+    '33.3333%',
+    '40%;color:red',
+    '40%\n',
+    '40%\r',
+    '40%\u2028',
+    40,
+    null,
+    '',
+  ]) {
+    const bad =
+      ':::mbb:v1 columns {}\n:::mbb:v1 column ' +
+      JSON.stringify({ width }) +
+      '\n:::mbb:end\n:::mbb:end\n';
+    assert.throws(() => w.MBB.importDocument(bad, 'bad-width'));
+    assert.equal(php({ mode: 'markdown', source: bad, documentId: 'bad-width' }).ok, false);
+  }
+  for (const bad of [
+    ...['col\n', 'col\r', 'col\u2028'].map(
+      (anchor) => ':::mbb:v1 columns ' + JSON.stringify({ anchor }) + '\n:::mbb:end\n',
+    ),
+    ':::mbb:v1 column {}\nBody.\n:::mbb:end\n',
+    ':::mbb:v1 columns {}\nDirect paragraph.\n:::mbb:end\n',
+    ...['compact\n', 'compact\r', 'compact\u2028'].map(
+      (className) => ':::mbb:v1 columns ' + JSON.stringify({ className }) + '\n:::mbb:end\n',
+    ),
+    ':::mbb:v1 columns {}\n' + ':::mbb:v1 column {}\n:::mbb:end\n'.repeat(7) + ':::mbb:end\n',
+    ':::mbb:v1 columns {"verticalAlignment":"stretch"}\n:::mbb:end\n',
+    ':::mbb:v1 columns {"isStackedOnMobile":"false"}\n:::mbb:end\n',
+    ':::mbb:v1 columns {"anchor":"dup-column"}\n:::mbb:v1 column {"anchor":"dup-column"}\n:::mbb:end\n:::mbb:end\n',
+    ':::mbb:v1 columns {}\n:::mbb:v1 column {"style":{"width":"40%"}}\n:::mbb:end\n:::mbb:end\n',
+    ':::mbb:v1 columns {}\n:::mbb:v1 column {}\n'.repeat(17) +
+      ':::mbb:end\n:::mbb:end\n'.repeat(17),
+  ]) {
+    assert.throws(() => w.MBB.importDocument(bad, 'bad-columns'));
+    assert.equal(php({ mode: 'markdown', source: bad, documentId: 'bad-columns' }).ok, false);
+  }
+  for (const raw of [
+    columnBase.serialized.replace('flex-basis:40%', 'flex-basis:41%'),
+    columnBase.serialized.replace('flex-basis:40%', 'flex-basis:40%;color:red'),
+    columnBase.serialized.replace('style="flex-basis:40%"', 'onclick="alert(1)"'),
+    columnBase.serialized.replace('"width":"40%"', '"width":"40%","style":{}'),
+    columnBase.serialized.replace('wp-block-columns is-not-stacked-on-mobile', 'wp-block-columns'),
+  ]) {
+    assert.throws(() => w.MBB.exportDocument(columnBase, raw));
+    assert.equal(php(raw, true).ok, false);
+  }
+  console.log(
+    'Native columns: genuine core shells, 0–6 columns, closed percentages/alignment/stacking, nesting, PHP/Node editing/reopen/image rewrite and raw-style refusals passed',
+  );
   if (process.env.MARKBRIDGE_WORDPRESS_SOURCE) {
     const group = (body) =>
       '<!-- wp:group -->\n<div class="wp-block-group">' + body + '</div>\n<!-- /wp:group -->';

@@ -52,6 +52,9 @@ try {
     wp_set_current_user($user);
     $source =
         ":::mbb:v1 group {\"tagName\":\"section\",\"anchor\":\"native-group\",\"className\":\"native-group-fixture\",\"ariaLabel\":\"Group fixture\",\"layout\":{\"type\":\"constrained\"}}\n\nGroup original paragraph.\n\n\$x^2$.\n\n```js\nconst x = 1;\n```\n\n:::mbb:v1 details {\"summary\":\"Group details\"}\n\nNested explanation.\n\n:::mbb:end\n\n:::mbb:end\n";
+    $source =
+        substr($source, 0, -strlen(":::mbb:end\n")) .
+        ":::mbb:v1 columns {\"isStackedOnMobile\":false}\n\n:::mbb:v1 column {\"width\":\"40%\",\"anchor\":\"saved-column\"}\n\nColumn original paragraph.\n\n:::mbb:end\n\n:::mbb:v1 column {\"width\":\"60%\"}\n\nSecond column.\n\n:::mbb:end\n\n:::mbb:end\n\n:::mbb:end\n";
     $request = [
         'post_id' => 0,
         'documentId' => 'NativeGroup' . bin2hex(random_bytes(5)),
@@ -69,6 +72,11 @@ try {
     $baseline = get_post($id)->post_content;
     ngs_assert(parse_blocks($baseline)[0]['blockName'] === 'core/group', 'Group identity lost.');
     ngs_assert(!str_contains($baseline, 'is-layout-'), 'Invented render-time layout classes.');
+    ngs_assert(
+        str_contains($baseline, '<!-- wp:columns ') &&
+            str_contains($baseline, 'style="flex-basis:40%"'),
+        'Native columns or fixed width lost.',
+    );
     ngs_assert(get_post($id)->post_content_filtered === $source, 'Original source changed.');
     $reopened = mbb_convert([
         'mode' => 'paired_restore',
@@ -86,7 +94,11 @@ try {
         'comment_approved' => 1,
     ]);
     update_post_meta($id, '_native_group_fixture_note', 'Synthetic private note');
-    $edited = str_replace('Group original paragraph.', 'Group edited paragraph.', $baseline);
+    $edited = str_replace(
+        ['Group original paragraph.', 'Column original paragraph.'],
+        ['Group edited paragraph.', 'Column edited paragraph.'],
+        $baseline,
+    );
     ngs_ok(
         ngs_call('/wp/v2/posts/' . $id, [
             'content' => $edited,

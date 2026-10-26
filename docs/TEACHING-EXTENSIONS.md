@@ -115,8 +115,10 @@ npm run package:source
 
 先检测 `markbridge_teaching_supports_component_catalog()`。受信扩展调用
 `markbridge_register_teaching_component_catalog($id, $index, $resolver)`，每类型只声明一次。
-`$index` 是闭合的 `title`、`defaultVersion`、`versions`；每版本项含 `version`、`title`、
-`fingerprint`，可声明 `activityVersion:1`。默认版本必须是版本列表首项。同类型跨新旧接口的第一次成功登记决定默认值；
+新增呈现字段前，先用 `function_exists` 确认 `markbridge_teaching_supports_component_catalog_metadata` 存在且调用返回 `true`；仅支持原目录接口的旧宿主应继续接收原字段，不能靠包版本字符串猜测。
+
+`$index` 必须包含 `title`、`defaultVersion`、`versions`，可选 `purposes`；每版本项含 `version`、`title`、
+`fingerprint`，可声明 `activityVersion:1`、`purposes` 与 `authoringGroup`。默认版本必须是版本列表首项。同类型跨新旧接口的第一次成功登记决定默认值；
 目录翻页、安装新版本、重开文章不会升级已有精确版本。
 
 每项 `fingerprint` 由 `markbridge_teaching_component_fingerprint($id, $provider)` 生成。
@@ -133,7 +135,7 @@ npm run package:source
 | 范围         | 预算与超额行为                                                                                |
 | ------------ | --------------------------------------------------------------------------------------------- |
 | 新旧联合目录 | 256 精确键、64 类型、每类型 64 版本；总索引 128 KiB；单声明 32 KiB；整笔拒绝，不部分登记      |
-| 目录响应     | 默认每页 20、最多 50 项、32 KiB；只交付轻量项，不执行 resolver                                |
+| 目录响应     | 默认每页 20、最多 50 项、32 KiB；只交付轻量项；`view=all` 不执行 resolver，`latest` 核验候选  |
 | 按需描述     | 单个公开描述 64 KiB；请求内最多 256 个解析键及 4 MiB 描述缓存，失败也记忆；复用时复核实际资源 |
 | 每篇文章     | 最多 32 个不同精确键、公开描述合计 512 KiB；重复实例复用版本；原活动／预览／参数预算保持      |
 | 多章出版     | 每章沿文章预算，总计最多 256 键／4 MiB；沿原章节、投影、资源及快照总预算                      |
@@ -146,10 +148,28 @@ renderer 文件、返回树及出版指纹仍执行原校验。新索引没有�
 
 后台使用 WordPress 原有选择与翻页控件；打开已有块会直接按其属性解析，无需先打开选择器。
 精确描述通过有编辑权限的私有 REST 请求获取：`GET mbb/v2/components/catalog` 与
-`GET mbb/v2/components/descriptor/{component}/{version}`。前者支持 `page`、`per_page`、`type`；
+`GET mbb/v2/components/descriptor/{component}/{version}`。前者支持 `page`、`per_page`、`type`、`view=all|latest` 和 `purpose`；
 后者必须携带目录的 `fingerprint`。可带 `post_id`，服务器另查文章编辑权限。
 响应不包含文件路径或工厂，且 `private, no-store`；目录变更须刷新。
 作者异步选择同时核对当前文章、选区、块属性／草稿代次与目录指纹，迟到结果不能应用到新草稿。
+
+作者选择器默认展示每个用途分组的最新可用精确版本，历史版本需显式开启；已保存版本始终保留。
+`purposes` 是 1–6 个不重复的用途名称，每项最多 120 字节；版本项可覆盖类型级用途。
+`authoringGroup` 是同类型内稳定的展示分组标识（小写字母开头，最多 64 个字母、数字或连字符），
+可用于将名称不同但用途相同的版本合并。未声明时按类型与标题分组，保守保留不同图形／用途的入口；
+不能把同 ID 的流程图、时序图和类图当成彼此的升级。旧登记按自测／图形阅读能力归类；缺少这些轻量数据时明确显示用途未标注，并保留在任一用途筛选结果中，以免隐藏旧索引的图形或其他变体。
+旧直接提供者登记也可声明这两个呈现字段。用途和展示分组不改变 portable definition pin、参数或保存格式。
+
+冻结的旧登记不必改写源码：受信扩展可通过 `markbridge_teaching_component_catalog_metadata` 过滤器接收原呈现字段、组件 ID 与精确版本，返回仅包含 `purposes`／`authoringGroup` 的元数据。值沿用上述闭合校验，回调应保持确定；无效返回、异常或合并后超过呈现预算时保留原目录。结果参与目录 fingerprint，但不进入 portable definition pin 或登记准入。
+
+`view=latest` 先按类型与用途过滤并按展示分组分页，仅在现有解析预算内从高到低核验本页候选，返回资源与协议检查通过的版本。
+`total` 是过滤后的展示分组数，即使本页没有已核验版本也可继续翻页；`unverifiedGroups` 表示本页未能核验任何可用版本的分组数，包含解析失败与预算不足；界面明确提示改用历史列表查看，
+不能将空结果解释为已证明未安装组件。`view=all` 保留原顺序和不加载描述的契约。
+
+当前文章的组件清单首次展开才请求完整轻量目录，同一文章的多个选择器复用该快照；文章引用变化会刷新明细。清单递归统计嵌套区块，显示精确版本和每个实例的定位入口。
+缺失版本不会替换；仅原精确版本作者接口明确声明 `upgrade` 且目标可用时提示升级候选。
+同展示分组的较新版本仅为发现信息，不推断迁移能力。参数准备、应用及原生撤销仍由现有作者流程完成，
+清单不会改写正文，也不代表全站依赖扫描。
 
 3.4.0-rc.2 起，插入自测菜单只列出作者模板与轻量目录中 `activityVersion:1` 精确键的交集。
 打开菜单最多读取六页、每页 50 项，作者键都已找到即可停止；页字节超额时改用最多十三页、

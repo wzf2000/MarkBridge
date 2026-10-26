@@ -21,6 +21,11 @@ function markbridge_teaching_supports_component_catalog(): bool
 {
     return true;
 }
+/** Optional display metadata was introduced after the original lightweight catalog API. */
+function markbridge_teaching_supports_component_catalog_metadata(): bool
+{
+    return true;
+}
 function mbb_component_canonical(mixed $value): mixed
 {
     if (is_object($value)) {
@@ -82,6 +87,42 @@ function markbridge_teaching_component_fingerprint(string $id, array $provider):
     }
     return hash('sha256', $json);
 }
+/** Presentation metadata is intentionally outside the portable definition fingerprint. */
+function mbb_component_purposes(array $data): array
+{
+    if (isset($data['purposes'])) {
+        return $data['purposes'];
+    }
+    if (($data['activityVersion'] ?? null) === 1) {
+        return ['Self checks'];
+    }
+    if (isset($data['readerMode'])) {
+        return ['Diagrams and relationships'];
+    }
+    return ['Unclassified purpose'];
+}
+function mbb_component_purpose_unknown(array $data): bool
+{
+    return !isset($data['purposes']) &&
+        ($data['activityVersion'] ?? null) !== 1 &&
+        !isset($data['readerMode']);
+}
+function mbb_component_valid_purposes(mixed $purposes): bool
+{
+    return is_array($purposes) &&
+        array_is_list($purposes) &&
+        count($purposes) > 0 &&
+        count($purposes) <= 6 &&
+        count(array_unique($purposes, SORT_REGULAR)) === count($purposes) &&
+        count(
+            array_filter(
+                $purposes,
+                static fn($value) => is_string($value) &&
+                    trim($value) !== '' &&
+                    strlen($value) <= 120,
+            ),
+        ) === count($purposes);
+}
 function mbb_component_index_entries(): array
 {
     $entries = [];
@@ -92,16 +133,61 @@ function mbb_component_index_entries(): array
             'title' => $p['title'],
             'fingerprint' => markbridge_teaching_component_fingerprint($p['id'], $p),
             'status' => $p['status'],
+            'purposes' => mbb_component_purposes($p),
+            'purposeUnknown' => mbb_component_purpose_unknown($p),
+            ...isset($p['authoringGroup']) ? ['authoringGroup' => $p['authoringGroup']] : [],
             ...isset($p['activityVersion']) ? ['activityVersion' => $p['activityVersion']] : [],
         ];
     }
     foreach ($GLOBALS['mbb_component_indexes'] ?? [] as $id => $index) {
         foreach ($index['versions'] as $v) {
-            $entries[$id . '@' . $v['version']] = ['id' => $id, 'status' => 'indexed'] + $v;
+            $entries[$id . '@' . $v['version']] =
+                [
+                    'id' => $id,
+                    'status' => 'indexed',
+                    'purposes' => mbb_component_purposes($v + $index),
+                    'purposeUnknown' => mbb_component_purpose_unknown($v + $index),
+                ] + $v;
         }
     }
     // Registration order is the default order; do not sort versions semantically.
     return $entries;
+}
+/** Display overlays never affect registration admission or portable resource definition pins. */
+function mbb_component_catalog_entries(): array
+{
+    $entries = mbb_component_index_entries();
+    $display = $entries;
+    foreach ($display as &$entry) {
+        $baseline = array_intersect_key($entry, array_flip(['purposes', 'authoringGroup']));
+        try {
+            $metadata = apply_filters(
+                'markbridge_teaching_component_catalog_metadata',
+                $baseline,
+                $entry['id'],
+                $entry['version'],
+            );
+            if (
+                !is_array($metadata) ||
+                array_diff(array_keys($metadata), ['purposes', 'authoringGroup']) ||
+                (array_key_exists('purposes', $metadata) &&
+                    !mbb_component_valid_purposes($metadata['purposes'])) ||
+                (array_key_exists('authoringGroup', $metadata) &&
+                    (!is_string($metadata['authoringGroup']) ||
+                        !preg_match('/^[a-z][a-z0-9-]{0,63}$/D', $metadata['authoringGroup'])))
+            ) {
+                continue;
+            }
+            if (isset($metadata['purposes']) && $metadata['purposes'] !== $entry['purposes']) {
+                $entry['purposeUnknown'] = false;
+            }
+            $entry = array_replace($entry, $metadata);
+        } catch (Throwable) {
+            // A broken optional display callback cannot invalidate a frozen registration.
+        }
+    }
+    unset($entry);
+    return mbb_component_index_bytes($display) <= 131072 ? $display : $entries;
 }
 function mbb_component_index_has(string $id, string $version): bool
 {
@@ -138,6 +224,9 @@ function mbb_component_index_definition_fits(array $p): bool
         'version' => $p['version'],
         'title' => $p['title'],
         'status' => $p['status'],
+        'purposes' => mbb_component_purposes($p),
+        'purposeUnknown' => mbb_component_purpose_unknown($p),
+        ...isset($p['authoringGroup']) ? ['authoringGroup' => $p['authoringGroup']] : [],
         ...isset($p['activityVersion']) ? ['activityVersion' => $p['activityVersion']] : [],
         'fingerprint' => markbridge_teaching_component_fingerprint($p['id'], $p),
     ];
@@ -156,8 +245,9 @@ function markbridge_register_teaching_component_catalog(
         if (
             !preg_match('/^[a-z][a-z0-9-]{0,63}$/D', $id) ||
             isset($GLOBALS['mbb_component_indexes'][$id]) ||
-            array_diff(array_keys($index), ['title', 'defaultVersion', 'versions']) ||
-            count($index) !== 3 ||
+            array_diff(array_keys($index), ['title', 'defaultVersion', 'versions', 'purposes']) ||
+            array_diff(['title', 'defaultVersion', 'versions'], array_keys($index)) ||
+            (isset($index['purposes']) && !mbb_component_valid_purposes($index['purposes'])) ||
             !is_string($index['title']) ||
             trim($index['title']) === '' ||
             strlen($index['title']) > 800 ||
@@ -180,8 +270,14 @@ function markbridge_register_teaching_component_catalog(
                     'title',
                     'fingerprint',
                     'activityVersion',
+                    'authoringGroup',
+                    'purposes',
                 ]) ||
                 (array_key_exists('activityVersion', $v) && $v['activityVersion'] !== 1) ||
+                (isset($v['purposes']) && !mbb_component_valid_purposes($v['purposes'])) ||
+                (isset($v['authoringGroup']) &&
+                    (!is_string($v['authoringGroup']) ||
+                        !preg_match('/^[a-z][a-z0-9-]{0,63}$/D', $v['authoringGroup']))) ||
                 !is_string($v['version']) ||
                 !preg_match('/^\d+\.\d+\.\d+$/D', $v['version']) ||
                 !is_string($v['title']) ||
@@ -233,7 +329,7 @@ function mbb_component_registry_fingerprint(): string
             mbb_component_canonical([
                 'entries' => array_map(
                     static fn($v) => array_diff_key($v, ['status' => true]),
-                    mbb_component_index_entries(),
+                    mbb_component_catalog_entries(),
                 ),
                 'indexes' => $GLOBALS['mbb_component_indexes'] ?? [],
                 'defaults' => mbb_component_default_versions(),
@@ -480,20 +576,68 @@ function mbb_component_catalog_page($request = null)
             400,
         );
     }
-    $items = array_values(
+    $entries = mbb_component_catalog_entries();
+    $view = $request['view'] ?? 'all';
+    $purpose = $request['purpose'] ?? '';
+    if (
+        !in_array($view, ['all', 'latest'], true) ||
+        !is_string($purpose) ||
+        strlen($purpose) > 120
+    ) {
+        return mbb_error(
+            'component_catalog_request',
+            mbb_t('Invalid component catalog request.'),
+            400,
+        );
+    }
+    $purposes = array_values(array_unique(array_merge([], ...array_column($entries, 'purposes'))));
+    $entries = array_values(
         array_filter(
-            mbb_component_index_entries(),
-            static fn($v) => $type === '' || $v['id'] === $type,
+            $entries,
+            static fn($v) => ($type === '' || $v['id'] === $type) &&
+                ($purpose === '' ||
+                    !empty($v['purposeUnknown']) ||
+                    in_array($purpose, $v['purposes'], true)),
         ),
     );
+    $unverified = 0;
+    if ($view === 'latest') {
+        $groups = [];
+        foreach ($entries as $entry) {
+            $group = $entry['id'] . '@' . ($entry['authoringGroup'] ?? $entry['title']);
+            $groups[$group][] = $entry;
+        }
+        $total = count($groups);
+        $items = [];
+        foreach (array_slice($groups, ($page - 1) * $size, $size) as $versions) {
+            usort($versions, static fn($a, $b) => version_compare($b['version'], $a['version']));
+            $verified = false;
+            foreach ($versions as $entry) {
+                $provider = mbb_component_provider($entry['id'], $entry['version']);
+                if ($provider && $provider['status'] === 'available') {
+                    $items[] = $entry + ['available' => true];
+                    $verified = true;
+                    break;
+                }
+            }
+            if (!$verified) {
+                $unverified++;
+            }
+        }
+    } else {
+        $total = count($entries);
+        $items = array_slice($entries, ($page - 1) * $size, $size);
+    }
     $data = [
         'schema' => 1,
         'fingerprint' => $fingerprint,
         'page' => $page,
         'perPage' => $size,
-        'total' => count($items),
-        'items' => array_slice($items, ($page - 1) * $size, $size),
+        'total' => $total,
+        'items' => $items,
         'defaults' => mbb_component_default_versions(),
+        'purposes' => $purposes,
+        'unverifiedGroups' => $unverified,
     ];
     if (strlen(mbb_component_json($data)) > 32768) {
         return mbb_error(

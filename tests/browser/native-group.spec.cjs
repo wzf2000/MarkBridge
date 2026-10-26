@@ -94,3 +94,65 @@ test('native group creation, inner editing and paired reopen retain supported ch
   expect(code).toBe('ADAPTER_ATTRIBUTES');
   expect(errors).toEqual([]);
 });
+
+test('native columns keep core editing, fixed widths and paired reopen', async ({ page }, info) => {
+  await page.goto('/adapters-editor?locale=en_US');
+  await page.evaluate(() => {
+    const paragraph = wp.blocks.createBlock('core/paragraph', {
+      content: 'Column first paragraph.',
+    });
+    const second = wp.blocks.createBlock('core/paragraph', { content: 'Column second paragraph.' });
+    const columns = wp.blocks.createBlock(
+      'core/columns',
+      { isStackedOnMobile: true, verticalAlignment: 'top' },
+      [
+        wp.blocks.createBlock('core/column', { width: '40%', anchor: 'first-column' }, [paragraph]),
+        wp.blocks.createBlock('core/column', { width: '60%' }, [second]),
+      ],
+    );
+    taskRegistry.dispatch('core/block-editor').resetBlocks([columns]);
+    taskRegistry.dispatch('core/block-editor').selectBlock(paragraph.clientId);
+  });
+  const canvas = page.frameLocator('iframe[name="editor-canvas"]');
+  const paragraph = canvas
+    .locator('p.block-editor-rich-text__editable')
+    .filter({ hasText: 'Column first paragraph.' });
+  await expect(paragraph).toBeVisible();
+  await paragraph.fill('Column edited paragraph.');
+  const result = await page.evaluate(() => {
+    const source = MBB.toMarkdown(taskBlocks, { origin: 'markdown_import' });
+    const doc = MBB.importDocument(source, 'browser-columns');
+    const blocks = wp.blocks.parse(doc.serialized);
+    const flatten = (items) => items.flatMap((b) => [b, ...flatten(b.innerBlocks || [])]);
+    const exact = MBB.exportDocument(doc, wp.blocks.serialize(blocks)) === source;
+    taskRegistry.dispatch('core/block-editor').resetBlocks(blocks);
+    taskRegistry
+      .dispatch('core/block-editor')
+      .selectBlock(blocks[0].innerBlocks[0].innerBlocks[0].clientId);
+    return {
+      source,
+      serialized: doc.serialized,
+      exact,
+      valid: flatten(blocks).every((b) => b.isValid),
+    };
+  });
+  expect(result.exact && result.valid).toBe(true);
+  expect(result.source).toContain(':::mbb:v1 columns ');
+  expect(result.source).toContain(':::mbb:v1 column ');
+  expect(result.source).toContain('Column edited paragraph');
+  expect(result.serialized).toContain('style="flex-basis:40%"');
+  await expect(canvas.getByText('Column edited paragraph.', { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  const columns = canvas.locator('[data-type="core/column"]');
+  await expect(columns).toHaveCount(2);
+  await expect
+    .poll(async () => {
+      const first = await columns.nth(0).boundingBox();
+      const second = await columns.nth(1).boundingBox();
+      return page.viewportSize().width >= 782
+        ? Math.abs(first.y - second.y) < 2 && second.x > first.x
+        : second.y > first.y;
+    })
+    .toBe(true);
+  await page.screenshot({ path: info.outputPath('native-columns-editor.png'), fullPage: true });
+});

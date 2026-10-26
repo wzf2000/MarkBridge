@@ -401,7 +401,13 @@ function mbb_component_register_checked(
             'activityVersion',
             'resources',
             'executionProfile',
+            'purposes',
+            'authoringGroup',
         ]) ||
+        (isset($provider['authoringGroup']) &&
+            (!is_string($provider['authoringGroup']) ||
+                !preg_match('/^[a-z][a-z0-9-]{0,63}$/D', $provider['authoringGroup']))) ||
+        (isset($provider['purposes']) && !mbb_component_valid_purposes($provider['purposes'])) ||
         (array_key_exists('supportsUiLocale', $provider) &&
             !is_bool($provider['supportsUiLocale'])) ||
         (array_key_exists('readerMode', $provider) &&

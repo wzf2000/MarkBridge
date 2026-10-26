@@ -481,6 +481,10 @@ msgid "A code version title must be empty or single-line text of at most 200 cha
 msgstr ""
 
 #: plugin/i18n.js
+msgid "A column must be a direct child of columns"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "A complex list contains a non-list item"
 msgstr ""
 
@@ -558,6 +562,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "A new native block candidate must be imported through bounded Markdown while preserving its original block shape."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "A newer version exists; no migration is declared"
 msgstr ""
 
 #: plugin/i18n.js
@@ -777,6 +785,10 @@ msgid "All content"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "All purposes"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "All relationships"
 msgstr ""
 
@@ -926,6 +938,14 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Article metadata changed while reading. Reconcile again"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Article search failed. Try again."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Article title"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1471,6 +1491,10 @@ msgid "Choose a featured image in article settings before publishing, then previ
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Choose a historical version"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Choose a literal date or structured date parts, not both"
 msgstr ""
 
@@ -1588,6 +1612,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Choose this conflict"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Choose up to 50 articles."
 msgstr ""
 
 #: plugin/i18n.js
@@ -1763,7 +1791,23 @@ msgid "Collections"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Column alignment must be top, center or bottom"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Column width differs from its fixed HTML style"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Column width must be a percentage greater than 0 and at most 100"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Columns"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Columns may contain only 0–6 direct column blocks"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1843,6 +1887,10 @@ msgid "Component parameters must contain only JSON data"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Component purpose"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Component text must be valid Unicode"
 msgstr ""
 
@@ -1852,6 +1900,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Component version"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Components in this article"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2057,6 +2109,10 @@ msgid "Correct option"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Correct the article IDs before adding a search result."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Count"
 msgstr ""
 
@@ -2246,6 +2302,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Diagnostic summary copied."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Diagrams and relationships"
 msgstr ""
 
 #, php-format
@@ -2593,6 +2653,14 @@ msgid "Every local image must be a readable attachment of its selected article. 
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Exact version is missing"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Exact version is unavailable"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Excerpt"
 msgstr ""
 
@@ -2780,6 +2848,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Find a reference target"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Find articles by title"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2989,6 +3061,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Gallery imageCrop must be a boolean"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "General demonstrations"
 msgstr ""
 
 #: plugin/i18n.js
@@ -3410,6 +3486,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Inserts an unsaved example with new stable IDs. Playback and reader choices are never saved. Edit the explanation, then preview and confirm through the normal save workflow."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Inspect exact versions in the current article. Select an instance to review its parameters and prepare any supported upgrade."
 msgstr ""
 
 #: plugin/i18n.js
@@ -4114,6 +4194,10 @@ msgid "Missing table header"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Mobile column stacking must be boolean"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Mode"
 msgstr ""
 
@@ -4352,11 +4436,23 @@ msgid "No cross-branch relationships in this branch."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "No declared upgrade"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "No fields are applied by default. Select fields and preview again. Clearing a selection changes neither current article settings nor the header."
 msgstr ""
 
 #: plugin/i18n.js
 msgid "No indexed objects in the current content."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "No matching articles in this page."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "No matching articles in this scan. Continue to the next page."
 msgstr ""
 
 #: plugin/i18n.js
@@ -4926,6 +5022,10 @@ msgid "Previous term"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Private"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Private Node.js is missing, outdated, or does not match the manifest."
 msgstr ""
 
@@ -4991,6 +5091,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Publication title"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Published"
 msgstr ""
 
 #: plugin/i18n.js
@@ -5559,6 +5663,10 @@ msgid "Scanning files. No articles or media are created."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Scheduled"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Scroll horizontally to read long lines. Focus the code and use the arrow keys."
 msgstr ""
 
@@ -5587,6 +5695,10 @@ msgid "Search reference targets"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Searching managed articles…"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Select a preview object, or use Tab and Enter, to locate its source."
 msgstr ""
 
@@ -5601,6 +5713,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Select editable public articles without passwords, or explicitly include selected private drafts. Password-protected articles are not supported."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Select instance"
 msgstr ""
 
 #: plugin/i18n.js
@@ -5625,6 +5741,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Selected the source object."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Self checks"
 msgstr ""
 
 #: plugin/i18n.js
@@ -5730,6 +5850,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Some articles may be unavailable."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Some component families have no verified available version. Choose a historical version to inspect them."
 msgstr ""
 
 #: plugin/i18n.js
@@ -6412,6 +6536,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "The article record could not be locked"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The article search input is invalid."
 msgstr ""
 
 #: plugin/i18n.js
@@ -8258,6 +8386,10 @@ msgid "Unavailable article"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Unclassified purpose"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Unclosed teaching container"
 msgstr ""
 
@@ -8500,11 +8632,19 @@ msgid "Unsupported teaching block version"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Untitled article"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Untitled draft"
 msgstr ""
 
 #: plugin/i18n.js
 msgid "Untitled reference"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Upgrade candidate available"
 msgstr ""
 
 #: plugin/i18n.js

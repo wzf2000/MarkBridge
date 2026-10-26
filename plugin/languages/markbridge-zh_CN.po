@@ -481,6 +481,10 @@ msgid "A code version title must be empty or single-line text of at most 200 cha
 msgstr "代码版本标题需为空或不超过 200 字符的单行文字"
 
 #: plugin/i18n.js
+msgid "A column must be a direct child of columns"
+msgstr "列区块必须直接位于分栏中。"
+
+#: plugin/i18n.js
 msgid "A complex list contains a non-list item"
 msgstr "复杂列表包含非列表项"
 
@@ -559,6 +563,10 @@ msgstr "无法建立新媒体命名空间"
 #: plugin/i18n.js
 msgid "A new native block candidate must be imported through bounded Markdown while preserving its original block shape."
 msgstr "新原生区块候选必须以有界 Markdown 导入，且保留原区块形状。"
+
+#: plugin/i18n.js
+msgid "A newer version exists; no migration is declared"
+msgstr "同类有较新版本，未声明迁移方式"
 
 #: plugin/i18n.js
 msgid "A nonempty documentId is required"
@@ -777,6 +785,10 @@ msgid "All content"
 msgstr "全部内容"
 
 #: plugin/i18n.js
+msgid "All purposes"
+msgstr "全部用途"
+
+#: plugin/i18n.js
 msgid "All relationships"
 msgstr "完整关系说明"
 
@@ -927,6 +939,14 @@ msgstr "文章 ID（以逗号分隔，最多 50 个）"
 #: plugin/i18n.js
 msgid "Article metadata changed while reading. Reconcile again"
 msgstr "文章元数据在读取期间变化，请重新协调"
+
+#: plugin/i18n.js
+msgid "Article search failed. Try again."
+msgstr "文章查找失败，请重试。"
+
+#: plugin/i18n.js
+msgid "Article title"
+msgstr "文章标题"
 
 #: plugin/i18n.js
 msgid "At most 16 static adapters may be registered"
@@ -1471,6 +1491,10 @@ msgid "Choose a featured image in article settings before publishing, then previ
 msgstr "发布前请在文章设置中选择特色图片，再预览并保存。"
 
 #: plugin/i18n.js
+msgid "Choose a historical version"
+msgstr "选择历史版本"
+
+#: plugin/i18n.js
 msgid "Choose a literal date or structured date parts, not both"
 msgstr "请选择原文日期或结构化年月日，不能同时使用两者"
 
@@ -1589,6 +1613,10 @@ msgstr "请选择 1–10 个文件，上传总大小不超过 16 MiB。"
 #: plugin/i18n.js
 msgid "Choose this conflict"
 msgstr "请选择此冲突"
+
+#: plugin/i18n.js
+msgid "Choose up to 50 articles."
+msgstr "最多选择 50 篇文章。"
 
 #: plugin/i18n.js
 msgid "Choose up to ten Markdown or single-document ZIP files. Scan first, preview each item, then create drafts one at a time. Header metadata is not applied."
@@ -1763,8 +1791,24 @@ msgid "Collections"
 msgstr "文集"
 
 #: plugin/i18n.js
+msgid "Column alignment must be top, center or bottom"
+msgstr "分栏对齐仅支持顶部、居中或底部。"
+
+#: plugin/i18n.js
+msgid "Column width differs from its fixed HTML style"
+msgstr "列宽与固定 HTML 样式不一致。"
+
+#: plugin/i18n.js
+msgid "Column width must be a percentage greater than 0 and at most 100"
+msgstr "列宽必须是大于 0 且不超过 100 的百分比。"
+
+#: plugin/i18n.js
 msgid "Columns"
 msgstr "列"
+
+#: plugin/i18n.js
+msgid "Columns may contain only 0–6 direct column blocks"
+msgstr "分栏仅可直接包含 0–6 个列区块。"
 
 #: plugin/i18n.js
 msgid "Comment was not saved: "
@@ -1843,6 +1887,10 @@ msgid "Component parameters must contain only JSON data"
 msgstr "组件参数只能是 JSON 数据"
 
 #: plugin/i18n.js
+msgid "Component purpose"
+msgstr "组件用途"
+
+#: plugin/i18n.js
 msgid "Component text must be valid Unicode"
 msgstr "组件文字必须为有效 Unicode"
 
@@ -1853,6 +1901,10 @@ msgstr "组件类型"
 #: plugin/i18n.js
 msgid "Component version"
 msgstr "组件版本"
+
+#: plugin/i18n.js
+msgid "Components in this article"
+msgstr "当前文章的组件"
 
 #: plugin/i18n.js
 msgid "Conference paper"
@@ -2057,6 +2109,10 @@ msgid "Correct option"
 msgstr "正确选项"
 
 #: plugin/i18n.js
+msgid "Correct the article IDs before adding a search result."
+msgstr "请先修正文章 ID，再添加搜索结果。"
+
+#: plugin/i18n.js
 msgid "Count"
 msgstr "数量"
 
@@ -2247,6 +2303,10 @@ msgstr "诊断摘要"
 #: plugin/i18n.js
 msgid "Diagnostic summary copied."
 msgstr "诊断摘要已复制。"
+
+#: plugin/i18n.js
+msgid "Diagrams and relationships"
+msgstr "图示与关系"
 
 #, php-format
 #: plugin/i18n.js
@@ -2593,6 +2653,14 @@ msgid "Every local image must be a readable attachment of its selected article. 
 msgstr "每张本地图片都必须是所选文章的可读附件。外站图片只保留链接，不联网抓取。"
 
 #: plugin/i18n.js
+msgid "Exact version is missing"
+msgstr "精确版本缺失"
+
+#: plugin/i18n.js
+msgid "Exact version is unavailable"
+msgstr "精确版本不可用"
+
+#: plugin/i18n.js
 msgid "Excerpt"
 msgstr "摘要"
 
@@ -2781,6 +2849,10 @@ msgstr "最终出版授权不匹配，请重新准备。"
 #: plugin/i18n.js
 msgid "Find a reference target"
 msgstr "查找引用目标"
+
+#: plugin/i18n.js
+msgid "Find articles by title"
+msgstr "按标题查找文章"
 
 #: plugin/i18n.js
 msgid "Find text"
@@ -2990,6 +3062,10 @@ msgstr "图库列数必须是 1–8 的整数"
 #: plugin/i18n.js
 msgid "Gallery imageCrop must be a boolean"
 msgstr "图库 imageCrop 必须是布尔值"
+
+#: plugin/i18n.js
+msgid "General demonstrations"
+msgstr "通用演示"
 
 #: plugin/i18n.js
 msgid "General settings"
@@ -3411,6 +3487,10 @@ msgstr "插入写作样板"
 #: plugin/i18n.js
 msgid "Inserts an unsaved example with new stable IDs. Playback and reader choices are never saved. Edit the explanation, then preview and confirm through the normal save workflow."
 msgstr "插入具有新稳定标识的未保存样例。播放进度和读者选择不写回文章。编辑解释后，按正常流程预览并确认保存。"
+
+#: plugin/i18n.js
+msgid "Inspect exact versions in the current article. Select an instance to review its parameters and prepare any supported upgrade."
+msgstr "查看当前文章使用的精确版本。选择实例后可检查参数，并准备该组件支持的升级候选。"
 
 #: plugin/i18n.js
 msgid "Installed extensions"
@@ -4114,6 +4194,10 @@ msgid "Missing table header"
 msgstr "缺少表头"
 
 #: plugin/i18n.js
+msgid "Mobile column stacking must be boolean"
+msgstr "手机分栏堆叠设置必须为布尔值。"
+
+#: plugin/i18n.js
 msgid "Mode"
 msgstr "模式"
 
@@ -4352,12 +4436,24 @@ msgid "No cross-branch relationships in this branch."
 msgstr "这个分支暂无跨组联系。"
 
 #: plugin/i18n.js
+msgid "No declared upgrade"
+msgstr "未声明可用升级"
+
+#: plugin/i18n.js
 msgid "No fields are applied by default. Select fields and preview again. Clearing a selection changes neither current article settings nor the header."
 msgstr "默认不应用。逐项选择后须重新预览；取消选择不会改写当前文章设置或头部。"
 
 #: plugin/i18n.js
 msgid "No indexed objects in the current content."
 msgstr "当前内容中没有可索引对象。"
+
+#: plugin/i18n.js
+msgid "No matching articles in this page."
+msgstr "本页没有匹配文章。"
+
+#: plugin/i18n.js
+msgid "No matching articles in this scan. Continue to the next page."
+msgstr "本次检索没有匹配文章，可继续查看下一页。"
 
 #: plugin/i18n.js
 msgid "No matching text."
@@ -4926,6 +5022,10 @@ msgid "Previous term"
 msgstr "前一项"
 
 #: plugin/i18n.js
+msgid "Private"
+msgstr "私密"
+
+#: plugin/i18n.js
 msgid "Private Node.js is missing, outdated, or does not match the manifest."
 msgstr "私有 Node.js 缺失、版本过低或与清单不匹配。"
 
@@ -4992,6 +5092,10 @@ msgstr "发表刊物或出处"
 #: plugin/i18n.js
 msgid "Publication title"
 msgstr "刊物或会议名称"
+
+#: plugin/i18n.js
+msgid "Published"
+msgstr "已发布"
 
 #: plugin/i18n.js
 msgid "Published privately"
@@ -5559,6 +5663,10 @@ msgid "Scanning files. No articles or media are created."
 msgstr "正在扫描文件，不会创建文章或媒体。"
 
 #: plugin/i18n.js
+msgid "Scheduled"
+msgstr "定时发布"
+
+#: plugin/i18n.js
 msgid "Scroll horizontally to read long lines. Focus the code and use the arrow keys."
 msgstr "长行可横向滚动；聚焦代码后可使用方向键。"
 
@@ -5568,7 +5676,7 @@ msgstr "搜索"
 
 #: plugin/i18n.js
 msgid "Search articles"
-msgstr "搜索文章"
+msgstr "查找文章"
 
 #: plugin/i18n.js
 msgid "Search editable articles"
@@ -5587,6 +5695,10 @@ msgid "Search reference targets"
 msgstr "搜索引用目标"
 
 #: plugin/i18n.js
+msgid "Searching managed articles…"
+msgstr "正在查找已管理的文章……"
+
+#: plugin/i18n.js
 msgid "Select a preview object, or use Tab and Enter, to locate its source."
 msgstr "点击预览对象，或使用 Tab 和 Enter，定位其源码。"
 
@@ -5602,6 +5714,10 @@ msgstr "选择代码第 %1$s 行"
 #: plugin/i18n.js
 msgid "Select editable public articles without passwords, or explicitly include selected private drafts. Password-protected articles are not supported."
 msgstr "请选择可编辑且无密码的公开文章，或明确包含所选私人草稿。本期不支持密码保护文章。"
+
+#: plugin/i18n.js
+msgid "Select instance"
+msgstr "选择实例"
 
 #: plugin/i18n.js
 msgid "Select the same bibliography block before using this candidate"
@@ -5626,6 +5742,10 @@ msgstr "已选中所属结构。"
 #: plugin/i18n.js
 msgid "Selected the source object."
 msgstr "已选中源码对象。"
+
+#: plugin/i18n.js
+msgid "Self checks"
+msgstr "学习自测"
 
 #: plugin/i18n.js
 msgid "Semantic exploration is unavailable for this formula."
@@ -5731,6 +5851,10 @@ msgstr "软件"
 #: plugin/i18n.js
 msgid "Some articles may be unavailable."
 msgstr "部分文章可能暂不可用。"
+
+#: plugin/i18n.js
+msgid "Some component families have no verified available version. Choose a historical version to inspect them."
+msgstr "部分组件分组没有已核验的可用版本，可选择历史版本查看。"
 
 #: plugin/i18n.js
 msgid "Some interrupted media could not be cleaned. Try later"
@@ -6413,6 +6537,10 @@ msgstr "文章或文件来源身份已变化，请重新核对后再同步。"
 #: plugin/i18n.js
 msgid "The article record could not be locked"
 msgstr "无法锁定文章记录"
+
+#: plugin/i18n.js
+msgid "The article search input is invalid."
+msgstr "文章查找条件无效。"
 
 #: plugin/i18n.js
 msgid "The article snapshot is incomplete."
@@ -8258,6 +8386,10 @@ msgid "Unavailable article"
 msgstr "文章不可用"
 
 #: plugin/i18n.js
+msgid "Unclassified purpose"
+msgstr "用途未标注"
+
+#: plugin/i18n.js
 msgid "Unclosed teaching container"
 msgstr "教学容器未闭合"
 
@@ -8500,12 +8632,20 @@ msgid "Unsupported teaching block version"
 msgstr "不支持的教学区块版本"
 
 #: plugin/i18n.js
+msgid "Untitled article"
+msgstr "无标题文章"
+
+#: plugin/i18n.js
 msgid "Untitled draft"
 msgstr "未命名草稿"
 
 #: plugin/i18n.js
 msgid "Untitled reference"
 msgstr "未命名文献"
+
+#: plugin/i18n.js
+msgid "Upgrade candidate available"
+msgstr "可准备升级候选"
 
 #: plugin/i18n.js
 msgid "Upgrade diagram to use the visual editor"

@@ -39,6 +39,8 @@ export const teachingSchemas = {
   'native-code': {},
   preformatted: {},
   group: {},
+  columns: {},
+  column: {},
   details: { summary: 'string', showContent: 'boolean' },
   buttons: {},
   button: { url: 'string' },
@@ -395,7 +397,7 @@ export function teachingSource(source, fail, ignored = new Set(), nonce, fences 
       if (line === ':::mbb:end') data = { end: true };
       else {
         const match =
-          /^:::mbb:v([12]) (identity|collapse|steps|step|code-compare|component|code-tabs|native-code|preformatted|group|details|buttons|button|adapter|object|statement|bibliography|image|gallery) (\{[^\r\n]*\})$/.exec(
+          /^:::mbb:v([12]) (identity|collapse|steps|step|code-compare|component|code-tabs|native-code|preformatted|group|columns|column|details|buttons|button|adapter|object|statement|bibliography|image|gallery) (\{[^\r\n]*\})$/.exec(
             line,
           );
         if (!match)
@@ -579,6 +581,13 @@ export function validateTeaching(blocks, fail) {
               inner.some((child) => child.name !== 'core/button'))
           )
             fail('ADAPTER_STRUCTURE', 'A button group requires 1–32 direct link buttons');
+          if (
+            kind === 'columns' &&
+            (inner.length > 6 || inner.some((child) => child.name !== 'core/column'))
+          )
+            fail('ADAPTER_STRUCTURE', 'Columns may contain only 0–6 direct column blocks');
+          if (kind === 'column' && parent !== 'columns')
+            fail('ADAPTER_STRUCTURE', 'A column must be a direct child of columns');
           if (kind === 'button' && (parent !== 'buttons' || inner.length))
             fail('ADAPTER_STRUCTURE', 'A link button must be a direct leaf of a button group');
           if (nativeTextKind(kind) && inner.length)

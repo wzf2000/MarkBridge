@@ -142,7 +142,11 @@ try {
         'source' => $upgradeSource,
         'documentId' => mbb_id($id),
     ]);
-    authoring_assert(!is_wp_error($upgraded), 'Synthetic version upgrade did not convert.');
+    authoring_assert(
+        !is_wp_error($upgraded),
+        'Synthetic version upgrade did not convert.' .
+            (is_wp_error($upgraded) ? ' Error code: ' . $upgraded->get_error_code() : ''),
+    );
     $saved = authoring_request('save', [
         'mode' => 'blocks',
         'post_id' => $id,

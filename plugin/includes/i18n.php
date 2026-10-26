@@ -126,7 +126,12 @@ function mbb_i18n_scripts(): void
 function mbb_i18n_register(): void
 {
     add_action('init', static function () {
-        load_plugin_textdomain('markbridge', false, basename(dirname(__DIR__)) . '/languages');
+        load_plugin_textdomain(
+            'markbridge',
+            false,
+            dirname(plugin_basename(dirname(__DIR__) . '/markdown-block-bridge.php')) .
+                '/languages',
+        );
     });
     foreach (
         [

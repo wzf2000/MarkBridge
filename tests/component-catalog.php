@@ -7,6 +7,12 @@ define('WP_PLUGIN_DIR', $directory);
 function add_action(...$args) {}
 function apply_filters($name, $value, ...$args)
 {
+    if (
+        $name === 'markbridge_teaching_component_catalog_metadata' &&
+        isset($GLOBALS['catalog_metadata_filter'])
+    ) {
+        return $GLOBALS['catalog_metadata_filter']($value, ...$args);
+    }
     if ($name === 'markbridge_validate_component_params') {
         if (($GLOBALS['domain_result'] ?? null) === 'throw') {
             throw new RuntimeException('Synthetic validator failure');
@@ -146,6 +152,135 @@ try {
         mbb_component_catalog_page(['per_page' => 51]) instanceof WP_Error,
         'Excessive page accepted',
     );
+    catalog_assert(
+        markbridge_teaching_supports_component_catalog_metadata(),
+        'Metadata capability probe unavailable',
+    );
+    $rawEntries = mbb_component_index_entries();
+    $beforeOverlay = mbb_component_registry_fingerprint();
+    $GLOBALS['catalog_metadata_filter'] = static fn($metadata, $id, $version) => [
+        'purposes' => ['Diagrams'],
+        'authoringGroup' => 'legacy-family',
+    ];
+    $overlaid = mbb_component_catalog_page(['per_page' => 1]);
+    catalog_assert(
+        $overlaid->data['items'][0]['purposes'] === ['Diagrams'] &&
+            $overlaid->data['items'][0]['authoringGroup'] === 'legacy-family' &&
+            !$overlaid->data['items'][0]['purposeUnknown'],
+        'Valid exact-version metadata overlay was lost',
+    );
+    catalog_assert(
+        mbb_component_registry_fingerprint() !== $beforeOverlay &&
+            mbb_component_index_entries() === $rawEntries,
+        'Display overlay changed admission entries or missed catalog fingerprint',
+    );
+    foreach (
+        [
+            null,
+            ['url' => 'https://invalid.example'],
+            ['purposes' => []],
+            ['purposes' => [null]],
+            ['authoringGroup' => '../wrong'],
+        ]
+        as $invalid
+    ) {
+        $GLOBALS['catalog_metadata_filter'] = static fn() => $invalid;
+        catalog_assert(
+            mbb_component_registry_fingerprint() === $beforeOverlay,
+            'Invalid optional metadata damaged the existing catalog',
+        );
+    }
+    $GLOBALS['catalog_metadata_filter'] = static function () {
+        throw new RuntimeException('Synthetic metadata failure');
+    };
+    catalog_assert(
+        mbb_component_registry_fingerprint() === $beforeOverlay,
+        'Thrown metadata callback damaged the catalog',
+    );
+    unset($GLOBALS['catalog_metadata_filter']);
+    $definitionPin = markbridge_teaching_component_fingerprint('presentation-fixture', $provider);
+    $presentation = $provider + [
+        'purposes' => ['Explore', 'Compare'],
+        'authoringGroup' => 'example',
+    ];
+    catalog_assert(
+        markbridge_teaching_component_fingerprint('presentation-fixture', $presentation) ===
+            $definitionPin,
+        'Presentation changed portable definition pin',
+    );
+    catalog_assert(
+        mbb_component_valid_purposes(['Explore', 'Compare']),
+        'Multiple purposes rejected',
+    );
+    catalog_assert(!mbb_component_valid_purposes(['Explore', []]), 'Non-text purpose accepted');
+    $factory = $GLOBALS['mbb_component_factories']['sdk-indexed-counter'];
+    $calls = [];
+    $GLOBALS['mbb_component_factories']['sdk-indexed-counter'] = static function (
+        $id,
+        $version,
+    ) use ($factory, &$calls) {
+        $calls[] = $version;
+        return $factory($id, $version);
+    };
+    $oneGroup = mbb_component_catalog_page(['view' => 'latest', 'per_page' => 1]);
+    catalog_assert(
+        count($calls) === 1 && $oneGroup->data['total'] === 40,
+        'Latest page resolved unrelated groups or lost its continuation count',
+    );
+    mbb_component_catalog_page(['view' => 'latest', 'type' => 'other-type']);
+    catalog_assert(count($calls) === 1, 'Type filter invoked another type factory');
+    $unknown = mbb_component_catalog_page([
+        'view' => 'latest',
+        'per_page' => 1,
+        'purpose' => 'Diagrams',
+    ]);
+    catalog_assert(
+        count($unknown->data['items']) === 1 && $unknown->data['items'][0]['purposeUnknown'],
+        'Unknown-purpose legacy entries vanished from purpose filtering',
+    );
+    foreach ($GLOBALS['mbb_component_indexes']['sdk-indexed-counter']['versions'] as &$entry) {
+        $entry['purposes'] = ['Explore'];
+    }
+    unset($entry);
+    mbb_component_catalog_page(['view' => 'latest', 'purpose' => 'Absent purpose']);
+    catalog_assert(count($calls) === 1, 'Purpose filter invoked unrelated factories');
+    mbb_component_catalog_page(['view' => 'latest', 'per_page' => 1, 'page' => 2]);
+    catalog_assert(count($calls) === 2, 'Next page did not resolve just its own group');
+    $GLOBALS['mbb_component_factories']['sdk-indexed-counter'] = $factory;
+    $GLOBALS['mbb_component_resolved'] = [];
+    $GLOBALS['mbb_component_resolved_bytes'] = 0;
+    foreach ($GLOBALS['mbb_component_indexes']['sdk-indexed-counter']['versions'] as &$entry) {
+        $entry['authoringGroup'] = 'counter';
+    }
+    unset($entry);
+    $latest = mbb_component_catalog_page(['view' => 'latest']);
+    catalog_assert(
+        count($latest->data['items']) === 1 && $latest->data['items'][0]['version'] === '1.39.0',
+        'Latest view did not choose the newest available definition',
+    );
+    catalog_assert(
+        count(mbb_component_catalog_page(['view' => 'all'])->data['items']) === 20,
+        'Latest view modified the historical index',
+    );
+    catalog_assert(
+        mbb_component_catalog_page(['view' => 'unknown']) instanceof WP_Error,
+        'Unknown catalog view accepted',
+    );
+    $GLOBALS['mbb_component_indexes']['sdk-indexed-counter']['versions'][0]['authoringGroup'] =
+        'other-use';
+    $split = mbb_component_catalog_page(['view' => 'latest']);
+    catalog_assert(count($split->data['items']) === 2, 'Distinct authoring groups were hidden');
+    $GLOBALS['mbb_component_indexes']['sdk-indexed-counter']['versions'][0]['authoringGroup'] =
+        'counter';
+    $GLOBALS['mbb_component_resolved'] = [];
+    $GLOBALS['mbb_component_resolved_bytes'] = 4194304;
+    $limited = mbb_component_catalog_page(['view' => 'latest']);
+    catalog_assert(
+        $limited->data['items'] === [] && $limited->data['unverifiedGroups'] === 1,
+        'Exhausted descriptor budget silently claimed a complete empty catalog',
+    );
+    $GLOBALS['mbb_component_resolved'] = [];
+    $GLOBALS['mbb_component_resolved_bytes'] = 0;
     $fp = mbb_component_registry_fingerprint();
     catalog_assert(
         mbb_component_descriptor_response([

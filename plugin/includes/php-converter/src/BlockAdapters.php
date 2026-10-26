@@ -16,6 +16,8 @@ final class BlockAdapters
         'native-code' => 'core/code',
         'preformatted' => 'core/preformatted',
         'group' => 'core/group',
+        'columns' => 'core/columns',
+        'column' => 'core/column',
         'details' => 'core/details',
         'buttons' => 'core/buttons',
         'button' => 'core/button',
@@ -269,6 +271,8 @@ final class BlockAdapters
         $keys = match ($kind) {
             'native-code', 'preformatted' => ['anchor', 'className', $source ? 'text' : 'content'],
             'group' => ['tagName', 'anchor', 'ariaLabel', 'className', 'layout'],
+            'columns' => ['verticalAlignment', 'isStackedOnMobile', 'anchor', 'className'],
+            'column' => ['verticalAlignment', 'width', 'anchor', 'className'],
             'details' => ['summary', 'showContent', 'anchor', ...!$source ? ['name'] : []],
             'buttons' => ['anchor', 'layout'],
             'button' => [
@@ -316,6 +320,55 @@ final class BlockAdapters
                 $out['className'] = $attrs['className'];
             }
         }
+        if (in_array($kind, ['columns', 'column'], true)) {
+            if (array_key_exists('className', $attrs)) {
+                if (
+                    !is_string($attrs['className']) ||
+                    strlen($attrs['className']) > 200 ||
+                    ($attrs['className'] !== '' &&
+                        !preg_match(
+                            '/^[A-Za-z][A-Za-z0-9_-]*(?: [A-Za-z][A-Za-z0-9_-]*)*$/D',
+                            $attrs['className'],
+                        ))
+                ) {
+                    self::fail('ADAPTER_ATTRIBUTES', 'Invalid native block class names');
+                }
+                $out['className'] = $attrs['className'];
+            }
+            if (array_key_exists('verticalAlignment', $attrs)) {
+                if (!in_array($attrs['verticalAlignment'], ['top', 'center', 'bottom'], true)) {
+                    self::fail(
+                        'ADAPTER_ATTRIBUTES',
+                        'Column alignment must be top, center or bottom',
+                    );
+                }
+                $out['verticalAlignment'] = $attrs['verticalAlignment'];
+            }
+            if ($kind === 'columns') {
+                if (
+                    array_key_exists('isStackedOnMobile', $attrs) &&
+                    !is_bool($attrs['isStackedOnMobile'])
+                ) {
+                    self::fail('ADAPTER_ATTRIBUTES', 'Mobile column stacking must be boolean');
+                }
+                $out['isStackedOnMobile'] = $attrs['isStackedOnMobile'] ?? true;
+            } elseif (array_key_exists('width', $attrs)) {
+                if (
+                    !is_string($attrs['width']) ||
+                    !preg_match(
+                        '/^(?:(?:0|[1-9][0-9]?)(?:\.[0-9]{1,3})?|100(?:\.0{1,3})?)%$/D',
+                        $attrs['width'],
+                    ) ||
+                    (float) $attrs['width'] <= 0
+                ) {
+                    self::fail(
+                        'ADAPTER_ATTRIBUTES',
+                        'Column width must be a percentage greater than 0 and at most 100',
+                    );
+                }
+                $out['width'] = $attrs['width'];
+            }
+        }
         if ($kind === 'group') {
             $out['tagName'] = array_key_exists('tagName', $attrs) ? $attrs['tagName'] : 'div';
             if (!in_array($out['tagName'], ['div', 'section'], true)) {
@@ -354,8 +407,8 @@ final class BlockAdapters
                 }
                 $out['layout'] = $layout;
             }
-        } elseif (self::textKind($kind)) {
-            // Plain native leaves have no other fields.
+        } elseif (self::textKind($kind) || in_array($kind, ['columns', 'column'], true)) {
+            // Closed columns and plain native leaves have no other fields.
         } elseif ($kind === 'details') {
             if (array_key_exists('name', $attrs) && $attrs['name'] !== '') {
                 self::fail('ADAPTER_ATTRIBUTES', 'Exclusive details groups are not supported');
@@ -477,6 +530,30 @@ final class BlockAdapters
                 $content .
                 '</pre>';
         }
+        if (in_array($kind, ['columns', 'column'], true)) {
+            $class = 'wp-block-' . $kind;
+            if (isset($a['verticalAlignment'])) {
+                $class .=
+                    ($kind === 'columns' ? ' are-vertically-aligned-' : ' is-vertically-aligned-') .
+                    $a['verticalAlignment'];
+            }
+            if ($kind === 'columns' && !$a['isStackedOnMobile']) {
+                $class .= ' is-not-stacked-on-mobile';
+            }
+            if (!empty($a['className'])) {
+                $class .= ' ' . $a['className'];
+            }
+            return '<div class="' .
+                $class .
+                '"' .
+                ($kind === 'column' && isset($a['width'])
+                    ? ' style="flex-basis:' . $a['width'] . '"'
+                    : '') .
+                $id .
+                '>' .
+                $body .
+                '</div>';
+        }
         if ($kind === 'group') {
             return '<' .
                 $a['tagName'] .
@@ -537,6 +614,8 @@ final class BlockAdapters
             match ($kind) {
                 'native-code', 'preformatted' => ['anchor', 'className'],
                 'group' => ['tagName', 'anchor', 'ariaLabel', 'className', 'layout'],
+                'columns' => ['verticalAlignment', 'isStackedOnMobile', 'anchor', 'className'],
+                'column' => ['verticalAlignment', 'width', 'anchor', 'className'],
                 'details' => ['showContent', 'anchor', 'name'],
                 'buttons' => ['anchor', 'layout'],
                 'button' => ['anchor', 'tagName', 'type'],
@@ -569,7 +648,7 @@ final class BlockAdapters
             $block['attrs'] = self::nativeAttrs($kind, $attrs);
             return $block;
         }
-        if ($kind === 'group') {
+        if (in_array($kind, ['group', 'columns', 'column'], true)) {
             $comment = self::nativeAttrs($kind, $comment);
         }
         $wrapper = self::fragment($block['raw']);
@@ -589,10 +668,26 @@ final class BlockAdapters
             'wp-block-' .
             $kind .
             ($kind === 'group' && !empty($comment['className']) ? ' ' . $comment['className'] : '');
+        if (in_array($kind, ['columns', 'column'], true)) {
+            if (isset($comment['verticalAlignment'])) {
+                $class .=
+                    ($kind === 'columns' ? ' are-vertically-aligned-' : ' is-vertically-aligned-') .
+                    $comment['verticalAlignment'];
+            }
+            if ($kind === 'columns' && !$comment['isStackedOnMobile']) {
+                $class .= ' is-not-stacked-on-mobile';
+            }
+            if (!empty($comment['className'])) {
+                $class .= ' ' . $comment['className'];
+            }
+        }
         if (strtolower($root->tagName) !== $tag || $root->getAttribute('class') !== $class) {
             self::fail('ADAPTER_STRUCTURE', 'Invalid native block tag or class');
         }
         $allowed = ['class'];
+        if ($kind === 'column' && isset($comment['width'])) {
+            $allowed[] = 'style';
+        }
         if (isset($comment['anchor']) && self::anchor($comment['anchor']) !== '') {
             $allowed[] = 'id';
         }
@@ -613,6 +708,13 @@ final class BlockAdapters
                     'The block wrapper contains unknown or non-neutral attributes',
                 );
             }
+        }
+        if (
+            $kind === 'column' &&
+            $root->getAttribute('style') !==
+                (isset($comment['width']) ? 'flex-basis:' . $comment['width'] : '')
+        ) {
+            self::fail('ADAPTER_ATTRIBUTES', 'Column width differs from its fixed HTML style');
         }
         if ($root->getAttribute('id') !== ($comment['anchor'] ?? '')) {
             self::fail('ADAPTER_ANCHOR', 'The HTML anchor differs from the block attribute');

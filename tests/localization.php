@@ -106,3 +106,33 @@ lc_assert(
     'Unbounded diagnostic accepted',
 );
 echo "Localization catalogs, placeholders, HTML boundaries and precise diagnostics passed.\n";
+
+function add_action($hook, $callback, ...$args)
+{
+    $GLOBALS['lc_hooks'][$hook][] = $callback;
+}
+function plugin_basename($file)
+{
+    lc_assert(
+        basename($file) === 'markdown-block-bridge.php',
+        'Translation registration did not use the plugin entry file',
+    );
+    return $GLOBALS['lc_plugin_file'];
+}
+function load_plugin_textdomain($domain, $deprecated, $relative)
+{
+    $GLOBALS['lc_domain_path'] = $relative;
+}
+foreach (['markbridge', 'markdown-block-bridge'] as $slug) {
+    $GLOBALS['lc_plugin_file'] = $slug . '/markdown-block-bridge.php';
+    $GLOBALS['lc_hooks'] = [];
+    mbb_i18n_register();
+    foreach ($GLOBALS['lc_hooks']['init'] as $callback) {
+        $callback();
+    }
+    lc_assert(
+        $GLOBALS['lc_domain_path'] === $slug . '/languages',
+        'Physical source directory replaced the registered plugin slug',
+    );
+}
+echo "Registered plugin-slug translation paths preserve normal and symlink installations.\n";
