@@ -167,8 +167,9 @@ const MBBCreateDocumentTools = (core) => {
             checked.document.source !== source
           )
             throw stale();
+          core.validateApply?.(checked.document);
           invalidate(); // Consume before dispatch, never revive through Undo.
-          core.apply(checked.document);
+          core.apply(checked.document, opening);
           finish({ applied: true });
           dialog.close();
           toolDialog.close();

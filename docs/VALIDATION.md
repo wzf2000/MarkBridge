@@ -2,6 +2,8 @@
 
 ## 3.9.0-rc.1：正文候选 SDK
 
+真实原生作者流程发现：SDK 采用后仅替换区块，普通保存从旧数据库配对反向导出，导致候选中的字面连字符被转义、BOM／CRLF 消失。修复沿原生 REST 事务重验并保存明确采用的精确 source 配对；不增加保存接口或正文存储。候选 proof 过期须撤销后重新预检，不静默按区块规范化。仅源字节发生变化而原生区块相同时，明确引导至 Markdown 窗口。采用后首次保存前继续编辑正文会阻止普通保存回退；须撤销回原稿并重新预检。新增定向模型已通过，当前修复尚未构建，也未运行新增双后端集成、浏览器与视觉验收。
+
 当前为源码候选，继承 Main 3.8.0 的知识图与课程接口，新增通用正文候选和受控 `File[]` 交接。已有正式版本和安装包保持原样。
 
 已运行：`node tests/document-tools.cjs`、`php tests/document-candidates.php`、相关 PHP／JavaScript 语法检查、定向格式检查、`git diff --check` 及本地化覆盖检查。会话模型覆盖关闭、迟到响应、编辑后撤销仍失效、取消保留工具草稿与应用不调用保存；PHP 模型覆盖 receipt 篡改／过期／会话、原文与组件指纹变化、封闭 JSON 字段、普通／转义重复键、query 覆盖隔离及最大正文的 JSON 转义预算。
@@ -10,7 +12,7 @@
 
 错误码契约区分 WordPress 核心与插件入口：核心先解析 HTTP JSON，语法无效或非法 UTF-8 返回原生 `rest_invalid_json`／400；合法 JSON 的非对象、未知／缺失／重复字段、类型及正文／原始请求容量错误返回 422；合法请求的未授权沿原权限回调返回 403，候选过期、失效或 receipt 无效返回 409。直接调用插件 parser 的模型会将无效 JSON 返回 422，不代表 HTTP 绕过了核心前置解析。真实 REST 用例已补这一区别，尚未执行。
 
-尚未运行：当前源码完整构建及包检查、真实 WordPress PHP／Node 双后端的 `tests/integration/document-candidates.php`、`tests/browser/document-tools.spec.cjs` 与文件交接的浏览器用例、桌面／手机截图人工审看。SDK 浏览器用例使用合成 REST，不能代替实际 WordPress 身份鉴权、原生编辑器保存重开或视觉验收。验证入口与所需独立实验环境见 [TESTING](TESTING.md#document-candidate-sdk)；不以模型通过或继承版本的旧证据填补这些缺项。
+当前修复尚未运行：完整构建及包检查、真实 WordPress PHP／Node 双后端的 `tests/integration/document-candidates.php`、`tests/browser/document-tools.spec.cjs` 与文件交接的浏览器用例、桌面／手机截图人工审看。SDK 浏览器用例使用合成 REST，不能代替实际 WordPress 身份鉴权、原生编辑器保存重开或视觉验收。验证入口与所需独立实验环境见 [TESTING](TESTING.md#document-candidate-sdk)；不以模型通过或继承版本的旧证据填补这些缺项。
 
 ## 3.2.0-rc.5：固定审核执行 profile
 

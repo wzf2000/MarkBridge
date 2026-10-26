@@ -202,3 +202,16 @@ synthetic author/draft; it does not initialize the reference index or touch othe
 browser suite after building, with one worker, and inspect desktop/mobile screenshots separately.
 Current executed checks and pending acceptance are recorded in [VALIDATION](VALIDATION.md);
 model checks do not establish build, database, authenticated native editing or visual acceptance.
+
+`tests/native-document-candidate.cjs` checks exact-source attachment only for the adopted client-ID
+lineage, pre-save Undo/Redo, ordinary body/code edits, expiry, source-only rejection and clearing after
+save/article changes. `tests/native-document-candidate.php` checks bounded closed native proof
+parsing, pair correspondence and final permissions/pins/expiry. The real local integration entry
+also runs `tests/integration/native-document-candidate.php`: it checks literal Markdown/BOM/CRLF,
+ordinary native saving and paired revisions, proof rejection, expiry, baseline conflicts and an exact
+resource changing during the transaction. That integration must run under both configured backends;
+pure models do not establish those results.
+
+`python3 tests/test_ci_dependencies.py` verifies pinned public dependency downloads with mocked
+responses: at most three attempts for HTTP 429/5xx or timeouts, bounded backoff, unchanged 64 MiB
+capacity and SHA checks, and no retries for permanent errors/digest failures. It performs no network.

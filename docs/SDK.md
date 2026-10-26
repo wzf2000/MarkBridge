@@ -248,6 +248,30 @@ suggestion, adjust the candidate and preview again; errors naming the saved `com
 saves an article or writes a source file. A changed portable identity is rejected; use a new draft
 instead of stripping it silently.
 
+For a native-editor adoption, Core retains one private in-memory provenance record containing the
+exact source/pair, receipt, expected version and before/after block client IDs. Native Undo returns
+to the original without attaching a source proof; Redo can restore the adopted pair. A third body
+or code-buffer edit, or a different block identity permanently invalidates its authorization and
+blocks native saving of the pending adoption; equal text alone cannot revive it. Undo all the way
+to the saved original, reopen the tool and prepare the candidate again. An article switch or
+successful candidate save clears the record. Saving the original after Undo retains only the abandoned
+candidate's client-ID marker, so a later Redo cannot silently normalize that never-saved candidate;
+ordinary new edits of the original remain unchanged. No source or receipt is retained by this history
+marker. Native Save adds an optional closed
+`mbb_document_candidate:{schema:1,sourceBase64,receipt}` object to the existing WordPress update
+request; this is not a separate save API or source store. The server re-admits the Markdown, verifies
+the actual native body against that candidate pair and uses the existing transaction/revision path.
+Old requests without this proof retain their normal block-edit behavior. Each body remains limited
+to 256 KiB, the proof uses canonical UTF-8 base64, and proof-bearing native requests are limited to
+1.5 MB. Source-only changes such as BOM/newlines that produce identical native blocks are rejected
+at native Apply with guidance to the existing Markdown dialog and its source Undo/save flow.
+
+Save an adoption promptly: the original 15-minute receipt remains authoritative through commit.
+Expiry, revoked permission or changed baseline/pins rejects saving and preserves editor input;
+Core never silently falls back to a normalized block export. Undo the adoption and prepare it again
+before retrying. Save the adoption before continuing native body editing. After that successful
+save, subsequent ordinary block edits use the existing native conversion rules.
+
 The private `POST /mbb/v1/document-tools/capture` and `/preview` routes are read-only.
 Requests must use an `application/json` object with exactly `{post_id, expected}` for capture and
 `{post_id, expected, receipt, source}` for preview. Extra/missing fields, non-scalar field types,

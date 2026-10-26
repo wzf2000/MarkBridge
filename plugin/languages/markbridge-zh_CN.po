@@ -5775,6 +5775,10 @@ msgid "Save succeeded. Only this tab's candidates matching this save were cleane
 msgstr "成功保存；仅清理与本次保存相同的本标签页候选，其他修改保留。"
 
 #: plugin/i18n.js
+msgid "Save the adopted document with the normal editor Save / Update action. Its exact source has not been saved."
+msgstr "请使用编辑器的普通“保存 / 更新”操作保存已采用的正文；其原始文本尚未保存。"
+
+#: plugin/i18n.js
 msgid "Saved collections"
 msgstr "已保存文集"
 
@@ -6595,8 +6599,16 @@ msgid "The adapter version does not match. Original configuration is preserved b
 msgstr "适配版本不匹配，原配置保留但不能转换新候选"
 
 #: plugin/i18n.js
+msgid "The adopted candidate was edited before saving or its baseline changed. Your input is preserved. Copy your current edits for safekeeping, then undo back to the saved original, reopen the tool, and prepare and save the candidate before editing its body."
+msgstr "采用后的正文在首次保存前被编辑，或原基线已变化，当前输入已保留。请先复制留存这些修改，再撤销回已保存的原稿，重新打开工具并预检、采用和保存候选，然后继续编辑正文。"
+
+#: plugin/i18n.js
 msgid "The anchor duplicates a document ID"
 msgstr "锚点与文档 ID 重复"
+
+#: plugin/i18n.js
+msgid "The applied document candidate expired or its baseline changed. Your input is preserved. Undo it and prepare the candidate again before saving."
+msgstr "已采用的正文候选已过期或基线发生变化，当前输入已保留。请先撤销这次采用，再重新预检候选后保存。"
 
 #: plugin/i18n.js
 msgid "The article ID is missing."
@@ -7573,6 +7585,10 @@ msgid "The native MathML lacks verifiable semantic structure."
 msgstr "原生 MathML 缺少可核对的语义结构。"
 
 #: plugin/i18n.js
+msgid "The native editor did not retain the complete candidate. Current input is preserved; use Markdown edit / upload to preview it again."
+msgstr "原生编辑器未完整保留候选。当前输入已保留，请使用“Markdown 编辑 / 上传”重新预览。"
+
+#: plugin/i18n.js
 msgid "The native formula changed during verification. Select it again before converting."
 msgstr "原生公式在验证期间已变化，请重新选择后转换。"
 
@@ -8371,6 +8387,10 @@ msgstr "浏览器不支持可靠存储锁。"
 #: plugin/i18n.js
 msgid "This candidate still references pending images. Upload the ZIP again or remove those images. Body content is preserved"
 msgstr "此候选仍引用待上传图片；请重新上传 ZIP 或移除这些图片，正文仍保留"
+
+#: plugin/i18n.js
+msgid "This change only affects source bytes. Open Markdown edit / upload to preview and apply it with source Undo and save."
+msgstr "这次修改仅影响原始文本。请打开“Markdown 编辑 / 上传”，通过原文预览、撤销和保存来采用修改。"
 
 #: plugin/i18n.js
 msgid "This collection candidate is busy. Try again shortly."

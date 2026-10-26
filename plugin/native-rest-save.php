@@ -8,6 +8,7 @@ if (!defined('ABSPATH')) {
 }
 
 require_once __DIR__ . '/includes/i18n.php';
+require_once __DIR__ . '/native-document-candidate.php';
 /** Read a bounded, unambiguous component header without erasing JSON object identities. */
 function mbb_native_component_read_header(string $raw): ?stdClass
 {
@@ -323,7 +324,10 @@ function mbb_native_pre_insert($prepared, $request)
     ) {
         $review->set_param($name, $value);
     }
-    $candidate = mbb_candidate($review);
+    $exact = $scope['exact_source'] ?? null;
+    $candidate = $exact
+        ? mbb_native_document_candidate($review, $serialized, $exact)
+        : mbb_candidate($review);
     if (is_wp_error($candidate)) {
         return $candidate;
     }
@@ -618,7 +622,15 @@ function mbb_native_rest_update_core($result, $server, $request)
                 $request->has_param($field) ? array_map('intval', (array) $request[$field]) : [],
             );
         }
+        $exact_source = $request->has_param('mbb_document_candidate')
+            ? mbb_native_document_open($request, $id, $expected)
+            : null;
+        if (is_wp_error($exact_source)) {
+            $response = $exact_source;
+            throw new RuntimeException('Exact document candidate rejected');
+        }
         $GLOBALS['mbb_native_pair'] = [
+            'exact_source' => $exact_source,
             'id' => $id,
             'expected' => $expected,
             'candidate' => null,
@@ -656,6 +668,13 @@ function mbb_native_rest_update_core($result, $server, $request)
         }
         if (function_exists('mbb_references_finish')) {
             mbb_references_finish($id, $GLOBALS['mbb_native_pair']['candidate']['document']);
+        }
+        if ($exact_source) {
+            $authorization = mbb_native_document_final($exact_source, $id);
+            if (is_wp_error($authorization)) {
+                $response = $authorization;
+                throw new RuntimeException('Exact document candidate final authorization rejected');
+            }
         }
         $commit_attempted = true;
         if ($wpdb->query('COMMIT') === false) {

@@ -181,3 +181,5 @@ try {
         wp_delete_user($user);
     }
 }
+
+require __DIR__ . '/native-document-candidate.php';

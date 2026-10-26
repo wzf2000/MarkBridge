@@ -5775,6 +5775,10 @@ msgid "Save succeeded. Only this tab's candidates matching this save were cleane
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Save the adopted document with the normal editor Save / Update action. Its exact source has not been saved."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Saved collections"
 msgstr ""
 
@@ -6595,7 +6599,15 @@ msgid "The adapter version does not match. Original configuration is preserved b
 msgstr ""
 
 #: plugin/i18n.js
+msgid "The adopted candidate was edited before saving or its baseline changed. Your input is preserved. Copy your current edits for safekeeping, then undo back to the saved original, reopen the tool, and prepare and save the candidate before editing its body."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "The anchor duplicates a document ID"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The applied document candidate expired or its baseline changed. Your input is preserved. Undo it and prepare the candidate again before saving."
 msgstr ""
 
 #: plugin/i18n.js
@@ -7573,6 +7585,10 @@ msgid "The native MathML lacks verifiable semantic structure."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "The native editor did not retain the complete candidate. Current input is preserved; use Markdown edit / upload to preview it again."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "The native formula changed during verification. Select it again before converting."
 msgstr ""
 
@@ -8370,6 +8386,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "This candidate still references pending images. Upload the ZIP again or remove those images. Body content is preserved"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "This change only affects source bytes. Open Markdown edit / upload to preview and apply it with source Undo and save."
 msgstr ""
 
 #: plugin/i18n.js

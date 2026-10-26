@@ -2056,12 +2056,18 @@
           message: T('This save request could not be verified. Reopen the editor and try again.'),
         };
       const recoveryTicket = window.MarkBridgeLocalRecovery?.ticket(Number(cfg.postId), 'blocks');
+      const exactSource = nativeDocumentCandidate?.request(options.data) || {};
       const result = await next({
         ...options,
-        data: { ...options.data, mbb_expected: cfg.state.expected },
+        data: {
+          ...options.data,
+          ...exactSource,
+          mbb_expected: cfg.state.expected,
+        },
       });
       const data = options.parse === false ? await result.clone().json() : result;
       if (typeof data?.mbb_expected === 'string') {
+        nativeDocumentCandidate?.saved(data.mbb_expected, !!exactSource.mbb_document_candidate);
         cfg.state.expected = data.mbb_expected;
         if (typeof data.status === 'string') cfg.state.post_status = data.status;
         if (typeof data.title?.raw === 'string') cfg.state.title = data.title.raw;
@@ -2171,10 +2177,41 @@
     },
   };
   // The public SDK receives capabilities, never private editor inputs or save callbacks.
+  const nativeDocumentCandidate =
+    typeof MBBCreateNativeDocumentCandidate === 'function'
+      ? MBBCreateNativeDocumentCandidate({
+          view: () => ({
+            postId: Number(wp.data.select('core/editor')?.getCurrentPostId?.() || 0),
+            expected: cfg.state?.expected,
+            content: wp.data.select('core/editor')?.getEditedPostContent?.(),
+            blocks: wp.data.select('core/block-editor')?.getBlocks?.() || [],
+          }),
+          parse: (value) => wp.blocks.parse(value),
+          serialize: (blocks) => wp.blocks.serialize(blocks),
+          apply: (parsed) => {
+            const blocks = wp.data.select('core/block-editor').getBlocks();
+            const dispatch = wp.data.dispatch('core/block-editor');
+            if (blocks.length)
+              dispatch.replaceBlocks(
+                blocks.map((block) => block.clientId),
+                parsed,
+              );
+            else dispatch.insertBlocks(parsed);
+          },
+          encode: (value) => {
+            const bytes = new TextEncoder().encode(value),
+              chunks = [];
+            for (let i = 0; i < bytes.length; i += 16384)
+              chunks.push(String.fromCharCode(...bytes.subarray(i, i + 16384)));
+            return btoa(chunks.join(''));
+          },
+        })
+      : null;
   let documentNativeGeneration = 0;
   const documentNativeStamp = () => {
     const editor = window.wp?.data?.select('core/editor');
-    if (!editor?.getCurrentPostId?.()) return '';
+    if (!editor?.getCurrentPostId?.() || typeof window.wp?.blocks?.serialize !== 'function')
+      return '';
     return JSON.stringify([
       editor.getCurrentPostId(),
       editor.getPostEdits?.(),
@@ -2183,6 +2220,7 @@
   };
   let documentNativeLast = documentNativeStamp();
   window.wp?.data?.subscribe?.(() => {
+    nativeDocumentCandidate?.changed();
     const next = documentNativeStamp();
     if (next !== documentNativeLast) {
       documentNativeLast = next;
@@ -2259,22 +2297,16 @@
             (cfg.technicalStyle || '') +
             (cfg.nativeMediaStyle || '') +
             (cfg.codeDisplayStyle || ''),
-          apply: (document) => {
+          validateApply: (document) => {
+            if (!dialog?.open) nativeDocumentCandidate?.validate(document);
+          },
+          apply: (document, opening) => {
             if (dialog?.open) {
               // Existing source-tools history supplies normal local Undo/Redo.
               sourceTools.commit(document.source, 0);
               return;
             }
-            const store = wp.data.select('core/block-editor');
-            const blocks = store.getBlocks(),
-              parsed = wp.blocks.parse(document.serialized),
-              dispatch = wp.data.dispatch('core/block-editor');
-            if (blocks.length)
-              dispatch.replaceBlocks(
-                blocks.map((block) => block.clientId),
-                parsed,
-              );
-            else dispatch.insertBlocks(parsed);
+            nativeDocumentCandidate.adopt(document, opening);
           },
         })
       : null;

@@ -106,6 +106,7 @@ jobs:
           wp_test() { "$MARKBRIDGE_TEST_WPCLI" --path="$MARKBRIDGE_TEST_WORDPRESS_ROOT" "$@"; }
           wp_test eval-file tests/ci-backend.php php
           wp_test eval-file tests/native-rest-save.php
+          wp_test eval-file tests/integration/document-candidates.php
           wp_test eval-file tests/teaching-save.php
           wp_test eval-file tests/provider-save.php
           wp_test eval-file tests/component-resources-save.php
@@ -132,6 +133,7 @@ jobs:
             "$RUNNER_TEMP/markbridge-downloads/wp-cli-2.12.0.phar" --path="$MARKBRIDGE_TEST_WORDPRESS_ROOT" eval-file tests/native-rest-save.php
           wp_test eval-file tests/ci-backend.php node
           wp_test eval-file tests/native-rest-save.php
+          wp_test eval-file tests/integration/document-candidates.php
           wp_test eval-file tests/teaching-save.php
           wp_test eval-file tests/provider-save.php
           wp_test eval-file tests/component-resources-save.php
@@ -155,6 +157,7 @@ jobs:
           wp_test eval-file tests/collections-save.php
           wp_test eval-file tests/ci-backend.php php
           wp_test eval-file tests/native-rest-save.php
+          wp_test eval-file tests/integration/document-candidates.php
           wp_test eval-file tests/teaching-save.php
           wp_test eval-file tests/provider-save.php
           wp_test eval-file tests/component-resources-save.php

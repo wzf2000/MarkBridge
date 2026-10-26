@@ -8,11 +8,14 @@ from pathlib import Path
 import re
 import shutil
 import stat
+import time
+import urllib.error
 import subprocess
 import urllib.request
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
+DOWNLOAD_LIMIT = 64 * 1024 * 1024
 
 
 def install_test_locales(archive, site):
@@ -64,17 +67,39 @@ def install_test_locales(archive, site):
     return {name: hashlib.sha256(body).hexdigest() for name, body in sorted(contents.items())}
 
 
+def temporary_download_error(error):
+    if isinstance(error, urllib.error.HTTPError):
+        return error.code == 429 or 500 <= error.code <= 599
+    return isinstance(error, TimeoutError) or (
+        isinstance(error, urllib.error.URLError) and isinstance(error.reason, TimeoutError)
+    )
+
+
 def dependency(name, downloads, pins):
     pin = pins[name]
     target = downloads / Path(pin["url"]).name
+    if target.is_symlink():
+        raise RuntimeError("Public dependency cache cannot be a symlink: " + name)
     if not target.exists():
         request = urllib.request.Request(pin["url"], headers={"User-Agent": "MarkBridge-CI"})
-        with urllib.request.urlopen(request, timeout=60) as response:
-            data = response.read(64 * 1024 * 1024 + 1)
-        if len(data) > 64 * 1024 * 1024:
-            raise RuntimeError("Public dependency exceeds download limit")
-        target.write_bytes(data)
-    if target.is_symlink() or hashlib.sha256(target.read_bytes()).hexdigest() != pin["sha256"]:
+        for attempt in range(3):
+            try:
+                with urllib.request.urlopen(request, timeout=60) as response:
+                    data = response.read(DOWNLOAD_LIMIT + 1)
+            except (urllib.error.URLError, TimeoutError) as error:
+                if attempt == 2 or not temporary_download_error(error):
+                    raise
+                time.sleep(attempt + 1)
+                continue
+            if len(data) > DOWNLOAD_LIMIT:
+                raise RuntimeError("Public dependency exceeds download limit")
+            if hashlib.sha256(data).hexdigest() != pin["sha256"]:
+                raise RuntimeError("Public dependency digest mismatch: " + name)
+            target.write_bytes(data)
+            break
+    if target.stat().st_size > DOWNLOAD_LIMIT:
+        raise RuntimeError("Public dependency exceeds download limit")
+    if hashlib.sha256(target.read_bytes()).hexdigest() != pin["sha256"]:
         raise RuntimeError("Public dependency digest mismatch: " + name)
     return target
 

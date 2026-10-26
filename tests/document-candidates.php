@@ -31,18 +31,21 @@ function mbb_component_json($v)
     return json_encode($v);
 }
 function mbb_references_fresh_user() {}
-function mbb_references_fresh_post($id) {}
+function mbb_references_fresh_post($id)
+{
+    return get_post($id);
+}
 function mbb_references_projection($s)
 {
-    return ['identity' => null];
+    return ['identity' => $GLOBALS['model_identity'] ?? null];
 }
 function mbb_binding_projection($p)
 {
-    return 'binding';
+    return $GLOBALS['model_binding'] ?? 'binding';
 }
 function get_post($id)
 {
-    return (object) ['ID' => $id];
+    return (object) ['ID' => $id, 'post_content' => $GLOBALS['snapshot']['document']['serialized']];
 }
 function mbb_merge_current($id, $expected)
 {
@@ -118,6 +121,10 @@ class WP_REST_Request extends ArrayObject
     public function is_json_content_type()
     {
         return $this->contentType === 'application/json';
+    }
+    public function has_param($k)
+    {
+        return $this->offsetExists($k);
     }
     public function set_param($k, $v)
     {

@@ -182,12 +182,13 @@ function mbb_document_tools_input($request, bool $preview): array
     ) {
         throw new InvalidArgumentException('document_request');
     }
-    // JSON decoding above validates syntax/Unicode/depth. Scan the bounded bytes once to
-    // reject top-level duplicate keys, including spellings such as "post\u005fid".
-    // Skip quoted strings iteratively; no recursive parser or long-string regex is needed.
-    $depth = 0;
-    $keyExpected = false;
-    $seen = [];
+    mbb_document_tools_unique_json_keys($body);
+    return $data;
+}
+/** Linear duplicate-key check after JSON syntax/Unicode/depth validation by the caller. */
+function mbb_document_tools_unique_json_keys(string $body): void
+{
+    $stack = [];
     $length = strlen($body);
     for ($i = 0; $i < $length; $i++) {
         $char = $body[$i];
@@ -196,31 +197,28 @@ function mbb_document_tools_input($request, bool $preview): array
             while ($i < $length && $body[$i] !== '"') {
                 $i += $body[$i] === '\\' ? 2 : 1;
             }
-            if ($depth === 1 && $keyExpected) {
+            $top = count($stack) - 1;
+            if ($top >= 0 && $stack[$top] !== null && $stack[$top]['key']) {
                 $key = json_decode(
                     substr($body, $start, $i - $start + 1),
                     false,
                     2,
                     JSON_THROW_ON_ERROR,
                 );
-                if (isset($seen[$key])) {
+                if (isset($stack[$top]['seen'][$key])) {
                     throw new InvalidArgumentException('document_request');
                 }
-                $seen[$key] = true;
-                $keyExpected = false;
+                $stack[$top]['seen'][$key] = true;
+                $stack[$top]['key'] = false;
             }
         } elseif ($char === '{' || $char === '[') {
-            $depth++;
-            if ($depth === 1) {
-                $keyExpected = true;
-            }
+            $stack[] = $char === '{' ? ['key' => true, 'seen' => []] : null;
         } elseif ($char === '}' || $char === ']') {
-            $depth--;
-        } elseif ($char === ',' && $depth === 1) {
-            $keyExpected = true;
+            array_pop($stack);
+        } elseif ($char === ',' && $stack && $stack[count($stack) - 1] !== null) {
+            $stack[count($stack) - 1]['key'] = true;
         }
     }
-    return $data;
 }
 function mbb_document_tools_request($r, bool $preview)
 {

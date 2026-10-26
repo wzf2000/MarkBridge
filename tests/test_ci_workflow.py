@@ -375,6 +375,9 @@ class CISaveCoverage(unittest.TestCase):
             "batch",
         ]
         for backend, commands in zip(passes[1::2], passes[2::2]):
+            self.assertEqual(
+                commands.count("wp_test eval-file tests/integration/document-candidates.php\n"), 1
+            )
             for name in existing + ["paired-backups", "references", "collections"]:
                 with self.subTest(backend=backend, test=name):
                     self.assertEqual(
