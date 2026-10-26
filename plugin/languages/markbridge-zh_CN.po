@@ -933,6 +933,10 @@ msgid "Apply bibliography edits"
 msgstr "应用参考文献修改"
 
 #: plugin/i18n.js
+msgid "Apply changes to the editor, then use the normal save action."
+msgstr "应用后仅改变编辑器中的未保存内容，再使用普通保存。"
+
+#: plugin/i18n.js
 msgid "Apply formula"
 msgstr "应用公式"
 
@@ -943,6 +947,10 @@ msgstr "应用参数"
 #: plugin/i18n.js
 msgid "Apply text edits"
 msgstr "应用文字修改"
+
+#: plugin/i18n.js
+msgid "Apply to editor"
+msgstr "应用到编辑器"
 
 #: plugin/i18n.js
 msgid "Arrange references to saved articles, then prepare an immutable snapshot. Collection configuration is not a second article body."
@@ -1691,6 +1699,10 @@ msgid "Close interactive preview"
 msgstr "关闭交互预览"
 
 #: plugin/i18n.js
+msgid "Close the current batch before handing over more files."
+msgstr "请先关闭当前批次，再交接其他文件。"
+
+#: plugin/i18n.js
 msgid "Close without restoring"
 msgstr "关闭，不恢复"
 
@@ -2406,6 +2418,10 @@ msgid "Document"
 msgstr "文档"
 
 #: plugin/i18n.js
+msgid "Document candidate requests require a closed JSON object with valid fields and no duplicate keys."
+msgstr "正文候选请求必须是字段完整、类型有效且没有重复键的 JSON 对象，不接受额外字段。"
+
+#: plugin/i18n.js
 msgid "Document containers and declarations are unsupported"
 msgstr "不支持文档容器和声明"
 
@@ -2893,6 +2909,10 @@ msgstr "文件需要修正"
 #: plugin/i18n.js
 msgid "File validation failed."
 msgstr "文件校验失败。"
+
+#: plugin/i18n.js
+msgid "Files received. Scan selected files to review them before creating drafts."
+msgstr "已接收文件。请扫描所选文件，逐项审阅后再创建草稿。"
 
 #: plugin/i18n.js
 msgid "Final media HTML does not satisfy the save allowlist"
@@ -3697,6 +3717,10 @@ msgid "Invalid or duplicate author tool registration"
 msgstr "作者工具登记无效或重复。"
 
 #: plugin/i18n.js
+msgid "Invalid or duplicate document tool registration."
+msgstr "正文工具登记无效或标识重复。"
+
+#: plugin/i18n.js
 msgid "Invalid or duplicate version ID"
 msgstr "版本 ID 非法或重复"
 
@@ -3799,6 +3823,10 @@ msgstr "最多保留两个活动批次。请取消旧批次或等待过期；站
 #: plugin/i18n.js
 msgid "Keep my changes and continue from the latest version"
 msgstr "保留我的修改，基于最新版继续"
+
+#: plugin/i18n.js
+msgid "Keep the current identity. Import a copy as a new draft instead."
+msgstr "请保留当前文档身份；需要复制时，请导入为新草稿。"
 
 #: plugin/i18n.js
 msgid "Kind"
@@ -5286,6 +5314,10 @@ msgid "Ready for preview"
 msgstr "可预览"
 
 #: plugin/i18n.js
+msgid "Received files"
+msgstr "已接收文件"
+
+#: plugin/i18n.js
 msgid "Rechecking permissions, the article, and images…"
 msgstr "正在重新鉴权并核验当前文章与图片…"
 
@@ -5621,6 +5653,10 @@ msgstr "采用候选前，请核对并明确确认候选引用键"
 #: plugin/i18n.js
 msgid "Review and explicitly acknowledge unsupported CSL-JSON fields before adopting the candidate"
 msgstr "采用候选前，请核对并明确确认不支持的 CSL-JSON 字段"
+
+#: plugin/i18n.js
+msgid "Review document candidate"
+msgstr "审阅正文候选"
 
 #: plugin/i18n.js
 msgid "Review the conflicting article and prepare a new identity."
@@ -7142,6 +7178,10 @@ msgstr "文档 ID 无效。"
 #: plugin/i18n.js
 msgid "The document ID must begin with a letter and contain 3–64 ASCII letters, digits, underscores, or hyphens."
 msgstr "文档ID需为3–64位字母、数字、下划线或连字符，以字母开头。"
+
+#: plugin/i18n.js
+msgid "The document candidate is unavailable or expired. Save current edits and reopen the tool."
+msgstr "正文候选已失效、过期或暂不可用。请先保存当前修改，再重新打开工具。"
 
 #: plugin/i18n.js
 msgid "The document lock could not be created."

@@ -933,6 +933,10 @@ msgid "Apply bibliography edits"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Apply changes to the editor, then use the normal save action."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Apply formula"
 msgstr ""
 
@@ -942,6 +946,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Apply text edits"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Apply to editor"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1691,6 +1699,10 @@ msgid "Close interactive preview"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Close the current batch before handing over more files."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Close without restoring"
 msgstr ""
 
@@ -2406,6 +2418,10 @@ msgid "Document"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Document candidate requests require a closed JSON object with valid fields and no duplicate keys."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Document containers and declarations are unsupported"
 msgstr ""
 
@@ -2892,6 +2908,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "File validation failed."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Files received. Scan selected files to review them before creating drafts."
 msgstr ""
 
 #: plugin/i18n.js
@@ -3697,6 +3717,10 @@ msgid "Invalid or duplicate author tool registration"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Invalid or duplicate document tool registration."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Invalid or duplicate version ID"
 msgstr ""
 
@@ -3798,6 +3822,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Keep my changes and continue from the latest version"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Keep the current identity. Import a copy as a new draft instead."
 msgstr ""
 
 #: plugin/i18n.js
@@ -5286,6 +5314,10 @@ msgid "Ready for preview"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Received files"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Rechecking permissions, the article, and images…"
 msgstr ""
 
@@ -5620,6 +5652,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Review and explicitly acknowledge unsupported CSL-JSON fields before adopting the candidate"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Review document candidate"
 msgstr ""
 
 #: plugin/i18n.js
@@ -7141,6 +7177,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "The document ID must begin with a letter and contain 3–64 ASCII letters, digits, underscores, or hyphens."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The document candidate is unavailable or expired. Save current edits and reopen the tool."
 msgstr ""
 
 #: plugin/i18n.js
