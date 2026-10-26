@@ -8,6 +8,153 @@ if (!defined('ABSPATH')) {
 }
 
 require_once __DIR__ . '/includes/i18n.php';
+/** Read a bounded, unambiguous component header without erasing JSON object identities. */
+function mbb_native_component_read_header(string $raw): ?stdClass
+{
+    try {
+        $attrs = json_decode($raw, false, 32, JSON_THROW_ON_ERROR);
+        if (
+            !($attrs instanceof stdClass) ||
+            !is_string($attrs->id ?? null) ||
+            !preg_match('/^[A-Za-z][A-Za-z0-9_-]{0,63}$/D', $attrs->id) ||
+            !is_string($attrs->component ?? null) ||
+            !is_string($attrs->componentVersion ?? null) ||
+            !property_exists($attrs, 'params')
+        ) {
+            return null;
+        }
+        // json_decode accepts duplicate keys; neither response nor stored duplicates
+        // establish a correspondence. Strings followed by ':' are object keys.
+        preg_match_all('/"(?:\\\\.|[^"\\\\])*"|[{}\[\]:,]/', $raw, $matches);
+        $tokens = $matches[0];
+        $stack = [];
+        foreach ($tokens as $i => $token) {
+            if ($token === '{') {
+                $stack[] = [];
+            } elseif ($token === '[') {
+                $stack[] = null;
+            } elseif ($token === '}' || $token === ']') {
+                array_pop($stack);
+            } elseif (
+                str_starts_with($token, '"') &&
+                ($tokens[$i + 1] ?? '') === ':' &&
+                ($stack[count($stack) - 1] ?? null) !== null
+            ) {
+                $key = json_decode($token, true, 32, JSON_THROW_ON_ERROR);
+                $index = count($stack) - 1;
+                if (isset($stack[$index][$key])) {
+                    return null;
+                }
+                $stack[$index][$key] = true;
+            }
+        }
+        return $attrs;
+    } catch (JsonException) {
+        return null;
+    }
+}
+/** Restore parameter shapes in an edit projection while retaining all core/plugin hooks. */
+function mbb_native_component_read_bytes(string $projected, string $stored): string
+{
+    if (
+        strlen($stored) > 262144 ||
+        strlen($projected) > 1500000 ||
+        !str_contains($stored, '<!-- wp:mbb/component ')
+    ) {
+        return $projected;
+    }
+    $pattern = '/<!-- wp:mbb\/component (\{[\s\S]*?\}) -->/';
+    preg_match_all($pattern, $stored, $original, PREG_SET_ORDER);
+    preg_match_all($pattern, $projected, $current, PREG_SET_ORDER);
+    if (count($original) > 32 || count($current) > 32) {
+        return $projected;
+    }
+    foreach ([[$stored, $original], [$projected, $current]] as [$text, $matches]) {
+        if (preg_match_all('/<!--\s+wp:mbb\/component(?=\s|\/|-->)/', $text) !== count($matches)) {
+            return $projected;
+        }
+    }
+    $headers = [];
+    $counts = [];
+    foreach ($original as $match) {
+        $a = mbb_native_component_read_header($match[1]);
+        if (!$a) {
+            return $projected;
+        }
+        $headers[$a->id][] = $a;
+    }
+    foreach ($current as $match) {
+        $a = mbb_native_component_read_header($match[1]);
+        if (!$a) {
+            return $projected;
+        }
+        $counts[$a->id] = ($counts[$a->id] ?? 0) + 1;
+    }
+    return preg_replace_callback(
+        $pattern,
+        static function ($match) use ($headers, $counts) {
+            $a = mbb_native_component_read_header($match[1]);
+            if (!$a || count($headers[$a->id] ?? []) !== 1 || ($counts[$a->id] ?? 0) !== 1) {
+                return $match[0];
+            }
+            $before = $headers[$a->id][0];
+            if (
+                $a->component !== $before->component ||
+                $a->componentVersion !== $before->componentVersion ||
+                !($before->params instanceof stdClass) ||
+                !mbb_component_pure_params($before->params)
+            ) {
+                return $match[0];
+            }
+            $original = mbb_component_json($before->params);
+            $prepared = mbb_component_json($a->params);
+            if (
+                !is_string($original) ||
+                !is_string($prepared) ||
+                strlen($original) > 16384 ||
+                strlen($prepared) > 16384 ||
+                $original === $prepared ||
+                json_decode($original, true, 32, JSON_THROW_ON_ERROR) !==
+                    json_decode($prepared, true, 32, JSON_THROW_ON_ERROR)
+            ) {
+                return $match[0];
+            }
+            $a->params = $before->params;
+            return '<!-- wp:mbb/component ' . serialize_block_attributes((array) $a) . ' -->';
+        },
+        $projected,
+    );
+}
+function mbb_native_component_read_response($response, $post, $request)
+{
+    if (
+        !($response instanceof WP_REST_Response) ||
+        $request->get_param('context') !== 'edit' ||
+        !mbb_managed($post->ID) ||
+        !current_user_can('edit_post', $post->ID)
+    ) {
+        return $response;
+    }
+    $data = $response->get_data();
+    if (is_string($data['content']['raw'] ?? null)) {
+        $data['content']['raw'] = mbb_native_component_read_bytes(
+            $data['content']['raw'],
+            $post->post_content,
+        );
+        $response->set_data($data);
+    }
+    return $response;
+}
+foreach (['post', 'page'] as $mbb_native_post_type) {
+    add_filter(
+        'rest_prepare_' . $mbb_native_post_type,
+        'mbb_native_component_read_response',
+        20,
+        3,
+    );
+}
+unset($mbb_native_post_type);
+
 // Undo only the exact core block-comment projection, never a filter's content/configuration change.
 // Core REST block hooks serialize attributes before pre-insert (e.g. 1e-8 -> 1.0e-8,
 // or nested {} -> []). The original browser comment remains subject to strict conversion.

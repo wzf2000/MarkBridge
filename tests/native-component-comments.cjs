@@ -14,6 +14,16 @@ try {
     const original = w.MBB.importDocument(c.source, c.documentId);
     assert.equal(original.serialized, c.base.serialized, c.name + ' PHP/Node base');
     const blocks = w.wp.blocks.parse(c.incoming);
+    if (c.read) {
+      const fromRead = w.wp.blocks.parse(c.read);
+      const valid = (list) => list.every((b) => b.isValid && valid(b.innerBlocks || []));
+      assert(valid(fromRead), c.name + ' native editor REST read stays valid');
+      assert.equal(
+        w.wp.blocks.serialize(fromRead),
+        c.incoming,
+        c.name + ' read normalizes in core',
+      );
+    }
     assert.equal(
       w.wp.blocks.serialize(blocks),
       c.incoming,

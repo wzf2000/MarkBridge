@@ -53,12 +53,16 @@ for (const plain of [false, true]) {
         }
         return route.fulfill({ json: {} });
       });
-      await page.clock.install();
+      const clockStart = new Date('2026-05-28T20:00:00.000Z');
+      await page.clock.install({ time: clockStart });
       await page.goto('/recovery-editor?locale=en_US&serverBackups' + (plain ? '&plainRest' : ''));
       await expect(page.locator('.mbb-server-backups')).toHaveCount(1);
       await page.locator('#mbb-more > summary').click();
       await page.locator('#mbb-recovery-open').click();
       await expect(page.locator('.mbb-server-backups')).toContainText('Last formal save:');
+      // Let the real editor mount, then pause before exercising exact debounce boundaries.
+      // Mixing a ticking clock with fastForward can briefly move Date.now backwards.
+      await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now() + 1000)));
       const capture = () =>
         page.evaluate(() => {
           window.backupCapture = () => ({

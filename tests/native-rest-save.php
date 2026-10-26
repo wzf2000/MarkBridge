@@ -615,6 +615,7 @@ try {
         ) === ['core/paragraph'],
         'Managed inserter did not preserve an existing allowlist.',
     );
+    require __DIR__ . '/native-component-read-save.php';
     echo "Native REST paired-save fixture passed.\n";
 } finally {
     wp_set_current_user((int) $admins[0]);

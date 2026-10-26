@@ -34,6 +34,7 @@ foreach (['span', 'text-replacement', 'attribute-token', 'decoder', 'tag-process
     require_once $root . '/wp-includes/html-api/class-wp-html-' . $name . '.php';
 }
 require dirname(__DIR__) . '/plugin/native-rest-save.php';
+require dirname(__DIR__) . '/plugin/components.php';
 require dirname(__DIR__) . '/plugin/includes/php-converter/Worker.php';
 function native_comment_check($ok, $label)
 {
@@ -137,6 +138,13 @@ foreach (
         'original core projection must reproduce strict refusal ' . $name,
     );
     $repaired = mbb_native_component_comment_bytes($prepared, $incoming);
+    $read = mbb_native_component_read_bytes($prepared, $incoming);
+    preg_match('/<!-- wp:mbb\/component (\{[\s\S]*?\}) -->/', $incoming, $beforeHeader);
+    preg_match('/<!-- wp:mbb\/component (\{[\s\S]*?\}) -->/', $read, $readHeader);
+    native_comment_check(
+        json_decode($beforeHeader[1])->params == json_decode($readHeader[1])->params,
+        'editor read preserves parameter JSON object and array shapes ' . $name,
+    );
     native_comment_check(
         $repaired === $incoming,
         'exact original component comment restored ' . $name,
@@ -155,6 +163,7 @@ foreach (
         'incoming' => $incoming,
         'prepared' => $prepared,
         'repaired' => $repaired,
+        'read' => $read,
         'documentId' => $documentId,
     ];
 }
@@ -232,6 +241,28 @@ $c = $cases[3];
 $incoming = $c['incoming'];
 $prepared = $c['prepared'];
 $blocks = parse_blocks($prepared);
+$hooked = $blocks;
+$hooked[0]['attrs']['metadata'] = ['ignoredHookedBlocks' => ['example/extra']];
+$hooked =
+    '<!-- wp:paragraph --><p>Hooked introduction</p><!-- /wp:paragraph -->' .
+    serialize_blocks($hooked);
+$read = mbb_native_component_read_bytes($hooked, $incoming);
+native_comment_check(
+    str_contains($read, 'Hooked introduction') && str_contains($read, 'ignoredHookedBlocks'),
+    'editor read retains hooked blocks and new metadata',
+);
+preg_match('/<!-- wp:mbb\/component (\{[\s\S]*?\}) -->/', $read, $header);
+native_comment_check(
+    json_decode($header[1])->params ==
+        json_decode(
+            preg_replace(
+                '/^.*?<!-- wp:mbb\/component (\{[\s\S]*?\}) -->[\s\S]*$/',
+                '$1',
+                $incoming,
+            ),
+        )->params,
+    'hooked editor read retains original parameter types',
+);
 foreach (['value', 'metadata', 'type', 'structure'] as $change) {
     $changed = $blocks;
     if ($change === 'value') {
@@ -255,6 +286,12 @@ foreach (['value', 'metadata', 'type', 'structure'] as $change) {
         $changed[0]['innerContent'] = array_values($changed[0]['innerContent']);
     }
     $serialized = serialize_blocks($changed);
+    if (in_array($change, ['value', 'type'], true)) {
+        native_comment_check(
+            mbb_native_component_read_bytes($serialized, $incoming) === $serialized,
+            'editor read does not reverse semantic ' . $change . ' changes',
+        );
+    }
     native_comment_check(
         mbb_native_component_comment_bytes($serialized, $incoming) === $serialized,
         'actual ' . $change . ' must not be restored',
@@ -278,6 +315,10 @@ foreach (['duplicate-id', 'duplicate-json', 'malformed-json'] as $bad) {
         $original = preg_replace('/"id":"sample"/', '"id":"sample",', $original, 1);
     }
     $projected = serialize_blocks(parse_blocks($original));
+    native_comment_check(
+        mbb_native_component_read_bytes($projected, $original) === $projected,
+        'editor read does not guess after ' . $bad,
+    );
     $repaired = mbb_native_component_comment_bytes($projected, $original);
     if ($bad === 'duplicate-id') {
         native_comment_check($repaired === $projected, 'duplicate instance must not restore');
