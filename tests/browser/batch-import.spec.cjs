@@ -181,6 +181,44 @@ test('File array handoff keeps the input untouched and requires an explicit scan
 }) => {
   await page.goto('/batch-tools?locale=en_US');
   await page.evaluate(async () => {
+    // Chromium's network events may omit a multipart body containing a File. Observe
+    // the browser-encoded clone and send that same untouched Request over the network.
+    const originalFetch = window.fetch.bind(window);
+    window.mbbHandoffRequests = [];
+    window.fetch = async (input, options) => {
+      if (
+        options?.body instanceof FormData &&
+        new URL(input, location.href).pathname.endsWith('/prepare')
+      ) {
+        if (window.mbbHandoffRequests.length) throw Error('Unexpected second file handoff');
+        const request = new Request(input, options);
+        const bytes = await request.clone().arrayBuffer();
+        if (bytes.byteLength > 65536)
+          throw Error('Synthetic handoff exceeded its observation budget');
+        const form = await request.clone().formData();
+        const fields = [];
+        for (const [name, value] of form) {
+          fields.push([
+            name,
+            value instanceof File
+              ? {
+                  name: value.name,
+                  type: value.type,
+                  size: value.size,
+                  text: await value.text(),
+                }
+              : value,
+          ]);
+        }
+        window.mbbHandoffRequests.push({
+          contentType: request.headers.get('Content-Type'),
+          raw: new TextDecoder().decode(bytes),
+          fields,
+        });
+        return originalFetch(request);
+      }
+      return originalFetch(input, options);
+    };
     await MarkBridgeBatch.open([
       new File(['# handed source'], 'handed.md', { type: 'text/markdown' }),
     ]);
@@ -194,10 +232,22 @@ test('File array handoff keeps the input untouched and requires an explicit scan
   ).toBe(0);
   expect((await control(page)).confirms).toEqual([]);
   await expect(dialog(page).getByLabel('Logical identity handling')).toHaveValue('copy');
+  expect(await page.evaluate(() => window.mbbHandoffRequests)).toEqual([]);
   const scanRequest = page.waitForRequest((request) => request.url().endsWith('/prepare'));
   await dialog(page).getByRole('button', { name: 'Scan selected files', exact: true }).click();
   const request = await scanRequest;
-  expect(request.postData()).toContain('filename="handed.md"');
-  expect(request.postData()).toContain('copy');
+  const observed = await page.evaluate(() => window.mbbHandoffRequests);
+  expect(observed).toHaveLength(1);
+  expect(observed[0].contentType).toMatch(/^multipart\/form-data; boundary=/);
+  expect(request.headers()['content-type']).toBe(observed[0].contentType);
+  expect(observed[0].raw).toContain('name="documents[]"; filename="handed.md"');
+  expect(observed[0].raw).toContain('name="identity_strategy"\r\n\r\ncopy\r\n');
+  expect(observed[0].fields).toEqual([
+    [
+      'documents[]',
+      { name: 'handed.md', type: 'text/markdown', size: 15, text: '# handed source' },
+    ],
+    ['identity_strategy', 'copy'],
+  ]);
   expect((await control(page)).confirms).toEqual([]);
 });

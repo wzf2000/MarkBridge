@@ -167,7 +167,7 @@ test('Main source application uses existing byte-preserving Undo and never saves
       body: JSON.stringify(data),
     });
   });
-  await page.goto('/editor');
+  await page.goto('/editor?locale=en_US');
   await page.evaluate(() => {
     MarkBridgeDocumentTools.registerTool('source-review', {
       label: 'Source review',
