@@ -7589,6 +7589,10 @@ msgid "The native editor did not retain the complete candidate. Current input is
 msgstr "原生编辑器未完整保留候选。当前输入已保留，请使用“Markdown 编辑 / 上传”重新预览。"
 
 #: plugin/i18n.js
+msgid "The native editor is synchronizing Undo or Redo. Your input is preserved. Wait for the editor to finish, then save again."
+msgstr "原生编辑器正在同步撤销或重做，当前输入已保留。请等待编辑器完成后再保存。"
+
+#: plugin/i18n.js
 msgid "The native formula changed during verification. Select it again before converting."
 msgstr "原生公式在验证期间已变化，请重新选择后转换。"
 

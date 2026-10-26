@@ -1883,6 +1883,7 @@
   "The native MathML lacks a unique TeX source annotation.",
   "The native MathML lacks verifiable semantic structure.",
   "The native editor did not retain the complete candidate. Current input is preserved; use Markdown edit / upload to preview it again.",
+  "The native editor is synchronizing Undo or Redo. Your input is preserved. Wait for the editor to finish, then save again.",
   "The native formula changed during verification. Select it again before converting.",
   "The native formula contains nested blocks and cannot be converted without loss.",
   "The native formula has extra formatting or attributes and cannot be converted without loss.",

@@ -2180,12 +2180,22 @@
   const nativeDocumentCandidate =
     typeof MBBCreateNativeDocumentCandidate === 'function'
       ? MBBCreateNativeDocumentCandidate({
-          view: () => ({
-            postId: Number(wp.data.select('core/editor')?.getCurrentPostId?.() || 0),
-            expected: cfg.state?.expected,
-            content: wp.data.select('core/editor')?.getEditedPostContent?.(),
-            blocks: wp.data.select('core/block-editor')?.getBlocks?.() || [],
-          }),
+          view: () => {
+            const editor = wp.data.select('core/editor'),
+              postId = Number(editor?.getCurrentPostId?.() || 0),
+              postType = editor?.getCurrentPostType?.(),
+              entity = postType
+                ? wp.data.select('core')?.getEditedEntityRecord?.('postType', postType, postId)
+                : null;
+            return {
+              postId,
+              expected: cfg.state?.expected,
+              mode: editor?.getEditorMode?.(),
+              content: editor?.getEditedPostContent?.(),
+              blocks: wp.data.select('core/block-editor')?.getBlocks?.() || [],
+              entityBlocks: entity?.blocks,
+            };
+          },
           parse: (value) => wp.blocks.parse(value),
           serialize: (blocks) => wp.blocks.serialize(blocks),
           apply: (parsed) => {

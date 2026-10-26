@@ -13,6 +13,8 @@ let counter = 0,
   postId = 7,
   expected = 'saved',
   content,
+  mode = 'visual',
+  entityBlocks,
   blocks = [{ clientId: 'old', text: 'old' }],
   memory;
 const serialize = (value) => JSON.stringify(value.map((b) => b.text));
@@ -23,7 +25,14 @@ assert(source.includes('\r\n'));
 const document = { source, serialized: '["new-literal-marker"]' };
 const opening = { context: { post_id: 7, expected: 'saved' }, receipt: 'signed', expires: 2000 };
 memory = context.create({
-  view: () => ({ postId, expected, blocks, content }),
+  view: () => ({
+    postId,
+    expected,
+    blocks,
+    mode,
+    entityBlocks: entityBlocks === undefined ? blocks : entityBlocks,
+    content: content === undefined ? serialize(entityBlocks || blocks) : content,
+  }),
   serialize,
   parse: (value) => JSON.parse(value).map((text) => ({ text, clientId: 'new-' + ++counter })),
   apply: (value) => {
@@ -168,3 +177,153 @@ assert.equal(
   'saving B itself clears its pending proof',
 );
 console.log('native original-save/Redo tombstone model passed');
+
+// Real Gutenberg Undo/Redo updates core-data before its block-editor projection.
+// Two complete byte/recursive-ID endpoints may diverge temporarily, never save.
+function freshAdoption() {
+  memory.clear();
+  expected = 'saved';
+  postId = 7;
+  mode = 'visual';
+  content = undefined;
+  entityBlocks = undefined;
+  blocks = original;
+  memory.adopt(document, opening);
+  return blocks;
+}
+const transitionB = freshAdoption();
+entityBlocks = original; // Undo has reached core-data; block-editor still holds B.
+memory.changed();
+assert.throws(
+  () => memory.request({ content: serialize(original) }),
+  (e) => e.code === 'document_native_transition',
+  'saving during Undo transition is rejected without consuming provenance',
+);
+memory.changed(); // More than one subscription/microtask may observe the split.
+blocks = original;
+memory.changed();
+assert.equal(Object.keys(memory.request({ content: serialize(original) })).length, 0);
+entityBlocks = transitionB; // Redo core-data has B; block-editor still holds A.
+memory.changed();
+assert.throws(
+  () => memory.request({ content: serialize(transitionB) }),
+  (e) => e.code === 'document_native_transition',
+);
+blocks = transitionB;
+memory.changed();
+assert(memory.request({ content: serialize(transitionB) }).mbb_document_candidate);
+// A transition may also return to its starting endpoint without becoming a third body.
+entityBlocks = original;
+memory.changed();
+entityBlocks = transitionB;
+memory.changed();
+assert(memory.request({ content: serialize(transitionB) }).mbb_document_candidate);
+
+// Every relaxing condition is required, and observing a failure is permanent.
+for (const mutate of [
+  () => {
+    mode = 'text';
+    entityBlocks = original;
+  },
+  () => {
+    entityBlocks = null;
+    content = serialize(original);
+  },
+  () => {
+    mode = undefined;
+  },
+  () => {
+    entityBlocks = [{ ...original[0], clientId: 'unknown-original-id' }];
+  },
+  () => {
+    entityBlocks = [
+      { ...original[0], innerBlocks: [{ clientId: 'unknown-entity-child', text: '' }] },
+    ];
+  },
+  () => {
+    entityBlocks = [{ ...original[0], clientId: undefined }];
+  },
+  () => {
+    entityBlocks = [{ ...original[0], text: 'unreviewed entity body' }];
+  },
+  () => {
+    entityBlocks = original;
+    content = serialize(blocks);
+  },
+  () => {
+    entityBlocks = original;
+    expected = 'external-baseline';
+  },
+]) {
+  const b = freshAdoption();
+  mutate();
+  memory.changed();
+  mode = 'visual';
+  expected = 'saved';
+  entityBlocks = b;
+  blocks = b;
+  content = serialize(b);
+  memory.changed();
+  assert.throws(
+    () => memory.request({ content: serialize(b) }),
+    (e) => e.code === 'document_native_candidate',
+    'unknown projection/mode/body cannot revive B by returning to its bytes',
+  );
+  blocks = original;
+  entityBlocks = original;
+  content = serialize(original);
+  memory.changed();
+  assert.equal(
+    Object.keys(memory.request({ content: serialize(original) })).length,
+    0,
+    'complete original A remains a safe way back after invalidation',
+  );
+}
+
+// A user typing an exact endpoint in code mode cannot masquerade as native history.
+const codeB = freshAdoption();
+mode = 'text';
+entityBlocks = null; // Core PostTextEditor onChange explicitly clears blocks.
+content = serialize(original);
+memory.changed();
+mode = 'visual';
+entityBlocks = codeB;
+blocks = codeB;
+content = serialize(codeB);
+assert.throws(() => memory.request({ content: serialize(codeB) }));
+
+// IDs are recursive, even when a third block projection has equal serialized bytes.
+const nestedB = freshAdoption();
+blocks = [{ ...nestedB[0], innerBlocks: [{ clientId: 'unregistered-child', text: '' }] }];
+entityBlocks = original;
+content = serialize(original);
+memory.changed();
+blocks = nestedB;
+entityBlocks = nestedB;
+content = serialize(nestedB);
+assert.throws(() => memory.request({ content: serialize(nestedB) }));
+
+// Save A -> Redo B is blocked at the first (core-data-only) half of Redo too.
+const abandonedB = freshAdoption();
+blocks = original;
+entityBlocks = original;
+content = serialize(original);
+memory.changed();
+memory.saved('saved-A-transition', false);
+expected = 'saved-A-transition';
+entityBlocks = abandonedB;
+content = serialize(abandonedB);
+memory.changed();
+assert.throws(() => memory.request({ content: serialize(abandonedB) }));
+
+// Missing optional WordPress APIs do not throw before adoption; adoption fails closed.
+memory.clear();
+mode = undefined;
+entityBlocks = null;
+assert.doesNotThrow(() => memory.changed());
+assert.equal(Object.keys(memory.request({ title: 'ordinary update' })).length, 0);
+assert.throws(
+  () => memory.validate(document),
+  (e) => e.code === 'document_native_candidate',
+);
+console.log('native cross-store transition provenance model passed');

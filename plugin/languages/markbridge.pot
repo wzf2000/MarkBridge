@@ -7589,6 +7589,10 @@ msgid "The native editor did not retain the complete candidate. Current input is
 msgstr ""
 
 #: plugin/i18n.js
+msgid "The native editor is synchronizing Undo or Redo. Your input is preserved. Wait for the editor to finish, then save again."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "The native formula changed during verification. Select it again before converting."
 msgstr ""
 
