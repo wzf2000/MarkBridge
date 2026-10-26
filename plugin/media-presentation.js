@@ -2,7 +2,10 @@
   const T = (message) => globalThis.MBBI18n?.t(message) ?? message;
   const failures = new WeakMap();
   const managed = (image) =>
-    image instanceof HTMLImageElement && image.closest('[data-mbb-content-view],.mbb-document');
+    image instanceof HTMLImageElement &&
+    !image.matches('.emoji,.wp-smiley') &&
+    !image.closest('.mbb-image-unavailable') &&
+    image.closest('[data-mbb-content-view],.mbb-document');
   function failed(image) {
     if (!managed(image)) return;
     let url;

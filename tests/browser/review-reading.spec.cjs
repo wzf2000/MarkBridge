@@ -58,6 +58,77 @@ test('upright reading statements, quote edges, and failed image links preserve a
   await expect(page.locator('#failed-image')).toBeVisible();
   await expect(page.locator('.mbb-image-unavailable')).toHaveCount(0);
 });
+test('failed inline emoji and generated fallback images never create recursive image fallbacks', async ({
+  page,
+}) => {
+  let requests = 0;
+  await page.route('https://review.invalid/**', (route) => {
+    requests++;
+    return route.abort();
+  });
+  await page.goto('/front');
+  await page.evaluate(async () => {
+    const article = document.querySelector('article');
+    const root = document.createElement('section');
+    root.id = 'image-failure-boundaries';
+    root.setAttribute('data-mbb-content-view', '');
+    article.append(root);
+    const broken = (id, className, alt, parent) => {
+      const image = document.createElement('img');
+      image.id = id;
+      image.className = className;
+      image.alt = alt;
+      const failed = new Promise((resolve) =>
+        image.addEventListener('error', resolve, { once: true }),
+      );
+      parent.append(image);
+      image.src = 'https://review.invalid/' + id + '.png';
+      return failed;
+    };
+    const figure = document.createElement('figure');
+    const inline = document.createElement('p');
+    root.append(figure, inline);
+    await Promise.all([
+      broken('ordinary-broken', '', '作者图片', figure),
+      broken('inline-emoji-broken', 'emoji', '😀', inline),
+      broken('inline-smiley-broken', 'wp-smiley', '🙂', inline),
+    ]);
+  });
+  const root = page.locator('#image-failure-boundaries');
+  await expect(root.locator('.mbb-image-unavailable')).toHaveCount(1);
+  await expect(root.locator('.mbb-image-unavailable a')).toHaveAttribute(
+    'href',
+    'https://review.invalid/ordinary-broken.png',
+  );
+  await expect(root.locator('.mbb-image-unavailable a')).toHaveText('作者图片');
+  await expect(root.locator('#ordinary-broken')).toHaveClass(/mbb-image-failed/);
+  await expect(root.locator('p .mbb-image-unavailable')).toHaveCount(0);
+  await expect(root.locator('#inline-emoji-broken')).not.toHaveClass(/mbb-image-failed/);
+  await expect(root.locator('#inline-smiley-broken')).not.toHaveClass(/mbb-image-failed/);
+
+  // WordPress may turn emoji alt text in a fallback link into another image.
+  // A real failed descendant must be ignored even without an emoji class.
+  await root.locator('.mbb-image-unavailable a').evaluate(async (link) => {
+    const image = document.createElement('img');
+    image.id = 'derived-broken';
+    image.alt = '😀';
+    const failed = new Promise((resolve) =>
+      image.addEventListener('error', resolve, { once: true }),
+    );
+    link.append(image);
+    image.src = 'https://review.invalid/derived-broken.png';
+    await failed;
+  });
+  await page.waitForLoadState('networkidle');
+  await expect(root.locator('.mbb-image-unavailable')).toHaveCount(1);
+  await expect(root.locator('.mbb-image-unavailable .mbb-image-unavailable')).toHaveCount(0);
+  await expect(root.locator('#derived-broken')).not.toHaveClass(/mbb-image-failed/);
+  await expect(root.locator('.mbb-image-unavailable a')).toHaveAttribute(
+    'href',
+    'https://review.invalid/ordinary-broken.png',
+  );
+  expect(requests).toBe(4); // One author image, two inline emoji, one derived image; no retries.
+});
 test('missing static renderer exposes authored fallback but no reader-facing raw configuration', async ({
   page,
 }) => {
