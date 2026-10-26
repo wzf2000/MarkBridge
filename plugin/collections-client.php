@@ -158,6 +158,7 @@ function mbb_collections_client_metadata(string $adapter): ?array
             'sha256',
             mbb_collections_json([
                 $provider['fingerprint'],
+                $provider['collectionSchemas'],
                 $hashes,
                 mbb_collections_client_core(),
             ]),

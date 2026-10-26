@@ -40,6 +40,7 @@ function mbb_collections_closed($value, array $keys): bool
 }
 function mbb_collections_config($value): array
 {
+    $schema = is_array($value) ? $value['schema'] ?? null : null;
     if (
         !mbb_collections_closed($value, [
             'schema',
@@ -49,8 +50,9 @@ function mbb_collections_config($value): array
             'cover',
             'privateOptIn',
             'chapters',
+            ...$schema === 2 ? ['authors', 'edition', 'versionStatement', 'numbering'] : [],
         ]) ||
-        $value['schema'] !== 1 ||
+        !in_array($schema, [1, 2], true) ||
         !is_bool($value['privateOptIn']) ||
         (!is_null($value['cover']) && (!is_int($value['cover']) || $value['cover'] < 1)) ||
         !is_array($value['chapters']) ||
@@ -75,11 +77,44 @@ function mbb_collections_config($value): array
     ) {
         throw new InvalidArgumentException('Invalid collection title or language');
     }
+    if ($schema === 2) {
+        if (
+            !is_array($value['authors']) ||
+            !array_is_list($value['authors']) ||
+            count($value['authors']) > 8 ||
+            !in_array($value['numbering'], ['article', 'chapter'], true)
+        ) {
+            throw new InvalidArgumentException('Invalid collection publication metadata');
+        }
+        foreach (
+            [
+                ...array_map(static fn($author) => [$author, 200, true], $value['authors']),
+                [$value['edition'], 200, false],
+                [$value['versionStatement'], 1000, false],
+            ]
+            as [$text, $max, $required]
+        ) {
+            if (
+                !is_string($text) ||
+                !mb_check_encoding($text, 'UTF-8') ||
+                strlen($text) > $max ||
+                ($required && trim($text) === '') ||
+                preg_match('/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/', $text)
+            ) {
+                throw new InvalidArgumentException('Invalid collection publication metadata');
+            }
+        }
+    }
     $ids = [];
     $keys = [];
     foreach ($value['chapters'] as $chapter) {
         if (
-            !mbb_collections_closed($chapter, ['key', 'post_id']) ||
+            !mbb_collections_closed($chapter, [
+                'key',
+                'post_id',
+                ...$schema === 2 ? ['role'] : [],
+            ]) ||
+            ($schema === 2 && !in_array($chapter['role'], ['preface', 'body', 'appendix'], true)) ||
             !is_string($chapter['key']) ||
             !preg_match('/^C_[a-f0-9]{32}$/D', $chapter['key']) ||
             !is_int($chapter['post_id']) ||
@@ -104,4 +139,57 @@ function mbb_collections_id(mixed $value): bool
 function mbb_collections_token(mixed $value): bool
 {
     return is_string($value) && preg_match('/^[a-f0-9]{64}$/D', $value) === 1;
+}
+
+/** Public capability probe; old providers can omit the optional descriptor on older hosts. */
+function markbridge_publication_collection_schemas(): array
+{
+    return [1, 2];
+}
+/** Chapter labels are derived solely from the explicit ordered reference configuration. */
+function mbb_collections_chapter_layout(array $config): array
+{
+    $body = 0;
+    $appendix = 0;
+    $out = [];
+    foreach ($config['chapters'] as $chapter) {
+        $role = $chapter['role'] ?? 'body';
+        $out[$chapter['key']] = [
+            'role' => $role,
+            'number' =>
+                $role === 'body'
+                    ? (string) ++$body
+                    : ($role === 'appendix'
+                        ? chr(65 + $appendix++)
+                        : null),
+        ];
+    }
+    return $out;
+}
+/** Only native technical objects have a matching controlled server renderer. */
+function mbb_collections_number_objects(array $objects, ?string $prefix): array
+{
+    $numbers = [];
+    $retained = [];
+    foreach ($objects as $id => &$object) {
+        $kind = $object['displayKind'];
+        if (
+            $prefix !== null &&
+            in_array(
+                $kind,
+                ['equation', 'figure', 'table', 'listing', 'definition', 'theorem', 'proof'],
+                true,
+            )
+        ) {
+            if (!is_int($object['number']) || $object['number'] < 1) {
+                throw new InvalidArgumentException('Invalid publication object number');
+            }
+            $object['number'] = $prefix . '.' . $object['number'];
+            $numbers[$id] = ['kind' => $kind, 'number' => $object['number']];
+        } else {
+            $retained[] = $id;
+        }
+    }
+    unset($object);
+    return ['objects' => $objects, 'numbers' => $numbers, 'retained' => $retained];
 }

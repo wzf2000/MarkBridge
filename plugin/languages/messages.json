@@ -2235,5 +2235,22 @@
   "Column width must be a percentage greater than 0 and at most 100": "列宽必须是大于 0 且不超过 100 的百分比。",
   "Column width differs from its fixed HTML style": "列宽与固定 HTML 样式不一致。",
   "Columns may contain only 0–6 direct column blocks": "分栏仅可直接包含 0–6 个列区块。",
-  "A column must be a direct child of columns": "列区块必须直接位于分栏中。"
+  "A column must be a direct child of columns": "列区块必须直接位于分栏中。",
+  "This publication adapter does not support this collection schema. Select a compatible format.": "此出版格式不支持当前文集编排，请选择兼容格式。",
+  "Chapter role": "章节角色",
+  "Preface": "前言",
+  "Body chapter": "正文章节",
+  "Appendix": "附录",
+  "Existing arrangements keep their original schema. Adopt publication arrangement to add authors, editions, chapter roles and optional chapter object numbering.": "已有编排保持原格式。采用出版编排后，可填写作者、版次和章节角色，并按需启用章节对象编号。",
+  "Adopt publication arrangement": "采用出版编排",
+  "Publication metadata and numbering": "出版信息与编号",
+  "Authors (one per line, up to 8)": "作者（每行一位，最多 8 位）",
+  "Edition": "版次",
+  "Version statement": "版本声明",
+  "Object numbering": "对象编号",
+  "Keep article numbering": "保留文章编号",
+  "Use chapter object numbers": "采用章节对象编号",
+  "Body chapters use 1, 2; appendices use A, B. Prefaces keep article object numbers. Chapter numbering covers equations, figures, tables, listings, definitions, theorems and proofs; steps and activities retain article numbers.": "正文按 1、2 编号，附录按 A、B 编号，前言对象保留文章编号。章节对象编号适用于公式、图、表、程序清单、定义、定理和证明；步骤与活动保留文章编号。",
+  "Undo publication arrangement": "撤销采用出版编排",
+  "Publication fields remain on this page. Adopt again to restore them before saving.": "出版信息仍保留在本页，重新采用后可恢复这些字段再保存。"
 }

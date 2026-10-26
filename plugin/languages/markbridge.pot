@@ -773,6 +773,10 @@ msgid "Administrator permission is required."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Adopt publication arrangement"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Adopt unsaved merge candidate"
 msgstr ""
 
@@ -901,6 +905,10 @@ msgid "Append values"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Appendix"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Applied bibliography changed. The current candidate is preserved and unapplied."
 msgstr ""
 
@@ -986,6 +994,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Authors (one per line, at most eight)"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Authors (one per line, up to 8)"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1206,6 +1218,14 @@ msgid "Body alignment must match header columns"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Body chapter"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Body chapters use 1, 2; appendices use A, B. Prefaces keep article object numbers. Chapter numbering covers equations, figures, tables, listings, definitions, theorems and proofs; steps and activities retain article numbers."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Body conflict "
 msgstr ""
 
@@ -1404,6 +1424,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Changes"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Chapter role"
 msgstr ""
 
 #: plugin/i18n.js
@@ -2581,6 +2605,10 @@ msgid "Editing permission for this article was lost. Only this article's local c
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Edition"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Empty anchors must occupy their own paragraph"
 msgstr ""
 
@@ -2682,6 +2710,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Execution stopped."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Existing arrangements keep their original schema. Adopt publication arrangement to add authors, editions, chapter roles and optional chapter object numbering."
 msgstr ""
 
 #: plugin/i18n.js
@@ -3725,6 +3757,10 @@ msgid "Journal article"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Keep article numbering"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Keep as plain text"
 msgstr ""
 
@@ -4530,6 +4566,10 @@ msgid "Object %1$s must contain exactly one matching formula, image, table or co
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Object numbering"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Object or statement kind"
 msgstr ""
 
@@ -4870,6 +4910,10 @@ msgid "Post-save content verification failed"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Preface"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Prepare a copy with a new identity"
 msgstr ""
 
@@ -5083,6 +5127,14 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Publication and source fields are limited to 512 plain characters"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Publication fields remain on this page. Adopt again to restore them before saving."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Publication metadata and numbering"
 msgstr ""
 
 #: plugin/i18n.js
@@ -8289,6 +8341,10 @@ msgid "This preview creates a normalized cross-site copy without old attachment 
 msgstr ""
 
 #: plugin/i18n.js
+msgid "This publication adapter does not support this collection schema. Select a compatible format."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "This registered field is required."
 msgstr ""
 
@@ -8395,6 +8451,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Undated"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Undo publication arrangement"
 msgstr ""
 
 #: plugin/i18n.js
@@ -8672,6 +8732,10 @@ msgid "Use bibliography candidate"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Use chapter object numbers"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Use displayed line numbers, for example 12,15-18."
 msgstr ""
 
@@ -8773,6 +8837,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Version language"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Version statement"
 msgstr ""
 
 #: plugin/i18n.js

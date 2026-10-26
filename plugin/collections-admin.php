@@ -49,6 +49,7 @@ add_action('admin_enqueue_scripts', static function ($hook) {
                 'url' => rest_url('mbb/v1/collections'),
                 'nonce' => wp_create_nonce('wp_rest'),
                 'lang' => str_replace('_', '-', get_locale()),
+                'collectionSchemas' => markbridge_publication_collection_schemas(),
             ]) .
             ';',
         'before',

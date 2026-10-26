@@ -1,5 +1,8 @@
 <?php
 // wp eval-file, only against an explicitly identified disposable local WordPress.
+if (PHP_SAPI !== 'cli' || !defined('WP_CLI') || !WP_CLI || !defined('ABSPATH')) {
+    throw new RuntimeException('Run collection save checks only through local WP-CLI.');
+}
 $root = getenv('MARKBRIDGE_TEST_WORDPRESS_ROOT');
 $home = getenv('MARKBRIDGE_TEST_HOME');
 if (
@@ -125,7 +128,12 @@ try {
     foreach (['publish', 'draft'] as $n => $status) {
         $doc = mbb_convert([
             'mode' => 'markdown',
-            'source' => "# Synthetic chapter\n\nSaved body $n.\n",
+            'source' =>
+                "# Synthetic chapter\n\nSaved body $n.\n\n" .
+                ':::mbb:v1 object {"id":"eq-book","kind":"equation","caption":"Publication equation"}' .
+                "\n\n$$\nx^2\n$$\n\n:::mbb:end\n\n" .
+                '<span class="mbb-xref" data-mbb-target="eq-book" data-mbb-version="1">[eq-book]</span> <a href="#eq-book">Author-selected equation link</a>' .
+                "\n",
             'documentId' => 'COLLECTION_TEST_' . $n,
         ]);
         collection_assert(!is_wp_error($doc), 'conversion');
@@ -296,6 +304,93 @@ try {
         'config' => $config,
     ])->get_data();
     collection_assert(isset($saved['revision']), 'explicit selected private');
+    $v2 = $config + [
+        'authors' => ['Synthetic Author'],
+        'edition' => 'Edition 1',
+        'versionStatement' => 'Reviewed locally',
+        'numbering' => 'chapter',
+    ];
+    $v2['schema'] = 2;
+    $v2['chapters'][0]['role'] = 'body';
+    $v2['chapters'][1]['role'] = 'appendix';
+    $savedV2 = collection_request('POST', '', [
+        'schema' => 1,
+        'revision' => $saved['revision'],
+        'collection_id' => $saved['collection_id'],
+        'config' => $v2,
+    ]);
+    collection_assert($savedV2->get_status() === 200, 'schema two configuration saved');
+    $savedV2 = $savedV2->get_data();
+    $preparedV2 = collection_request('POST', '/prepare', [
+        'schema' => 1,
+        'collection_id' => $savedV2['collection_id'],
+        'revision' => $savedV2['revision'],
+        'adapter' => 'snapshot-v1',
+    ]);
+    collection_assert($preparedV2->get_status() === 200, 'schema two prepared');
+    $preparedV2 = $preparedV2->get_data();
+    $tokens[] = $preparedV2['token'];
+    $dir = mbb_collections_directory($preparedV2['token']);
+    $manifestV2 = json_decode(
+        file_get_contents($dir . '/manifest.json'),
+        true,
+        64,
+        JSON_THROW_ON_ERROR,
+    );
+    collection_assert(
+        $manifestV2['schema'] === 2 &&
+            $manifestV2['authors'] === ['Synthetic Author'] &&
+            $manifestV2['edition'] === 'Edition 1',
+        'actual frozen metadata',
+    );
+    foreach (['1.1', 'A.1'] as $i => $number) {
+        collection_assert(
+            $manifestV2['chapters'][$i]['objects'][0]['number'] === $number,
+            'actual object metadata chapter number',
+        );
+        $body = file_get_contents($dir . '/' . basename($manifestV2['chapters'][$i]['path']));
+        collection_assert(
+            str_contains($body, $number . '. ') &&
+                str_contains($body, $number . '</a>') &&
+                str_contains($body, 'Author-selected equation link'),
+            'actual body/automatic reference number and authored anchor',
+        );
+    }
+    $v2['edition'] = 'Edition 2';
+    $changedV2 = collection_request('POST', '', [
+        'schema' => 1,
+        'revision' => $savedV2['revision'],
+        'collection_id' => $savedV2['collection_id'],
+        'config' => $v2,
+    ]);
+    collection_assert($changedV2->get_status() === 200, 'changed publication metadata saved');
+    collection_assert(
+        collection_request('POST', '/jobs/' . $preparedV2['token'] . '/confirm', [
+            'schema' => 1,
+            'receipt' => $preparedV2['receipt'],
+        ])->get_status() === 409,
+        'old metadata candidate cannot confirm',
+    );
+    collection_request('DELETE', '/jobs/' . $preparedV2['token']);
+    mbb_register_publication_adapter('legacy-save-fixture', [
+        'contract' => 'mbb-publication-adapter/v1',
+        'version' => '0.3.0',
+        'fingerprint' => str_repeat('d', 64),
+        'title' => 'Legacy save fixture',
+        'extension' => 'zip',
+        'mime' => 'application/zip',
+        'build' => 'mbb_collections_snapshot_zip',
+    ]);
+    $changedV2 = $changedV2->get_data();
+    collection_assert(
+        collection_request('POST', '/prepare', [
+            'schema' => 1,
+            'collection_id' => $changedV2['collection_id'],
+            'revision' => $changedV2['revision'],
+            'adapter' => 'legacy-save-fixture',
+        ])->get_status() === 422,
+        'old provider refuses schema two in actual REST',
+    );
     foreach ($posts as $i => $id) {
         $now = get_post($id, ARRAY_A);
         foreach (
@@ -305,7 +400,7 @@ try {
             collection_assert($now[$field] === $before[$i][$field], 'article unchanged');
         }
     }
-    echo "Collection real REST config/prepare/confirm/ZIP/no-body-write/owner/private/stale checks passed\n";
+    echo "Collection real REST config/prepare/confirm/ZIP/no-body-write/owner/private/stale/schema2-metadata-and-numbering checks passed\n";
 } finally {
     if ($previousOrigin === null) {
         unset($_SERVER['HTTP_ORIGIN']);

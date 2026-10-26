@@ -94,3 +94,23 @@ Publisher 的“离线网页书”格式在作者浏览器顺序复用 `MarkBrid
 `prepare` 响应附 adapter/client。`POST /collections/jobs/{token}/inputs` 仍只收 `{schema:1,receipt}`；在实际首字节之前复核，不消费候选。`confirm` 沿原合同。客户端不得通过普通 `/download` 下载输入冒充完整书。最终 `POST /collections/jobs/{token}/client-download` 闭合收 `{schema:1,receipt,snapshot_sha256,provider_fingerprint,projection_sha256,projection_bytes}`，projection_bytes 为 1–24 MiB 整数。真正 JSON 输出前核验 owner/session/TTL/catalog/所有数据、资源、外部目标及渲染器，消费 CAS 后再做一次终态检查，成功只回 `{schema:1,authorized:true,snapshot_sha256,provider_fingerprint,projection_sha256,projection_bytes,expires}`。失败可已消费，请重新准备；无二进制正文或 HTML 上传。
 
 已经交付浏览器的输入字节不能撤回。最终 gate 约束本插件触发的最终下载，不能阻止作者另存已获数据，也不证明任意客户端 HTML 的真实性。扩展不是不受信插件沙箱。取消／输入变化／迟到结果均废弃本地候选与预览；不改变保存的文章。集合预算、原有 256 KiB 正文及 32 MiB 单章导出限制不变。
+
+## 3.7 候选：采用出版编排
+
+已有配置及新建配置默认仍为 schema 1，不补字段、不自动迁移。点击“采用出版编排”后，本地候选才成为 schema 2；填写出版信息、指定每篇文章角色，再保存配置。作者最多 8 位，每位最多 200 个 UTF-8 字节；版次最多 200 字节、版本声明最多 1000 字节。作者不是从文章账户自动推断，空作者列表合法。字段控制字符与 UTF-8 校验沿用原文本规则。
+
+每篇引用增加 `role=preface|body|appendix`。正文单独按 1、2 编号，附录单独按 A、B 编号，前言不占正文或附录编号；实际阅读顺序始终是作者排定的顺序，不自动移动章节。Publisher 用角色和章号生成书名页后的目录与章标题，并将作者、版次和声明带入网页书／EPUB。前言和附录仍引用已有文章，不新增第二份可写正文。
+
+对象编号可选 `article`（保留原文章编号）或 `chapter`。后者仅为正文／附录中的原生公式、图、表、程序清单、定义、定理、证明生成 `1.1`／`A.1` 形式，按对象种类分别计数。前言以及步骤、活动等其他对象保留文章编号，出版报告明确记录适用范围。没有按普通文字匹配或猜测编号；服务器通过稳定对象 ID 将同一映射传入既有技术渲染和静态导出，同时更新选中文章的对象元数据及自动引用 label。作者自写的普通链接文本不变，源正文、对象 ID、配对和修订不变；Publisher 仍沿原规则将派生产物中的 ID 加章节作用域以避免冲突。
+
+采用新编排或修改任何字段、角色及排序，都会丢弃旧候选；保存后须重新准备、生成、核对并确认。取消生成／快照保留当前编排输入。“撤销采用出版编排”会将本地候选切回 schema 1，出版字段与角色暂留本页，重新采用可恢复；不会声称这些未保存字段能在关闭页面后继续恢复。不支持 schema 2 的旧适配器明确不可准备，不能忽略新字段后继续下载。新内置 `snapshot-v1` 和新版 Publisher 支持 schema 1、2；旧 Publisher 在新 Main 中仍能处理 schema 1。
+
+## Schema 2 与适配器能力
+
+配置 schema 2 保留原七个字段，增加闭合字段 `authors:string[]`、`edition:string`、`versionStatement:string`、`numbering:"article"|"chapter"`；每章为闭合 `{key,post_id,role}`。未知字段／角色／编号值拒绝。16 KiB 配置、10 章、16 MiB 去重图片及 24 MiB 产物预算均不扩大。REST 请求封套仍为 schema 1；配置和 manifest 的 schema 分别明确标为 2。
+
+快照 manifest schema 2 增加上述四个出版字段；每章增加 `role`、`number`（正文数字字符串／附录字母／前言 null）及 `numbering:{mode,applied,retained}`（稳定对象 ID 列表）。`objects[].number` 对适用对象为带章号的字符串，其余仍为文章整数编号。全部字段和实际派生正文一起计入 manifest SHA-256。下载仍重新核对配置目录 revision、文章／资源／渲染器和权限，不提供客户端 HTML 上传入口。
+
+受信适配器 descriptor 可选 `collectionSchemas`，须为不重复、非空的 `[1,2]` 子集，缺省为 `[1]`，未知值、null、空数组和重复声明拒绝。能力进入 renderer 与客户端指纹。`markbridge_publication_collection_schemas(): array` 是公开能力探测，新 Main 返回 `[1,2]`；扩展应先 `function_exists` 并检查包含 2，才向旧闭合登记合同传入此可选字段。没有探测接口的宿主沿原 descriptor 形状继续支持 schema 1，不按包版本猜测。
+
+`tests/collections-schema.php` 是无需构建／数据库的闭合字段、能力和实际服务端编号模型；既有 `tests/collections.php` 增补 schema 2 冻结摘要、旧适配器拒绝及 schema 1 回归。文集浏览器用例验证显式采用、旧格式限制、修改时迟到响应失效与取消保留输入。`tests/publication-numbering.php` 仅为 CLI 只读合成投影，供 Publisher 浏览器复用实际服务器编号，不是真实 WordPress 鉴权验收。

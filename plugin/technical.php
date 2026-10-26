@@ -36,7 +36,64 @@ function mbb_technical_url(string $url): bool
         !isset($parts['pass']);
 }
 
-function mbb_render_technical($html)
+function mbb_render_technical($html, array $numbering = [])
+{
+    foreach ($numbering as $id => $item) {
+        if (
+            !is_string($id) ||
+            !preg_match('/^[A-Za-z][A-Za-z0-9_-]{0,63}$/D', $id) ||
+            !is_array($item) ||
+            count($item) !== 2 ||
+            !isset($item['kind'], $item['number']) ||
+            !mbb_technical_label($item['kind']) ||
+            !is_string($item['number']) ||
+            !preg_match('/^(?:[1-9][0-9]?|[A-J])\.[1-9][0-9]{0,3}$/D', $item['number'])
+        ) {
+            throw new InvalidArgumentException('Invalid publication object numbering');
+        }
+    }
+    $result = mbb_render_technical_content($html, $numbering);
+    if ($numbering) {
+        // Do not emit metadata claiming numbers when the closed renderer declined the source.
+        $doc = new DOMDocument('1.0', 'UTF-8');
+        $previous = libxml_use_internal_errors(true);
+        try {
+            $doc->loadHTML(
+                '<?xml encoding="UTF-8"?><div>' . $result . '</div>',
+                LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD | LIBXML_NONET,
+            );
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous);
+        }
+        $xpath = new DOMXPath($doc);
+        foreach ($numbering as $id => $item) {
+            $object = $doc->getElementById($id);
+            $prefix = $object
+                ? $xpath
+                    ->query(
+                        './/span[contains(concat(" ",normalize-space(@class)," ")," mbb-technical-number ")]',
+                        $object,
+                    )
+                    ->item(0)
+                : null;
+            $label =
+                mbb_technical_label($item['kind']) .
+                ($item['kind'] === 'proof' &&
+                in_array(mbb_technical_label('proof'), ['证明', '證明'], true)
+                    ? ''
+                    : ' ') .
+                $item['number'];
+            if (!$prefix || !str_starts_with($prefix->textContent, $label . '.')) {
+                throw new InvalidArgumentException(
+                    'Publication object numbering could not be rendered',
+                );
+            }
+        }
+    }
+    return $result;
+}
+function mbb_render_technical_content($html, array $numbering = [])
 {
     if (!is_string($html) || !preg_match('/mbb-(?:technical-|bibliography|xref|cite)/', $html)) {
         return $html;
@@ -269,14 +326,20 @@ function mbb_render_technical($html)
     foreach ($objects as $id => &$item) {
         $kind = $item['kind'];
         $counts[$kind] = ($counts[$kind] ?? 0) + 1;
-        $item['label'] = mbb_technical_label($kind) . ' ' . $counts[$kind];
+        if (isset($numbering[$id]) && $numbering[$id]['kind'] !== $kind) {
+            throw new InvalidArgumentException(
+                'Publication object kind differs from its numbered target',
+            );
+        }
+        $number = $numbering[$id]['number'] ?? $counts[$kind];
+        $item['label'] = mbb_technical_label($kind) . ' ' . $number;
         $authoredTitle = trim($item['heading']->textContent);
         $prefix = $document->createElement('span');
         $prefix->setAttribute('class', 'mbb-technical-number');
         $prefix->setAttribute('data-mbb-generated', '');
         $displayLabel = $item['label'];
         if ($kind === 'proof' && in_array(mbb_technical_label($kind), ['证明', '證明'], true)) {
-            $displayLabel = mbb_technical_label($kind) . $counts[$kind];
+            $displayLabel = mbb_technical_label($kind) . $number;
         }
         $prefix->appendChild(
             $document->createTextNode($displayLabel . ($kind === 'proof' ? '.' : '. ')),

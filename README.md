@@ -4,7 +4,7 @@
   <a href="LICENSE"><img alt="License: GPL-3.0-or-later" src="https://img.shields.io/badge/license-GPL--3.0--or--later-818cf8"></a>
   <img alt="WordPress 7.1" src="https://img.shields.io/badge/WordPress-7.1-21759b">
   <img alt="PHP 8.2+" src="https://img.shields.io/badge/PHP-8.2%2B-777bb4">
-  <img alt="Version 3.6.0" src="https://img.shields.io/badge/version-3.6.0-818cf8">
+  <img alt="Version 3.7.0" src="https://img.shields.io/badge/version-3.7.0-818cf8">
 </p>
 
 <p align="center"><strong>用 Markdown 写作，用区块调整。保存时，让两种格式保持一致。</strong></p>
@@ -39,6 +39,8 @@ flowchart LR
 ```
 
 ## 开始使用
+
+**3.7.0**新增可显式采用的出版编排：作者、版次、版本声明、前言／正文／附录角色，以及可选章节对象编号。旧文集仍按原格式读写；编号仅进入冻结快照和出版物，不改变文章、对象 ID 或修订。新版 Publisher 可将同一快照生成网页书和 EPUB，详见[文集说明](docs/COLLECTIONS.md)。
 
 **3.6.0** 改善组件创作流程：按用途查找组件，默认展示各类的最新版本，按需查看历史版本；在当前文章检查组件依赖，并由管理员按权限查询使用文章。新增可往返保存的原生分栏子集，桌面并排、手机堆叠，支持列宽与垂直对齐。历史精确版本和原有配对保存保护继续保留。
 

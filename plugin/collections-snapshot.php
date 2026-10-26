@@ -9,6 +9,8 @@ require_once __DIR__ . '/relation-map-documents.php';
 
 function mbb_register_publication_adapter(string $id, array $descriptor): bool
 {
+    $hasSchemas = array_key_exists('collectionSchemas', $descriptor);
+    $schemas = $hasSchemas ? $descriptor['collectionSchemas'] : [1];
     if (
         !preg_match('/^[a-z][a-z0-9-]{0,31}$/D', $id) ||
         isset($GLOBALS['mbb_publication_adapters'][$id]) ||
@@ -21,7 +23,14 @@ function mbb_register_publication_adapter(string $id, array $descriptor): bool
             'extension',
             'mime',
             'build',
+            ...$hasSchemas ? ['collectionSchemas'] : [],
         ]) ||
+        !is_array($schemas) ||
+        !array_is_list($schemas) ||
+        !$schemas ||
+        count($schemas) > 2 ||
+        count(array_unique($schemas, SORT_REGULAR)) !== count($schemas) ||
+        array_filter($schemas, static fn($schema) => !in_array($schema, [1, 2], true)) ||
         $descriptor['contract'] !== 'mbb-publication-adapter/v1' ||
         !is_string($descriptor['version']) ||
         !preg_match('/^[0-9]+\.[0-9]+\.[0-9]+$/D', $descriptor['version']) ||
@@ -36,6 +45,7 @@ function mbb_register_publication_adapter(string $id, array $descriptor): bool
     ) {
         return false;
     }
+    $descriptor['collectionSchemas'] = $schemas;
     $GLOBALS['mbb_publication_adapters'][$id] = $descriptor;
     return true;
 }
@@ -91,6 +101,7 @@ function mbb_collections_renderer(string $adapter): array
         'fingerprint' => $p['fingerprint'],
         'mime' => $p['mime'],
         'extension' => $p['extension'],
+        'collectionSchemas' => $p['collectionSchemas'],
         'files' => $files,
         'blockAdapters' => mbb_block_adapter_digest(),
         'client' => function_exists('mbb_collections_client_metadata')
@@ -401,6 +412,7 @@ function mbb_collections_body(
     array $map,
     array $mappings,
     array $retained,
+    array $numbering = [],
 ): string {
     // Relative internal references are introduced only after the existing safe renderer has
     // validated every author-provided URL. Never relax its URL admission globally.
@@ -417,7 +429,7 @@ function mbb_collections_body(
         }
     }
     unset($value, $item);
-    $body = mbb_static_export_body($serialized, $map);
+    $body = mbb_static_export_body($serialized, $map, $numbering);
     [$doc, $xpath, $root] = mbb_static_export_fragment($body);
     $images = [];
     foreach ($mappings as $mapping) {
@@ -482,7 +494,22 @@ function mbb_collections_snapshot(array $config, string $adapter, ?string $direc
     if (!$config['chapters']) {
         mbb_collections_fail('collection_empty', 422);
     }
+    mbb_collections_config($config);
+    if (!isset($GLOBALS['mbb_publication_adapters'][$adapter])) {
+        mbb_collections_fail('collection_adapter', 503);
+    }
+    if (
+        !in_array(
+            $config['schema'],
+            $GLOBALS['mbb_publication_adapters'][$adapter]['collectionSchemas'],
+            true,
+        )
+    ) {
+        mbb_collections_fail('collection_schema', 422);
+    }
     $renderer = mbb_collections_renderer($adapter);
+    $layout = mbb_collections_chapter_layout($config);
+    $numbered = [];
     $selected = [];
     $stamps = [];
     $chapters = [];
@@ -491,6 +518,12 @@ function mbb_collections_snapshot(array $config, string $adapter, ?string $direc
     foreach ($config['chapters'] as $chapter) {
         $s = mbb_collections_post($chapter['post_id'], $config['privateOptIn']);
         $stamps[$chapter['key']] = mbb_collections_stamp($s);
+        $numbered[$chapter['key']] = mbb_collections_number_objects(
+            $s['projection']['objects'],
+            ($config['numbering'] ?? 'article') === 'chapter'
+                ? $layout[$chapter['key']]['number']
+                : null,
+        );
         if ($identity = $s['projection']['identity']) {
             $tuple = mbb_collections_tuple($identity);
             if (isset($selected[$tuple])) {
@@ -499,7 +532,7 @@ function mbb_collections_snapshot(array $config, string $adapter, ?string $direc
             $selected[$tuple] = [
                 'key' => $chapter['key'],
                 'title' => $s['post']->post_title,
-                'objects' => $s['projection']['objects'],
+                'objects' => $numbered[$chapter['key']]['objects'],
             ];
         }
         $references += count($s['projection']['edges']);
@@ -600,6 +633,7 @@ function mbb_collections_snapshot(array $config, string $adapter, ?string $direc
             $map,
             $plan['mappings'],
             $plan['retainedImages'],
+            $numbered[$chapter['key']]['numbers'],
         );
         $total += strlen($body);
         if ($total > MBB_COLLECTION_LIMITS['artifactBytes']) {
@@ -616,9 +650,18 @@ function mbb_collections_snapshot(array $config, string $adapter, ?string $direc
             'serializedSha256' => hash('sha256', $s['document']['serialized']),
             'bodyBytes' => strlen($body),
             'bodySha256' => hash('sha256', $body),
-            'objects' => array_values($s['projection']['objects']),
+            'objects' => array_values($numbered[$chapter['key']]['objects']),
             'references' => $map,
             'components' => mbb_collections_components($s['document']['serialized']),
+            ...$config['schema'] === 2
+                ? $layout[$chapter['key']] + [
+                        'numbering' => [
+                            'mode' => $config['numbering'],
+                            'applied' => array_keys($numbered[$chapter['key']]['numbers']),
+                            'retained' => $numbered[$chapter['key']]['retained'],
+                        ],
+                    ]
+                : [],
             'projectionPlan' => function_exists('mbb_component_projection_wire')
                 ? mbb_component_projection_wire(
                     $s['document']['serialized'],
@@ -641,7 +684,13 @@ function mbb_collections_snapshot(array $config, string $adapter, ?string $direc
     $css = mbb_static_export_styles();
     $total += strlen($css);
     $manifest = [
-        'schema' => 1,
+        'schema' => $config['schema'],
+        ...$config['schema'] === 2
+            ? array_intersect_key(
+                $config,
+                array_flip(['authors', 'edition', 'versionStatement', 'numbering']),
+            )
+            : [],
         'kind' => 'markbridge-publication-snapshot',
         'title' => $config['title'],
         'lang' => $config['lang'],
@@ -826,6 +875,7 @@ function mbb_collections_snapshot_zip(array $manifest, callable $read, string $o
     }
 }
 mbb_register_publication_adapter('snapshot-v1', [
+    'collectionSchemas' => [1, 2],
     'contract' => 'mbb-publication-adapter/v1',
     'version' => '1.0.0',
     'fingerprint' => hash_file('sha256', __FILE__),

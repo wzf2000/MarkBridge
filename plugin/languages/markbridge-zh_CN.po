@@ -773,6 +773,10 @@ msgid "Administrator permission is required."
 msgstr "需要管理员权限。"
 
 #: plugin/i18n.js
+msgid "Adopt publication arrangement"
+msgstr "采用出版编排"
+
+#: plugin/i18n.js
 msgid "Adopt unsaved merge candidate"
 msgstr "采用未保存合并候选"
 
@@ -901,6 +905,10 @@ msgid "Append values"
 msgstr "追加数值"
 
 #: plugin/i18n.js
+msgid "Appendix"
+msgstr "附录"
+
+#: plugin/i18n.js
 msgid "Applied bibliography changed. The current candidate is preserved and unapplied."
 msgstr "已应用的参考文献发生变化，当前候选已保留且尚未应用。"
 
@@ -987,6 +995,10 @@ msgstr "作者"
 #: plugin/i18n.js
 msgid "Authors (one per line, at most eight)"
 msgstr "作者（每行一位，最多八位）"
+
+#: plugin/i18n.js
+msgid "Authors (one per line, up to 8)"
+msgstr "作者（每行一位，最多 8 位）"
 
 #: plugin/i18n.js
 msgid "Authors and institutions"
@@ -1206,6 +1218,14 @@ msgid "Body alignment must match header columns"
 msgstr "表格正文对齐必须与表头列一致"
 
 #: plugin/i18n.js
+msgid "Body chapter"
+msgstr "正文章节"
+
+#: plugin/i18n.js
+msgid "Body chapters use 1, 2; appendices use A, B. Prefaces keep article object numbers. Chapter numbering covers equations, figures, tables, listings, definitions, theorems and proofs; steps and activities retain article numbers."
+msgstr "正文按 1、2 编号，附录按 A、B 编号，前言对象保留文章编号。章节对象编号适用于公式、图、表、程序清单、定义、定理和证明；步骤与活动保留文章编号。"
+
+#: plugin/i18n.js
 msgid "Body conflict "
 msgstr "正文冲突 "
 
@@ -1405,6 +1425,10 @@ msgstr "分类 slugs"
 #: plugin/i18n.js
 msgid "Changes"
 msgstr "修改差异"
+
+#: plugin/i18n.js
+msgid "Chapter role"
+msgstr "章节角色"
 
 #: plugin/i18n.js
 msgid "Check changed targets and readable incoming references"
@@ -2581,6 +2605,10 @@ msgid "Editing permission for this article was lost. Only this article's local c
 msgstr "这篇文章的编辑权限已失效；仅清除此文章的本地候选，其他文章保留。"
 
 #: plugin/i18n.js
+msgid "Edition"
+msgstr "版次"
+
+#: plugin/i18n.js
 msgid "Empty anchors must occupy their own paragraph"
 msgstr "空锚点必须独立成段"
 
@@ -2683,6 +2711,10 @@ msgstr "执行失败；静态替代仍可阅读。"
 #: plugin/i18n.js
 msgid "Execution stopped."
 msgstr "执行已停止。"
+
+#: plugin/i18n.js
+msgid "Existing arrangements keep their original schema. Adopt publication arrangement to add authors, editions, chapter roles and optional chapter object numbering."
+msgstr "已有编排保持原格式。采用出版编排后，可填写作者、版次和章节角色，并按需启用章节对象编号。"
 
 #: plugin/i18n.js
 msgid "Existing identities are retained only if unclaimed; occupied identities block saving."
@@ -3725,6 +3757,10 @@ msgid "Journal article"
 msgstr "期刊论文"
 
 #: plugin/i18n.js
+msgid "Keep article numbering"
+msgstr "保留文章编号"
+
+#: plugin/i18n.js
 msgid "Keep as plain text"
 msgstr "保留为纯文本"
 
@@ -4530,6 +4566,10 @@ msgid "Object %1$s must contain exactly one matching formula, image, table or co
 msgstr "对象 %1$s 必须恰好包含一个匹配的公式、图片、表格或代码区块。现有正文已保留。"
 
 #: plugin/i18n.js
+msgid "Object numbering"
+msgstr "对象编号"
+
+#: plugin/i18n.js
 msgid "Object or statement kind"
 msgstr "对象或声明类型"
 
@@ -4870,6 +4910,10 @@ msgid "Post-save content verification failed"
 msgstr "保存后内容核验失败"
 
 #: plugin/i18n.js
+msgid "Preface"
+msgstr "前言"
+
+#: plugin/i18n.js
 msgid "Prepare a copy with a new identity"
 msgstr "准备使用新身份的副本"
 
@@ -5084,6 +5128,14 @@ msgstr "公开"
 #: plugin/i18n.js
 msgid "Publication and source fields are limited to 512 plain characters"
 msgstr "出版与来源字段最多 512 个普通字符"
+
+#: plugin/i18n.js
+msgid "Publication fields remain on this page. Adopt again to restore them before saving."
+msgstr "出版信息仍保留在本页，重新采用后可恢复这些字段再保存。"
+
+#: plugin/i18n.js
+msgid "Publication metadata and numbering"
+msgstr "出版信息与编号"
 
 #: plugin/i18n.js
 msgid "Publication or source"
@@ -8289,6 +8341,10 @@ msgid "This preview creates a normalized cross-site copy without old attachment 
 msgstr "此预览生成规范化的跨站副本，并解除旧附件 ID；导入时会创建新本地附件及关联。已保存的原文章保持不变。"
 
 #: plugin/i18n.js
+msgid "This publication adapter does not support this collection schema. Select a compatible format."
+msgstr "此出版格式不支持当前文集编排，请选择兼容格式。"
+
+#: plugin/i18n.js
 msgid "This registered field is required."
 msgstr "此字段为必填项。"
 
@@ -8396,6 +8452,10 @@ msgstr "教学容器未闭合"
 #: plugin/i18n.js
 msgid "Undated"
 msgstr "未注明年份"
+
+#: plugin/i18n.js
+msgid "Undo publication arrangement"
+msgstr "撤销采用出版编排"
 
 #: plugin/i18n.js
 msgid "Undo source change"
@@ -8672,6 +8732,10 @@ msgid "Use bibliography candidate"
 msgstr "使用文献候选"
 
 #: plugin/i18n.js
+msgid "Use chapter object numbers"
+msgstr "采用章节对象编号"
+
+#: plugin/i18n.js
 msgid "Use displayed line numbers, for example 12,15-18."
 msgstr "使用显示行号，例如 12,15-18。"
 
@@ -8774,6 +8838,10 @@ msgstr "版本冲突：核对服务器与当前候选"
 #: plugin/i18n.js
 msgid "Version language"
 msgstr "版本语言"
+
+#: plugin/i18n.js
+msgid "Version statement"
+msgstr "版本声明"
 
 #: plugin/i18n.js
 msgid "Version title (optional)"

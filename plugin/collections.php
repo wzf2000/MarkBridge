@@ -33,6 +33,9 @@ function mbb_collections_error(Throwable $e)
         ),
         'collection_empty' => mbb_t('Select at least one article before preparing a snapshot.'),
         'collection_adapter' => mbb_t('The selected publication adapter is unavailable.'),
+        'collection_schema' => mbb_t(
+            'This publication adapter does not support this collection schema. Select a compatible format.',
+        ),
         'collection_input' => mbb_t(
             'The collection input is invalid. Current fields are preserved.',
         ),
@@ -73,7 +76,15 @@ function mbb_collections_context(): array
     foreach ($GLOBALS['mbb_publication_adapters'] ?? [] as $key => $provider) {
         $adapters[$key] = array_intersect_key(
             $provider,
-            array_flip(['contract', 'version', 'fingerprint', 'title', 'extension', 'mime']),
+            array_flip([
+                'contract',
+                'version',
+                'fingerprint',
+                'title',
+                'extension',
+                'mime',
+                'collectionSchemas',
+            ]),
         ) + ['client' => mbb_collections_client_metadata($key)];
     }
     mbb_collections_owner($owner);
@@ -82,6 +93,7 @@ function mbb_collections_context(): array
         'revision' => $catalog['revision'],
         'items' => $items,
         'limits' => MBB_COLLECTION_LIMITS,
+        'collectionSchemas' => markbridge_publication_collection_schemas(),
         'adapters' => $adapters,
     ];
 }

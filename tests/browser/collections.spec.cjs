@@ -157,3 +157,148 @@ for (const plain of [false, true])
     await expect(page.getByRole('button', { name: 'Prepare snapshot' })).toBeDisabled();
     await expect(page.getByRole('button', { name: 'Save collection configuration' })).toBeEnabled();
   });
+
+test('publication arrangement is explicit and preserves metadata during cancelled and late preparation', async ({
+  page,
+}, info) => {
+  let stored = null,
+    posted = null,
+    revision = null,
+    release = null,
+    waiting = false,
+    cancelled = 0;
+  const summary = (config) =>
+    config.chapters.map((c) => ({
+      key: c.key,
+      title: 'Article ' + c.post_id,
+      status: 'publish',
+      state: 'available',
+      state: 'available',
+    }));
+  await page.route(
+    (url) => url.pathname.startsWith('/wp-json/mbb/v1/collections'),
+    async (route) => {
+      const path = new URL(route.request().url()).pathname.split('/collections')[1] || '',
+        method = route.request().method(),
+        body = route.request().postDataJSON();
+      if (path === '' && method === 'GET')
+        return route.fulfill({
+          json: {
+            items: [],
+            revision,
+            collectionSchemas: [1, 2],
+            adapters: {
+              'snapshot-v1': { title: 'Snapshot ZIP', collectionSchemas: [1, 2] },
+              legacy: { title: 'Old Publisher', collectionSchemas: [1] },
+            },
+          },
+        });
+      if (path === '/search')
+        return route.fulfill({
+          json: {
+            items: [
+              { post_id: 12, title: 'First saved article', status: 'publish' },
+              { post_id: 13, title: 'Second saved article', status: 'publish' },
+            ],
+            nextPage: null,
+          },
+        });
+      if (path === '' && method === 'POST') {
+        posted = body;
+        stored = body.config;
+        revision = 'd'.repeat(64);
+        return route.fulfill({
+          json: { collection_id: bid, revision, config: stored, chapterSummaries: summary(stored) },
+        });
+      }
+      if (path === '/prepare') {
+        if (waiting)
+          await new Promise((resolve) => {
+            release = resolve;
+          });
+        return route.fulfill({
+          json: {
+            token,
+            receipt,
+            adapter: 'snapshot-v1',
+            snapshot_sha256: 'e'.repeat(64),
+            artifact: {
+              bytes: 10,
+              sha256: 'f'.repeat(64),
+              extension: 'zip',
+              mime: 'application/zip',
+            },
+            scope: summary(stored).map((c) => ({ ...c, scope: 'public' })),
+            resourceCount: 0,
+            resourceBytes: 0,
+          },
+        });
+      }
+      if (method === 'DELETE') {
+        cancelled++;
+        return route.fulfill({ json: { cancelled: true } });
+      }
+      return route.fulfill({ json: {} });
+    },
+  );
+  await page.goto('/collections-editor?locale=en_US');
+  await page.getByRole('button', { name: 'Search', exact: true }).click();
+  await page.getByRole('button', { name: 'Add article', exact: true }).first().click();
+  await page.getByRole('button', { name: 'Add article', exact: true }).nth(1).click();
+  await page.getByLabel('Collection title', { exact: true }).fill('Publication arrangement');
+  await page.getByLabel('Export format', { exact: true }).selectOption('legacy');
+  await page.getByRole('button', { name: 'Save collection configuration', exact: true }).click();
+  await expect.poll(() => posted?.config.schema).toBe(1);
+  expect(posted.config).not.toHaveProperty('authors');
+  await page.getByRole('button', { name: 'Adopt publication arrangement', exact: true }).click();
+  await page
+    .getByLabel('Authors (one per line, up to 8)', { exact: true })
+    .fill('作者甲\nAuthor B');
+  await page.getByLabel('Edition', { exact: true }).fill('第二版');
+  await page.getByLabel('Version statement', { exact: true }).fill('Reviewed 2026');
+  await page.getByLabel('Chapter role', { exact: true }).first().selectOption('preface');
+  await page.getByLabel('Chapter role', { exact: true }).nth(1).selectOption('appendix');
+  await page.getByLabel('Object numbering', { exact: true }).selectOption('chapter');
+  await page.getByRole('button', { name: 'Undo publication arrangement', exact: true }).click();
+  await page.getByRole('button', { name: 'Adopt publication arrangement', exact: true }).click();
+  await expect(page.getByLabel('Authors (one per line, up to 8)', { exact: true })).toHaveValue(
+    '作者甲\nAuthor B',
+  );
+  await expect(page.getByLabel('Edition', { exact: true })).toHaveValue('第二版');
+  await expect(page.getByLabel('Chapter role', { exact: true }).first()).toHaveValue('preface');
+  await expect(page.getByLabel('Object numbering', { exact: true })).toHaveValue('chapter');
+
+  await page.getByRole('button', { name: 'Save collection configuration', exact: true }).click();
+  await expect.poll(() => posted?.config.schema).toBe(2);
+  expect(posted.config.authors).toEqual(['作者甲', 'Author B']);
+  expect(posted.config.chapters.map((c) => c.role)).toEqual(['preface', 'appendix']);
+  await expect(page.getByRole('button', { name: 'Prepare snapshot', exact: true })).toBeDisabled();
+  await expect(
+    page.getByText(
+      'This publication adapter does not support this collection schema. Select a compatible format.',
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await page.getByLabel('Export format', { exact: true }).selectOption('snapshot-v1');
+  waiting = true;
+  await page.getByRole('button', { name: 'Prepare snapshot', exact: true }).click();
+  await expect.poll(() => typeof release).toBe('function');
+  await page.getByLabel('Edition', { exact: true }).fill('第三版（未保存）');
+  release();
+  waiting = false;
+  await expect.poll(() => cancelled).toBeGreaterThan(0);
+  await expect(page.getByLabel('Edition', { exact: true })).toHaveValue('第三版（未保存）');
+  await expect(page.getByLabel('Authors (one per line, up to 8)', { exact: true })).toHaveValue(
+    '作者甲\nAuthor B',
+  );
+  await page.getByRole('button', { name: 'Save collection configuration', exact: true }).click();
+  await expect.poll(() => posted?.config.edition).toBe('第三版（未保存）');
+  await page.getByRole('button', { name: 'Prepare snapshot', exact: true }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Check the snapshot scope', exact: true }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Cancel snapshot', exact: true }).click();
+  await expect(page.getByLabel('Edition', { exact: true })).toHaveValue('第三版（未保存）');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: info.outputPath('publication-arrangement.png'), fullPage: true });
+});

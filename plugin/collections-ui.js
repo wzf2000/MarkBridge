@@ -15,7 +15,10 @@
     adapters = {},
     adapter = 'snapshot-v1',
     projection = null,
-    previewReady = false;
+    previewReady = false,
+    collectionSchemas = cfg.collectionSchemas || [1],
+    publicationMetadataOpen = false,
+    publicationDraft = null;
   let summaries = [],
     config = fresh(),
     results = [],
@@ -23,6 +26,8 @@
     nextPage = null,
     page = 1;
   function fresh() {
+    publicationDraft = null;
+    publicationMetadataOpen = false;
     return {
       schema: 1,
       title: '',
@@ -180,6 +185,49 @@
     wrap.append(input);
     return wrap;
   }
+  function selectField(label, value, options, apply) {
+    const wrap = el('label', T(label)),
+      input = el('select', undefined, { 'aria-label': T(label) });
+    for (const [key, text] of options) input.append(el('option', T(text), { value: key }));
+    input.value = value;
+    input.disabled = !!loading;
+    input.onchange = () => change(() => apply(input.value));
+    wrap.append(input);
+    return wrap;
+  }
+  function adoptArrangement() {
+    publicationMetadataOpen = true;
+    config = {
+      ...config,
+      schema: 2,
+      authors: [...(publicationDraft?.authors || [])],
+      edition: publicationDraft?.edition || '',
+      versionStatement: publicationDraft?.versionStatement || '',
+      numbering: publicationDraft?.numbering || 'article',
+      chapters: config.chapters.map((chapter) => ({
+        ...chapter,
+        role: publicationDraft?.roles[chapter.key] || 'body',
+      })),
+    };
+  }
+  function undoArrangement() {
+    publicationDraft = {
+      authors: [...config.authors],
+      edition: config.edition,
+      versionStatement: config.versionStatement,
+      numbering: config.numbering,
+      roles: Object.fromEntries(config.chapters.map((chapter) => [chapter.key, chapter.role])),
+    };
+    const { authors, edition, versionStatement, numbering, ...legacy } = config;
+    config = {
+      ...legacy,
+      schema: 1,
+      chapters: config.chapters.map(({ role, ...chapter }) => chapter),
+    };
+  }
+  function compatibleFormat() {
+    return (adapters[adapter]?.collectionSchemas || [1]).includes(config.schema);
+  }
   function section(title) {
     const n = el('section', undefined, { class: 'mbbc-panel' });
     n.append(el('h2', T(title)));
@@ -199,7 +247,12 @@
         el(
           'option',
           clients.get(key)?.label || (key === 'snapshot-v1' ? T('Snapshot ZIP') : value.title),
-          { value: key },
+          {
+            value: key,
+            ...(!(value.collectionSchemas || [1]).includes(config.schema)
+              ? { disabled: 'disabled' }
+              : {}),
+          },
         ),
       );
     formats.value = adapter;
@@ -246,9 +299,18 @@
               confirmed = false;
             },
           ),
-        !!loading || dirty || !id || !config.chapters.length,
+        !!loading || dirty || !id || !config.chapters.length || !compatibleFormat(),
       ),
     );
+    if (!compatibleFormat())
+      n.append(
+        el(
+          'p',
+          T(
+            'This publication adapter does not support this collection schema. Select a compatible format.',
+          ),
+        ),
+      );
     if (job) {
       const report = el('div', undefined, { class: 'mbbc-scope' });
       report.append(el('h3', T('Check the snapshot scope')));
@@ -489,6 +551,7 @@
         run(
           () => api('/' + select.value),
           (data) => {
+            publicationDraft = null;
             id = data.collection_id;
             revision = data.revision;
             config = data.config;
@@ -582,7 +645,11 @@
           () =>
             change(() => {
               const chapterKey = key();
-              config.chapters.push({ key: chapterKey, post_id: item.post_id });
+              config.chapters.push({
+                key: chapterKey,
+                post_id: item.post_id,
+                ...(config.schema === 2 ? { role: 'body' } : {}),
+              });
               summaries.push({
                 key: chapterKey,
                 state: 'available',
@@ -599,6 +666,7 @@
               () => api('/import-companion', 'POST', { schema: 1, post_id: item.post_id }),
               (data) => {
                 invalidate();
+                publicationDraft = null;
                 config = data.config;
                 id = null;
                 dirty = true;
@@ -658,6 +726,21 @@
         ),
         button('Remove article', () => change(() => config.chapters.splice(index, 1)), !!loading),
       );
+      if (config.schema === 2)
+        row.append(
+          selectField(
+            'Chapter role',
+            c.role,
+            [
+              ['preface', 'Preface'],
+              ['body', 'Body chapter'],
+              ['appendix', 'Appendix'],
+            ],
+            (value) => {
+              c.role = value;
+            },
+          ),
+        );
       chosen.append(row);
     });
     edit.append(chosen);
@@ -687,6 +770,77 @@
         'number',
       ),
     );
+    if (config.schema === 1 && collectionSchemas.includes(2)) {
+      meta.append(
+        el(
+          'p',
+          T(
+            'Existing arrangements keep their original schema. Adopt publication arrangement to add authors, editions, chapter roles and optional chapter object numbering.',
+          ),
+        ),
+        button('Adopt publication arrangement', () => change(adoptArrangement), !!loading),
+        ...(publicationDraft
+          ? [
+              el(
+                'p',
+                T(
+                  'Publication fields remain on this page. Adopt again to restore them before saving.',
+                ),
+              ),
+            ]
+          : []),
+      );
+    }
+    if (config.schema === 2) {
+      const details = el('details', undefined, { class: 'mbbc-publication-metadata' });
+      details.open = publicationMetadataOpen;
+      details.ontoggle = () => {
+        publicationMetadataOpen = details.open;
+      };
+      details.append(
+        el('summary', T('Publication metadata and numbering')),
+        field(
+          'Authors (one per line, up to 8)',
+          config.authors.join('\n'),
+          (value) => {
+            config.authors = value.split(/\r?\n/).filter((name) => name.trim() !== '');
+          },
+          'textarea',
+        ),
+        field('Edition', config.edition, (value) => {
+          config.edition = value;
+        }),
+        field(
+          'Version statement',
+          config.versionStatement,
+          (value) => {
+            config.versionStatement = value;
+          },
+          'textarea',
+        ),
+        selectField(
+          'Object numbering',
+          config.numbering,
+          [
+            ['article', 'Keep article numbering'],
+            ['chapter', 'Use chapter object numbers'],
+          ],
+          (value) => {
+            config.numbering = value;
+          },
+        ),
+        el(
+          'p',
+          T(
+            'Body chapters use 1, 2; appendices use A, B. Prefaces keep article object numbers. Chapter numbering covers equations, figures, tables, listings, definitions, theorems and proofs; steps and activities retain article numbers.',
+          ),
+        ),
+      );
+      details.append(
+        button('Undo publication arrangement', () => change(undoArrangement), !!loading),
+      );
+      meta.append(details);
+    }
     const label = el('label', T('Explicitly include the selected private drafts')),
       check = el('input', undefined, { type: 'checkbox' });
     check.checked = config.privateOptIn;
@@ -722,6 +876,7 @@
     () => api(),
     (data) => {
       catalog = data.items;
+      collectionSchemas = data.collectionSchemas || cfg.collectionSchemas || [1];
       adapters = data.adapters || { 'snapshot-v1': { title: 'Snapshot ZIP' } };
       revision = data.revision;
     },

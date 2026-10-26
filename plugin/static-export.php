@@ -63,8 +63,11 @@ function mbb_static_export_styles(): string
         "\n" .
         file_get_contents(__DIR__ . '/media-presentation.css');
 }
-function mbb_static_export_body(string $serialized, array $referenceMap = []): string
-{
+function mbb_static_export_body(
+    string $serialized,
+    array $referenceMap = [],
+    array $numbering = [],
+): string {
     // Canonical HTML only: never call arbitrary render_block/the_content filters.
     $html = preg_replace('/<!--[\s\S]*?-->/', '', $serialized);
     [$doc, $xpath, $root] = mbb_static_export_fragment($html);
@@ -241,7 +244,9 @@ function mbb_static_export_body(string $serialized, array $referenceMap = []): s
         $html .= $doc->saveHTML($n);
     }
     if (function_exists('mbb_render_technical')) {
-        $html = mbb_render_technical($html);
+        $html = mbb_render_technical($html, $numbering);
+    } elseif ($numbering) {
+        throw new InvalidArgumentException('Publication numbering requires the technical renderer');
     }
     if (function_exists('mbb_references_static_links')) {
         $html = mbb_references_static_links($html, $referenceMap);

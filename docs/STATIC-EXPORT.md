@@ -105,3 +105,7 @@ CRLF、空白和不换行空格。序列化用 `&#13;` 保存回车。行号是 
 
 Markdown 仍保留原始站点关联；便携 ZIP 在图片投影前拒绝本地附件 ID。HTML 可在严格验证
 关联后将图片转为 data URI，最终文件不带可写附件身份，也不是可恢复全部媒体关系的备份。
+
+### Collection chapter numbering (3.7 candidate)
+
+The trusted collection snapshot builder may pass an explicit stable-object-ID numbering map through `mbb_static_export_body` to the existing technical renderer. It changes only generated technical captions and automatic reference labels in the derived publication. Ordinary single-article export uses the unchanged default; no client-supplied HTML, callback, numbering attribute or second article save route is introduced. See [collections](COLLECTIONS.md) for the closed schema, supported kinds and retained article-numbering scope.

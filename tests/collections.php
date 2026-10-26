@@ -248,6 +248,7 @@ class WP_REST_Response
 }
 // Exercise the real safe HTML projection against small canonical fragments.
 require_once dirname(__DIR__) . '/plugin/static-export.php';
+require_once dirname(__DIR__) . '/plugin/technical.php';
 require_once dirname(__DIR__) . '/plugin/collections.php';
 // Core installs its default CORS callback after plugin registration in real REST.
 // Reproduce that order: equal priorities would send bytes before these headers.
@@ -426,6 +427,61 @@ try {
     check(count($GLOBALS['cleared']) > 0, 'option caches cleared');
     $s = mbb_collections_snapshot($config, 'snapshot-v1');
     check($s['manifest']['chapters'][0]['scope'] === 'public', 'public scope');
+    $v2 = $config + [
+        'authors' => ['Author A'],
+        'edition' => 'Edition 1',
+        'versionStatement' => 'Reviewed 2026',
+        'numbering' => 'chapter',
+    ];
+    $v2['schema'] = 2;
+    $v2['chapters'] = array_map(
+        static fn($chapter) => $chapter + ['role' => 'body'],
+        $config['chapters'],
+    );
+    $s2 = mbb_collections_snapshot($v2, 'snapshot-v1');
+    check(
+        $s2['manifest']['schema'] === 2 &&
+            $s2['manifest']['authors'] === ['Author A'] &&
+            $s2['manifest']['chapters'][0]['number'] === '1',
+        'new publication metadata and role numbering enter frozen snapshot',
+    );
+    foreach (
+        [
+            'edition' => 'Edition 2',
+            'versionStatement' => 'Revised',
+            'numbering' => 'article',
+            'authors' => ['Author B'],
+        ]
+        as $field => $value
+    ) {
+        $changed = $v2;
+        $changed[$field] = $value;
+        check(
+            mbb_collections_snapshot($changed, 'snapshot-v1')['sha256'] !== $s2['sha256'],
+            'publication metadata affects exact digest',
+        );
+    }
+    $changed = $v2;
+    $changed['chapters'][0]['role'] = 'appendix';
+    check(
+        mbb_collections_snapshot($changed, 'snapshot-v1')['sha256'] !== $s2['sha256'],
+        'role affects digest',
+    );
+    mbb_register_publication_adapter('legacy-publication-model', [
+        'contract' => 'mbb-publication-adapter/v1',
+        'version' => '0.3.0',
+        'fingerprint' => str_repeat('e', 64),
+        'title' => 'Old provider',
+        'extension' => 'zip',
+        'mime' => 'application/zip',
+        'build' => static function () {},
+    ]);
+    rejects(fn() => mbb_collections_snapshot($v2, 'legacy-publication-model'), 'collection_schema');
+    check(
+        mbb_collections_snapshot($config, 'legacy-publication-model')['manifest']['schema'] === 1,
+        'old provider still accepts original schema',
+    );
+
     check(
         !str_contains(mbb_collections_json($s['manifest']), 'post_id'),
         'manifest excludes post ids',
@@ -496,6 +552,52 @@ try {
         'unselected private target unavailable',
     );
     check($outside[$tuple] === null, 'private title not retained');
+    $GLOBALS['snapshots'][13]['post']->post_status = 'publish';
+    $outsidePublic = [];
+    $externalMap = mbb_collections_references([$target], [], $outsidePublic);
+    check(
+        $externalMap[0]['resolved']['label'] === 'Equation 1' &&
+            str_starts_with($externalMap[0]['resolved']['url'], 'https://'),
+        'unselected public external target keeps its original article number',
+    );
+    $GLOBALS['snapshots'][13]['post']->post_status = 'draft';
+    $originalTwelve = $GLOBALS['snapshots'][12];
+    $originalThirteen = $GLOBALS['snapshots'][13];
+    $GLOBALS['snapshots'][12]['post'] = clone $originalTwelve['post'];
+    $GLOBALS['snapshots'][13]['post'] = clone $originalThirteen['post'];
+    $marker =
+        '<span class="mbb-xref" data-mbb-version="2" data-mbb-namespace="' .
+        $target['namespace'] .
+        '" data-mbb-document="' .
+        $target['document'] .
+        '" data-mbb-target="eq" data-mbb-kind="equation">[eq]</span>';
+    $GLOBALS['snapshots'][12]['document']['serialized'] = '<p>' . $marker . '</p>';
+    $GLOBALS['snapshots'][12]['post']->post_content =
+        $GLOBALS['snapshots'][12]['document']['serialized'];
+    $GLOBALS['snapshots'][12]['expected'] = mbb_token($GLOBALS['snapshots'][12]['post']);
+    $GLOBALS['snapshots'][12]['projection']['edges'] = [$target];
+    $GLOBALS['snapshots'][13]['document']['serialized'] =
+        '<figure id="eq" class="mbb-technical-object" data-mbb-object-kind="equation"><div class="mbb-technical-body">x</div><figcaption class="mbb-technical-caption">Equation</figcaption></figure>';
+    $GLOBALS['snapshots'][13]['post']->post_content =
+        $GLOBALS['snapshots'][13]['document']['serialized'];
+    $GLOBALS['snapshots'][13]['expected'] = mbb_token($GLOBALS['snapshots'][13]['post']);
+    $numberConfig = $v2;
+    $numberConfig['privateOptIn'] = true;
+    $numberConfig['chapters'][] = [
+        'key' => 'C_' . str_repeat('f', 32),
+        'post_id' => 13,
+        'role' => 'appendix',
+    ];
+    $numberedSnapshot = mbb_collections_snapshot($numberConfig, 'snapshot-v1');
+    check(
+        $numberedSnapshot['manifest']['chapters'][1]['objects'][0]['number'] === 'A.1' &&
+            $numberedSnapshot['manifest']['chapters'][0]['references'][0]['resolved']['label'] ===
+                'Equation A.1',
+        'selected chapter object metadata and cross-chapter automatic label share chapter number',
+    );
+    $GLOBALS['snapshots'][12] = $originalTwelve;
+    $GLOBALS['snapshots'][13] = $originalThirteen;
+
     $outside = [];
     $map = mbb_collections_references(
         [$target],
