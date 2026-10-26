@@ -506,7 +506,7 @@ function mbb_export_plan(
                 'files' => $files,
                 'sidecar' => '',
                 'referenceMap' => $referenceMap,
-                'relationStamp' => mbb_relation_map_v2_stamp($document['serialized']),
+                'relationStamp' => mbb_controlled_map_stamp($document['serialized']),
             ];
         }
         $projected = mbb_convert([

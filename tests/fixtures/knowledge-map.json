@@ -1,0 +1,3798 @@
+[
+  {
+    "id": "defaults",
+    "valid": true,
+    "params": {
+      "format": "knowledge-map/v1",
+      "title": "概念、阅读与配套练习",
+      "groups": [
+        { "id": "fundamentals", "title": "基础概念" },
+        { "id": "application", "title": "阅读与应用" }
+      ],
+      "nodes": [
+        {
+          "id": "concept",
+          "group": "fundamentals",
+          "title": "核心概念",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "阅读作者原文中的概念说明。"
+        },
+        {
+          "id": "reading",
+          "group": "application",
+          "title": "阅读材料",
+          "role": "reading",
+          "target": {
+            "kind": "step",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "read-step"
+          },
+          "description": "定位原文中已有的阶段步骤。"
+        },
+        {
+          "id": "practice",
+          "group": "application",
+          "title": "配套练习",
+          "role": "practice",
+          "target": {
+            "kind": "activity",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "practice-check"
+          },
+          "description": "定位原文中真实登记的练习。"
+        }
+      ],
+      "edges": [
+        {
+          "id": "first-read",
+          "from": "concept",
+          "to": "reading",
+          "kind": "prerequisite",
+          "why": "先理解概念，再阅读应用。"
+        },
+        {
+          "id": "reading-explains",
+          "from": "reading",
+          "to": "concept",
+          "kind": "explains",
+          "why": "阅读材料解释核心概念。"
+        },
+        {
+          "id": "practice-with",
+          "from": "reading",
+          "to": "practice",
+          "kind": "practises",
+          "why": "结合原文中的练习检验理解。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "local-document",
+    "valid": true,
+    "params": {
+      "format": "knowledge-map/v1",
+      "title": "概念、阅读与配套练习",
+      "groups": [
+        { "id": "fundamentals", "title": "基础概念" },
+        { "id": "application", "title": "阅读与应用" }
+      ],
+      "nodes": [
+        {
+          "id": "concept",
+          "group": "fundamentals",
+          "title": "核心概念",
+          "role": "concept",
+          "target": {
+            "kind": "local-document",
+            "site": "S_33333333333333333333333333333333",
+            "documentId": "LocalSyntheticDocument"
+          },
+          "description": "阅读作者原文中的概念说明。"
+        },
+        {
+          "id": "reading",
+          "group": "application",
+          "title": "阅读材料",
+          "role": "reading",
+          "target": {
+            "kind": "step",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "read-step"
+          },
+          "description": "定位原文中已有的阶段步骤。"
+        },
+        {
+          "id": "practice",
+          "group": "application",
+          "title": "配套练习",
+          "role": "practice",
+          "target": {
+            "kind": "activity",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "practice-check"
+          },
+          "description": "定位原文中真实登记的练习。"
+        }
+      ],
+      "edges": [
+        {
+          "id": "first-read",
+          "from": "concept",
+          "to": "reading",
+          "kind": "prerequisite",
+          "why": "先理解概念，再阅读应用。"
+        },
+        {
+          "id": "reading-explains",
+          "from": "reading",
+          "to": "concept",
+          "kind": "explains",
+          "why": "阅读材料解释核心概念。"
+        },
+        {
+          "id": "practice-with",
+          "from": "reading",
+          "to": "practice",
+          "kind": "practises",
+          "why": "结合原文中的练习检验理解。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "multi-incoming-prerequisites",
+    "valid": true,
+    "params": {
+      "format": "knowledge-map/v1",
+      "title": "概念、阅读与配套练习",
+      "groups": [
+        { "id": "fundamentals", "title": "基础概念" },
+        { "id": "application", "title": "阅读与应用" }
+      ],
+      "nodes": [
+        {
+          "id": "concept",
+          "group": "fundamentals",
+          "title": "核心概念",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "阅读作者原文中的概念说明。"
+        },
+        {
+          "id": "reading",
+          "group": "application",
+          "title": "阅读材料",
+          "role": "reading",
+          "target": {
+            "kind": "step",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "read-step"
+          },
+          "description": "定位原文中已有的阶段步骤。"
+        },
+        {
+          "id": "practice",
+          "group": "application",
+          "title": "配套练习",
+          "role": "practice",
+          "target": {
+            "kind": "activity",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "practice-check"
+          },
+          "description": "定位原文中真实登记的练习。"
+        }
+      ],
+      "edges": [
+        {
+          "id": "first-read",
+          "from": "concept",
+          "to": "reading",
+          "kind": "prerequisite",
+          "why": "先理解概念，再阅读应用。"
+        },
+        {
+          "id": "reading-explains",
+          "from": "reading",
+          "to": "concept",
+          "kind": "explains",
+          "why": "阅读材料解释核心概念。"
+        },
+        {
+          "id": "practice-with",
+          "from": "reading",
+          "to": "practice",
+          "kind": "practises",
+          "why": "结合原文中的练习检验理解。"
+        },
+        { "id": "concept-practice", "from": "concept", "to": "practice", "kind": "prerequisite" },
+        { "id": "reading-practice", "from": "reading", "to": "practice", "kind": "prerequisite" }
+      ]
+    }
+  },
+  {
+    "id": "non-prerequisite-cycle",
+    "valid": true,
+    "params": {
+      "format": "knowledge-map/v1",
+      "title": "概念、阅读与配套练习",
+      "groups": [
+        { "id": "fundamentals", "title": "基础概念" },
+        { "id": "application", "title": "阅读与应用" }
+      ],
+      "nodes": [
+        {
+          "id": "concept",
+          "group": "fundamentals",
+          "title": "核心概念",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "阅读作者原文中的概念说明。"
+        },
+        {
+          "id": "reading",
+          "group": "application",
+          "title": "阅读材料",
+          "role": "reading",
+          "target": {
+            "kind": "step",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "read-step"
+          },
+          "description": "定位原文中已有的阶段步骤。"
+        },
+        {
+          "id": "practice",
+          "group": "application",
+          "title": "配套练习",
+          "role": "practice",
+          "target": {
+            "kind": "activity",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "practice-check"
+          },
+          "description": "定位原文中真实登记的练习。"
+        }
+      ],
+      "edges": [
+        { "id": "ab", "from": "concept", "to": "reading", "kind": "explains" },
+        { "id": "ba", "from": "reading", "to": "concept", "kind": "practises" }
+      ]
+    }
+  },
+  {
+    "id": "prerequisite-cycle",
+    "valid": false,
+    "params": {
+      "format": "knowledge-map/v1",
+      "title": "概念、阅读与配套练习",
+      "groups": [
+        { "id": "fundamentals", "title": "基础概念" },
+        { "id": "application", "title": "阅读与应用" }
+      ],
+      "nodes": [
+        {
+          "id": "concept",
+          "group": "fundamentals",
+          "title": "核心概念",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "阅读作者原文中的概念说明。"
+        },
+        {
+          "id": "reading",
+          "group": "application",
+          "title": "阅读材料",
+          "role": "reading",
+          "target": {
+            "kind": "step",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "read-step"
+          },
+          "description": "定位原文中已有的阶段步骤。"
+        },
+        {
+          "id": "practice",
+          "group": "application",
+          "title": "配套练习",
+          "role": "practice",
+          "target": {
+            "kind": "activity",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "practice-check"
+          },
+          "description": "定位原文中真实登记的练习。"
+        }
+      ],
+      "edges": [
+        {
+          "id": "first-read",
+          "from": "concept",
+          "to": "reading",
+          "kind": "prerequisite",
+          "why": "先理解概念，再阅读应用。"
+        },
+        {
+          "id": "reading-explains",
+          "from": "reading",
+          "to": "concept",
+          "kind": "prerequisite",
+          "why": "阅读材料解释核心概念。"
+        },
+        {
+          "id": "practice-with",
+          "from": "reading",
+          "to": "practice",
+          "kind": "practises",
+          "why": "结合原文中的练习检验理解。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "self-prerequisite",
+    "valid": false,
+    "params": {
+      "format": "knowledge-map/v1",
+      "title": "概念、阅读与配套练习",
+      "groups": [
+        { "id": "fundamentals", "title": "基础概念" },
+        { "id": "application", "title": "阅读与应用" }
+      ],
+      "nodes": [
+        {
+          "id": "concept",
+          "group": "fundamentals",
+          "title": "核心概念",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "阅读作者原文中的概念说明。"
+        },
+        {
+          "id": "reading",
+          "group": "application",
+          "title": "阅读材料",
+          "role": "reading",
+          "target": {
+            "kind": "step",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "read-step"
+          },
+          "description": "定位原文中已有的阶段步骤。"
+        },
+        {
+          "id": "practice",
+          "group": "application",
+          "title": "配套练习",
+          "role": "practice",
+          "target": {
+            "kind": "activity",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "practice-check"
+          },
+          "description": "定位原文中真实登记的练习。"
+        }
+      ],
+      "edges": [
+        {
+          "id": "first-read",
+          "from": "concept",
+          "to": "concept",
+          "kind": "prerequisite",
+          "why": "先理解概念，再阅读应用。"
+        },
+        {
+          "id": "reading-explains",
+          "from": "reading",
+          "to": "concept",
+          "kind": "explains",
+          "why": "阅读材料解释核心概念。"
+        },
+        {
+          "id": "practice-with",
+          "from": "reading",
+          "to": "practice",
+          "kind": "practises",
+          "why": "结合原文中的练习检验理解。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "self-explains",
+    "valid": false,
+    "params": {
+      "format": "knowledge-map/v1",
+      "title": "概念、阅读与配套练习",
+      "groups": [
+        { "id": "fundamentals", "title": "基础概念" },
+        { "id": "application", "title": "阅读与应用" }
+      ],
+      "nodes": [
+        {
+          "id": "concept",
+          "group": "fundamentals",
+          "title": "核心概念",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "阅读作者原文中的概念说明。"
+        },
+        {
+          "id": "reading",
+          "group": "application",
+          "title": "阅读材料",
+          "role": "reading",
+          "target": {
+            "kind": "step",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "read-step"
+          },
+          "description": "定位原文中已有的阶段步骤。"
+        },
+        {
+          "id": "practice",
+          "group": "application",
+          "title": "配套练习",
+          "role": "practice",
+          "target": {
+            "kind": "activity",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "practice-check"
+          },
+          "description": "定位原文中真实登记的练习。"
+        }
+      ],
+      "edges": [
+        {
+          "id": "first-read",
+          "from": "concept",
+          "to": "concept",
+          "kind": "explains",
+          "why": "先理解概念，再阅读应用。"
+        },
+        {
+          "id": "reading-explains",
+          "from": "reading",
+          "to": "concept",
+          "kind": "explains",
+          "why": "阅读材料解释核心概念。"
+        },
+        {
+          "id": "practice-with",
+          "from": "reading",
+          "to": "practice",
+          "kind": "practises",
+          "why": "结合原文中的练习检验理解。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "self-practises",
+    "valid": false,
+    "params": {
+      "format": "knowledge-map/v1",
+      "title": "概念、阅读与配套练习",
+      "groups": [
+        { "id": "fundamentals", "title": "基础概念" },
+        { "id": "application", "title": "阅读与应用" }
+      ],
+      "nodes": [
+        {
+          "id": "concept",
+          "group": "fundamentals",
+          "title": "核心概念",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "阅读作者原文中的概念说明。"
+        },
+        {
+          "id": "reading",
+          "group": "application",
+          "title": "阅读材料",
+          "role": "reading",
+          "target": {
+            "kind": "step",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "read-step"
+          },
+          "description": "定位原文中已有的阶段步骤。"
+        },
+        {
+          "id": "practice",
+          "group": "application",
+          "title": "配套练习",
+          "role": "practice",
+          "target": {
+            "kind": "activity",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "practice-check"
+          },
+          "description": "定位原文中真实登记的练习。"
+        }
+      ],
+      "edges": [
+        {
+          "id": "first-read",
+          "from": "concept",
+          "to": "concept",
+          "kind": "practises",
+          "why": "先理解概念，再阅读应用。"
+        },
+        {
+          "id": "reading-explains",
+          "from": "reading",
+          "to": "concept",
+          "kind": "explains",
+          "why": "阅读材料解释核心概念。"
+        },
+        {
+          "id": "practice-with",
+          "from": "reading",
+          "to": "practice",
+          "kind": "practises",
+          "why": "结合原文中的练习检验理解。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "96-codepoints",
+    "valid": true,
+    "params": {
+      "format": "knowledge-map/v1",
+      "title": "概念、阅读与配套练习",
+      "groups": [
+        { "id": "fundamentals", "title": "基础概念" },
+        { "id": "application", "title": "阅读与应用" }
+      ],
+      "nodes": [
+        {
+          "id": "concept",
+          "group": "fundamentals",
+          "title": "概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "阅读作者原文中的概念说明。"
+        },
+        {
+          "id": "reading",
+          "group": "application",
+          "title": "阅读材料",
+          "role": "reading",
+          "target": {
+            "kind": "step",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "read-step"
+          },
+          "description": "定位原文中已有的阶段步骤。"
+        },
+        {
+          "id": "practice",
+          "group": "application",
+          "title": "配套练习",
+          "role": "practice",
+          "target": {
+            "kind": "activity",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "practice-check"
+          },
+          "description": "定位原文中真实登记的练习。"
+        }
+      ],
+      "edges": [
+        {
+          "id": "first-read",
+          "from": "concept",
+          "to": "reading",
+          "kind": "prerequisite",
+          "why": "先理解概念，再阅读应用。"
+        },
+        {
+          "id": "reading-explains",
+          "from": "reading",
+          "to": "concept",
+          "kind": "explains",
+          "why": "阅读材料解释核心概念。"
+        },
+        {
+          "id": "practice-with",
+          "from": "reading",
+          "to": "practice",
+          "kind": "practises",
+          "why": "结合原文中的练习检验理解。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "97-codepoints",
+    "valid": false,
+    "params": {
+      "format": "knowledge-map/v1",
+      "title": "概念、阅读与配套练习",
+      "groups": [
+        { "id": "fundamentals", "title": "基础概念" },
+        { "id": "application", "title": "阅读与应用" }
+      ],
+      "nodes": [
+        {
+          "id": "concept",
+          "group": "fundamentals",
+          "title": "概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概概",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "阅读作者原文中的概念说明。"
+        },
+        {
+          "id": "reading",
+          "group": "application",
+          "title": "阅读材料",
+          "role": "reading",
+          "target": {
+            "kind": "step",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "read-step"
+          },
+          "description": "定位原文中已有的阶段步骤。"
+        },
+        {
+          "id": "practice",
+          "group": "application",
+          "title": "配套练习",
+          "role": "practice",
+          "target": {
+            "kind": "activity",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "practice-check"
+          },
+          "description": "定位原文中真实登记的练习。"
+        }
+      ],
+      "edges": [
+        {
+          "id": "first-read",
+          "from": "concept",
+          "to": "reading",
+          "kind": "prerequisite",
+          "why": "先理解概念，再阅读应用。"
+        },
+        {
+          "id": "reading-explains",
+          "from": "reading",
+          "to": "concept",
+          "kind": "explains",
+          "why": "阅读材料解释核心概念。"
+        },
+        {
+          "id": "practice-with",
+          "from": "reading",
+          "to": "practice",
+          "kind": "practises",
+          "why": "结合原文中的练习检验理解。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "64-id",
+    "valid": true,
+    "params": {
+      "format": "knowledge-map/v1",
+      "title": "概念、阅读与配套练习",
+      "groups": [
+        { "id": "fundamentals", "title": "基础概念" },
+        { "id": "application", "title": "阅读与应用" }
+      ],
+      "nodes": [
+        {
+          "id": "concept",
+          "group": "fundamentals",
+          "title": "核心概念",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "阅读作者原文中的概念说明。"
+        },
+        {
+          "id": "reading",
+          "group": "application",
+          "title": "阅读材料",
+          "role": "reading",
+          "target": {
+            "kind": "step",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "read-step"
+          },
+          "description": "定位原文中已有的阶段步骤。"
+        },
+        {
+          "id": "practice",
+          "group": "application",
+          "title": "配套练习",
+          "role": "practice",
+          "target": {
+            "kind": "activity",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "practice-check"
+          },
+          "description": "定位原文中真实登记的练习。"
+        }
+      ],
+      "edges": [
+        {
+          "id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "from": "concept",
+          "to": "reading",
+          "kind": "prerequisite",
+          "why": "先理解概念，再阅读应用。"
+        },
+        {
+          "id": "reading-explains",
+          "from": "reading",
+          "to": "concept",
+          "kind": "explains",
+          "why": "阅读材料解释核心概念。"
+        },
+        {
+          "id": "practice-with",
+          "from": "reading",
+          "to": "practice",
+          "kind": "practises",
+          "why": "结合原文中的练习检验理解。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "65-id",
+    "valid": false,
+    "params": {
+      "format": "knowledge-map/v1",
+      "title": "概念、阅读与配套练习",
+      "groups": [
+        { "id": "fundamentals", "title": "基础概念" },
+        { "id": "application", "title": "阅读与应用" }
+      ],
+      "nodes": [
+        {
+          "id": "concept",
+          "group": "fundamentals",
+          "title": "核心概念",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "阅读作者原文中的概念说明。"
+        },
+        {
+          "id": "reading",
+          "group": "application",
+          "title": "阅读材料",
+          "role": "reading",
+          "target": {
+            "kind": "step",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "read-step"
+          },
+          "description": "定位原文中已有的阶段步骤。"
+        },
+        {
+          "id": "practice",
+          "group": "application",
+          "title": "配套练习",
+          "role": "practice",
+          "target": {
+            "kind": "activity",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "practice-check"
+          },
+          "description": "定位原文中真实登记的练习。"
+        }
+      ],
+      "edges": [
+        {
+          "id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "from": "concept",
+          "to": "reading",
+          "kind": "prerequisite",
+          "why": "先理解概念，再阅读应用。"
+        },
+        {
+          "id": "reading-explains",
+          "from": "reading",
+          "to": "concept",
+          "kind": "explains",
+          "why": "阅读材料解释核心概念。"
+        },
+        {
+          "id": "practice-with",
+          "from": "reading",
+          "to": "practice",
+          "kind": "practises",
+          "why": "结合原文中的练习检验理解。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "old-format",
+    "valid": false,
+    "params": {
+      "format": "relation-map/v2",
+      "title": "概念、阅读与配套练习",
+      "groups": [
+        { "id": "fundamentals", "title": "基础概念" },
+        { "id": "application", "title": "阅读与应用" }
+      ],
+      "nodes": [
+        {
+          "id": "concept",
+          "group": "fundamentals",
+          "title": "核心概念",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "阅读作者原文中的概念说明。"
+        },
+        {
+          "id": "reading",
+          "group": "application",
+          "title": "阅读材料",
+          "role": "reading",
+          "target": {
+            "kind": "step",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "read-step"
+          },
+          "description": "定位原文中已有的阶段步骤。"
+        },
+        {
+          "id": "practice",
+          "group": "application",
+          "title": "配套练习",
+          "role": "practice",
+          "target": {
+            "kind": "activity",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "practice-check"
+          },
+          "description": "定位原文中真实登记的练习。"
+        }
+      ],
+      "edges": [
+        {
+          "id": "first-read",
+          "from": "concept",
+          "to": "reading",
+          "kind": "prerequisite",
+          "why": "先理解概念，再阅读应用。"
+        },
+        {
+          "id": "reading-explains",
+          "from": "reading",
+          "to": "concept",
+          "kind": "explains",
+          "why": "阅读材料解释核心概念。"
+        },
+        {
+          "id": "practice-with",
+          "from": "reading",
+          "to": "practice",
+          "kind": "practises",
+          "why": "结合原文中的练习检验理解。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "unknown-root",
+    "valid": false,
+    "params": {
+      "format": "knowledge-map/v1",
+      "title": "概念、阅读与配套练习",
+      "groups": [
+        { "id": "fundamentals", "title": "基础概念" },
+        { "id": "application", "title": "阅读与应用" }
+      ],
+      "nodes": [
+        {
+          "id": "concept",
+          "group": "fundamentals",
+          "title": "核心概念",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "阅读作者原文中的概念说明。"
+        },
+        {
+          "id": "reading",
+          "group": "application",
+          "title": "阅读材料",
+          "role": "reading",
+          "target": {
+            "kind": "step",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "read-step"
+          },
+          "description": "定位原文中已有的阶段步骤。"
+        },
+        {
+          "id": "practice",
+          "group": "application",
+          "title": "配套练习",
+          "role": "practice",
+          "target": {
+            "kind": "activity",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "practice-check"
+          },
+          "description": "定位原文中真实登记的练习。"
+        }
+      ],
+      "edges": [
+        {
+          "id": "first-read",
+          "from": "concept",
+          "to": "reading",
+          "kind": "prerequisite",
+          "why": "先理解概念，再阅读应用。"
+        },
+        {
+          "id": "reading-explains",
+          "from": "reading",
+          "to": "concept",
+          "kind": "explains",
+          "why": "阅读材料解释核心概念。"
+        },
+        {
+          "id": "practice-with",
+          "from": "reading",
+          "to": "practice",
+          "kind": "practises",
+          "why": "结合原文中的练习检验理解。"
+        }
+      ],
+      "coordinates": []
+    }
+  },
+  {
+    "id": "unknown-role",
+    "valid": false,
+    "params": {
+      "format": "knowledge-map/v1",
+      "title": "概念、阅读与配套练习",
+      "groups": [
+        { "id": "fundamentals", "title": "基础概念" },
+        { "id": "application", "title": "阅读与应用" }
+      ],
+      "nodes": [
+        {
+          "id": "concept",
+          "group": "fundamentals",
+          "title": "核心概念",
+          "role": "activity",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "阅读作者原文中的概念说明。"
+        },
+        {
+          "id": "reading",
+          "group": "application",
+          "title": "阅读材料",
+          "role": "reading",
+          "target": {
+            "kind": "step",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "read-step"
+          },
+          "description": "定位原文中已有的阶段步骤。"
+        },
+        {
+          "id": "practice",
+          "group": "application",
+          "title": "配套练习",
+          "role": "practice",
+          "target": {
+            "kind": "activity",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "practice-check"
+          },
+          "description": "定位原文中真实登记的练习。"
+        }
+      ],
+      "edges": [
+        {
+          "id": "first-read",
+          "from": "concept",
+          "to": "reading",
+          "kind": "prerequisite",
+          "why": "先理解概念，再阅读应用。"
+        },
+        {
+          "id": "reading-explains",
+          "from": "reading",
+          "to": "concept",
+          "kind": "explains",
+          "why": "阅读材料解释核心概念。"
+        },
+        {
+          "id": "practice-with",
+          "from": "reading",
+          "to": "practice",
+          "kind": "practises",
+          "why": "结合原文中的练习检验理解。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "unknown-kind",
+    "valid": false,
+    "params": {
+      "format": "knowledge-map/v1",
+      "title": "概念、阅读与配套练习",
+      "groups": [
+        { "id": "fundamentals", "title": "基础概念" },
+        { "id": "application", "title": "阅读与应用" }
+      ],
+      "nodes": [
+        {
+          "id": "concept",
+          "group": "fundamentals",
+          "title": "核心概念",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "阅读作者原文中的概念说明。"
+        },
+        {
+          "id": "reading",
+          "group": "application",
+          "title": "阅读材料",
+          "role": "reading",
+          "target": {
+            "kind": "step",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "read-step"
+          },
+          "description": "定位原文中已有的阶段步骤。"
+        },
+        {
+          "id": "practice",
+          "group": "application",
+          "title": "配套练习",
+          "role": "practice",
+          "target": {
+            "kind": "activity",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "practice-check"
+          },
+          "description": "定位原文中真实登记的练习。"
+        }
+      ],
+      "edges": [
+        {
+          "id": "first-read",
+          "from": "concept",
+          "to": "reading",
+          "kind": "recommended",
+          "why": "先理解概念，再阅读应用。"
+        },
+        {
+          "id": "reading-explains",
+          "from": "reading",
+          "to": "concept",
+          "kind": "explains",
+          "why": "阅读材料解释核心概念。"
+        },
+        {
+          "id": "practice-with",
+          "from": "reading",
+          "to": "practice",
+          "kind": "practises",
+          "why": "结合原文中的练习检验理解。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "missing-role",
+    "valid": false,
+    "params": {
+      "format": "knowledge-map/v1",
+      "title": "概念、阅读与配套练习",
+      "groups": [
+        { "id": "fundamentals", "title": "基础概念" },
+        { "id": "application", "title": "阅读与应用" }
+      ],
+      "nodes": [
+        {
+          "id": "concept",
+          "group": "fundamentals",
+          "title": "核心概念",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "阅读作者原文中的概念说明。"
+        },
+        {
+          "id": "reading",
+          "group": "application",
+          "title": "阅读材料",
+          "role": "reading",
+          "target": {
+            "kind": "step",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "read-step"
+          },
+          "description": "定位原文中已有的阶段步骤。"
+        },
+        {
+          "id": "practice",
+          "group": "application",
+          "title": "配套练习",
+          "role": "practice",
+          "target": {
+            "kind": "activity",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "practice-check"
+          },
+          "description": "定位原文中真实登记的练习。"
+        }
+      ],
+      "edges": [
+        {
+          "id": "first-read",
+          "from": "concept",
+          "to": "reading",
+          "kind": "prerequisite",
+          "why": "先理解概念，再阅读应用。"
+        },
+        {
+          "id": "reading-explains",
+          "from": "reading",
+          "to": "concept",
+          "kind": "explains",
+          "why": "阅读材料解释核心概念。"
+        },
+        {
+          "id": "practice-with",
+          "from": "reading",
+          "to": "practice",
+          "kind": "practises",
+          "why": "结合原文中的练习检验理解。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "duplicate-node",
+    "valid": false,
+    "params": {
+      "format": "knowledge-map/v1",
+      "title": "概念、阅读与配套练习",
+      "groups": [
+        { "id": "fundamentals", "title": "基础概念" },
+        { "id": "application", "title": "阅读与应用" }
+      ],
+      "nodes": [
+        {
+          "id": "concept",
+          "group": "fundamentals",
+          "title": "核心概念",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "阅读作者原文中的概念说明。"
+        },
+        {
+          "id": "concept",
+          "group": "application",
+          "title": "阅读材料",
+          "role": "reading",
+          "target": {
+            "kind": "step",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "read-step"
+          },
+          "description": "定位原文中已有的阶段步骤。"
+        },
+        {
+          "id": "practice",
+          "group": "application",
+          "title": "配套练习",
+          "role": "practice",
+          "target": {
+            "kind": "activity",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "practice-check"
+          },
+          "description": "定位原文中真实登记的练习。"
+        }
+      ],
+      "edges": [
+        {
+          "id": "first-read",
+          "from": "concept",
+          "to": "reading",
+          "kind": "prerequisite",
+          "why": "先理解概念，再阅读应用。"
+        },
+        {
+          "id": "reading-explains",
+          "from": "reading",
+          "to": "concept",
+          "kind": "explains",
+          "why": "阅读材料解释核心概念。"
+        },
+        {
+          "id": "practice-with",
+          "from": "reading",
+          "to": "practice",
+          "kind": "practises",
+          "why": "结合原文中的练习检验理解。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "duplicate-edge-id",
+    "valid": false,
+    "params": {
+      "format": "knowledge-map/v1",
+      "title": "概念、阅读与配套练习",
+      "groups": [
+        { "id": "fundamentals", "title": "基础概念" },
+        { "id": "application", "title": "阅读与应用" }
+      ],
+      "nodes": [
+        {
+          "id": "concept",
+          "group": "fundamentals",
+          "title": "核心概念",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "阅读作者原文中的概念说明。"
+        },
+        {
+          "id": "reading",
+          "group": "application",
+          "title": "阅读材料",
+          "role": "reading",
+          "target": {
+            "kind": "step",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "read-step"
+          },
+          "description": "定位原文中已有的阶段步骤。"
+        },
+        {
+          "id": "practice",
+          "group": "application",
+          "title": "配套练习",
+          "role": "practice",
+          "target": {
+            "kind": "activity",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "practice-check"
+          },
+          "description": "定位原文中真实登记的练习。"
+        }
+      ],
+      "edges": [
+        {
+          "id": "first-read",
+          "from": "concept",
+          "to": "reading",
+          "kind": "prerequisite",
+          "why": "先理解概念，再阅读应用。"
+        },
+        {
+          "id": "first-read",
+          "from": "reading",
+          "to": "concept",
+          "kind": "explains",
+          "why": "阅读材料解释核心概念。"
+        },
+        {
+          "id": "practice-with",
+          "from": "reading",
+          "to": "practice",
+          "kind": "practises",
+          "why": "结合原文中的练习检验理解。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "duplicate-triple",
+    "valid": false,
+    "params": {
+      "format": "knowledge-map/v1",
+      "title": "概念、阅读与配套练习",
+      "groups": [
+        { "id": "fundamentals", "title": "基础概念" },
+        { "id": "application", "title": "阅读与应用" }
+      ],
+      "nodes": [
+        {
+          "id": "concept",
+          "group": "fundamentals",
+          "title": "核心概念",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "阅读作者原文中的概念说明。"
+        },
+        {
+          "id": "reading",
+          "group": "application",
+          "title": "阅读材料",
+          "role": "reading",
+          "target": {
+            "kind": "step",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "read-step"
+          },
+          "description": "定位原文中已有的阶段步骤。"
+        },
+        {
+          "id": "practice",
+          "group": "application",
+          "title": "配套练习",
+          "role": "practice",
+          "target": {
+            "kind": "activity",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "practice-check"
+          },
+          "description": "定位原文中真实登记的练习。"
+        }
+      ],
+      "edges": [
+        {
+          "id": "first-read",
+          "from": "concept",
+          "to": "reading",
+          "kind": "prerequisite",
+          "why": "先理解概念，再阅读应用。"
+        },
+        {
+          "id": "reading-explains",
+          "from": "reading",
+          "to": "concept",
+          "kind": "explains",
+          "why": "阅读材料解释核心概念。"
+        },
+        {
+          "id": "practice-with",
+          "from": "reading",
+          "to": "practice",
+          "kind": "practises",
+          "why": "结合原文中的练习检验理解。"
+        },
+        {
+          "id": "copy",
+          "from": "concept",
+          "to": "reading",
+          "kind": "prerequisite",
+          "why": "先理解概念，再阅读应用。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "missing-endpoint",
+    "valid": false,
+    "params": {
+      "format": "knowledge-map/v1",
+      "title": "概念、阅读与配套练习",
+      "groups": [
+        { "id": "fundamentals", "title": "基础概念" },
+        { "id": "application", "title": "阅读与应用" }
+      ],
+      "nodes": [
+        {
+          "id": "concept",
+          "group": "fundamentals",
+          "title": "核心概念",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "阅读作者原文中的概念说明。"
+        },
+        {
+          "id": "reading",
+          "group": "application",
+          "title": "阅读材料",
+          "role": "reading",
+          "target": {
+            "kind": "step",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "read-step"
+          },
+          "description": "定位原文中已有的阶段步骤。"
+        },
+        {
+          "id": "practice",
+          "group": "application",
+          "title": "配套练习",
+          "role": "practice",
+          "target": {
+            "kind": "activity",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "practice-check"
+          },
+          "description": "定位原文中真实登记的练习。"
+        }
+      ],
+      "edges": [
+        {
+          "id": "first-read",
+          "from": "concept",
+          "to": "missing",
+          "kind": "prerequisite",
+          "why": "先理解概念，再阅读应用。"
+        },
+        {
+          "id": "reading-explains",
+          "from": "reading",
+          "to": "concept",
+          "kind": "explains",
+          "why": "阅读材料解释核心概念。"
+        },
+        {
+          "id": "practice-with",
+          "from": "reading",
+          "to": "practice",
+          "kind": "practises",
+          "why": "结合原文中的练习检验理解。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "unknown-group",
+    "valid": false,
+    "params": {
+      "format": "knowledge-map/v1",
+      "title": "概念、阅读与配套练习",
+      "groups": [
+        { "id": "fundamentals", "title": "基础概念" },
+        { "id": "application", "title": "阅读与应用" }
+      ],
+      "nodes": [
+        {
+          "id": "concept",
+          "group": "missing",
+          "title": "核心概念",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "阅读作者原文中的概念说明。"
+        },
+        {
+          "id": "reading",
+          "group": "application",
+          "title": "阅读材料",
+          "role": "reading",
+          "target": {
+            "kind": "step",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "read-step"
+          },
+          "description": "定位原文中已有的阶段步骤。"
+        },
+        {
+          "id": "practice",
+          "group": "application",
+          "title": "配套练习",
+          "role": "practice",
+          "target": {
+            "kind": "activity",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "practice-check"
+          },
+          "description": "定位原文中真实登记的练习。"
+        }
+      ],
+      "edges": [
+        {
+          "id": "first-read",
+          "from": "concept",
+          "to": "reading",
+          "kind": "prerequisite",
+          "why": "先理解概念，再阅读应用。"
+        },
+        {
+          "id": "reading-explains",
+          "from": "reading",
+          "to": "concept",
+          "kind": "explains",
+          "why": "阅读材料解释核心概念。"
+        },
+        {
+          "id": "practice-with",
+          "from": "reading",
+          "to": "practice",
+          "kind": "practises",
+          "why": "结合原文中的练习检验理解。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "empty-group",
+    "valid": false,
+    "params": {
+      "format": "knowledge-map/v1",
+      "title": "概念、阅读与配套练习",
+      "groups": [
+        { "id": "fundamentals", "title": "基础概念" },
+        { "id": "application", "title": "阅读与应用" },
+        { "id": "empty", "title": "Empty" }
+      ],
+      "nodes": [
+        {
+          "id": "concept",
+          "group": "fundamentals",
+          "title": "核心概念",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "阅读作者原文中的概念说明。"
+        },
+        {
+          "id": "reading",
+          "group": "application",
+          "title": "阅读材料",
+          "role": "reading",
+          "target": {
+            "kind": "step",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "read-step"
+          },
+          "description": "定位原文中已有的阶段步骤。"
+        },
+        {
+          "id": "practice",
+          "group": "application",
+          "title": "配套练习",
+          "role": "practice",
+          "target": {
+            "kind": "activity",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "practice-check"
+          },
+          "description": "定位原文中真实登记的练习。"
+        }
+      ],
+      "edges": [
+        {
+          "id": "first-read",
+          "from": "concept",
+          "to": "reading",
+          "kind": "prerequisite",
+          "why": "先理解概念，再阅读应用。"
+        },
+        {
+          "id": "reading-explains",
+          "from": "reading",
+          "to": "concept",
+          "kind": "explains",
+          "why": "阅读材料解释核心概念。"
+        },
+        {
+          "id": "practice-with",
+          "from": "reading",
+          "to": "practice",
+          "kind": "practises",
+          "why": "结合原文中的练习检验理解。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "mixed-document-target",
+    "valid": false,
+    "params": {
+      "format": "knowledge-map/v1",
+      "title": "概念、阅读与配套练习",
+      "groups": [
+        { "id": "fundamentals", "title": "基础概念" },
+        { "id": "application", "title": "阅读与应用" }
+      ],
+      "nodes": [
+        {
+          "id": "concept",
+          "group": "fundamentals",
+          "title": "核心概念",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "fake-step"
+          },
+          "description": "阅读作者原文中的概念说明。"
+        },
+        {
+          "id": "reading",
+          "group": "application",
+          "title": "阅读材料",
+          "role": "reading",
+          "target": {
+            "kind": "step",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "read-step"
+          },
+          "description": "定位原文中已有的阶段步骤。"
+        },
+        {
+          "id": "practice",
+          "group": "application",
+          "title": "配套练习",
+          "role": "practice",
+          "target": {
+            "kind": "activity",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "practice-check"
+          },
+          "description": "定位原文中真实登记的练习。"
+        }
+      ],
+      "edges": [
+        {
+          "id": "first-read",
+          "from": "concept",
+          "to": "reading",
+          "kind": "prerequisite",
+          "why": "先理解概念，再阅读应用。"
+        },
+        {
+          "id": "reading-explains",
+          "from": "reading",
+          "to": "concept",
+          "kind": "explains",
+          "why": "阅读材料解释核心概念。"
+        },
+        {
+          "id": "practice-with",
+          "from": "reading",
+          "to": "practice",
+          "kind": "practises",
+          "why": "结合原文中的练习检验理解。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "mixed-local-target",
+    "valid": false,
+    "params": {
+      "format": "knowledge-map/v1",
+      "title": "概念、阅读与配套练习",
+      "groups": [
+        { "id": "fundamentals", "title": "基础概念" },
+        { "id": "application", "title": "阅读与应用" }
+      ],
+      "nodes": [
+        {
+          "id": "concept",
+          "group": "fundamentals",
+          "title": "核心概念",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "site": "S_33333333333333333333333333333333"
+          },
+          "description": "阅读作者原文中的概念说明。"
+        },
+        {
+          "id": "reading",
+          "group": "application",
+          "title": "阅读材料",
+          "role": "reading",
+          "target": {
+            "kind": "step",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "read-step"
+          },
+          "description": "定位原文中已有的阶段步骤。"
+        },
+        {
+          "id": "practice",
+          "group": "application",
+          "title": "配套练习",
+          "role": "practice",
+          "target": {
+            "kind": "activity",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "practice-check"
+          },
+          "description": "定位原文中真实登记的练习。"
+        }
+      ],
+      "edges": [
+        {
+          "id": "first-read",
+          "from": "concept",
+          "to": "reading",
+          "kind": "prerequisite",
+          "why": "先理解概念，再阅读应用。"
+        },
+        {
+          "id": "reading-explains",
+          "from": "reading",
+          "to": "concept",
+          "kind": "explains",
+          "why": "阅读材料解释核心概念。"
+        },
+        {
+          "id": "practice-with",
+          "from": "reading",
+          "to": "practice",
+          "kind": "practises",
+          "why": "结合原文中的练习检验理解。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "object-target-required",
+    "valid": false,
+    "params": {
+      "format": "knowledge-map/v1",
+      "title": "概念、阅读与配套练习",
+      "groups": [
+        { "id": "fundamentals", "title": "基础概念" },
+        { "id": "application", "title": "阅读与应用" }
+      ],
+      "nodes": [
+        {
+          "id": "concept",
+          "group": "fundamentals",
+          "title": "核心概念",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "阅读作者原文中的概念说明。"
+        },
+        {
+          "id": "reading",
+          "group": "application",
+          "title": "阅读材料",
+          "role": "reading",
+          "target": {
+            "kind": "step",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "定位原文中已有的阶段步骤。"
+        },
+        {
+          "id": "practice",
+          "group": "application",
+          "title": "配套练习",
+          "role": "practice",
+          "target": {
+            "kind": "activity",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "practice-check"
+          },
+          "description": "定位原文中真实登记的练习。"
+        }
+      ],
+      "edges": [
+        {
+          "id": "first-read",
+          "from": "concept",
+          "to": "reading",
+          "kind": "prerequisite",
+          "why": "先理解概念，再阅读应用。"
+        },
+        {
+          "id": "reading-explains",
+          "from": "reading",
+          "to": "concept",
+          "kind": "explains",
+          "why": "阅读材料解释核心概念。"
+        },
+        {
+          "id": "practice-with",
+          "from": "reading",
+          "to": "practice",
+          "kind": "practises",
+          "why": "结合原文中的练习检验理解。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "object-target-post-id",
+    "valid": false,
+    "params": {
+      "format": "knowledge-map/v1",
+      "title": "概念、阅读与配套练习",
+      "groups": [
+        { "id": "fundamentals", "title": "基础概念" },
+        { "id": "application", "title": "阅读与应用" }
+      ],
+      "nodes": [
+        {
+          "id": "concept",
+          "group": "fundamentals",
+          "title": "核心概念",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "阅读作者原文中的概念说明。"
+        },
+        {
+          "id": "reading",
+          "group": "application",
+          "title": "阅读材料",
+          "role": "reading",
+          "target": {
+            "kind": "step",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "read-step"
+          },
+          "description": "定位原文中已有的阶段步骤。"
+        },
+        {
+          "id": "practice",
+          "group": "application",
+          "title": "配套练习",
+          "role": "practice",
+          "target": {
+            "kind": "activity",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "1234",
+            "target": "practice-check"
+          },
+          "description": "定位原文中真实登记的练习。"
+        }
+      ],
+      "edges": [
+        {
+          "id": "first-read",
+          "from": "concept",
+          "to": "reading",
+          "kind": "prerequisite",
+          "why": "先理解概念，再阅读应用。"
+        },
+        {
+          "id": "reading-explains",
+          "from": "reading",
+          "to": "concept",
+          "kind": "explains",
+          "why": "阅读材料解释核心概念。"
+        },
+        {
+          "id": "practice-with",
+          "from": "reading",
+          "to": "practice",
+          "kind": "practises",
+          "why": "结合原文中的练习检验理解。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "unknown-target-field",
+    "valid": false,
+    "params": {
+      "format": "knowledge-map/v1",
+      "title": "概念、阅读与配套练习",
+      "groups": [
+        { "id": "fundamentals", "title": "基础概念" },
+        { "id": "application", "title": "阅读与应用" }
+      ],
+      "nodes": [
+        {
+          "id": "concept",
+          "group": "fundamentals",
+          "title": "核心概念",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "阅读作者原文中的概念说明。"
+        },
+        {
+          "id": "reading",
+          "group": "application",
+          "title": "阅读材料",
+          "role": "reading",
+          "target": {
+            "kind": "step",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "read-step"
+          },
+          "description": "定位原文中已有的阶段步骤。"
+        },
+        {
+          "id": "practice",
+          "group": "application",
+          "title": "配套练习",
+          "role": "practice",
+          "target": {
+            "kind": "activity",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "practice-check",
+            "url": "/private/"
+          },
+          "description": "定位原文中真实登记的练习。"
+        }
+      ],
+      "edges": [
+        {
+          "id": "first-read",
+          "from": "concept",
+          "to": "reading",
+          "kind": "prerequisite",
+          "why": "先理解概念，再阅读应用。"
+        },
+        {
+          "id": "reading-explains",
+          "from": "reading",
+          "to": "concept",
+          "kind": "explains",
+          "why": "阅读材料解释核心概念。"
+        },
+        {
+          "id": "practice-with",
+          "from": "reading",
+          "to": "practice",
+          "kind": "practises",
+          "why": "结合原文中的练习检验理解。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "raw-url-rejected",
+    "valid": false,
+    "params": {
+      "format": "knowledge-map/v1",
+      "title": "概念、阅读与配套练习",
+      "groups": [
+        { "id": "fundamentals", "title": "基础概念" },
+        { "id": "application", "title": "阅读与应用" }
+      ],
+      "nodes": [
+        {
+          "id": "concept",
+          "group": "fundamentals",
+          "title": "核心概念",
+          "role": "concept",
+          "target": { "kind": "url", "url": "https://fixture.invalid" },
+          "description": "阅读作者原文中的概念说明。"
+        },
+        {
+          "id": "reading",
+          "group": "application",
+          "title": "阅读材料",
+          "role": "reading",
+          "target": {
+            "kind": "step",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "read-step"
+          },
+          "description": "定位原文中已有的阶段步骤。"
+        },
+        {
+          "id": "practice",
+          "group": "application",
+          "title": "配套练习",
+          "role": "practice",
+          "target": {
+            "kind": "activity",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222",
+            "target": "practice-check"
+          },
+          "description": "定位原文中真实登记的练习。"
+        }
+      ],
+      "edges": [
+        {
+          "id": "first-read",
+          "from": "concept",
+          "to": "reading",
+          "kind": "prerequisite",
+          "why": "先理解概念，再阅读应用。"
+        },
+        {
+          "id": "reading-explains",
+          "from": "reading",
+          "to": "concept",
+          "kind": "explains",
+          "why": "阅读材料解释核心概念。"
+        },
+        {
+          "id": "practice-with",
+          "from": "reading",
+          "to": "practice",
+          "kind": "practises",
+          "why": "结合原文中的练习检验理解。"
+        }
+      ]
+    }
+  },
+  {
+    "id": "32-nodes-and-32-edges",
+    "valid": true,
+    "params": {
+      "format": "knowledge-map/v1",
+      "title": "概念、阅读与配套练习",
+      "groups": [{ "id": "all", "title": "All" }],
+      "nodes": [
+        {
+          "id": "n0",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n1",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n2",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n3",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n4",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n5",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n6",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n7",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n8",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n9",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n10",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n11",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n12",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n13",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n14",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n15",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n16",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n17",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n18",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n19",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n20",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n21",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n22",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n23",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n24",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n25",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n26",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n27",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n28",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n29",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n30",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n31",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        }
+      ],
+      "edges": [
+        { "id": "e1", "from": "n0", "to": "n1", "kind": "prerequisite" },
+        { "id": "e2", "from": "n1", "to": "n2", "kind": "prerequisite" },
+        { "id": "e3", "from": "n2", "to": "n3", "kind": "prerequisite" },
+        { "id": "e4", "from": "n3", "to": "n4", "kind": "prerequisite" },
+        { "id": "e5", "from": "n4", "to": "n5", "kind": "prerequisite" },
+        { "id": "e6", "from": "n5", "to": "n6", "kind": "prerequisite" },
+        { "id": "e7", "from": "n6", "to": "n7", "kind": "prerequisite" },
+        { "id": "e8", "from": "n7", "to": "n8", "kind": "prerequisite" },
+        { "id": "e9", "from": "n8", "to": "n9", "kind": "prerequisite" },
+        { "id": "e10", "from": "n9", "to": "n10", "kind": "prerequisite" },
+        { "id": "e11", "from": "n10", "to": "n11", "kind": "prerequisite" },
+        { "id": "e12", "from": "n11", "to": "n12", "kind": "prerequisite" },
+        { "id": "e13", "from": "n12", "to": "n13", "kind": "prerequisite" },
+        { "id": "e14", "from": "n13", "to": "n14", "kind": "prerequisite" },
+        { "id": "e15", "from": "n14", "to": "n15", "kind": "prerequisite" },
+        { "id": "e16", "from": "n15", "to": "n16", "kind": "prerequisite" },
+        { "id": "e17", "from": "n16", "to": "n17", "kind": "prerequisite" },
+        { "id": "e18", "from": "n17", "to": "n18", "kind": "prerequisite" },
+        { "id": "e19", "from": "n18", "to": "n19", "kind": "prerequisite" },
+        { "id": "e20", "from": "n19", "to": "n20", "kind": "prerequisite" },
+        { "id": "e21", "from": "n20", "to": "n21", "kind": "prerequisite" },
+        { "id": "e22", "from": "n21", "to": "n22", "kind": "prerequisite" },
+        { "id": "e23", "from": "n22", "to": "n23", "kind": "prerequisite" },
+        { "id": "e24", "from": "n23", "to": "n24", "kind": "prerequisite" },
+        { "id": "e25", "from": "n24", "to": "n25", "kind": "prerequisite" },
+        { "id": "e26", "from": "n25", "to": "n26", "kind": "prerequisite" },
+        { "id": "e27", "from": "n26", "to": "n27", "kind": "prerequisite" },
+        { "id": "e28", "from": "n27", "to": "n28", "kind": "prerequisite" },
+        { "id": "e29", "from": "n28", "to": "n29", "kind": "prerequisite" },
+        { "id": "e30", "from": "n29", "to": "n30", "kind": "prerequisite" },
+        { "id": "e31", "from": "n30", "to": "n31", "kind": "prerequisite" },
+        { "id": "extra", "from": "n0", "to": "n31", "kind": "explains" }
+      ]
+    }
+  },
+  {
+    "id": "33-nodes",
+    "valid": false,
+    "params": {
+      "format": "knowledge-map/v1",
+      "title": "概念、阅读与配套练习",
+      "groups": [{ "id": "all", "title": "All" }],
+      "nodes": [
+        {
+          "id": "n0",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n1",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n2",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n3",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n4",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n5",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n6",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n7",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n8",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n9",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n10",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n11",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n12",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n13",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n14",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n15",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n16",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n17",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n18",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n19",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n20",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n21",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n22",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n23",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n24",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n25",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n26",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n27",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n28",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n29",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n30",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n31",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "extra",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        }
+      ],
+      "edges": [
+        { "id": "e1", "from": "n0", "to": "n1", "kind": "prerequisite" },
+        { "id": "e2", "from": "n1", "to": "n2", "kind": "prerequisite" },
+        { "id": "e3", "from": "n2", "to": "n3", "kind": "prerequisite" },
+        { "id": "e4", "from": "n3", "to": "n4", "kind": "prerequisite" },
+        { "id": "e5", "from": "n4", "to": "n5", "kind": "prerequisite" },
+        { "id": "e6", "from": "n5", "to": "n6", "kind": "prerequisite" },
+        { "id": "e7", "from": "n6", "to": "n7", "kind": "prerequisite" },
+        { "id": "e8", "from": "n7", "to": "n8", "kind": "prerequisite" },
+        { "id": "e9", "from": "n8", "to": "n9", "kind": "prerequisite" },
+        { "id": "e10", "from": "n9", "to": "n10", "kind": "prerequisite" },
+        { "id": "e11", "from": "n10", "to": "n11", "kind": "prerequisite" },
+        { "id": "e12", "from": "n11", "to": "n12", "kind": "prerequisite" },
+        { "id": "e13", "from": "n12", "to": "n13", "kind": "prerequisite" },
+        { "id": "e14", "from": "n13", "to": "n14", "kind": "prerequisite" },
+        { "id": "e15", "from": "n14", "to": "n15", "kind": "prerequisite" },
+        { "id": "e16", "from": "n15", "to": "n16", "kind": "prerequisite" },
+        { "id": "e17", "from": "n16", "to": "n17", "kind": "prerequisite" },
+        { "id": "e18", "from": "n17", "to": "n18", "kind": "prerequisite" },
+        { "id": "e19", "from": "n18", "to": "n19", "kind": "prerequisite" },
+        { "id": "e20", "from": "n19", "to": "n20", "kind": "prerequisite" },
+        { "id": "e21", "from": "n20", "to": "n21", "kind": "prerequisite" },
+        { "id": "e22", "from": "n21", "to": "n22", "kind": "prerequisite" },
+        { "id": "e23", "from": "n22", "to": "n23", "kind": "prerequisite" },
+        { "id": "e24", "from": "n23", "to": "n24", "kind": "prerequisite" },
+        { "id": "e25", "from": "n24", "to": "n25", "kind": "prerequisite" },
+        { "id": "e26", "from": "n25", "to": "n26", "kind": "prerequisite" },
+        { "id": "e27", "from": "n26", "to": "n27", "kind": "prerequisite" },
+        { "id": "e28", "from": "n27", "to": "n28", "kind": "prerequisite" },
+        { "id": "e29", "from": "n28", "to": "n29", "kind": "prerequisite" },
+        { "id": "e30", "from": "n29", "to": "n30", "kind": "prerequisite" },
+        { "id": "e31", "from": "n30", "to": "n31", "kind": "prerequisite" },
+        { "id": "extra", "from": "n0", "to": "n31", "kind": "explains" }
+      ]
+    }
+  },
+  {
+    "id": "33-edges",
+    "valid": false,
+    "params": {
+      "format": "knowledge-map/v1",
+      "title": "概念、阅读与配套练习",
+      "groups": [{ "id": "all", "title": "All" }],
+      "nodes": [
+        {
+          "id": "n0",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n1",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n2",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n3",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n4",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n5",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n6",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n7",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n8",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n9",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n10",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n11",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n12",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n13",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n14",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n15",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n16",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n17",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n18",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n19",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n20",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n21",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n22",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n23",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n24",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n25",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n26",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n27",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n28",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n29",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n30",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        },
+        {
+          "id": "n31",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          }
+        }
+      ],
+      "edges": [
+        { "id": "e1", "from": "n0", "to": "n1", "kind": "prerequisite" },
+        { "id": "e2", "from": "n1", "to": "n2", "kind": "prerequisite" },
+        { "id": "e3", "from": "n2", "to": "n3", "kind": "prerequisite" },
+        { "id": "e4", "from": "n3", "to": "n4", "kind": "prerequisite" },
+        { "id": "e5", "from": "n4", "to": "n5", "kind": "prerequisite" },
+        { "id": "e6", "from": "n5", "to": "n6", "kind": "prerequisite" },
+        { "id": "e7", "from": "n6", "to": "n7", "kind": "prerequisite" },
+        { "id": "e8", "from": "n7", "to": "n8", "kind": "prerequisite" },
+        { "id": "e9", "from": "n8", "to": "n9", "kind": "prerequisite" },
+        { "id": "e10", "from": "n9", "to": "n10", "kind": "prerequisite" },
+        { "id": "e11", "from": "n10", "to": "n11", "kind": "prerequisite" },
+        { "id": "e12", "from": "n11", "to": "n12", "kind": "prerequisite" },
+        { "id": "e13", "from": "n12", "to": "n13", "kind": "prerequisite" },
+        { "id": "e14", "from": "n13", "to": "n14", "kind": "prerequisite" },
+        { "id": "e15", "from": "n14", "to": "n15", "kind": "prerequisite" },
+        { "id": "e16", "from": "n15", "to": "n16", "kind": "prerequisite" },
+        { "id": "e17", "from": "n16", "to": "n17", "kind": "prerequisite" },
+        { "id": "e18", "from": "n17", "to": "n18", "kind": "prerequisite" },
+        { "id": "e19", "from": "n18", "to": "n19", "kind": "prerequisite" },
+        { "id": "e20", "from": "n19", "to": "n20", "kind": "prerequisite" },
+        { "id": "e21", "from": "n20", "to": "n21", "kind": "prerequisite" },
+        { "id": "e22", "from": "n21", "to": "n22", "kind": "prerequisite" },
+        { "id": "e23", "from": "n22", "to": "n23", "kind": "prerequisite" },
+        { "id": "e24", "from": "n23", "to": "n24", "kind": "prerequisite" },
+        { "id": "e25", "from": "n24", "to": "n25", "kind": "prerequisite" },
+        { "id": "e26", "from": "n25", "to": "n26", "kind": "prerequisite" },
+        { "id": "e27", "from": "n26", "to": "n27", "kind": "prerequisite" },
+        { "id": "e28", "from": "n27", "to": "n28", "kind": "prerequisite" },
+        { "id": "e29", "from": "n28", "to": "n29", "kind": "prerequisite" },
+        { "id": "e30", "from": "n29", "to": "n30", "kind": "prerequisite" },
+        { "id": "e31", "from": "n30", "to": "n31", "kind": "prerequisite" },
+        { "id": "extra", "from": "n0", "to": "n31", "kind": "explains" },
+        { "id": "too-many", "from": "n1", "to": "n31", "kind": "explains" }
+      ]
+    }
+  },
+  {
+    "id": "joint-byte-budget",
+    "valid": false,
+    "params": {
+      "format": "knowledge-map/v1",
+      "title": "概念、阅读与配套练习",
+      "groups": [{ "id": "all", "title": "All" }],
+      "nodes": [
+        {
+          "id": "n0",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        },
+        {
+          "id": "n1",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        },
+        {
+          "id": "n2",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        },
+        {
+          "id": "n3",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        },
+        {
+          "id": "n4",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        },
+        {
+          "id": "n5",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        },
+        {
+          "id": "n6",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        },
+        {
+          "id": "n7",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        },
+        {
+          "id": "n8",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        },
+        {
+          "id": "n9",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        },
+        {
+          "id": "n10",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        },
+        {
+          "id": "n11",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        },
+        {
+          "id": "n12",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        },
+        {
+          "id": "n13",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        },
+        {
+          "id": "n14",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        },
+        {
+          "id": "n15",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        },
+        {
+          "id": "n16",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        },
+        {
+          "id": "n17",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        },
+        {
+          "id": "n18",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        },
+        {
+          "id": "n19",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        },
+        {
+          "id": "n20",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        },
+        {
+          "id": "n21",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        },
+        {
+          "id": "n22",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        },
+        {
+          "id": "n23",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        },
+        {
+          "id": "n24",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        },
+        {
+          "id": "n25",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        },
+        {
+          "id": "n26",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        },
+        {
+          "id": "n27",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        },
+        {
+          "id": "n28",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        },
+        {
+          "id": "n29",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        },
+        {
+          "id": "n30",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        },
+        {
+          "id": "n31",
+          "group": "all",
+          "title": "Node",
+          "role": "concept",
+          "target": {
+            "kind": "document",
+            "namespace": "S_11111111111111111111111111111111",
+            "document": "D_22222222222222222222222222222222"
+          },
+          "description": "字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字字"
+        }
+      ],
+      "edges": [
+        { "id": "e1", "from": "n0", "to": "n1", "kind": "prerequisite" },
+        { "id": "e2", "from": "n1", "to": "n2", "kind": "prerequisite" },
+        { "id": "e3", "from": "n2", "to": "n3", "kind": "prerequisite" },
+        { "id": "e4", "from": "n3", "to": "n4", "kind": "prerequisite" },
+        { "id": "e5", "from": "n4", "to": "n5", "kind": "prerequisite" },
+        { "id": "e6", "from": "n5", "to": "n6", "kind": "prerequisite" },
+        { "id": "e7", "from": "n6", "to": "n7", "kind": "prerequisite" },
+        { "id": "e8", "from": "n7", "to": "n8", "kind": "prerequisite" },
+        { "id": "e9", "from": "n8", "to": "n9", "kind": "prerequisite" },
+        { "id": "e10", "from": "n9", "to": "n10", "kind": "prerequisite" },
+        { "id": "e11", "from": "n10", "to": "n11", "kind": "prerequisite" },
+        { "id": "e12", "from": "n11", "to": "n12", "kind": "prerequisite" },
+        { "id": "e13", "from": "n12", "to": "n13", "kind": "prerequisite" },
+        { "id": "e14", "from": "n13", "to": "n14", "kind": "prerequisite" },
+        { "id": "e15", "from": "n14", "to": "n15", "kind": "prerequisite" },
+        { "id": "e16", "from": "n15", "to": "n16", "kind": "prerequisite" },
+        { "id": "e17", "from": "n16", "to": "n17", "kind": "prerequisite" },
+        { "id": "e18", "from": "n17", "to": "n18", "kind": "prerequisite" },
+        { "id": "e19", "from": "n18", "to": "n19", "kind": "prerequisite" },
+        { "id": "e20", "from": "n19", "to": "n20", "kind": "prerequisite" },
+        { "id": "e21", "from": "n20", "to": "n21", "kind": "prerequisite" },
+        { "id": "e22", "from": "n21", "to": "n22", "kind": "prerequisite" },
+        { "id": "e23", "from": "n22", "to": "n23", "kind": "prerequisite" },
+        { "id": "e24", "from": "n23", "to": "n24", "kind": "prerequisite" },
+        { "id": "e25", "from": "n24", "to": "n25", "kind": "prerequisite" },
+        { "id": "e26", "from": "n25", "to": "n26", "kind": "prerequisite" },
+        { "id": "e27", "from": "n26", "to": "n27", "kind": "prerequisite" },
+        { "id": "e28", "from": "n27", "to": "n28", "kind": "prerequisite" },
+        { "id": "e29", "from": "n28", "to": "n29", "kind": "prerequisite" },
+        { "id": "e30", "from": "n29", "to": "n30", "kind": "prerequisite" },
+        { "id": "e31", "from": "n30", "to": "n31", "kind": "prerequisite" },
+        { "id": "extra", "from": "n0", "to": "n31", "kind": "explains" }
+      ]
+    }
+  }
+]

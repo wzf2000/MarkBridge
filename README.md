@@ -4,7 +4,7 @@
   <a href="LICENSE"><img alt="License: GPL-3.0-or-later" src="https://img.shields.io/badge/license-GPL--3.0--or--later-818cf8"></a>
   <img alt="WordPress 7.1" src="https://img.shields.io/badge/WordPress-7.1-21759b">
   <img alt="PHP 8.2+" src="https://img.shields.io/badge/PHP-8.2%2B-777bb4">
-  <img alt="Version 3.7.0" src="https://img.shields.io/badge/version-3.7.0-818cf8">
+  <img alt="Version 3.8.0-rc.1" src="https://img.shields.io/badge/version-3.8.0-rc.1-818cf8">
 </p>
 
 <p align="center"><strong>用 Markdown 写作，用区块调整。保存时，让两种格式保持一致。</strong></p>
@@ -22,6 +22,7 @@ MarkBridge 把它们放回同一次编辑流程：**先转换，检查差异与�
 - **保留并核对修改。** Markdown 与区块成对保存、成对恢复；提供私有服务端配对备份，以及默认关闭的本机草稿恢复、三方合并与已保存文章导出。
 - **写公式，也看得清公式。** 自托管 MathJax；段落和块级公式可预览。管理员开启公式阅读后，可点击公式或用键盘打开阅读弹窗，放大查看并复制 TeX；代码里的美元符号保持原样。
 - **沿用 WordPress 权限。** 支持草稿、待审核、私密、公开与特色图片，普通作者按已有权限操作。
+- **组织知识与练习。** 配合 Teaching 的 `knowledge-map@0.1.0`，用概念／阅读／练习节点和固定关系连接文章、阶段与真实活动；服务端只交付当前可读目标。
 - **编排文集。** 保存文章引用与顺序，检查公开／私人范围，再准备并确认下载不可变快照；不另存正文。参见[文集说明](docs/COLLECTIONS.md)。
 - **组织长文与教学内容。** 使用折叠、阶段阅读、代码对照和带行号、高亮与行链接的代码页签；受信扩展可提供教学组件与静态区块。
 - **按需选择组件版本。** 从分页目录选择受信组件的精确版本，只加载文章实际引用的描述与资源；已有文章保持原版本。新索引扩展需要 MarkBridge 3.4 的目录能力。
@@ -40,7 +41,7 @@ flowchart LR
 
 ## 开始使用
 
-**3.7.0**新增可显式采用的出版编排：作者、版次、版本声明、前言／正文／附录角色，以及可选章节对象编号。旧文集仍按原格式读写；编号仅进入冻结快照和出版物，不改变文章、对象 ID 或修订。新版 Publisher 可将同一快照生成网页书和 EPUB，详见[文集说明](docs/COLLECTIONS.md)。
+**3.8.0-rc.1**新增可显式采用的出版编排：作者、版次、版本声明、前言／正文／附录角色，以及可选章节对象编号。旧文集仍按原格式读写；编号仅进入冻结快照和出版物，不改变文章、对象 ID 或修订。新版 Publisher 可将同一快照生成网页书和 EPUB，详见[文集说明](docs/COLLECTIONS.md)。
 
 本版也保持原生编辑器读取教学参数时的空对象与数组区别，避免缺失数据被误判为无效区块；兼容其他插件插入的区块和元数据，不自动改写文章。
 

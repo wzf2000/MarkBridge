@@ -211,11 +211,24 @@ $body =
     '<div class="wp-block-mbb-component" id="map"><div class="mbb-teaching-body"><p>Author body</p><p class="mbb-component-params">RAW_CARRIER_CANARY</p></div></div>';
 $early = mbb_relation_map_v2_render($body, json_decode(mbb_component_json($attrs), true));
 privacy_check(str_contains($early, 'PRIVATE_NODE_CANARY'), 'authorized initial view');
+privacy_check(
+    !str_contains($early, 'data-mbb-relation-notice'),
+    'complete authorized view has no unavailable notice',
+);
 privacy_check(!str_contains($early, 'RAW_CARRIER_CANARY'), 'old carrier removed');
+$complete = mbb_component_static_document($early, $source, 'en');
+privacy_check(
+    !str_contains($complete, 'data-mbb-relation-notice'),
+    'fresh complete final projection has no unavailable notice',
+);
 $lean = mbb_relation_map_article($p->nodes[1]->target);
 privacy_check(!isset($lean['document'], $lean['projection']), 'resolver retains no complete body');
 $GLOBALS['privacy_authorized'] = false;
 $final = mbb_component_static_document($early, $source, 'en');
+privacy_check(
+    str_contains($final, 'data-mbb-relation-notice'),
+    'partially unavailable view retains neutral notice',
+);
 foreach (
     [
         'PRIVATE_NODE_CANARY',

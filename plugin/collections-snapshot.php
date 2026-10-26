@@ -74,6 +74,8 @@ function mbb_collections_renderer(string $adapter): array
             'projections.css',
             'relation-map.php',
             'relation-map-v2.php',
+            'knowledge-map.php',
+            'knowledge-map.js',
             'relation-map-v2.js',
             'relation-map-documents.php',
             'relation-map.js',
@@ -325,7 +327,11 @@ function mbb_collections_components(string $serialized): array
             'paramsSha256' => hash(
                 'sha256',
                 mbb_component_json(
-                    ($a->params->format ?? null) === 'relation-map/v2'
+                    in_array(
+                        $a->params->format ?? null,
+                        ['relation-map/v2', 'knowledge-map/v1'],
+                        true,
+                    )
                         ? mbb_relation_map_v2_view($a->params, 'publication:' . $id)['map']
                         : $a->params,
                 ),
@@ -618,7 +624,7 @@ function mbb_collections_snapshot(array $config, string $adapter, ?string $direc
         if (mbb_collections_stamp($s) !== $stamps[$chapter['key']]) {
             mbb_collections_fail('collection_changed');
         }
-        $relationStamps[(int) $s['post']->ID] = mbb_relation_map_v2_stamp(
+        $relationStamps[(int) $s['post']->ID] = mbb_controlled_map_stamp(
             $s['document']['serialized'],
         );
         $map = mbb_collections_references($s['projection']['edges'], $selected, $outside);
@@ -749,7 +755,7 @@ function mbb_collections_final(array $snapshot, array $config, string $adapter):
     }
     foreach ($snapshot['relationStamps'] ?? [] as $id => $stamp) {
         $post = mbb_references_fresh_post((int) $id);
-        if (!$post || !hash_equals($stamp, mbb_relation_map_v2_stamp($post->post_content))) {
+        if (!$post || !hash_equals($stamp, mbb_controlled_map_stamp($post->post_content))) {
             mbb_collections_fail('collection_changed');
         }
     }
@@ -833,7 +839,7 @@ function mbb_collections_final(array $snapshot, array $config, string $adapter):
     }
     foreach ($snapshot['relationStamps'] ?? [] as $id => $stamp) {
         $post = mbb_references_fresh_post((int) $id);
-        if (!$post || !hash_equals($stamp, mbb_relation_map_v2_stamp($post->post_content))) {
+        if (!$post || !hash_equals($stamp, mbb_controlled_map_stamp($post->post_content))) {
             mbb_collections_fail('collection_changed');
         }
     }

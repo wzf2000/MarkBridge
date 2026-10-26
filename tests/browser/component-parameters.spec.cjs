@@ -394,3 +394,91 @@ test('controlled map article search stays with its stable node and cancels late 
     await page.getByLabel('Edit item: Edges', { exact: true }).locator('option').allTextContents(),
   ).toEqual(['1 · Custom first title → Custom second title · Suggested reading order']);
 });
+
+test('knowledge map article search stays with its stable node, roles and cancels late results', async ({
+  page,
+}) => {
+  await open(page);
+  const schema = require('../fixtures/knowledge-map-schema.json');
+  const params = {
+    format: 'knowledge-map/v1',
+    title: 'Controlled fixture',
+    groups: [{ id: 'group', title: 'Group' }],
+    nodes: [
+      {
+        id: 'node-a',
+        group: 'group',
+        title: 'Custom first title',
+        role: 'concept',
+        target: {
+          kind: 'document',
+          namespace: 'S_' + 'a'.repeat(32),
+          document: 'D_' + 'a'.repeat(32),
+        },
+      },
+      {
+        id: 'node-b',
+        group: 'group',
+        title: 'Custom second title',
+        role: 'practice',
+        target: {
+          kind: 'document',
+          namespace: 'S_' + 'a'.repeat(32),
+          document: 'D_' + 'b'.repeat(32),
+        },
+      },
+    ],
+    edges: [{ id: 'edge-a', from: 'node-a', to: 'node-b', kind: 'prerequisite' }],
+  };
+  await page.evaluate(
+    ({ schema, params }) => {
+      const provider = MBBComponents.find((p) => p.id === 'fixture');
+      provider.schema = schema;
+      provider.readerMode = 'knowledge-map/v1';
+      wp.apiFetch = (options) =>
+        options.method === 'POST'
+          ? Promise.resolve({
+              state: 'available',
+              title: options.data.target.document.endsWith('a')
+                ? 'Real first article'
+                : 'Real second article',
+            })
+          : new Promise((resolve) => {
+              window.finishControlledSearch = () =>
+                resolve({
+                  state: 'ready',
+                  items: [
+                    {
+                      title: 'Stale article result',
+                      target: {
+                        kind: 'local-document',
+                        site: 'S_' + 'c'.repeat(32),
+                        documentId: '123:old',
+                      },
+                    },
+                  ],
+                });
+            });
+      taskRegistry
+        .dispatch('core/block-editor')
+        .updateBlockAttributes(taskBlocks[0].clientId, { params });
+    },
+    { schema, params },
+  );
+  await expect(page.locator('[data-mbb-current-article]')).toContainText('Real first article');
+  await page.getByLabel('Search managed articles', { exact: true }).fill('first');
+  await page.getByRole('button', { name: 'Search articles', exact: true }).click();
+  await page.waitForFunction(() => typeof finishControlledSearch === 'function');
+  await page.getByLabel('Edit item: Nodes', { exact: true }).selectOption('1');
+  await expect(page.locator('[data-mbb-current-article]')).toContainText('Real second article');
+  await page.evaluate(() => finishControlledSearch());
+  await expect(page.getByRole('button', { name: 'Stale article result', exact: true })).toHaveCount(
+    0,
+  );
+  await expect(
+    page.getByRole('textbox', { name: 'Nodes › Item 2 › Identifier', exact: true }),
+  ).toHaveAttribute('readonly', '');
+  expect(
+    await page.getByLabel('Edit item: Edges', { exact: true }).locator('option').allTextContents(),
+  ).toEqual(['1 · Custom first title → Custom second title · Prior understanding']);
+});

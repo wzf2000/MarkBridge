@@ -117,3 +117,14 @@
   background: #fff;
   margin: 16px 0;
 }
+
+.mbbc-configuration-candidate {
+  margin: 16px 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .mbbc-configuration-candidate .button {
+    display: block;
+    width: 100%;
+  }
+}

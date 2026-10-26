@@ -35,6 +35,7 @@ export function parameterLabel(path) {
     edges: T('Edges'),
     source: T('Source'),
     target: T('Target'),
+    role: T('Node role'),
     start: T('Start'),
     count: T('Count'),
     size: T('Size'),
@@ -218,10 +219,13 @@ function relationParameterSchema(schema) {
     schema.properties.title?.type !== 'string' ||
     schema.properties.format?.type !== 'string' ||
     schema.properties.format.enum?.length !== 1 ||
-    !['relation-map/v1', 'relation-map/v2'].includes(schema.properties.format.enum[0])
+    !['relation-map/v1', 'relation-map/v2', 'knowledge-map/v1'].includes(
+      schema.properties.format.enum[0],
+    )
   )
     return false;
-  const v2 = schema.properties.format.enum[0] === 'relation-map/v2';
+  const knowledge = schema.properties.format.enum[0] === 'knowledge-map/v1';
+  const v2 = knowledge || schema.properties.format.enum[0] === 'relation-map/v2';
   const target = schema.properties.nodes?.items?.properties?.target;
   if (
     v2 &&
@@ -230,7 +234,10 @@ function relationParameterSchema(schema) {
       target.additionalProperties !== false ||
       Object.keys(target.properties || {})
         .sort()
-        .join(',') !== 'document,documentId,kind,namespace,site' ||
+        .join(',') !==
+        (knowledge
+          ? 'document,documentId,kind,namespace,site,target'
+          : 'document,documentId,kind,namespace,site') ||
       !Object.values(target.properties).every((s) => s.type === 'string'))
   )
     return false;
@@ -240,7 +247,7 @@ function relationParameterSchema(schema) {
       'nodes',
       64,
       v2
-        ? ['id', 'group', 'title', 'target', 'description']
+        ? ['id', 'group', 'title', 'target', 'description', ...(knowledge ? ['role'] : [])]
         : ['id', 'group', 'title', 'url', 'description'],
     ],
     ['edges', 128, v2 ? ['id', 'from', 'to', 'kind', 'why'] : ['from', 'to', 'kind', 'why']],
@@ -375,8 +382,11 @@ export function createParameterEditor({
   const el = wp.element.createElement;
   const find = (component, version) =>
     providers().find((p) => p.id === component && p.version === version);
-  function ArticleTarget({ value, label, onChange, assertCurrent }) {
+  function ArticleTarget({ value, label, onChange, assertCurrent, knowledge = false }) {
     const [query, setQuery] = wp.element.useState('');
+    const [targetKind, setTargetKind] = wp.element.useState(
+      ['step', 'activity'].includes(value?.kind) ? value.kind : 'document',
+    );
     const [items, setItems] = wp.element.useState([]);
     const [error, setError] = wp.element.useState('');
     const [busy, setBusy] = wp.element.useState(false);
@@ -395,15 +405,21 @@ export function createParameterEditor({
       let active = true;
       setCurrentTarget({ state: 'loading' });
       wp.apiFetch({
-        path: '/mbb/v1/references/articles',
+        path: ['step', 'activity'].includes(value?.kind)
+          ? '/mbb/v1/references/resolve'
+          : '/mbb/v1/references/articles',
         method: 'POST',
-        data: { target: value },
+        data: ['step', 'activity'].includes(value?.kind) ? { targets: [value] } : { target: value },
       }).then(
         (result) => {
           if (active && alive.current) {
             try {
               currentGuard.current();
-              setCurrentTarget(result);
+              setCurrentTarget(
+                ['step', 'activity'].includes(value?.kind)
+                  ? result.items?.[0] || { state: 'unavailable' }
+                  : result,
+              );
             } catch {
               setCurrentTarget({ state: 'unavailable' });
             }
@@ -421,6 +437,22 @@ export function createParameterEditor({
       'fieldset',
       {},
       el('legend', {}, label),
+      knowledge
+        ? el(wp.components.SelectControl, {
+            label: T('Target type'),
+            value: targetKind,
+            options: [
+              { label: T('Article'), value: 'document' },
+              { label: T('Stage'), value: 'step' },
+              { label: T('Activity'), value: 'activity' },
+            ],
+            onChange: (kind) => {
+              queryGeneration.current++;
+              setTargetKind(kind);
+              setItems([]);
+            },
+          })
+        : null,
       el(
         'p',
         { 'data-mbb-current-article': '' },
@@ -460,11 +492,18 @@ export function createParameterEditor({
               assertCurrent();
               const currentQuery = ++queryGeneration.current;
               const result = await wp.apiFetch({
-                path: '/mbb/v1/references/articles?q=' + encodeURIComponent(query),
+                path:
+                  (targetKind === 'document'
+                    ? '/mbb/v1/references/articles?q='
+                    : '/mbb/v1/references/search?q=') + encodeURIComponent(query),
               });
               assertCurrent();
               if (alive.current && currentQuery === queryGeneration.current)
-                setItems(result.items || []);
+                setItems(
+                  (result.items || []).filter(
+                    (item) => targetKind === 'document' || item.target?.kind === targetKind,
+                  ),
+                );
             } catch (e) {
               if (alive.current) setError(E(e));
             } finally {
@@ -484,6 +523,7 @@ export function createParameterEditor({
             onClick: () => {
               try {
                 assertCurrent();
+                queryGeneration.current++;
                 onChange(clone(item.target));
                 setItems([]);
               } catch (e) {
@@ -491,9 +531,20 @@ export function createParameterEditor({
               }
             },
           },
-          item.title,
+          (item.article ? item.article + ' · ' : '') +
+            (item.label ? item.label + ' · ' : '') +
+            item.title,
         ),
       ),
+      knowledge && targetKind !== 'document'
+        ? el(
+            'p',
+            {},
+            T(
+              'Stage and activity targets require an existing logical identity. Maintain it with the document identity tools before choosing a target.',
+            ),
+          )
+        : null,
       el(
         'p',
         {},
@@ -540,7 +591,10 @@ export function createParameterEditor({
     const [mode, setMode] = wp.element.useState('form');
     const [selectedItems, setSelectedItems] = wp.element.useState({});
     const relationForm = relationParameterSchema(schema);
-    const relationV2 = relationForm && schema.properties.format.enum[0] === 'relation-map/v2';
+    const knowledge = relationForm && schema.properties.format.enum[0] === 'knowledge-map/v1';
+    const relationV2 =
+      relationForm &&
+      ['relation-map/v2', 'knowledge-map/v1'].includes(schema.properties.format.enum[0]);
     const authorSession = wp.element.useRef({});
     const authorLife = wp.element.useRef({ active: true, signature: '', generation: 0 });
     const [, refreshLocalDraft] = wp.element.useState(0);
@@ -734,7 +788,9 @@ export function createParameterEditor({
           throw Error(parameterLabel(issues[0].path) + ': ' + T(issues[0].message));
         if (
           relationForm &&
-          ['relation-map/v1', 'relation-map/v2'].includes(registered?.readerMode)
+          ['relation-map/v1', 'relation-map/v2', 'knowledge-map/v1'].includes(
+            registered?.readerMode,
+          )
         ) {
           if (!globalThis.MBBRelationMap)
             throw Error(
@@ -742,7 +798,12 @@ export function createParameterEditor({
                 'The relationship map validator is unavailable. Reload before applying parameters.',
               ),
             );
-          (relationV2 ? globalThis.MBBRelationMapV2 : globalThis.MBBRelationMap).validate(parsed);
+          (knowledge
+            ? globalThis.MBBKnowledgeMap
+            : relationV2
+              ? globalThis.MBBRelationMapV2
+              : globalThis.MBBRelationMap
+          ).validate(parsed);
         }
         if (author?.apiVersion === 2) author.validate(parsed, candidateActivity);
         const pending = drafts.get(clientId);
@@ -812,6 +873,7 @@ export function createParameterEditor({
           key: String(candidate.nodes?.[path[1]]?.id || keyOf(path)),
           value: v,
           label,
+          knowledge,
           assertCurrent: assertAuthorCurrent,
           onChange: (next) => set(path, next),
         });
@@ -842,11 +904,27 @@ export function createParameterEditor({
       } else if (s.enum) {
         const options = s.enum.map((item, i) => ({
           label:
-            ['recommended', 'compare', 'optimization'].includes(item) &&
+            [
+              'recommended',
+              'compare',
+              'optimization',
+              'prerequisite',
+              'explains',
+              'practises',
+              'concept',
+              'reading',
+              'practice',
+            ].includes(item) &&
             schema.properties?.format?.enum?.some((v) =>
-              ['relation-map/v1', 'relation-map/v2'].includes(v),
+              ['relation-map/v1', 'relation-map/v2', 'knowledge-map/v1'].includes(v),
             )
               ? {
+                  prerequisite: T('Prior understanding'),
+                  explains: T('Explanation relationship'),
+                  practises: T('Related practice'),
+                  concept: T('Concept'),
+                  reading: T('Reading'),
+                  practice: T('Practice'),
                   recommended: T('Suggested reading order'),
                   compare: T('Compare ideas'),
                   optimization: T('For further optimization'),
@@ -908,6 +986,12 @@ export function createParameterEditor({
                             child.to) +
                           ' · ' +
                           ({
+                            prerequisite: T('Prior understanding'),
+                            explains: T('Explanation relationship'),
+                            practises: T('Related practice'),
+                            concept: T('Concept'),
+                            reading: T('Reading'),
+                            practice: T('Practice'),
                             recommended: T('Suggested reading order'),
                             compare: T('Compare ideas'),
                             optimization: T('For further optimization'),

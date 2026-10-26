@@ -253,7 +253,11 @@ function mbb_component_projection_fingerprint(string $component, string $version
         ? mbb_component_provider($component, $version)
         : null;
     if (
-        in_array($provider['readerMode'] ?? null, ['relation-map/v1', 'relation-map/v2'], true) &&
+        in_array(
+            $provider['readerMode'] ?? null,
+            ['relation-map/v1', 'relation-map/v2', 'knowledge-map/v1'],
+            true,
+        ) &&
         ($provider['status'] ?? null) === 'available'
     ) {
         $files = [];
@@ -261,6 +265,8 @@ function mbb_component_projection_fingerprint(string $component, string $version
             [
                 'relation-map.php',
                 'relation-map-v2.php',
+                'knowledge-map.php',
+                'knowledge-map.js',
                 'relation-map-v2.js',
                 'relation-map-documents.php',
                 'relation-map.js',
@@ -343,18 +349,23 @@ function mbb_component_projection_plan(
         $fingerprint = mbb_component_projection_fingerprint($a->component, $a->componentVersion);
         $tree = null;
         $provider = mbb_component_provider($a->component, $a->componentVersion);
-        if (($a->params->format ?? null) === 'relation-map/v2') {
+        if (in_array($a->params->format ?? null, ['relation-map/v2', 'knowledge-map/v1'], true)) {
             $view = mbb_relation_map_v2_view(
                 $a->params,
                 (string) (function_exists('get_the_ID') ? get_the_ID() : 0) . ':' . $id,
             );
             $native = [
-                'schema' => 'relation-map/public-v2',
+                'schema' =>
+                    $a->params->format === 'knowledge-map/v1'
+                        ? 'knowledge-map/public-v1'
+                        : 'relation-map/public-v2',
                 'map' => $view['map'],
                 'edgeIds' => $view['edgeIds'],
+                'incomplete' =>
+                    !$view['map'] || count($view['map']->nodes) !== count($a->params->nodes),
                 'locale' => str_starts_with($locale, 'zh') ? 'zh' : 'en',
                 'interactive' =>
-                    ($provider['readerMode'] ?? null) === 'relation-map/v2' &&
+                    ($provider['readerMode'] ?? null) === $a->params->format &&
                     ($provider['status'] ?? null) === 'available',
             ];
             $size = strlen(mbb_projection_json($native));
@@ -549,7 +560,13 @@ function mbb_projection_insert(DOMDocument $doc, DOMElement $root, array $items)
             $target->appendChild($wrapper);
         }
         try {
-            if (($item['projection']['schema'] ?? null) === 'relation-map/public-v2') {
+            if (
+                in_array(
+                    $item['projection']['schema'] ?? null,
+                    ['relation-map/public-v2', 'knowledge-map/public-v1'],
+                    true,
+                )
+            ) {
                 $view = $item['projection'];
                 if (
                     !in_array($item['state'], ['available', 'author-fallback'], true) ||
@@ -571,33 +588,42 @@ function mbb_projection_insert(DOMDocument $doc, DOMElement $root, array $items)
                 $target->setAttribute(
                     'data-mbb-teaching-config',
                     mbb_component_json([
-                        'reader' => 'relation-map/public-v2',
+                        'reader' => $view['schema'],
                         'publicView' => $view['map'],
                         'edgeIds' => $view['edgeIds'],
                         'status' =>
                             $view['interactive'] && $view['map'] ? 'available' : 'unavailable',
                     ]),
                 );
-                $notice = $doc->createElement('p');
-                $notice->setAttribute('data-mbb-generated', '');
-                $notice->setAttribute('data-mbb-relation-notice', '');
-                $notice->appendChild(
-                    $doc->createTextNode(
-                        mbb_relation_map_message(
-                            'Some articles may be unavailable.',
-                            $view['locale'],
+                $notice = null;
+                if (array_key_exists('incomplete', $view) && !is_bool($view['incomplete'])) {
+                    throw new RuntimeException('relation_map_projection');
+                }
+                if ($view['incomplete'] ?? true) {
+                    $notice = $doc->createElement('p');
+                    $notice->setAttribute('data-mbb-generated', '');
+                    $notice->setAttribute('data-mbb-relation-notice', '');
+                    $notice->appendChild(
+                        $doc->createTextNode(
+                            mbb_relation_map_message(
+                                'Some articles may be unavailable.',
+                                $view['locale'],
+                            ),
                         ),
-                    ),
-                );
-                $target->insertBefore($notice, $wrapper);
+                    );
+                    $target->insertBefore($notice, $wrapper);
+                }
                 if ($view['map']) {
                     mbb_relation_map_append(
                         $doc,
                         $wrapper,
                         mbb_relation_map_envelope($view['map'], $view['locale']),
+                        $view['schema'] === 'knowledge-map/public-v1' ? 'knowledge-map/v1' : null,
                     );
                 }
-                $bytes = strlen($doc->saveHTML($wrapper)) + strlen($doc->saveHTML($notice));
+                $bytes =
+                    strlen($doc->saveHTML($wrapper)) +
+                    ($notice ? strlen($doc->saveHTML($notice)) : 0);
                 if ($bytes > MBB_PROJECTION_BYTES || $total + $bytes > 524288) {
                     throw new RuntimeException('projection_output');
                 }

@@ -16,6 +16,8 @@ function mbb_component_frame_profile(?string $executionProfile = null): string
             'components.js',
             'relation-map.php',
             'relation-map-v2.php',
+            'knowledge-map.php',
+            'knowledge-map.js',
             'relation-map-v2.js',
             'relation-map-documents.php',
             'relation-map.js',

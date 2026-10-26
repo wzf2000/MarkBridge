@@ -174,7 +174,13 @@ add_filter(
             }
         }
         if ($kind === 'component') {
-            if (($attrs['params']['format'] ?? null) === 'relation-map/v2') {
+            if (
+                in_array(
+                    $attrs['params']['format'] ?? null,
+                    ['relation-map/v2', 'knowledge-map/v1'],
+                    true,
+                )
+            ) {
                 return mbb_relation_map_v2_render($html, $attrs);
             }
             $paramsConsistent = true;

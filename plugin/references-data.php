@@ -230,19 +230,23 @@ function mbb_references_replace_tuples(string $source, array $mappings): string
             }
             if (
                 $block['blockName'] === 'mbb/component' &&
-                ($block['attrs']['params']['format'] ?? null) === 'relation-map/v2'
+                in_array(
+                    $block['attrs']['params']['format'] ?? null,
+                    ['relation-map/v2', 'knowledge-map/v1'],
+                    true,
+                )
             ) {
                 foreach ($block['attrs']['params']['nodes'] as &$node) {
                     $target = $node['target'] ?? [];
                     if (
-                        ($target['kind'] ?? null) === 'document' &&
+                        in_array($target['kind'] ?? null, ['document', 'step', 'activity'], true) &&
                         ($after =
                             $map[
                                 ($target['namespace'] ?? '') . '/' . ($target['document'] ?? '')
                             ] ?? null)
                     ) {
                         $node['target'] = [
-                            'kind' => 'document',
+                            ...$target,
                             'namespace' => $after['namespace'],
                             'document' => $after['document'],
                         ];

@@ -1170,7 +1170,13 @@ final class Converter
                         '</code></pre></div>';
                 }
             } elseif ($kind === 'component') {
-                if (($attrs['params']->format ?? null) !== 'relation-map/v2') {
+                if (
+                    !in_array(
+                        $attrs['params']->format ?? null,
+                        ['relation-map/v2', 'knowledge-map/v1'],
+                        true,
+                    )
+                ) {
                     $html .=
                         '<p data-mbb-generated="" class="mbb-component-params">' .
                         base64_encode(Teaching::encode($attrs['params'])) .

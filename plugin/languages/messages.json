@@ -2252,5 +2252,21 @@
   "Use chapter object numbers": "采用章节对象编号",
   "Body chapters use 1, 2; appendices use A, B. Prefaces keep article object numbers. Chapter numbering covers equations, figures, tables, listings, definitions, theorems and proofs; steps and activities retain article numbers.": "正文按 1、2 编号，附录按 A、B 编号，前言对象保留文章编号。章节对象编号适用于公式、图、表、程序清单、定义、定理和证明；步骤与活动保留文章编号。",
   "Undo publication arrangement": "撤销采用出版编排",
-  "Publication fields remain on this page. Adopt again to restore them before saving.": "出版信息仍保留在本页，重新采用后可恢复这些字段再保存。"
+  "Publication fields remain on this page. Adopt again to restore them before saving.": "出版信息仍保留在本页，重新采用后可恢复这些字段再保存。",
+  "Collection configuration candidate": "编排候选",
+  "Adopt as a new unsaved collection. Cancel preserves current fields and the current job.": "采用后会建立新的未保存合辑。当前合辑与任务在取消时保留。",
+  "Untitled collection": "未命名",
+  "Adopt as new collection": "采用为新合辑",
+  "Target type": "目标类型",
+  "Article": "文章",
+  "Prior understanding": "先了解",
+  "Explanation relationship": "解释关系",
+  "Related practice": "配套练习",
+  "Concept": "概念",
+  "Reading": "阅读",
+  "Practice": "练习",
+  "Prior understanding supports comprehension without restricting access; explanations and practice connect the material.": "先了解表示理解上的前置，不限制访问；解释关系与配套练习帮助联系所学。",
+  "Node role": "节点角色",
+  "Stage and activity targets require an existing logical identity. Maintain it with the document identity tools before choosing a target.": "阶段和活动目标需要已有逻辑身份。请先通过文档身份工具维护，再选择目标。",
+  "Invalid knowledge map configuration.": "知识图配置无效。"
 }

@@ -178,7 +178,7 @@
     } catch {
       return;
     }
-    if (config.reader === 'relation-map/public-v2') {
+    if (['relation-map/public-v2', 'knowledge-map/public-v1'].includes(config.reader)) {
       if (
         config.status !== 'available' ||
         window.MBB_COMPONENTS_READER !== true ||
@@ -186,7 +186,9 @@
       )
         return;
       try {
-        const native = globalThis.MBBRelationMap.enhance(node, config.publicView, config.edgeIds);
+        const native = globalThis.MBBRelationMap.enhance(node, config.publicView, config.edgeIds, {
+          semantics: config.reader === 'knowledge-map/public-v1' ? 'knowledge-map/v1' : null,
+        });
         instances.set(node, {
           ...native,
           signature,

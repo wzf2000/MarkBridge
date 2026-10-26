@@ -104,6 +104,19 @@ function get_permalink($p)
 {
     return 'https://collection.invalid/article/' . $p->ID;
 }
+function get_preview_post_link($p)
+{
+    return 'https://collection.invalid/preview/' . $p->ID;
+}
+function mbb_references_final($id, $hash, $edit = false)
+{
+    mbb_references_fresh_user();
+    $p = mbb_references_fresh_post($id);
+    return $p &&
+        mbb_references_readable($p) &&
+        (!$edit || current_user_can('edit_post', $id)) &&
+        hash_equals($hash, mbb_references_pair_hash($p));
+}
 function mbb_block_adapter_digest()
 {
     return str_repeat('a', 64);
@@ -393,6 +406,47 @@ $config = [
 ];
 $GLOBALS['snapshots'] = [12 => snapshot(12), 13 => snapshot(13, 'draft'), 14 => snapshot(14)];
 try {
+    $identity = [
+        'namespace' => 'S_' . str_repeat('a', 32),
+        'document' => 'D_' . str_repeat('b', 32),
+    ];
+    $GLOBALS['snapshots'][12]['projection']['identity'] = $identity;
+    $GLOBALS['wpdb']->claims[$identity['namespace'] . ':' . $identity['document']] = [
+        'post_id' => 12,
+        'pair_hash' => $GLOBALS['snapshots'][12]['hash'],
+    ];
+    $catalogBefore = $GLOBALS['wpdb']->data;
+    $prepared = markbridge_prepare_collection_configuration($config);
+    check(
+        isset($prepared['config']) &&
+            $prepared['config'] === $config &&
+            count($prepared['chapterSummaries']) === 1,
+        'candidate exact schema and summaries',
+    );
+    check($GLOBALS['wpdb']->data === $catalogBefore, 'candidate writes no catalog or job');
+    $target = markbridge_document_target_for_post(12, true);
+    check(
+        $target && markbridge_resolve_document_target($target, true)['post_id'] === 12,
+        'public target APIs verify current identity',
+    );
+    $GLOBALS['denied'] = ['edit_post:12'];
+    check(
+        (markbridge_prepare_collection_configuration($config)['error'] ?? '') !== '',
+        'candidate rejects lost edit permission',
+    );
+    check(
+        markbridge_resolve_document_target($target, true) === ['state' => 'unavailable'],
+        'public resolver hides permission failure',
+    );
+    $GLOBALS['denied'] = [];
+    $GLOBALS['wpdb']->claims[$identity['namespace'] . ':' . $identity['document']]['pair_hash'] =
+        'stale';
+    check(
+        (markbridge_prepare_collection_configuration($config)['error'] ?? '') !== '',
+        'candidate rejects stale identity claim',
+    );
+    $GLOBALS['wpdb']->claims = [];
+    $GLOBALS['snapshots'][12]['projection']['identity'] = null;
     check(mbb_collections_config($config) === $config, 'config exact');
     foreach (
         [

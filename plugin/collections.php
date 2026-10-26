@@ -228,6 +228,76 @@ function mbb_collections_save($r)
         return mbb_collections_error($e);
     }
 }
+/** Pure candidate preparation: current permissions and identities, no catalog/job write. */
+function markbridge_supports_collection_candidates(): bool
+{
+    return true;
+}
+function markbridge_prepare_collection_configuration(array $input): array|WP_Error
+{
+    try {
+        $owner = mbb_collections_owner();
+        $config = mbb_collections_config($input);
+        if (!$config['chapters']) {
+            mbb_collections_fail('collection_empty', 422);
+        }
+        $stamps = [];
+        $targets = [];
+        foreach ($config['chapters'] as $chapter) {
+            $s = mbb_collections_post($chapter['post_id'], $config['privateOptIn']);
+            $target = markbridge_document_target_for_post($chapter['post_id'], true);
+            if (!$target) {
+                mbb_collections_fail('collection_identity', 422);
+            }
+            $targets[] = [$target, $chapter['post_id'], $s['hash']];
+            $stamps[] = mbb_collections_stamp($s);
+            unset($s);
+        }
+        if ($config['cover']) {
+            mbb_collections_cover($config['cover'], array_column($config['chapters'], 'post_id'));
+        }
+        $summaries = mbb_collections_summaries($config);
+        foreach ($summaries as $summary) {
+            if ($summary['state'] !== 'available') {
+                mbb_collections_fail('collection_changed');
+            }
+        }
+        foreach ($stamps as $stamp) {
+            if (!mbb_collections_final_stamp($stamp, true, $config['privateOptIn'])) {
+                mbb_collections_fail('collection_changed');
+            }
+        }
+        foreach ($targets as [$target, $id, $hash]) {
+            $fresh = markbridge_resolve_document_target($target, true);
+            if (
+                ($fresh['state'] ?? null) !== 'available' ||
+                $fresh['post_id'] !== $id ||
+                !hash_equals($hash, $fresh['hash'])
+            ) {
+                mbb_collections_fail('collection_changed');
+            }
+        }
+        mbb_collections_owner($owner);
+        return ['config' => $config, 'chapterSummaries' => $summaries];
+    } catch (Throwable $e) {
+        return mbb_collections_error($e);
+    }
+}
+function mbb_collections_configuration_candidate($r)
+{
+    try {
+        if (strlen((string) $r->get_body()) > 16384) {
+            mbb_collections_fail('collection_input', 413);
+        }
+        $data = mbb_collections_input($r, ['schema', 'config']);
+        if (!is_array($data['config'])) {
+            mbb_collections_fail('collection_input', 422);
+        }
+        return markbridge_prepare_collection_configuration($data['config']);
+    } catch (Throwable $e) {
+        return mbb_collections_error($e);
+    }
+}
 function mbb_collections_delete($r)
 {
     try {
@@ -741,6 +811,11 @@ add_action('rest_api_init', static function () {
             ['/collections/(?P<collection_id>B_[a-f0-9]{32})', 'DELETE', 'mbb_collections_delete'],
             ['/collections/search', 'GET', 'mbb_collections_search'],
             ['/collections/import-companion', 'POST', 'mbb_collections_import_companion'],
+            [
+                '/collections/configuration-candidate',
+                'POST',
+                'mbb_collections_configuration_candidate',
+            ],
             ['/collections/prepare', 'POST', 'mbb_collections_prepare'],
             ['/collections/jobs/(?P<token>[a-f0-9]{64})', 'DELETE', 'mbb_collections_cancel'],
         ]

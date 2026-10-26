@@ -149,3 +149,28 @@ median/min/max. Durations include fresh process startup; they are not HTTP save
 latency. OS/filesystem caches are uncontrolled. To compare PHP versions choose
 `--php` explicitly and a different output file. Runtime preparation, database saves
 and frontend work are measured separately.
+
+## Knowledge maps and collection configuration candidates
+
+After the ordinary build, run `node tests/knowledge-map.cjs`,
+`node tests/knowledge-map-native.cjs`, `php tests/knowledge-map-copy.php`,
+`php tests/knowledge-map-privacy.php` and `php tests/collections.php`. The shared
+knowledge-map corpus covers the closed target union, roles, title budgets, stable IDs,
+self/duplicate edges and prerequisite-only DAG rule. Native tests compare actual PHP/JS
+Markdown/block bytes and verify that saved HTML has no parameter carrier. Privacy tests
+recheck final static output and prepared permission stamps, including escaped JSON formats.
+
+`tests/browser/knowledge-map.spec.cjs` covers fixed semantics and existing reader controls
+at 1440/390/320. `collection-configuration-candidate.spec.cjs` covers cancel, new unsaved
+adoption and edits while validation is pending. The controlled knowledge-map case in
+`component-parameters.spec.cjs` uses the real sanitized editor runtime and checks stable
+node selection and late search cancellation. Reuse the old relation routing/author tests
+for unchanged reader and Apply/Undo behavior.
+
+Run `tests/knowledge-map-save.php` through WP-CLI only in a disposable local WordPress,
+with `MARKBRIDGE_TEST_WORDPRESS_ROOT` and `MARKBRIDGE_TEST_HOME` identifying that lab.
+Activate the matching Teaching provider first. Run once per supported conversion backend.
+It creates and removes only its own author/posts, exercises paired save/reopen, real
+logical-identity target resolution, kind rejection, candidate validation without catalog
+writes, anonymous draft filtering and final export re-resolution after target deletion.
+This fixture never authorizes production writes or seeding a retained review database.

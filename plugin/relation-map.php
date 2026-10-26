@@ -179,8 +179,12 @@ function mbb_relation_map_message(string $message, string $locale): string
     }
     return $messages[$message] ?? $message;
 }
-function mbb_relation_map_append(DOMDocument $doc, DOMElement $root, array $view): void
-{
+function mbb_relation_map_append(
+    DOMDocument $doc,
+    DOMElement $root,
+    array $view,
+    ?string $semantics = null,
+): void {
     if (
         array_keys($view) !== ['schema', 'map', 'locale'] ||
         $view['schema'] !== 'relation-map/v1' ||
@@ -191,11 +195,20 @@ function mbb_relation_map_append(DOMDocument $doc, DOMElement $root, array $view
     }
     $p = $view['map'];
     $T = static fn($message) => mbb_relation_map_message($message, $view['locale']);
-    $kinds = [
-        'recommended' => $T('Suggested reading order'),
-        'compare' => $T('Compare ideas'),
-        'optimization' => $T('For further optimization'),
-    ];
+    $knowledge = $semantics === 'knowledge-map/v1';
+    $kinds = $knowledge
+        ? ($view['locale'] === 'zh'
+            ? ['recommended' => '先了解', 'compare' => '解释关系', 'optimization' => '配套练习']
+            : [
+                'recommended' => 'Prior understanding',
+                'compare' => 'Explanation relationship',
+                'optimization' => 'Related practice',
+            ])
+        : [
+            'recommended' => $T('Suggested reading order'),
+            'compare' => $T('Compare ideas'),
+            'optimization' => $T('For further optimization'),
+        ];
     $make = static function ($parent, $tag, $text = '') use ($doc) {
         $n = $doc->createElement($tag);
         if ($text !== '') {
@@ -208,7 +221,13 @@ function mbb_relation_map_append(DOMDocument $doc, DOMElement $root, array $view
     $make(
         $root,
         'p',
-        $T('Relations suggest reading paths and connections; choose your own starting point.'),
+        $knowledge
+            ? ($view['locale'] === 'zh'
+                ? '先了解表示理解上的前置，不限制访问；解释关系与配套练习帮助联系所学。'
+                : 'Prior understanding supports comprehension without restricting access; explanations and practice connect the material.')
+            : $T(
+                'Relations suggest reading paths and connections; choose your own starting point.',
+            ),
     );
     $nodes = [];
     foreach ($p->groups as $g) {

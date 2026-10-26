@@ -114,3 +114,15 @@ Publisher 的“离线网页书”格式在作者浏览器顺序复用 `MarkBrid
 受信适配器 descriptor 可选 `collectionSchemas`，须为不重复、非空的 `[1,2]` 子集，缺省为 `[1]`，未知值、null、空数组和重复声明拒绝。能力进入 renderer 与客户端指纹。`markbridge_publication_collection_schemas(): array` 是公开能力探测，新 Main 返回 `[1,2]`；扩展应先 `function_exists` 并检查包含 2，才向旧闭合登记合同传入此可选字段。没有探测接口的宿主沿原 descriptor 形状继续支持 schema 1，不按包版本猜测。
 
 `tests/collections-schema.php` 是无需构建／数据库的闭合字段、能力和实际服务端编号模型；既有 `tests/collections.php` 增补 schema 2 冻结摘要、旧适配器拒绝及 schema 1 回归。文集浏览器用例验证显式采用、旧格式限制、修改时迟到响应失效与取消保留输入。`tests/publication-numbering.php` 仅为 CLI 只读合成投影，供 Publisher 浏览器复用实际服务器编号，不是真实 WordPress 鉴权验收。
+
+## 扩展提出编排候选
+
+Main 3.8 允许已安装受信扩展在文集页面提出配置候选。先显示编排变化和文章状态；取消保留当前配置、字段和任务。
+“采用为新合辑”会再次核对权限、身份和当前输入，采用结果始终是新的未保存合辑。继续修改当前字段会使候选失效，
+避免覆盖后来输入。保存和准备快照仍需按原流程操作，不自动执行。
+
+扩展通过 `markbridge_collections_configuration_sources` action 提供来源表单，通过
+`MarkBridgeCollections.proposeConfiguration(config)` 提出已有 schema 1／2 配置。
+`POST collections/configuration-candidate` 接收 closed `{schema:1,config}`，请求最多 16 KiB，
+复用既有 nonce、会话、private/no-store 与逐目标编辑权限；不保存配置，也不写入课程字段。
+PHP 公共解析与准备接口详见 [SDK](SDK.md#controlled-knowledge-maps-and-course-integration-main-38)。

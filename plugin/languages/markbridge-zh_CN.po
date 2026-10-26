@@ -773,6 +773,14 @@ msgid "Administrator permission is required."
 msgstr "需要管理员权限。"
 
 #: plugin/i18n.js
+msgid "Adopt as a new unsaved collection. Cancel preserves current fields and the current job."
+msgstr "采用后会建立新的未保存合辑。当前合辑与任务在取消时保留。"
+
+#: plugin/i18n.js
+msgid "Adopt as new collection"
+msgstr "采用为新合辑"
+
+#: plugin/i18n.js
 msgid "Adopt publication arrangement"
 msgstr "采用出版编排"
 
@@ -939,6 +947,10 @@ msgstr "应用文字修改"
 #: plugin/i18n.js
 msgid "Arrange references to saved articles, then prepare an immutable snapshot. Collection configuration is not a second article body."
 msgstr "编排已保存文章的引用，再准备不可变快照。文集配置不是第二份正文。"
+
+#: plugin/i18n.js
+msgid "Article"
+msgstr "文章"
 
 #: plugin/i18n.js
 msgid "Article IDs (comma separated, up to 50)"
@@ -1807,6 +1819,10 @@ msgid "Collapsible content is limited to three nested levels"
 msgstr "折叠内容最多嵌套三层"
 
 #: plugin/i18n.js
+msgid "Collection configuration candidate"
+msgstr "编排候选"
+
+#: plugin/i18n.js
 msgid "Collection title"
 msgstr "文集标题"
 
@@ -1929,6 +1945,10 @@ msgstr "组件版本"
 #: plugin/i18n.js
 msgid "Components in this article"
 msgstr "当前文章的组件"
+
+#: plugin/i18n.js
+msgid "Concept"
+msgstr "概念"
 
 #: plugin/i18n.js
 msgid "Conference paper"
@@ -2757,6 +2777,10 @@ msgstr "需要表格行"
 #: plugin/i18n.js
 msgid "Explanation"
 msgstr "解释"
+
+#: plugin/i18n.js
+msgid "Explanation relationship"
+msgstr "解释关系"
 
 #: plugin/i18n.js
 msgid "Explicit export confirmation is required"
@@ -3631,6 +3655,10 @@ msgstr "图片映射非法"
 #: plugin/i18n.js
 msgid "Invalid integer budget"
 msgstr "整数预算非法"
+
+#: plugin/i18n.js
+msgid "Invalid knowledge map configuration."
+msgstr "知识图配置无效。"
 
 #: plugin/i18n.js
 msgid "Invalid language or missing terminal newline"
@@ -4532,6 +4560,10 @@ msgid "Node diagram"
 msgstr "节点图"
 
 #: plugin/i18n.js
+msgid "Node role"
+msgstr "节点角色"
+
+#: plugin/i18n.js
 msgid "Nodes"
 msgstr "节点"
 
@@ -4910,6 +4942,10 @@ msgid "Post-save content verification failed"
 msgstr "保存后内容核验失败"
 
 #: plugin/i18n.js
+msgid "Practice"
+msgstr "练习"
+
+#: plugin/i18n.js
 msgid "Preface"
 msgstr "前言"
 
@@ -5066,6 +5102,14 @@ msgid "Previous term"
 msgstr "前一项"
 
 #: plugin/i18n.js
+msgid "Prior understanding"
+msgstr "先了解"
+
+#: plugin/i18n.js
+msgid "Prior understanding supports comprehension without restricting access; explanations and practice connect the material."
+msgstr "先了解表示理解上的前置，不限制访问；解释关系与配套练习帮助联系所学。"
+
+#: plugin/i18n.js
 msgid "Private"
 msgstr "私密"
 
@@ -5206,6 +5250,10 @@ msgid "Read the latest server version again"
 msgstr "重新读取服务器最新版"
 
 #: plugin/i18n.js
+msgid "Reading"
+msgstr "阅读"
+
+#: plugin/i18n.js
 msgid "Reading ZIP data failed"
 msgstr "ZIP 数据读取失败"
 
@@ -5332,6 +5380,10 @@ msgstr "登记的教学组件"
 #: plugin/i18n.js
 msgid "Rejected registrations"
 msgstr "被拒绝的登记"
+
+#: plugin/i18n.js
+msgid "Related practice"
+msgstr "配套练习"
 
 #: plugin/i18n.js
 msgid "Relations suggest reading paths and connections; choose your own starting point."
@@ -5995,6 +6047,10 @@ msgid "Stage %1$s / %2$s"
 msgstr "阶段 %1$s / %2$s"
 
 #: plugin/i18n.js
+msgid "Stage and activity targets require an existing logical identity. Maintain it with the document identity tools before choosing a target."
+msgstr "阶段和活动目标需要已有逻辑身份。请先通过文档身份工具维护，再选择目标。"
+
+#: plugin/i18n.js
 msgid "Stage mode must be full/staged and the full-text entry must be enabled"
 msgstr "阶段模式需为 full/staged 且全文入口必须启用"
 
@@ -6215,6 +6271,10 @@ msgstr "标签 slugs"
 #: plugin/i18n.js
 msgid "Target"
 msgstr "目标"
+
+#: plugin/i18n.js
+msgid "Target type"
+msgstr "目标类型"
 
 #: plugin/i18n.js
 msgid "Task content"
@@ -8694,6 +8754,10 @@ msgstr "不支持的教学区块版本"
 #: plugin/i18n.js
 msgid "Untitled article"
 msgstr "无标题文章"
+
+#: plugin/i18n.js
+msgid "Untitled collection"
+msgstr "未命名"
 
 #: plugin/i18n.js
 msgid "Untitled draft"

@@ -134,19 +134,25 @@
   const messages = /*__MBB_RELATION_MESSAGES__*/ {};
   const translate = (message, zh) =>
     zh ? messages[message] || globalThis.MBBI18n?.t(message) || message : message;
-  const labels = (zh) => {
+  const labels = (zh, semantics) => {
     const T = (message) => translate(message, zh);
+    if (semantics === 'knowledge-map/v1')
+      return {
+        recommended: T('Prior understanding'),
+        compare: T('Explanation relationship'),
+        optimization: T('Related practice'),
+      };
     return {
       recommended: T('Suggested reading order'),
       compare: T('Compare ideas'),
       optimization: T('For further optimization'),
     };
   };
-  function staticView(doc, raw, zh = true) {
+  function staticView(doc, raw, zh = true, options = {}) {
     const T = (message) => translate(message, zh);
     const p = validate(raw),
       root = doc.createElement('div'),
-      kinds = labels(zh),
+      kinds = labels(zh, options.semantics),
       names = new Map(p.nodes.map((n) => [n.id, n]));
     const el = (tag, content) => {
       const n = doc.createElement(tag);
@@ -158,7 +164,11 @@
       el('h3', p.title),
       el(
         'p',
-        T('Relations suggest reading paths and connections; choose your own starting point.'),
+        options.semantics === 'knowledge-map/v1'
+          ? T(
+              'Prior understanding supports comprehension without restricting access; explanations and practice connect the material.',
+            )
+          : T('Relations suggest reading paths and connections; choose your own starting point.'),
       ),
     );
     for (const g of p.groups) {
@@ -192,11 +202,11 @@
     root.append(list);
     return root;
   }
-  function enhance(node, raw, edgeIds = []) {
+  function enhance(node, raw, edgeIds = [], options = {}) {
     const p = validate(raw),
       doc = node.ownerDocument,
       zh = (globalThis.MBB_UI_LOCALE || doc.documentElement.lang || 'zh').startsWith('zh'),
-      kinds = labels(zh);
+      kinds = labels(zh, options.semantics);
     const T = (message) => translate(message, zh);
     const el = (tag, cls, text) => {
       const n = doc.createElement(tag);
@@ -284,7 +294,7 @@
     ui.append(cross);
     const details = el('details', 'mbb-relation-details'),
       summary = el('summary', '', T('All relationships and articles'));
-    details.append(summary, staticView(doc, p, zh));
+    details.append(summary, staticView(doc, p, zh, options));
     ui.append(details);
     const mobile = matchMedia('(max-width: 700px)');
     let fullMode = !mobile.matches,

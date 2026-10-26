@@ -1129,7 +1129,7 @@ export function registerTeaching() {
                 ),
               )
             : kind === 'component'
-              ? a.params?.format === 'relation-map/v2'
+              ? ['relation-map/v2', 'knowledge-map/v1'].includes(a.params?.format)
                 ? null
                 : el(
                     'p',
@@ -1172,7 +1172,7 @@ export function registerTeaching() {
                 ),
               )
             : kind === 'component'
-              ? a.params?.format === 'relation-map/v2'
+              ? ['relation-map/v2', 'knowledge-map/v1'].includes(a.params?.format)
                 ? null
                 : el(
                     'p',

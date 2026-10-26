@@ -5,7 +5,7 @@ if (!defined('ABSPATH')) {
         exit();
     }
 }
-require_once __DIR__ . '/relation-map-v2.php';
+require_once __DIR__ . '/knowledge-map.php';
 function mbb_relation_map_article(stdClass $target): ?array
 {
     if (!mbb_relation_map_v2_target($target) || !function_exists('mbb_references_control')) {
@@ -89,19 +89,23 @@ function mbb_relation_map_v2_view(mixed $params, string $context): array
 {
     mbb_relation_map_private_headers();
     $empty = ['map' => null, 'dependencies' => [], 'edgeIds' => []];
-    if (!mbb_relation_map_v2_valid($params)) {
+    if (
+        !(($params->format ?? null) === 'knowledge-map/v1'
+            ? mbb_knowledge_map_valid($params)
+            : mbb_relation_map_v2_valid($params))
+    ) {
         return $empty;
     }
     $resolved = [];
     foreach ($params->nodes as $node) {
-        $snapshot = mbb_relation_map_article($node->target);
+        $snapshot = mbb_controlled_map_snapshot($node->target);
         if ($snapshot) {
             $resolved[$node->id] = [$node, $snapshot];
         }
     }
     // Recheck every dependency after all work; stale results never survive a mixed snapshot.
     foreach ($resolved as $id => [$node, $snapshot]) {
-        $fresh = mbb_relation_map_article($node->target);
+        $fresh = mbb_controlled_map_snapshot($node->target);
         if (
             !$fresh ||
             $fresh['post']->ID !== $snapshot['post']->ID ||
@@ -122,13 +126,17 @@ function mbb_relation_map_v2_view(mixed $params, string $context): array
         $post = $snapshot['post'];
         $url =
             $post->post_status === 'publish' ? get_permalink($post) : get_preview_post_link($post);
+        $url .= $snapshot['fragment'] ?? '';
         if (!mbb_relation_map_url($url)) {
             continue;
         }
         $next = (object) [
             'id' => $opaque('n', $node->id),
             'group' => $opaque('g', $node->group),
-            'title' => $node->title,
+            'title' =>
+                ($params->format === 'knowledge-map/v1'
+                    ? mbb_knowledge_map_role($node->role)
+                    : '') . $node->title,
             'url' => $url,
         ];
         if (isset($node->description)) {
@@ -147,7 +155,14 @@ function mbb_relation_map_v2_view(mixed $params, string $context): array
             $next = (object) [
                 'from' => $nodes[$edge->from]->id,
                 'to' => $nodes[$edge->to]->id,
-                'kind' => $edge->kind,
+                'kind' =>
+                    $params->format === 'knowledge-map/v1'
+                        ? [
+                            'prerequisite' => 'recommended',
+                            'explains' => 'compare',
+                            'practises' => 'optimization',
+                        ][$edge->kind]
+                        : $edge->kind,
             ];
             if (isset($edge->why)) {
                 $next->why = $edge->why;
@@ -208,11 +223,16 @@ function mbb_relation_map_v2_render(string $html, array $attrs): string
         libxml_use_internal_errors($old);
     }
     $static =
-        '<p data-mbb-generated="" data-mbb-relation-notice="">' .
-        esc_html(mbb_t('Some articles may be unavailable.')) .
-        '</p>';
+        $view['map'] && count($view['map']->nodes) === count($params->nodes)
+            ? ''
+            : '<p data-mbb-generated="" data-mbb-relation-notice="">' .
+                esc_html(mbb_t('Some articles may be unavailable.')) .
+                '</p>';
     $config = [
-        'reader' => 'relation-map/public-v2',
+        'reader' =>
+            $params->format === 'knowledge-map/v1'
+                ? 'knowledge-map/public-v1'
+                : 'relation-map/public-v2',
         'publicView' => $view['map'],
         'edgeIds' => $view['edgeIds'],
         'status' => 'unavailable',
@@ -227,6 +247,7 @@ function mbb_relation_map_v2_render(string $html, array $attrs): string
             $out,
             $root,
             mbb_relation_map_envelope($view['map'], determine_locale()),
+            $params->format === 'knowledge-map/v1' ? 'knowledge-map/v1' : null,
         );
         $static .= $out->saveHTML($root);
         $provider = mbb_component_provider(
@@ -234,7 +255,7 @@ function mbb_relation_map_v2_render(string $html, array $attrs): string
             $attrs['componentVersion'] ?? '',
         );
         if (
-            ($provider['readerMode'] ?? null) === 'relation-map/v2' &&
+            ($provider['readerMode'] ?? null) === $params->format &&
             ($provider['status'] ?? null) === 'available'
         ) {
             $config['status'] = 'available';
@@ -396,7 +417,11 @@ if (function_exists('add_action')) {
         static function () {
             global $wp_query;
             foreach ($wp_query->posts ?? [] as $post) {
-                if (is_object($post) && str_contains($post->post_content ?? '', 'relation-map')) {
+                if (
+                    is_object($post) &&
+                    (str_contains($post->post_content ?? '', 'relation-map') ||
+                        str_contains($post->post_content ?? '', 'knowledge-map'))
+                ) {
                     mbb_relation_map_private_headers();
                     break;
                 }
@@ -423,7 +448,10 @@ if (function_exists('add_filter')) {
         add_filter(
             'rest_prepare_' . $type,
             static function ($response, $post) {
-                if (str_contains($post->post_content ?? '', 'relation-map')) {
+                if (
+                    str_contains($post->post_content ?? '', 'relation-map') ||
+                    str_contains($post->post_content ?? '', 'knowledge-map')
+                ) {
                     mbb_relation_map_private_headers();
                     $response->header('Cache-Control', 'private, no-store, max-age=0');
                     $response->header('Vary', 'Cookie');
@@ -434,4 +462,152 @@ if (function_exists('add_filter')) {
             2,
         );
     }
+}
+
+function mbb_controlled_map_stamp(string $serialized): string
+{
+    $legacy = mbb_relation_map_v2_stamp($serialized);
+    if (!preg_match('/<!--\s*wp:mbb\/component(?:\s|-->)/', $serialized)) {
+        return $legacy;
+    }
+    $parts = [];
+    foreach (mbb_component_descriptors($serialized) as $id => $attrs) {
+        if (($attrs->params->format ?? null) === 'knowledge-map/v1') {
+            $parts[$id] = mbb_relation_map_v2_view($attrs->params, 'export:' . $id);
+        }
+    }
+    return $parts ? hash('sha256', mbb_component_json([$legacy, $parts])) : $legacy;
+}
+function mbb_knowledge_map_role(string $role): string
+{
+    $zh = str_starts_with(function_exists('determine_locale') ? determine_locale() : 'en', 'zh');
+    return ($zh
+        ? ['concept' => '[概念] ', 'reading' => '[阅读] ', 'practice' => '[练习] ']
+        : [
+            'concept' => '[Concept] ',
+            'reading' => '[Reading] ',
+            'practice' => '[Practice] ',
+        ])[$role];
+}
+/** Normalize a fresh reference result into the existing permission-stamped snapshot shape. */
+function mbb_controlled_map_snapshot(stdClass $target): ?array
+{
+    if (mbb_relation_map_v2_target($target)) {
+        return mbb_relation_map_article($target);
+    }
+    if (!mbb_knowledge_map_target($target) || !function_exists('mbb_references_resolve')) {
+        return null;
+    }
+    try {
+        $resolved = mbb_references_resolve((array) $target);
+        if (($resolved['state'] ?? null) !== 'available') {
+            return null;
+        }
+        $s = mbb_references_snapshot($resolved['post_id']);
+        $object = $s['projection']['objects'][$target->target] ?? null;
+        if (
+            !mbb_controlled_map_native_object(
+                $s['post']->post_content,
+                $target->target,
+                $target->kind,
+            ) ||
+            !$object ||
+            $object['kind'] !== $target->kind ||
+            !hash_equals($resolved['pair_hash'], $s['hash']) ||
+            !mbb_references_final($resolved['post_id'], $s['hash'])
+        ) {
+            return null;
+        }
+        $s['fragment'] = '#' . rawurlencode($target->target);
+        return $s;
+    } catch (Throwable) {
+        return null;
+    }
+}
+/** Trusted server API. It never grants anonymous access to the reference registry. */
+function markbridge_resolve_document_target(stdClass $target, bool $edit = false): array
+{
+    $none = ['state' => 'unavailable'];
+    $s = mbb_relation_map_article($target);
+    if (!$s) {
+        return $none;
+    }
+    $id = (int) $s['post']->ID;
+    mbb_references_fresh_user();
+    if ($edit && !current_user_can('edit_post', $id)) {
+        return $none;
+    }
+    $fresh = mbb_relation_map_article($target);
+    if (
+        !$fresh ||
+        (int) $fresh['post']->ID !== $id ||
+        !hash_equals($s['hash'], $fresh['hash']) ||
+        ($edit && !current_user_can('edit_post', $id))
+    ) {
+        return $none;
+    }
+    $url =
+        $fresh['post']->post_status === 'publish'
+            ? get_permalink($fresh['post'])
+            : get_preview_post_link($fresh['post']);
+    if (!mbb_relation_map_url($url)) {
+        return $none;
+    }
+    return [
+        'state' => 'available',
+        'post_id' => $id,
+        'title' => $fresh['post']->post_title,
+        'url' => $url,
+        'hash' => $fresh['hash'],
+        'expected' => $fresh['expected'],
+    ];
+}
+function markbridge_document_target_for_post(int $id, bool $edit = false): ?stdClass
+{
+    try {
+        $s = mbb_references_snapshot($id, $edit);
+        $control = mbb_references_control();
+        if (!$control || $control['state'] !== 'ready') {
+            return null;
+        }
+        $identity = $s['projection']['identity'];
+        $target = $identity
+            ? (object) (['kind' => 'document'] + $identity)
+            : (object) [
+                'kind' => 'local-document',
+                'site' => $control['site_namespace'],
+                'documentId' => mbb_id($id),
+            ];
+        $resolved = markbridge_resolve_document_target($target, $edit);
+        return ($resolved['state'] ?? '') === 'available' &&
+            $resolved['post_id'] === $id &&
+            hash_equals($resolved['hash'], $s['hash'])
+            ? $target
+            : null;
+    } catch (Throwable) {
+        return null;
+    }
+}
+
+/** A teaching activity is an envelope-v2 component, never an algorithm or replay alias. */
+function mbb_controlled_map_native_object(string $serialized, string $id, string $kind): bool
+{
+    $matches = 0;
+    $walk = function (array $blocks) use (&$walk, &$matches, $id, $kind): void {
+        foreach ($blocks as $block) {
+            $a = $block['attrs'] ?? [];
+            if (
+                ($a['id'] ?? null) === $id &&
+                (($kind === 'step' && $block['blockName'] === 'mbb/step') ||
+                    ($kind === 'activity' &&
+                        $block['blockName'] === 'mbb/component' &&
+                        ($a['version'] ?? null) === 2))
+            ) {
+                $matches++;
+            }
+            $walk($block['innerBlocks'] ?? []);
+        }
+    };
+    $walk(parse_blocks($serialized));
+    return $matches === 1;
 }

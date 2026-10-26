@@ -413,7 +413,7 @@ function mbb_component_register_checked(
         (array_key_exists('readerMode', $provider) &&
             !in_array(
                 $provider['readerMode'],
-                ['diagram', 'relation-map/v1', 'relation-map/v2'],
+                ['diagram', 'relation-map/v1', 'relation-map/v2', 'knowledge-map/v1'],
                 true,
             )) ||
         (array_key_exists('activityVersion', $provider) && $provider['activityVersion'] !== 1) ||
@@ -709,3 +709,5 @@ require_once __DIR__ . '/projections.php';
 require_once __DIR__ . '/component-frame.php';
 
 require_once __DIR__ . '/relation-map-v2.php';
+
+require_once __DIR__ . '/knowledge-map.php';

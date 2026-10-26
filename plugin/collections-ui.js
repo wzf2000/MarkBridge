@@ -94,6 +94,7 @@
   }
   const clients = new Map();
   window.MarkBridgeCollections = {
+    proposeConfiguration,
     registerClient(id, value) {
       if (
         typeof id !== 'string' ||
@@ -131,7 +132,96 @@
         return window.MarkBridgeCollections.registerClient(id, descriptor);
       },
     });
+  let configurationCandidate = null,
+    configurationRequest = 0;
+  function closeConfigurationCandidate() {
+    if (!configurationCandidate) return;
+    const candidate = configurationCandidate;
+    configurationCandidate = null;
+    candidate.panel.remove();
+    candidate.resolve(false);
+  }
+  async function proposeConfiguration(input) {
+    if (loading !== null) return false;
+    closeConfigurationCandidate();
+    const request = ++configurationRequest;
+    const opening = serial;
+    let supplied;
+    try {
+      supplied = JSON.parse(JSON.stringify(input));
+    } catch {
+      return false;
+    }
+    try {
+      const prepared = await api('/configuration-candidate', 'POST', {
+        schema: 1,
+        config: supplied,
+      });
+      if (opening !== serial || request !== configurationRequest) return false;
+      return await new Promise((resolve) => {
+        const panel = el('section', undefined, {
+          class: 'mbbc-panel mbbc-configuration-candidate',
+        });
+        const candidate = { panel, resolve, opening };
+        configurationCandidate = candidate;
+        panel.append(
+          el('h2', T('Collection configuration candidate')),
+          el(
+            'p',
+            T(
+              'Adopt as a new unsaved collection. Cancel preserves current fields and the current job.',
+            ),
+          ),
+        );
+        panel.append(
+          el('p', (config.title || T('Untitled collection')) + ' → ' + prepared.config.title),
+        );
+        const list = el('ol');
+        for (const chapter of prepared.chapterSummaries)
+          list.append(
+            el(
+              'li',
+              (chapter.title || T('Unavailable')) + ' · ' + (chapter.status || chapter.state),
+            ),
+          );
+        panel.append(list);
+        const cancel = button('Cancel', () => closeConfigurationCandidate());
+        const adopt = button('Adopt as new collection', async () => {
+          adopt.disabled = true;
+          try {
+            if (configurationCandidate !== candidate || opening !== serial) return;
+            const fresh = await api('/configuration-candidate', 'POST', {
+              schema: 1,
+              config: prepared.config,
+            });
+            if (configurationCandidate !== candidate || opening !== serial) return;
+            configurationCandidate = null;
+            panel.remove();
+            invalidate();
+            id = null;
+            config = fresh.config;
+            summaries = fresh.chapterSummaries;
+            publicationDraft = null;
+            publicationMetadataOpen = false;
+            render();
+            resolve(true);
+          } catch (error) {
+            if (configurationCandidate === candidate) {
+              status.textContent = error.message;
+              adopt.disabled = false;
+            }
+          }
+        });
+        panel.append(adopt, document.createTextNode(' '), cancel);
+        root.insertBefore(panel, workspace);
+      });
+    } catch (error) {
+      if (opening === serial) status.textContent = error.message;
+      return false;
+    }
+  }
   function invalidate(changed = true) {
+    closeConfigurationCandidate();
     discardProjection();
     serial++;
     loading = null;
@@ -147,6 +237,7 @@
     render();
   }
   async function run(action, done) {
+    closeConfigurationCandidate();
     const ticket = ++serial;
     loading = ticket;
     status.textContent = T('Working…');

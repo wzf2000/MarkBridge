@@ -12,6 +12,8 @@ const relationMessages = Object.fromEntries(
 const relationReader =
   read('relation-map-v2.js') +
   '\n' +
+  read('knowledge-map.js') +
+  '\n' +
   relationSource.replace('/*__MBB_RELATION_MESSAGES__*/ {}', JSON.stringify(relationMessages));
 function asset(name, body = read(name)) {
   const ext = path.extname(name),

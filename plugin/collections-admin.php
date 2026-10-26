@@ -19,7 +19,9 @@ function mbb_collections_page(): void
         esc_url(admin_url('tools.php?page=mbb-editor')) .
         '">' .
         esc_html(mbb_t('Markdown editing bridge')) .
-        '</a></p><div id="mbb-collections" aria-live="polite"></div></div>';
+        '</a></p>';
+    do_action('markbridge_collections_configuration_sources');
+    echo '<div id="mbb-collections" aria-live="polite"></div></div>';
 }
 add_action('admin_enqueue_scripts', static function ($hook) {
     if (

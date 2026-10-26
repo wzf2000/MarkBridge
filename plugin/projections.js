@@ -131,8 +131,14 @@
       wrapper.className = 'mbb-projection';
       wrapper.setAttribute('data-mbb-generated', '');
       try {
-        if (['relation-map/v1', 'relation-map/public-v2'].includes(item.projection?.schema)) {
-          const v2 = item.projection.schema === 'relation-map/public-v2';
+        if (
+          ['relation-map/v1', 'relation-map/public-v2', 'knowledge-map/public-v1'].includes(
+            item.projection?.schema,
+          )
+        ) {
+          const v2 = ['relation-map/public-v2', 'knowledge-map/public-v1'].includes(
+            item.projection.schema,
+          );
           if (
             !['available', 'author-fallback'].includes(item.state) ||
             !closed(
@@ -140,6 +146,7 @@
               v2
                 ? ['schema', 'map', 'locale', 'edgeIds', 'interactive']
                 : ['schema', 'map', 'locale'],
+              v2 ? ['incomplete'] : [],
             ) ||
             !['zh', 'en'].includes(item.projection.locale) ||
             JSON.stringify(item.projection.map ?? {}) !== JSON.stringify(item.params)
@@ -147,7 +154,9 @@
             fail();
           if (
             v2 &&
-            (!Array.isArray(item.projection.edgeIds) ||
+            ((Object.hasOwn(item.projection, 'incomplete') &&
+              typeof item.projection.incomplete !== 'boolean') ||
+              !Array.isArray(item.projection.edgeIds) ||
               typeof item.projection.interactive !== 'boolean' ||
               item.projection.edgeIds.length !== (item.projection.map?.edges?.length || 0) ||
               item.projection.edgeIds.some(
@@ -155,7 +164,7 @@
               ))
           )
             fail();
-          if (v2) {
+          if (v2 && (item.projection.incomplete ?? true)) {
             const notice = doc.createElement('p');
             notice.textContent =
               globalThis.MBBI18n?.t('Some articles may be unavailable.') ||
@@ -168,6 +177,12 @@
                 doc,
                 item.projection.map,
                 item.projection.locale === 'zh',
+                {
+                  semantics:
+                    item.projection.schema === 'knowledge-map/public-v1'
+                      ? 'knowledge-map/v1'
+                      : null,
+                },
               ),
             );
           const bytes = new TextEncoder().encode(wrapper.outerHTML).length;

@@ -128,3 +128,68 @@ The extension usage form also offers `GET mbb/v1/extensions/articles?q=...&curso
 Schema 2 collection configurations add `authors` (0–8 nonblank strings, ≤200 UTF-8 bytes each), `edition` (≤200 bytes), `versionStatement` (≤1000 bytes), `numbering` (`article|chapter`) and a `role` (`preface|body|appendix`) on each chapter reference. All fields are closed and remain under the original 16384-byte configuration limit. Schema 1 is never implicitly rewritten. New Publisher providers omit the optional descriptor field on older hosts and continue to consume schema 1.
 
 Schema 2 immutable manifests carry those fields and chapter `role`, `number`, and `numbering:{mode,applied,retained}`. Native technical objects can have a derived `objects[].number` such as `1.1` or `A.1`; retained objects keep their original integer numbers. Server-side rendering, selected-object projections and generated cross-document labels use the same explicit stable-ID map. This map is internal trusted rendering input, not an article attribute, REST numbering override or alternate save path. Authored anchor text, source IDs and revisions are unchanged. Metadata and role/order changes require a new snapshot and final permission verification.
+
+## Controlled knowledge maps and course integration (Main 3.8)
+
+Feature-detect `markbridge_teaching_supports_knowledge_maps(): bool` before registering
+`readerMode: knowledge-map/v1`. The closed author format is
+`{format:'knowledge-map/v1',title,groups,nodes,edges}`. Groups use `{id,title}` (1–8);
+nodes use `{id,group,title,role,target,description?}` (1–32), with role
+`concept|reading|practice` and title at most 96 Unicode codepoints. Edges use
+`{id,from,to,kind,why?}` (at most 32), with kind `prerequisite|explains|practises`.
+IDs use the existing ASCII identifier contract. Every group must be used. Self edges,
+duplicate edge IDs and duplicate `(from,to,kind)` tuples fail. Only the prerequisite
+subgraph must be acyclic; explanation/practice cycles and multiple incoming/cross-group
+edges are supported. Fixed reader labels describe prior understanding, explanation and
+practice; prior understanding never restricts access. Existing text, 16 KiB/1024-value/depth-8
+parameter and 120 KiB combined static budgets remain in force.
+
+Targets are a closed union of `{kind:'document',namespace,document}`,
+`{kind:'local-document',site,documentId}`, and portable
+`{kind:'step'|'activity',namespace,document,target}`. Namespace/document use `S_32hex` and
+`D_32hex`; local document IDs use at most 512 UTF-8 bytes without controls. A local ID
+never becomes a portable identity by inference. Stage/activity targets must match the
+current reference index's exact kind; activities must be genuine envelope-v2 components.
+Author target selection uses the existing permission-checked article and reference searches.
+Maintain missing logical identities through the existing identity tools before selecting
+stages or activities.
+
+Core `mbb_knowledge_map_valid($params)` and JS `MBBKnowledgeMap.validate(params)` share
+the model. Trusted providers use the existing `markbridge_validate_component_params`
+filter for domain validation. Author params stay server-side. Core resolves targets and
+rechecks current identity, pair and read permission before emitting opaque IDs and safe
+links; unreadable nodes, their relationships/explanations and empty groups are omitted.
+Controlled-map responses are private/no-store and vary on Cookie. Missing providers keep
+filtered static relationships and the author's body. Export/publication preparation and
+final permission stamps include the same filtered view.
+
+Installed PHP extensions may call these trusted server APIs; none is an anonymous REST API:
+
+- `markbridge_resolve_document_target(stdClass $target, bool $edit=false): array` accepts
+  only document/local-document targets. Success is
+  `{state:'available',post_id:int,title:string,url:string,hash:string,expected:string}`;
+  every failure is `{state:'unavailable'}`. It rechecks unique current identity, paired
+  content and read access; `edit=true` additionally requires current `edit_post`.
+- `markbridge_document_target_for_post(int $id, bool $edit=false): ?stdClass` derives a
+  target from the current indexed identity or proven local site/document ID and verifies
+  it through the resolver. It never guesses an identity from a post ID or course ID.
+- `markbridge_supports_collection_candidates(): bool` advertises the following narrow API.
+- `markbridge_prepare_collection_configuration(array $config): array|WP_Error` validates
+  the existing closed collection schema 1/2, at most ten chapters, explicit `privateOptIn`,
+  current edit/read access, pairs, unique identities and cover scope, then rechecks them.
+  Success is `{config,chapterSummaries}`. Any unavailable/conflicting target rejects the
+  whole candidate. It writes no catalog, article, job or hidden course fields.
+
+The `markbridge_collections_configuration_sources` action runs immediately before the
+collection workspace. Extensions may render their own small source form there. Keep course
+metadata in its own owner-controlled record; a graph and collection do not become a second
+copy of it. Once the collection UI is ready, call
+`window.MarkBridgeCollections.proposeConfiguration(config): Promise<boolean>`. It sends
+closed `{schema:1,config}` (at most 16 KiB) to authenticated nonce-protected
+`POST /mbb/v1/collections/configuration-candidate`, shows the arrangement and chapter
+states, and waits for explicit Adopt/Cancel. Cancel resolves false and preserves current
+fields, collection and job. Adopt revalidates server permissions and the opening serial;
+current edits or another operation invalidate the candidate. Successful adoption resolves
+true and creates a new dirty, unsaved collection with `id=null`. It never saves or prepares
+publication automatically. Callers must wait for the API to exist and must not manipulate
+input DOM, popup windows or session storage.
