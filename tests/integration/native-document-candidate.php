@@ -23,12 +23,109 @@ function ndc_request(string $route, array $data)
     $r->set_body(wp_json_encode($data));
     return rest_do_request($r);
 }
+/** Counts/booleans only: never dump provider declarations, paths, URLs or article values. */
+function ndc_registration_diagnostic(
+    string $provider,
+    array $definition,
+    int $rejectionStart,
+): array {
+    $entries = mbb_component_index_entries();
+    $counts = array_count_values(array_column($entries, 'id'));
+    $reason = 'unreported';
+    $allowed = [
+        'invalid-registration',
+        'invalid-budget',
+        'invalid-schema',
+        'invalid-resource',
+        'invalid-resource-url',
+        'invalid-defaults',
+        'invalid-resource-group',
+        'catalog-limit',
+        'invalid-execution-profile',
+        'duplicate-provider',
+    ];
+    foreach (
+        array_slice($GLOBALS['mbb_component_rejections'] ?? [], $rejectionStart)
+        as $rejection
+    ) {
+        if (
+            ($rejection['id'] ?? null) === $provider &&
+            in_array($rejection['reason'] ?? null, $allowed, true)
+        ) {
+            $reason = $rejection['reason'];
+        }
+    }
+    $nodes = 0;
+    $defaults = json_decode(
+        mbb_component_json($definition['defaults']),
+        false,
+        16,
+        JSON_THROW_ON_ERROR,
+    );
+    $file = $definition['resource']['file'];
+    $budgets = true;
+    foreach (mbb_component_budget_limits() as $key => $limit) {
+        $value = $definition['budgets'][$key] ?? null;
+        $budgets = $budgets && is_int($value) && $value >= 1 && $value <= $limit;
+    }
+    return [
+        'reason' => $reason,
+        'counts' => [
+            'legacy' => count(mbb_component_registry()),
+            'entries' => count($entries),
+            'types' => count($counts),
+            'maxVersionsPerType' => $counts ? max($counts) : 0,
+            'indexBytes' => mbb_component_index_bytes($entries),
+            'rejections' => count($GLOBALS['mbb_component_rejections'] ?? []),
+        ],
+        'checks' => [
+            'legacyRoom' => count(mbb_component_registry()) < 32,
+            'catalogRoom' => mbb_component_index_room($provider, $definition['version']),
+            'duplicate' => mbb_component_index_has($provider, $definition['version']),
+            'schema' => mbb_component_schema_definition($definition['schema'], 0, $nodes),
+            'defaults' =>
+                mbb_component_pure_params($defaults) &&
+                mbb_component_schema($defaults, $definition['schema']),
+            'budgets' => $budgets,
+            'resourceRegular' => is_file($file) && !is_link($file) && is_readable($file),
+            'resourceBudget' => filesize($file) <= $definition['budgets']['resourceBytes'],
+            'resourceHash' => hash_equals(
+                $definition['resource']['sha256'],
+                (string) hash_file('sha256', $file),
+            ),
+            'resourceUrl' =>
+                $definition['resource']['url'] === plugins_url(basename($file), $file) &&
+                parse_url($definition['resource']['url'], PHP_URL_HOST) ===
+                    parse_url(site_url(), PHP_URL_HOST),
+        ],
+    ];
+}
+function ndc_component_state(): array
+{
+    $state = [];
+    foreach (array_keys($GLOBALS) as $name) {
+        if (str_starts_with($name, 'mbb_component')) {
+            $state[$name] = $GLOBALS[$name];
+        }
+    }
+    return $state;
+}
+function ndc_restore_component_state(array $state): void
+{
+    foreach (array_keys($GLOBALS) as $name) {
+        if (str_starts_with($name, 'mbb_component')) {
+            unset($GLOBALS[$name]);
+        }
+    }
+    foreach ($state as $name => $value) {
+        $GLOBALS[$name] = $value;
+    }
+}
 function ndc_run(): void
 {
     $previous = get_current_user_id();
     $user = $id = 0;
-    $registry = $GLOBALS['mbb_components'] ?? [];
-    $defaults = $GLOBALS['mbb_component_defaults'] ?? [];
+    $componentState = ndc_component_state();
     $suffix = bin2hex(random_bytes(6));
     $provider = 'native-exact-' . $suffix;
     $fixture = WP_PLUGIN_DIR . '/markbridge-native-exact-' . $suffix;
@@ -41,30 +138,78 @@ function ndc_run(): void
             file_put_contents($file, $frame) === strlen($frame),
             'Synthetic native resource failed',
         );
-        ndc_assert(
-            markbridge_register_teaching_component($provider, [
-                'version' => '0.1.0',
-                'protocolVersion' => 1,
-                'minMarkBridge' => '1.6.0',
-                'budgets' => mbb_component_budget_limits(),
-                'title' => 'Native exact-source fixture',
-                'schema' => [
-                    'type' => 'object',
-                    'additionalProperties' => false,
-                    'required' => ['value'],
-                    'properties' => [
-                        'value' => ['type' => 'integer', 'minimum' => 0, 'maximum' => 10],
-                    ],
+        $definition = [
+            'version' => '0.1.0',
+            'protocolVersion' => 1,
+            'minMarkBridge' => '1.6.0',
+            'budgets' => mbb_component_budget_limits(),
+            'title' => 'Native exact-source fixture',
+            'schema' => [
+                'type' => 'object',
+                'additionalProperties' => false,
+                'required' => ['value'],
+                'properties' => [
+                    'value' => ['type' => 'integer', 'minimum' => 0, 'maximum' => 10],
                 ],
-                'defaults' => ['value' => 1],
-                'resource' => [
-                    'file' => $file,
-                    'url' => plugins_url('frame.html', $file),
-                    'sha256' => hash_file('sha256', $file),
-                ],
-            ]),
-            'Synthetic native provider failed',
-        );
+            ],
+            'defaults' => ['value' => 1],
+            'resource' => [
+                'file' => $file,
+                'url' => plugins_url('frame.html', $file),
+                'sha256' => hash_file('sha256', $file),
+            ],
+        ];
+        $rejectionStart = count($GLOBALS['mbb_component_rejections'] ?? []);
+        $registered = markbridge_register_teaching_component($provider, $definition);
+        if (!$registered) {
+            $diagnostic = ndc_registration_diagnostic($provider, $definition, $rejectionStart);
+            echo wp_json_encode([
+                'nativeProviderRegistration' =>
+                    ['context' => 'installed-components', 'registered' => false] + $diagnostic,
+            ]) . "\n";
+            $capacity =
+                !$diagnostic['checks']['legacyRoom'] ||
+                !$diagnostic['checks']['catalogRoom'] ||
+                $diagnostic['reason'] === 'catalog-limit';
+            $validFixture = !$diagnostic['checks']['duplicate'];
+            foreach (
+                [
+                    'schema',
+                    'defaults',
+                    'budgets',
+                    'resourceRegular',
+                    'resourceBudget',
+                    'resourceHash',
+                    'resourceUrl',
+                ]
+                as $key
+            ) {
+                $validFixture = $validFixture && $diagnostic['checks'][$key];
+            }
+            ndc_assert(
+                $capacity && $validFixture,
+                'Synthetic native provider failed outside an isolated capacity condition: ' .
+                    wp_json_encode($diagnostic),
+            );
+            // This fixture tests one synthetic exact dependency, not installed-directory capacity.
+            // Re-run the unchanged public registration/admission against an isolated in-memory
+            // catalog only after proving the installed capacity condition. Limits stay unchanged.
+            ndc_restore_component_state([]);
+            $registered = markbridge_register_teaching_component($provider, $definition);
+            $isolated = ndc_registration_diagnostic($provider, $definition, 0);
+            if ($registered) {
+                $isolated['reason'] = null;
+            }
+            echo wp_json_encode([
+                'nativeProviderRegistration' =>
+                    ['context' => 'isolated-synthetic', 'registered' => $registered] + $isolated,
+            ]) . "\n";
+            ndc_assert(
+                $registered,
+                'Synthetic native provider failed after isolation: ' . wp_json_encode($isolated),
+            );
+        }
+
         $user = wp_insert_user([
             'user_login' => 'native-exact-' . $suffix,
             'user_pass' => wp_generate_password(32),
@@ -253,8 +398,8 @@ function ndc_run(): void
         if ($hook) {
             remove_action('rest_after_insert_post', $hook, 1000);
         }
-        $GLOBALS['mbb_components'] = $registry;
-        $GLOBALS['mbb_component_defaults'] = $defaults;
+        ndc_restore_component_state($componentState);
+        $componentRestored = ndc_component_state() === $componentState;
         wp_set_current_user($previous);
         if ($id) {
             wp_delete_post($id, true);
@@ -269,6 +414,7 @@ function ndc_run(): void
         if (is_dir($fixture)) {
             rmdir($fixture);
         }
+        ndc_assert($componentRestored, 'Native fixture component state was not restored');
     }
 }
 ndc_run();
