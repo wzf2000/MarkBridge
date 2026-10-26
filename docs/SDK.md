@@ -242,7 +242,9 @@ generation. Editing then undoing, closing, switching articles or recapturing inv
 escaped differences and a sandboxed static preview. **Cancel** returns `{applied:false}` and leaves
 the tool and its draft mounted. **Apply to editor** rechecks the server again, consumes the token,
 and returns `{applied:true}` after changing only the existing unsaved editor state. Native and source
-Undo/Redo remain available; the author uses the ordinary preview/save flow afterward. No SDK call
+Undo/Redo remain available; the author uses the ordinary preview/save flow afterward. Candidate-input HTTP 422 errors leave the opening token available so the author can reject a bad
+suggestion, adjust the candidate and preview again; errors naming the saved `component_base` or
+`identity`, permissions, receipts and baseline conflicts invalidate it. No SDK call
 saves an article or writes a source file. A changed portable identity is rejected; use a new draft
 instead of stripping it silently.
 

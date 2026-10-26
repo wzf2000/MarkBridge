@@ -46,6 +46,11 @@ test('document tool keeps its draft on cancel and explicitly applies without sav
             serializedSha256: 'b',
             receipt: 'synthetic',
           };
+        if (payload.source === 'Invalid candidate')
+          throw Object.assign(Error('Reject the invalid suggestion and retry'), {
+            status: 422,
+            code: 'UNSUPPORTED_BLOCK',
+          });
         return {
           before: 'Original',
           html: '<p>Candidate</p><script>throw Error("unsafe")</script>',
@@ -59,11 +64,16 @@ test('document tool keeps its draft on cancel and explicitly applies without sav
       render(host, api) {
         const draft = document.createElement('textarea');
         draft.setAttribute('aria-label', 'Tool draft');
-        draft.value = 'Candidate';
+        draft.value = 'Invalid candidate';
         const capture = document.createElement('button');
         capture.textContent = 'Capture original';
         const preview = document.createElement('button');
         preview.textContent = 'Propose candidate';
+        const rejectBad = document.createElement('button');
+        rejectBad.textContent = 'Reject invalid suggestion';
+        rejectBad.onclick = () => {
+          draft.value = 'Candidate';
+        };
         let opening;
         capture.onclick = async () => {
           opening = await api.capture();
@@ -74,9 +84,11 @@ test('document tool keeps its draft on cancel and explicitly applies without sav
             await api.propose({ openingToken: opening.openingToken, source: draft.value });
           } catch (error) {
             host.dataset.error = error.message;
+            host.dataset.current = String(api.isCurrent(opening.openingToken));
+            rejectBad.disabled = !api.isCurrent(opening.openingToken);
           }
         };
-        host.append(draft, capture, preview);
+        host.append(draft, capture, preview, rejectBad);
         return () => {
           window.disposed++;
         };
@@ -86,6 +98,10 @@ test('document tool keeps its draft on cancel and explicitly applies without sav
   await page.getByRole('button', { name: 'Example review' }).click();
   await page.getByRole('button', { name: 'Capture original' }).click();
   await expect(page.getByRole('button', { name: 'Captured' })).toBeVisible();
+  await page.getByRole('button', { name: 'Propose candidate' }).click();
+  await expect(page.locator('.mbb-document-tool-host')).toHaveAttribute('data-current', 'true');
+  await expect(page.getByRole('button', { name: 'Reject invalid suggestion' })).toBeEnabled();
+  await page.getByRole('button', { name: 'Reject invalid suggestion' }).click();
   await page.getByRole('button', { name: 'Propose candidate' }).click();
   await expect(page.getByRole('dialog', { name: 'Review document candidate' })).toBeVisible();
   await page.getByRole('button', { name: 'Cancel', exact: true }).click();
@@ -99,6 +115,7 @@ test('document tool keeps its draft on cancel and explicitly applies without sav
     disposed: 1,
     calls: [
       'document-tools/capture',
+      'document-tools/preview',
       'document-tools/preview',
       'document-tools/preview',
       'document-tools/preview',

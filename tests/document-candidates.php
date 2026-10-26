@@ -71,6 +71,12 @@ function mbb_component_projection_fingerprint($id, $v)
 function mbb_preview($r)
 {
     $GLOBALS['previews']++;
+    if (!empty($GLOBALS['duringPreview'])) {
+        $GLOBALS['duringPreview']();
+    }
+    if (!empty($GLOBALS['previewError'])) {
+        return $GLOBALS['previewError'];
+    }
     return [
         'before' => $GLOBALS['snapshot']['document']['source'],
         'html' => '<p>safe</p>',
@@ -174,6 +180,22 @@ dc_assert(
 );
 $preview = $input + ['receipt' => $d['receipt'], 'source' => 'B'];
 dc_assert(dc_request($preview, true) instanceof WP_REST_Response, 'preview');
+$GLOBALS['previewError'] = new WP_Error('UNSUPPORTED_BLOCK', 422);
+$editable = dc_request($preview, true);
+dc_assert(
+    $editable instanceof WP_Error && $editable->status === 422,
+    'unchanged baseline returns editable rejection',
+);
+$GLOBALS['duringPreview'] = static function () {
+    $GLOBALS['snapshot']['document']['source'] = 'changed during bad candidate';
+};
+$changedDuringRejection = dc_request($preview, true);
+dc_assert(
+    $changedDuringRejection instanceof WP_Error && $changedDuringRejection->status === 409,
+    'bad candidate cannot mask a concurrent baseline change',
+);
+$GLOBALS['previewError'] = $GLOBALS['duringPreview'] = null;
+$GLOBALS['snapshot']['document']['source'] = "\xef\xbb\xbfA\r\n";
 $GLOBALS['session'] = 'session-b';
 dc_assert(is_wp_error(dc_request($preview, true)), 'session invalidated');
 $GLOBALS['session'] = 'session-a';

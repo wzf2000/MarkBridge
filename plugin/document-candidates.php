@@ -285,15 +285,13 @@ function mbb_document_tools_request($r, bool $preview)
                 $request->set_param($key, $value);
             }
             $result = mbb_preview($request);
-            if (is_wp_error($result)) {
-                return $result;
-            }
             if (
-                strlen($result['document']['serialized']) > 262144 ||
-                mbb_references_projection($result['document']['serialized'])['identity'] !==
-                    $baseline['identity']
+                !is_wp_error($result) &&
+                (strlen($result['document']['serialized']) > 262144 ||
+                    mbb_references_projection($result['document']['serialized'])['identity'] !==
+                        $baseline['identity'])
             ) {
-                return mbb_error(
+                $result = mbb_error(
                     'document_identity',
                     mbb_t('Keep the current identity. Import a copy as a new draft instead.'),
                     422,
@@ -302,6 +300,10 @@ function mbb_document_tools_request($r, bool $preview)
             $final = mbb_document_tools_current($id, $r['expected']);
             if ($baseline !== $final['claims'] || $claims['expires'] <= time()) {
                 mbb_document_tools_fail();
+            }
+            // Even a rejected candidate must not hide a concurrent authority/baseline change.
+            if (is_wp_error($result)) {
+                return $result;
             }
             // The receipt is deliberately never renewed by a preview.
         }

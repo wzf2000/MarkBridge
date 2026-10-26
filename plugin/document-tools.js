@@ -84,6 +84,11 @@ const MBBCreateDocumentTools = (core) => {
     candidateDialog?.remove();
     candidateDialog = null;
   }
+  // Preview 422s describe editable candidate input. These two legacy 422 codes
+  // instead describe the saved document ID/pair; they cannot authorize a retry.
+  // Permission/source/receipt/adapter conflicts use non-422 statuses and expire the batch.
+  const editableRejection = (error) =>
+    error?.status === 422 && !['component_base', 'identity'].includes(error.code);
   async function propose({ openingToken, source } = {}) {
     const serial = ++request;
     closeCandidate();
@@ -99,7 +104,7 @@ const MBBCreateDocumentTools = (core) => {
     try {
       preview = await core.api('document-tools/preview', payload);
     } catch (error) {
-      if (serial === request && current === opening) invalidate();
+      if (serial === request && current === opening && !editableRejection(error)) invalidate();
       throw error;
     }
     if (serial !== request || !isCurrent(openingToken)) throw stale();
@@ -168,9 +173,9 @@ const MBBCreateDocumentTools = (core) => {
           dialog.close();
           toolDialog.close();
         } catch (error) {
-          if (serial === request && current === opening) invalidate();
+          if (serial === request && current === opening && !editableRejection(error)) invalidate();
           status.textContent = error.message;
-          // Keep the tool's draft mounted; recapture explicitly after resolving the cause.
+          // Keep editable candidate errors retryable; baseline failures require a new capture.
           if (!settled) {
             settled = true;
             reject(error);

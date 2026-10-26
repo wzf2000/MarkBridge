@@ -78,6 +78,7 @@ const tick = () => new Promise((r) => setImmediate(r));
     applied = 0,
     hold,
     release;
+  let failure = null;
   const calls = [];
   const core = context.install({
     stamp: () => stamp,
@@ -92,6 +93,7 @@ const tick = () => new Promise((r) => setImmediate(r));
     },
     api: async (route, payload) => {
       calls.push(route);
+      if (route.endsWith('/preview') && failure) throw failure;
       if (hold) {
         hold = false;
         await new Promise((r) => {
@@ -138,6 +140,44 @@ const tick = () => new Promise((r) => setImmediate(r));
   opening = await sdk.capture();
   assert(!sdk.isCurrent(prior.openingToken));
   assert(sdk.isCurrent(opening.openingToken));
+  const previewsBeforeErrors = calls.filter((r) => r.endsWith('/preview')).length;
+  for (const code of [
+    'UNSUPPORTED_BLOCK',
+    'document_identity',
+    'document_request',
+    'component_params',
+    'html_policy',
+  ]) {
+    failure = Object.assign(Error('Editable candidate rejected'), { status: 422, code });
+    await assert.rejects(
+      sdk.propose({ openingToken: opening.openingToken, source: 'bad suggestion' }),
+    );
+    assert(
+      sdk.isCurrent(opening.openingToken),
+      'candidate error keeps decisions available: ' + code,
+    );
+  }
+  for (const [status, code] of [
+    [422, 'component_base'],
+    [422, 'identity'],
+    [403, 'export_forbidden'],
+    [409, 'document_candidate'],
+    [409, 'adapter_conflict'],
+  ]) {
+    failure = Object.assign(Error('Baseline unavailable'), { status, code });
+    await assert.rejects(
+      sdk.propose({ openingToken: opening.openingToken, source: 'bad suggestion' }),
+    );
+    assert(
+      !sdk.isCurrent(opening.openingToken),
+      'baseline/permission/receipt expires all decisions',
+    );
+    failure = null;
+    opening = await sdk.capture();
+  }
+  failure = null;
+  const rejectedPreviews =
+    calls.filter((r) => r.endsWith('/preview')).length - previewsBeforeErrors;
   const pending = sdk.propose({ openingToken: opening.openingToken, source: 'B' });
   await tick();
   assert.equal(body.children.length, 2);
@@ -168,7 +208,7 @@ const tick = () => new Promise((r) => setImmediate(r));
   assert.equal((await apply).applied, true);
   assert.equal(applied, 1);
   assert.equal(disposed, 2);
-  assert.equal(calls.filter((r) => r.endsWith('/preview')).length, 3);
+  assert.equal(calls.filter((r) => r.endsWith('/preview')).length, 3 + rejectedPreviews);
   assert(!calls.some((r) => r.includes('save')));
   assert(!sdk.isCurrent(opening.openingToken));
   let handed;
