@@ -18,27 +18,30 @@ const MBBCreateNativeDocumentCandidate = ({
     serialized: serialize(blocks),
   });
   const matches = (a, b) => a.ids === b.ids && a.serialized === b.serialized;
+  const identified = (body) => {
+    const values = JSON.parse(body.ids);
+    return (
+      values.every((id) => typeof id === 'string' && id.length > 0) &&
+      new Set(values).size === values.length
+    );
+  };
   const nativeState = (current) => {
     if (
       current.mode !== 'visual' ||
       !Array.isArray(current.blocks) ||
-      !Array.isArray(current.entityBlocks) ||
       typeof current.content !== 'string'
     )
       return null;
-    const body = snapshot(current.blocks),
-      entity = snapshot(current.entityBlocks),
-      bodyIds = JSON.parse(body.ids),
-      entityIds = JSON.parse(entity.ids);
-    if (
-      ![bodyIds, entityIds].every(
-        (values) =>
-          values.every((id) => typeof id === 'string' && id.length > 0) &&
-          new Set(values).size === values.length,
-      )
-    )
-      return null;
-    return current.content === entity.serialized ? { body, entity } : null;
+    const body = snapshot(current.blocks);
+    if (!identified(body)) return null;
+    // A clean initial load may use Gutenberg's cached parsing of saved content,
+    // without an entity blocks field. Only prepare may register this as original A.
+    if (current.entityBlocks === undefined)
+      return { body, entity: null, entityMissing: true, content: current.content };
+    if (!Array.isArray(current.entityBlocks)) return null;
+    const entity = snapshot(current.entityBlocks);
+    if (!identified(entity) || current.content !== entity.serialized) return null;
+    return { body, entity, entityMissing: false, content: current.content };
   };
   const clear = () => {
     pending = null;
@@ -70,15 +73,17 @@ const MBBCreateNativeDocumentCandidate = ({
     }
     const { body, entity } = state,
       bodyBefore = matches(body, pending.before),
-      entityBefore = matches(entity, pending.before),
+      entityBefore = state.entityMissing
+        ? pending.beforeEntityMissing && state.content === pending.before.serialized
+        : matches(entity, pending.before),
       bodyAfter = matches(body, pending.after),
-      entityAfter = matches(entity, pending.after);
+      entityAfter = !state.entityMissing && matches(entity, pending.after);
     if (pending.invalid) return bodyBefore && entityBefore ? 'original' : 'blocked';
     if (bodyAfter && entityAfter) return 'candidate';
     if (bodyBefore && entityBefore) return 'original';
     // Gutenberg restores core-data before React updates block-editor. Only the
     // two registered byte/recursive-ID endpoints can be temporarily out of step.
-    // A code buffer has no entity blocks and cannot impersonate this transition.
+    // Code mode and unknown entity shapes cannot impersonate this transition.
     if ((bodyBefore && entityAfter) || (bodyAfter && entityBefore)) return 'transition';
     // Drop authorization permanently, but retain a tombstone: ordinary Save must not
     // silently normalize an adopted source after an unreviewed body edit.
@@ -88,7 +93,12 @@ const MBBCreateNativeDocumentCandidate = ({
   function prepare(document) {
     const current = view(),
       state = nativeState(current);
-    if (!state || !matches(state.body, state.entity))
+    if (
+      !state ||
+      (state.entityMissing
+        ? state.content !== state.body.serialized
+        : !matches(state.body, state.entity))
+    )
       throw error(
         'The native editor did not retain the complete candidate. Current input is preserved; use Markdown edit / upload to preview it again.',
       );
@@ -101,7 +111,7 @@ const MBBCreateNativeDocumentCandidate = ({
         'document_source_only',
         422,
       );
-    return { current, blocks, before, after };
+    return { current, blocks, before, after, beforeEntityMissing: state.entityMissing };
   }
   return {
     validate: prepare,
@@ -145,6 +155,7 @@ const MBBCreateNativeDocumentCandidate = ({
         receipt: opening.receipt,
         expires: opening.expires,
         before: plan.before,
+        beforeEntityMissing: plan.beforeEntityMissing,
         after: plan.after,
       };
       applying = true;
@@ -169,7 +180,7 @@ const MBBCreateNativeDocumentCandidate = ({
         // produced by this synchronous adoption, never a later equal-text lookup.
         pending.after = actual;
       }
-      if (phase() !== 'candidate')
+      if (!['candidate', 'transition'].includes(phase()))
         throw error(
           'The native editor did not retain the complete candidate. Current input is preserved; use Markdown edit / upload to preview it again.',
         );

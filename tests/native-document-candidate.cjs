@@ -327,3 +327,159 @@ assert.throws(
   (e) => e.code === 'document_native_candidate',
 );
 console.log('native cross-store transition provenance model passed');
+
+// Gutenberg's first clean projection may parse saved string content from its
+// cache, leaving entity.blocks undefined. This absence can denote only A.
+function initialEntityFixture(initialArray = false) {
+  const state = {
+    postId: 7,
+    expected: 'saved',
+    mode: 'visual',
+    blocks: original,
+    entityBlocks: initialArray ? original : undefined,
+    content: serialize(original),
+  };
+  const local = context.create({
+    view: () => state,
+    serialize,
+    parse: (value) => JSON.parse(value).map((text) => ({ text, clientId: 'initial-' + ++counter })),
+    apply: (value) => {
+      state.blocks = value;
+      local.changed();
+    },
+    encode: (value) => Buffer.from(value).toString('base64'),
+    now: () => 1000,
+  });
+  return { state, local };
+}
+const initialMissing = initialEntityFixture();
+initialMissing.local.adopt(document, opening); // B blocks, still missing original entity A.
+const missingB = initialMissing.state.blocks;
+assert.throws(
+  () => initialMissing.local.request({ content: serialize(missingB) }),
+  (e) => e.code === 'document_native_transition',
+  'synchronous adoption may finish before the original entity projection catches up',
+);
+Object.assign(initialMissing.state, { entityBlocks: missingB, content: serialize(missingB) });
+initialMissing.local.changed();
+assert(initialMissing.local.request({ content: serialize(missingB) }).mbb_document_candidate);
+// Undo restores original string/missing-entity before block-editor catches up.
+Object.assign(initialMissing.state, { entityBlocks: undefined, content: serialize(original) });
+initialMissing.local.changed();
+assert.throws(
+  () => initialMissing.local.request({ content: serialize(original) }),
+  (e) => e.code === 'document_native_transition',
+);
+initialMissing.state.blocks = original;
+initialMissing.local.changed();
+assert.equal(Object.keys(initialMissing.local.request({ content: serialize(original) })).length, 0);
+// Redo first restores the full B entity, then the full B block projection.
+Object.assign(initialMissing.state, { entityBlocks: missingB, content: serialize(missingB) });
+initialMissing.local.changed();
+assert.throws(
+  () => initialMissing.local.request({ content: serialize(missingB) }),
+  (e) => e.code === 'document_native_transition',
+);
+initialMissing.state.blocks = missingB;
+initialMissing.local.changed();
+assert(initialMissing.local.request({ content: serialize(missingB) }).mbb_document_candidate);
+initialMissing.local.saved('saved-missing-B', true);
+initialMissing.state.expected = 'saved-missing-B';
+assert.equal(Object.keys(initialMissing.local.request({ content: serialize(missingB) })).length, 0);
+
+for (const [initialArray, corrupt] of [
+  [
+    true,
+    (state) => {
+      state.entityBlocks = undefined;
+    },
+  ],
+  [
+    false,
+    (state) => {
+      state.content = serialize(state.blocks);
+    },
+  ],
+  [
+    false,
+    (state) => {
+      state.entityBlocks = null;
+    },
+  ],
+  [
+    false,
+    (state) => {
+      state.entityBlocks = () => original;
+    },
+  ],
+  [
+    false,
+    (state) => {
+      state.entityBlocks = 'unknown';
+    },
+  ],
+  [
+    false,
+    (state) => {
+      state.blocks = [{ ...state.blocks[0], clientId: 'unregistered-missing-id' }];
+    },
+  ],
+  [
+    false,
+    (state) => {
+      state.blocks = [{ ...state.blocks[0], text: 'third missing-entity body' }];
+    },
+  ],
+  [
+    false,
+    (state) => {
+      state.mode = 'text';
+      state.content = serialize(original);
+    },
+  ],
+  [
+    false,
+    (state) => {
+      state.mode = undefined;
+    },
+  ],
+]) {
+  const { state, local } = initialEntityFixture(initialArray);
+  local.adopt(document, opening);
+  const b = state.blocks;
+  corrupt(state);
+  local.changed();
+  Object.assign(state, { mode: 'visual', blocks: b, entityBlocks: b, content: serialize(b) });
+  local.changed();
+  assert.throws(
+    () => local.request({ content: serialize(b) }),
+    (e) => e.code === 'document_native_candidate',
+    'later missing, wrong missing endpoint, code mode, unknown shape/ID/body permanently invalidates B',
+  );
+}
+for (const corrupt of [
+  (state) => {
+    state.content = document.serialized;
+  },
+  (state) => {
+    state.mode = 'text';
+  },
+  (state) => {
+    state.mode = undefined;
+  },
+  (state) => {
+    state.entityBlocks = null;
+  },
+  (state) => {
+    state.entityBlocks = () => original;
+  },
+  (state) => {
+    state.blocks = [{ text: 'old' }];
+  },
+]) {
+  const { state, local } = initialEntityFixture();
+  corrupt(state);
+  assert.throws(() => local.validate(document));
+  assert.equal(state.blocks[0].text, 'old', 'invalid prepare does not apply any candidate');
+}
+console.log('native registered initial-missing entity model passed');
