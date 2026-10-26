@@ -1220,6 +1220,7 @@ body:has(#mbb-toolbar:not([hidden]):not(.mbb-keyboard-open) #mbb-recovery-open:n
   margin-top: 0;
 }
 .mbb-document-dialog iframe {
+  box-sizing: border-box;
   display: block;
   width: 100%;
   min-height: 320px;
