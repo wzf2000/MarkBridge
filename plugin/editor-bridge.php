@@ -16,6 +16,7 @@ require_once __DIR__ . '/resource-import.php';
 require_once __DIR__ . '/save-commit.php';
 require_once __DIR__ . '/export.php';
 require_once __DIR__ . '/merge.php';
+require_once __DIR__ . '/document-candidates.php';
 require_once __DIR__ . '/preview-navigation.php';
 function mbb_managed($id)
 {
@@ -1443,20 +1444,20 @@ function mbb_enqueue_ui()
     }
     if ($tool) {
         mbb_enqueue_kernel(true);
-        wp_enqueue_style(
-            'mbb-batch-ui',
-            plugins_url(mbb_asset('batch-ui.css'), __FILE__),
-            [],
-            substr(hash_file('sha256', __DIR__ . '/batch-ui.css'), 0, 12),
-        );
-        wp_enqueue_script(
-            'mbb-batch-ui',
-            plugins_url(mbb_asset('batch-ui.js'), __FILE__),
-            ['mbb-editor-ui', 'mbb-source-tools', 'mbb-math'],
-            substr(hash_file('sha256', __DIR__ . '/batch-ui.js'), 0, 12),
-            true,
-        );
     }
+    wp_enqueue_style(
+        'mbb-batch-ui',
+        plugins_url(mbb_asset('batch-ui.css'), __FILE__),
+        [],
+        substr(hash_file('sha256', __DIR__ . '/batch-ui.css'), 0, 12),
+    );
+    wp_enqueue_script(
+        'mbb-batch-ui',
+        plugins_url(mbb_asset('batch-ui.js'), __FILE__),
+        ['mbb-editor-ui', 'mbb-source-tools', 'mbb-math'],
+        substr(hash_file('sha256', __DIR__ . '/batch-ui.js'), 0, 12),
+        true,
+    );
     wp_enqueue_script(
         'mbb-resource-ui',
         plugins_url(mbb_asset('resource-ui.js'), __FILE__),

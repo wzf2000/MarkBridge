@@ -42,7 +42,7 @@ asset('diagnostics.css');
 asset('kernel.js');
 asset('emoji.js');
 asset('presentation-loader.js');
-asset('editor-ui.js');
+asset('editor-ui.js', read('document-tools.js') + '\n' + read('editor-ui.js'));
 asset('source-tools.js');
 asset('writing-ui.js');
 asset('references-ui.js');

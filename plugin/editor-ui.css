@@ -1200,3 +1200,40 @@ body:has(#mbb-toolbar:not([hidden]):not(.mbb-keyboard-open) #mbb-recovery-open:n
   height: auto;
   white-space: normal;
 }
+
+/* Core-owned document tool and candidate dialogs share the editor's restrained controls. */
+.mbb-document-dialog {
+  box-sizing: border-box;
+  width: min(960px, calc(100vw - 24px));
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  padding: 20px;
+  border: 1px solid #c3c4c7;
+  border-radius: 8px;
+  color: #1d2327;
+  background: #fff;
+}
+.mbb-document-dialog::backdrop {
+  background: rgb(0 0 0 / 45%);
+}
+.mbb-document-dialog h2 {
+  margin-top: 0;
+}
+.mbb-document-dialog iframe {
+  display: block;
+  width: 100%;
+  min-height: 320px;
+  border: 1px solid #c3c4c7;
+  margin: 12px 0;
+}
+.mbb-document-dialog button {
+  min-height: 36px;
+  margin: 4px;
+}
+.mbb-document-tool-host {
+  margin-top: 12px;
+}
+.mbb-document-tool-host textarea {
+  box-sizing: border-box;
+  max-width: 100%;
+}

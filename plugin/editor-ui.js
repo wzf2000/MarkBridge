@@ -149,6 +149,7 @@
   function invalidate() {
     const hadCandidate = !!candidate;
     version++;
+    documentTools?.invalidate();
     sourceTools?.invalidate();
     if (hadCandidate && loaded)
       message(T('The candidate changed. Preview the differences again before saving.'));
@@ -1680,6 +1681,10 @@
       }
     };
     actions.append(reviewButton, save, recoveryApply);
+    const documentMore = el('details', { class: 'mbb-document-more' });
+    documentMore.append(el('summary', {}, T('More')));
+    documentTools?.menu(documentMore);
+    actions.append(documentMore);
     dialog.append(actions);
     status = el('p', { role: 'status' });
     diff = el('section', { 'aria-label': T('Changes') });
@@ -2165,6 +2170,114 @@
       }
     },
   };
+  // The public SDK receives capabilities, never private editor inputs or save callbacks.
+  let documentNativeGeneration = 0;
+  const documentNativeStamp = () => {
+    const editor = window.wp?.data?.select('core/editor');
+    if (!editor?.getCurrentPostId?.()) return '';
+    return JSON.stringify([
+      editor.getCurrentPostId(),
+      editor.getPostEdits?.(),
+      wp.blocks.serialize(wp.data.select('core/block-editor')?.getBlocks?.() || []),
+    ]);
+  };
+  let documentNativeLast = documentNativeStamp();
+  window.wp?.data?.subscribe?.(() => {
+    const next = documentNativeStamp();
+    if (next !== documentNativeLast) {
+      documentNativeLast = next;
+      documentNativeGeneration++;
+      documentTools?.invalidate();
+    }
+  });
+  const documentTools =
+    typeof MBBCreateDocumentTools === 'function'
+      ? MBBCreateDocumentTools({
+          api,
+          prepare: async () => {
+            if (!dialog?.open && cfg.state?.source_managed) await open(cfg.postId);
+          },
+          stamp: () =>
+            JSON.stringify([
+              epoch,
+              version,
+              dialog?.open,
+              documentNativeGeneration,
+              documentNativeStamp(),
+            ]),
+          context: () => ({
+            post_id: Number(dialog?.open ? base?.post_id : cfg.postId),
+            expected: dialog?.open ? base?.expected : cfg.state?.expected,
+          }),
+          clean: () => {
+            if (
+              window.MarkBridgeParameterDrafts?.pending() ||
+              resources?.pending() ||
+              Object.keys(resources?.request() || {}).length
+            )
+              return false;
+            const native = window.wp?.data?.select('core/editor');
+            if (native?.isEditedPostDirty?.() || native?.isSavingPost?.()) return false;
+            const state = dialog?.open ? base : cfg.state;
+            if (!state?.post_id || !state.expected) return false;
+            const content = native?.getEditedPostContent?.();
+            if (
+              native?.getCurrentPostId?.() &&
+              typeof content === 'string' &&
+              content !== state.document.serialized
+            )
+              return false;
+            if (
+              native?.getCurrentPostId?.() &&
+              Number(native.getCurrentPostId()) !== Number(state.post_id)
+            )
+              return false;
+            if (dialog?.open)
+              return (
+                loaded &&
+                !busy &&
+                !saving &&
+                mode === 'markdown' &&
+                !source.readOnly &&
+                !source.disabled &&
+                readSource() === state.document.source &&
+                title.value === state.title &&
+                publication.value === state.post_status &&
+                featuredOverride === null &&
+                docId.value === state.document.documentId &&
+                !frontmatterSelected.size &&
+                !recoveryRecord &&
+                !conflict
+              );
+            return !state.source_managed && !!native?.getCurrentPostId?.();
+          },
+          diff: (target, before, after) => showDiff(before, after, target),
+          styles: () =>
+            MBB_MATH.style +
+            (cfg.footnoteStyle || '') +
+            (cfg.teachingStyle || '') +
+            (cfg.technicalStyle || '') +
+            (cfg.nativeMediaStyle || '') +
+            (cfg.codeDisplayStyle || ''),
+          apply: (document) => {
+            if (dialog?.open) {
+              // Existing source-tools history supplies normal local Undo/Redo.
+              sourceTools.commit(document.source, 0);
+              return;
+            }
+            const store = wp.data.select('core/block-editor');
+            const blocks = store.getBlocks(),
+              parsed = wp.blocks.parse(document.serialized),
+              dispatch = wp.data.dispatch('core/block-editor');
+            if (blocks.length)
+              dispatch.replaceBlocks(
+                blocks.map((block) => block.clientId),
+                parsed,
+              );
+            else dispatch.insertBlocks(parsed);
+          },
+        })
+      : null;
   function setup() {
     document.querySelector('#mbb-new')?.addEventListener('click', () => open(0));
     document
@@ -2264,6 +2377,7 @@
         panel.querySelector('summary')?.focus();
       };
       moreBody.append(h, recovery);
+      documentTools?.menu(moreBody);
       if (window.MBBWritingTools) moreBody.append(window.MBBWritingTools.native());
       bar.append(
         a,

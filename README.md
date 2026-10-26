@@ -4,7 +4,7 @@
   <a href="LICENSE"><img alt="License: GPL-3.0-or-later" src="https://img.shields.io/badge/license-GPL--3.0--or--later-818cf8"></a>
   <img alt="WordPress 7.1" src="https://img.shields.io/badge/WordPress-7.1-21759b">
   <img alt="PHP 8.2+" src="https://img.shields.io/badge/PHP-8.2%2B-777bb4">
-  <img alt="Version 3.8.0-rc.1" src="https://img.shields.io/badge/version-3.8.0-rc.1-818cf8">
+  <img alt="Version 3.9.0-rc.1" src="https://img.shields.io/badge/version-3.9.0-rc.1-818cf8">
 </p>
 
 <p align="center"><strong>用 Markdown 写作，用区块调整。保存时，让两种格式保持一致。</strong></p>
@@ -41,7 +41,9 @@ flowchart LR
 
 ## 开始使用
 
-**3.8.0-rc.1**新增可显式采用的出版编排：作者、版次、版本声明、前言／正文／附录角色，以及可选章节对象编号。旧文集仍按原格式读写；编号仅进入冻结快照和出版物，不改变文章、对象 ID 或修订。新版 Publisher 可将同一快照生成网页书和 EPUB，详见[文集说明](docs/COLLECTIONS.md)。
+**3.9.0-rc.1** 为本地受信作者工具提供[正文候选 SDK](docs/SDK.md#document-body-tools-main-39-api-1)：从已保存原文准备候选，经过独立差异和静态预览后显式应用，再使用普通保存。工具从“更多”进入；文件交换沿用批量草稿导入与默认新身份。当前为待构建、待真实 WordPress／浏览器验收的源码候选。
+
+**3.7.0**新增可显式采用的出版编排：作者、版次、版本声明、前言／正文／附录角色，以及可选章节对象编号。旧文集仍按原格式读写；编号仅进入冻结快照和出版物，不改变文章、对象 ID 或修订。新版 Publisher 可将同一快照生成网页书和 EPUB，详见[文集说明](docs/COLLECTIONS.md)。
 
 本版也保持原生编辑器读取教学参数时的空对象与数组区别，避免缺失数据被误判为无效区块；兼容其他插件插入的区块和元数据，不自动改写文章。
 

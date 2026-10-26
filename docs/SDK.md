@@ -193,3 +193,83 @@ current edits or another operation invalidate the candidate. Successful adoption
 true and creates a new dirty, unsaved collection with `id=null`. It never saves or prepares
 publication automatically. Callers must wait for the API to exist and must not manipulate
 input DOM, popup windows or session storage.
+
+## Document body tools (Main 3.9, API 1)
+
+`window.MarkBridgeDocumentTools` is the Core-owned body-candidate interface. It is separate from
+`MarkBridgeAuthorTools` (whose bibliography contract is unchanged). Register trusted local JavaScript
+with `registerTool(id, {label, render(host, api)})`. IDs are unique lowercase ASCII tokens, at most
+64 characters; labels are plain text up to 100 characters, with at most 32 tools. `render` mounts
+only inside `host` and may return a synchronous disposal function. Core owns the dialog, focus,
+closing and disposal. Tools appear under **More** in the native editor and Markdown dialog.
+
+```js
+MarkBridgeDocumentTools.registerTool('example-review', {
+  label: 'Review a document',
+  render(host, api) {
+    // Keep the plugin's selection and imported suggestions in its own memory.
+    // Use explicit buttons to capture and propose; render() does not grant save authority.
+    const button = document.createElement('button');
+    button.textContent = 'Prepare candidate';
+    button.onclick = async () => {
+      const opening = await api.capture();
+      const source = opening.source; // Synthesize a candidate from this immutable original.
+      if (api.isCurrent(opening.openingToken)) {
+        const result = await api.propose({ openingToken: opening.openingToken, source });
+        // result.applied reports a local application, never a save.
+      }
+    };
+    host.append(button);
+    return () => {
+      button.onclick = null;
+    };
+  },
+});
+```
+
+`capture()` requires an existing, saved managed article and clean native/Markdown editing state,
+including title/metadata, component parameters and resource imports. Authors save pending edits
+before opening a candidate. A native file-source entry opens the existing source editor first;
+unavailable/unwritable bindings remain unavailable. Capture never normalizes BOM/newlines. It returns
+a deeply frozen clone of `{source, serialized, documentId, identity, sourceSha256,
+serializedSha256, openingToken}`; `identity` is null or `{namespace, document}`. Each original and
+candidate format is bounded to 256 KiB. It does not return WordPress post IDs as portable identity.
+
+The opaque local `openingToken` binds the current tool session, native metadata/body and Main input
+generation. Editing then undoing, closing, switching articles or recapturing invalidates it.
+`isCurrent(token)` checks local state only. Asynchronous tools must discard their own late work.
+`propose({openingToken, source})` rechecks server authority and opens a **separate Core dialog** with
+escaped differences and a sandboxed static preview. **Cancel** returns `{applied:false}` and leaves
+the tool and its draft mounted. **Apply to editor** rechecks the server again, consumes the token,
+and returns `{applied:true}` after changing only the existing unsaved editor state. Native and source
+Undo/Redo remain available; the author uses the ordinary preview/save flow afterward. No SDK call
+saves an article or writes a source file. A changed portable identity is rejected; use a new draft
+instead of stripping it silently.
+
+The private `POST /mbb/v1/document-tools/capture` and `/preview` routes are read-only.
+Requests must use an `application/json` object with exactly `{post_id, expected}` for capture and
+`{post_id, expected, receipt, source}` for preview. Extra/missing fields, non-scalar field types,
+invalid Unicode and duplicate top-level keys (including escaped spellings) are rejected. Only the
+raw JSON body supplies these values; form and query parameters never override them. The raw preview
+budget accounts for the maximum 256 KiB source and 8192-byte receipt with worst-case JSON escaping.
+WordPress rejects syntactically invalid JSON (including invalid UTF-8) with its native HTTP 400 before
+the endpoint callback. Valid JSON with a non-object root, unknown/missing/duplicate keys or invalid
+field types or source/raw-byte budgets receives HTTP 422. Existing permission callbacks retain HTTP 403 for unauthorized
+valid requests; native JSON parse errors can occur first. Stale baselines and invalid/expired receipts
+retain HTTP 409. The direct callback model also tests its defensive JSON parser, whose rejection is
+422; that is separate from WordPress's earlier HTTP 400.
+
+Their 15-minute,
+domain-separated HMAC receipt contains only claims/digests and expiry, never private body text. Each
+request freshly verifies the account/session, site/blog, expected pair, identity ownership, source
+binding, actual bounded file bytes/fingerprint, adapters and exact original provider/resource pins.
+Preview never extends expiry or adopts a newer baseline. Original pins changing invalidates the
+whole candidate even if it explicitly requests a different component version. Receipts and file
+hashes are not permission grants. There is no fuzzy relocation, extra body store or task queue.
+
+`api.importFiles(files)` accepts a real `File[]` of 1–10 items and hands them to
+`MarkBridgeBatch.open(files)`. The existing scan, loss warnings, per-item preview and explicit draft
+confirmation remain mandatory. Default identity handling is **copy**, including the existing intra-batch
+mapping; Markdown and single-document resource ZIP restrictions and upload limits remain unchanged.
+It does not edit the file input, start scanning automatically, replace an existing batch, or replace
+an article. Explicit replacement of the current article uses `propose`.

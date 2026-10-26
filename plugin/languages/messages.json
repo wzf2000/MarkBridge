@@ -2268,5 +2268,15 @@
   "Prior understanding supports comprehension without restricting access; explanations and practice connect the material.": "先了解表示理解上的前置，不限制访问；解释关系与配套练习帮助联系所学。",
   "Node role": "节点角色",
   "Stage and activity targets require an existing logical identity. Maintain it with the document identity tools before choosing a target.": "阶段和活动目标需要已有逻辑身份。请先通过文档身份工具维护，再选择目标。",
-  "Invalid knowledge map configuration.": "知识图配置无效。"
+  "Invalid knowledge map configuration.": "知识图配置无效。",
+  "The document candidate is unavailable or expired. Save current edits and reopen the tool.": "正文候选已失效、过期或暂不可用。请先保存当前修改，再重新打开工具。",
+  "Keep the current identity. Import a copy as a new draft instead.": "请保留当前文档身份；需要复制时，请导入为新草稿。",
+  "Review document candidate": "审阅正文候选",
+  "Apply changes to the editor, then use the normal save action.": "应用后仅改变编辑器中的未保存内容，再使用普通保存。",
+  "Apply to editor": "应用到编辑器",
+  "Invalid or duplicate document tool registration.": "正文工具登记无效或标识重复。",
+  "Close the current batch before handing over more files.": "请先关闭当前批次，再交接其他文件。",
+  "Files received. Scan selected files to review them before creating drafts.": "已接收文件。请扫描所选文件，逐项审阅后再创建草稿。",
+  "Received files": "已接收文件",
+  "Document candidate requests require a closed JSON object with valid fields and no duplicate keys.": "正文候选请求必须是字段完整、类型有效且没有重复键的 JSON 对象，不接受额外字段。"
 }

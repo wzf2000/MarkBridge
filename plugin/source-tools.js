@@ -681,6 +681,7 @@
       tools,
       previewTools,
       reset,
+      commit,
       invalidate,
       prepare,
       controls,

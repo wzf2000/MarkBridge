@@ -175,3 +175,29 @@ test('capability rejection is shown without enabling creation', async ({ page },
   await expect(page.locator('.mbb-batch-item')).toHaveCount(0);
   await page.screenshot({ path: info.outputPath('batch-capability-error.png'), fullPage: true });
 });
+
+test('File array handoff keeps the input untouched and requires an explicit scan', async ({
+  page,
+}) => {
+  await page.goto('/batch-tools?locale=en_US');
+  await page.evaluate(async () => {
+    await MarkBridgeBatch.open([
+      new File(['# handed source'], 'handed.md', { type: 'text/markdown' }),
+    ]);
+  });
+  await expect(status(page)).toContainText('Files received');
+  await expect(dialog(page).getByText('Received files: handed.md', { exact: true })).toBeVisible();
+  expect(
+    await dialog(page)
+      .getByLabel('Batch files', { exact: true })
+      .evaluate((e) => e.files.length),
+  ).toBe(0);
+  expect((await control(page)).confirms).toEqual([]);
+  await expect(dialog(page).getByLabel('Logical identity handling')).toHaveValue('copy');
+  const scanRequest = page.waitForRequest((request) => request.url().endsWith('/prepare'));
+  await dialog(page).getByRole('button', { name: 'Scan selected files', exact: true }).click();
+  const request = await scanRequest;
+  expect(request.postData()).toContain('filename="handed.md"');
+  expect(request.postData()).toContain('copy');
+  expect((await control(page)).confirms).toEqual([]);
+});

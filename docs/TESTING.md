@@ -174,3 +174,31 @@ It creates and removes only its own author/posts, exercises paired save/reopen, 
 logical-identity target resolution, kind rejection, candidate validation without catalog
 writes, anonymous draft filtering and final export re-resolution after target deletion.
 This fixture never authorizes production writes or seeding a retained review database.
+
+## Document candidate SDK
+
+The 3.9 source adds `node tests/document-tools.cjs` (pure client contract),
+`php tests/document-candidates.php` (receipt and baseline model), and
+`tests/browser/document-tools.spec.cjs` (Core dialog flow with synthetic REST).
+These check stale generations/late responses, cancellation, separate tool draft lifetime, explicit
+application without save, bounded File[] handoff and read-only receipt tamper/session/expiry checks.
+The PHP model additionally supplies raw JSON requests for closed fields, top-level duplicate keys,
+escaped duplicate names, query override isolation and maximum-size JSON escaping. Defensive callback
+parser errors are 422 in that direct model; real WordPress parses syntactically invalid JSON/UTF-8
+first and returns its native HTTP 400. The real REST entry checks that distinction alongside valid
+JSON shape errors (422), original permission denial (403) and stale/receipt rejection (409).
+
+For real WordPress authority and saved-pair checks, use an explicitly owned **local** synthetic site
+with the current built package installed; the entry rejects other environments:
+
+```sh
+export MARKBRIDGE_TEST_WORDPRESS_ROOT=/path/to/owned/local-wordpress
+export MARKBRIDGE_TEST_HOME=http://127.0.0.1:18800
+wp --path="$MARKBRIDGE_TEST_WORDPRESS_ROOT" eval-file tests/integration/document-candidates.php
+```
+
+Repeat under each configured PHP/Node conversion backend. This creates and removes only its own
+synthetic author/draft; it does not initialize the reference index or touch other articles. Run the
+browser suite after building, with one worker, and inspect desktop/mobile screenshots separately.
+The 3.9 initial source preparation has only syntax/model validation: build, real database integration
+and browser/visual acceptance are pending and must not be inferred from those model checks.

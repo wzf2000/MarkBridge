@@ -42,6 +42,8 @@
   }
   let dialog,
     files,
+    handedFiles = null,
+    handedSummary,
     identityStrategy,
     prepare,
     refresh,
@@ -376,6 +378,11 @@
       accept: '.md,.markdown,.zip',
       'aria-label': T('Batch files'),
     });
+    handedSummary = node('p', '', { hidden: '' });
+    files.addEventListener('change', () => {
+      handedFiles = null;
+      handedSummary.hidden = true;
+    });
     identityStrategy = node('select', '', { 'aria-label': T('Logical identity handling') });
     for (const [value, label] of [
       ['copy', 'Copy with new identities (default)'],
@@ -408,14 +415,15 @@
     previewPanel.append(node('h3', T('Review this item')), frame, label, create, details);
     prepare.onclick = () =>
       busy(async (session) => {
+        const selected = handedFiles || [...files.files];
         if (
-          files.files.length < 1 ||
-          files.files.length > 10 ||
-          [...files.files].reduce((n, f) => n + f.size, 0) > 16777216
+          selected.length < 1 ||
+          selected.length > 10 ||
+          selected.reduce((n, f) => n + f.size, 0) > 16777216
         )
           throw Error(T('Choose one to ten files within the 16 MiB upload budget.'));
         const data = new FormData();
-        for (const f of files.files) data.append('documents[]', f);
+        for (const f of selected) data.append('documents[]', f);
         data.append('identity_strategy', identityStrategy.value);
         clearPreview();
         status.textContent = T('Scanning files. No articles or media are created.');
@@ -471,12 +479,15 @@
       rows.replaceChildren();
       history.replaceChildren();
       files.value = '';
+      handedFiles = null;
+      handedSummary.hidden = true;
     });
     dialog.append(
       head,
       intro,
       identityStrategy,
       files,
+      handedSummary,
       prepare,
       refresh,
       status,
@@ -486,16 +497,38 @@
     );
     document.body.append(dialog);
   }
-  async function open() {
+  async function open(incoming) {
+    if (
+      incoming !== undefined &&
+      (!Array.isArray(incoming) ||
+        incoming.length < 1 ||
+        incoming.length > 10 ||
+        !incoming.every((file) => file instanceof File) ||
+        incoming.reduce((n, f) => n + f.size, 0) > 16777216)
+    )
+      throw Error(T('Choose one to ten files within the 16 MiB upload budget.'));
     if (!dialog) setup();
-    if (dialog.open) return;
-    ++epoch;
+    if (dialog.open) {
+      if (incoming) throw Error(T('Close the current batch before handing over more files.'));
+      return;
+    }
+    handedFiles = incoming ? [...incoming] : null;
+    handedSummary.hidden = !handedFiles;
+    handedSummary.textContent = handedFiles
+      ? T('Received files') + ': ' + handedFiles.map((file) => file.name.slice(0, 200)).join(', ')
+      : '';
+    identityStrategy.value = 'copy';
+    const openingEpoch = ++epoch;
     dialog.showModal();
     job = null;
     clearPreview();
     render();
     status.textContent = T('Loading your active batches…');
     await busy(listBatches);
+    if (openingEpoch === epoch && handedFiles && dialog.open)
+      status.textContent = T(
+        'Files received. Scan selected files to review them before creating drafts.',
+      );
   }
   document.addEventListener('click', (event) => {
     if (event.target.closest('#mbb-batch-new')) void open();
