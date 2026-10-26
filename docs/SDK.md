@@ -248,6 +248,12 @@ suggestion, adjust the candidate and preview again; errors naming the saved `com
 saves an article or writes a source file. A changed portable identity is rejected; use a new draft
 instead of stripping it silently.
 
+Native provenance uses the visual editor. A clean initial load without entity blocks can register
+only the captured original endpoint. Gutenberg may restore core-data before block-editor during
+Undo/Redo: only the registered byte/client-ID endpoints may temporarily differ, and Save then
+returns `document_native_transition` (409) without consuming provenance. Candidate saving still
+requires both complete states to agree; missing fields cannot impersonate the candidate.
+
 For a native-editor adoption, Core retains one private in-memory provenance record containing the
 exact source/pair, receipt, expected version and before/after block client IDs. Native Undo returns
 to the original without attaching a source proof; Redo can restore the adopted pair. A third body
