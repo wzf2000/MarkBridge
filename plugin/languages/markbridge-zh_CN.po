@@ -1029,6 +1029,10 @@ msgid "Author–year"
 msgstr "作者—年份"
 
 #: plugin/i18n.js
+msgid "Automatic"
+msgstr "自动选择"
+
+#: plugin/i18n.js
 msgid "Automatic copy failed. Select the summary to copy it manually."
 msgstr "自动复制失败，请选择摘要后手动复制。"
 
@@ -3177,7 +3181,7 @@ msgstr "跳转行号"
 
 #: plugin/i18n.js
 msgid "Group"
-msgstr "所属分组"
+msgstr "分组"
 
 #: plugin/i18n.js
 msgid "Groups"
@@ -3443,6 +3447,10 @@ msgstr "索引状态"
 #: plugin/i18n.js
 msgid "Indexed component versions"
 msgstr "按需解析的组件版本"
+
+#: plugin/i18n.js
+msgid "Initial focus"
+msgstr "初始显示"
 
 #: plugin/i18n.js
 msgid "Initial values"
@@ -4290,6 +4298,10 @@ msgid "Mobile column stacking must be boolean"
 msgstr "手机分栏堆叠设置必须为布尔值。"
 
 #: plugin/i18n.js
+msgid "Mobile starting branch"
+msgstr "手机初始分支"
+
+#: plugin/i18n.js
 msgid "Mode"
 msgstr "模式"
 
@@ -4578,6 +4590,10 @@ msgstr "没有可选择的历史版本。"
 #: plugin/i18n.js
 msgid "No versioned metadata proposal exists. An unversioned header remains ordinary body content."
 msgstr "没有版本化元数据提案；旧无版本头继续作为正文。"
+
+#: plugin/i18n.js
+msgid "Node"
+msgstr "节点"
 
 #: plugin/i18n.js
 msgid "Node (private server runtime)"
@@ -5008,6 +5024,10 @@ msgstr "准备初始参数"
 #: plugin/i18n.js
 msgid "Prepare or discard local author edits before applying parameters."
 msgstr "请先准备或丢弃本地作者编辑，再应用参数。"
+
+#: plugin/i18n.js
+msgid "Prepare relationship layout upgrade"
+msgstr "准备关系图布局升级"
 
 #: plugin/i18n.js
 msgid "Prepare snapshot"
@@ -5933,6 +5953,10 @@ msgid "Show diagram"
 msgstr "显示图示"
 
 #: plugin/i18n.js
+msgid "Show entire branch"
+msgstr "显示整个分支"
+
+#: plugin/i18n.js
 msgid "Show full text"
 msgstr "显示全文"
 
@@ -6121,6 +6145,10 @@ msgstr "开始日期"
 #: plugin/i18n.js
 msgid "Start interactive demonstration"
 msgstr "启动交互演示"
+
+#: plugin/i18n.js
+msgid "Starting item"
+msgstr "初始项目"
 
 #: plugin/i18n.js
 msgid "Starting line number"

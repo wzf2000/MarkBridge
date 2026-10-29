@@ -7,9 +7,20 @@ const map = {};
 const relationSource = read('relation-map.js');
 const catalog = JSON.parse(read('languages/messages.json'));
 const relationMessages = Object.fromEntries(
-  [...relationSource.matchAll(/T\('([^']+)'\)/g)].map((match) => [match[1], catalog[match[1]]]),
+  [...(relationSource + '\n' + read('relation-map-v3-reader.js')).matchAll(/T\('([^']+)'\)/g)].map(
+    (match) => [match[1], catalog[match[1]]],
+  ),
 );
 const relationReader =
+  read('relation-map-v3.js') +
+  '\n' +
+  read('relation-map-layout-v3.js') +
+  '\n' +
+  read('relation-map-v3-reader.js').replace(
+    '/*__MBB_RELATION_MESSAGES__*/ {}',
+    JSON.stringify(relationMessages),
+  ) +
+  '\n' +
   read('relation-map-v2.js') +
   '\n' +
   read('knowledge-map.js') +

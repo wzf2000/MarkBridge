@@ -178,7 +178,18 @@
     } catch {
       return;
     }
-    if (['relation-map/public-v2', 'knowledge-map/public-v1'].includes(config.reader)) {
+    if (
+      ['relation-map/public-v2', 'relation-map/public-v3', 'knowledge-map/public-v1'].includes(
+        config.reader,
+      )
+    ) {
+      if (
+        config.reader === 'relation-map/public-v3' &&
+        !globalThis.MBBRelationMapV3.publicDisplay(config.display, config.publicView)
+      ) {
+        node.dataset.mbbComponentState = 'static';
+        return;
+      }
       if (
         config.status !== 'available' ||
         window.MBB_COMPONENTS_READER !== true ||
@@ -186,7 +197,12 @@
       )
         return;
       try {
-        const native = globalThis.MBBRelationMap.enhance(node, config.publicView, config.edgeIds, {
+        const native = (
+          config.reader === 'relation-map/public-v3'
+            ? globalThis.MBBRelationMapV3Reader
+            : globalThis.MBBRelationMap
+        ).enhance(node, config.publicView, config.edgeIds, {
+          display: config.display,
           semantics: config.reader === 'knowledge-map/public-v1' ? 'knowledge-map/v1' : null,
         });
         instances.set(node, {

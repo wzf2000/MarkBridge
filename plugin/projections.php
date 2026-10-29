@@ -255,7 +255,7 @@ function mbb_component_projection_fingerprint(string $component, string $version
     if (
         in_array(
             $provider['readerMode'] ?? null,
-            ['relation-map/v1', 'relation-map/v2', 'knowledge-map/v1'],
+            ['relation-map/v1', 'relation-map/v2', 'relation-map/v3', 'knowledge-map/v1'],
             true,
         ) &&
         ($provider['status'] ?? null) === 'available'
@@ -265,9 +265,13 @@ function mbb_component_projection_fingerprint(string $component, string $version
             [
                 'relation-map.php',
                 'relation-map-v2.php',
+                'relation-map-v3.php',
                 'knowledge-map.php',
                 'knowledge-map.js',
                 'relation-map-v2.js',
+                'relation-map-v3.js',
+                'relation-map-layout-v3.js',
+                'relation-map-v3-reader.js',
                 'relation-map-documents.php',
                 'relation-map.js',
                 'relation-map.css',
@@ -349,7 +353,13 @@ function mbb_component_projection_plan(
         $fingerprint = mbb_component_projection_fingerprint($a->component, $a->componentVersion);
         $tree = null;
         $provider = mbb_component_provider($a->component, $a->componentVersion);
-        if (in_array($a->params->format ?? null, ['relation-map/v2', 'knowledge-map/v1'], true)) {
+        if (
+            in_array(
+                $a->params->format ?? null,
+                ['relation-map/v2', 'relation-map/v3', 'knowledge-map/v1'],
+                true,
+            )
+        ) {
             $view = mbb_relation_map_v2_view(
                 $a->params,
                 (string) (function_exists('get_the_ID') ? get_the_ID() : 0) . ':' . $id,
@@ -358,9 +368,12 @@ function mbb_component_projection_plan(
                 'schema' =>
                     $a->params->format === 'knowledge-map/v1'
                         ? 'knowledge-map/public-v1'
-                        : 'relation-map/public-v2',
+                        : ($a->params->format === 'relation-map/v3'
+                            ? 'relation-map/public-v3'
+                            : 'relation-map/public-v2'),
                 'map' => $view['map'],
                 'edgeIds' => $view['edgeIds'],
+                ...$a->params->format === 'relation-map/v3' ? ['display' => $view['display']] : [],
                 'incomplete' =>
                     !$view['map'] || count($view['map']->nodes) !== count($a->params->nodes),
                 'locale' => str_starts_with($locale, 'zh') ? 'zh' : 'en',
@@ -563,11 +576,26 @@ function mbb_projection_insert(DOMDocument $doc, DOMElement $root, array $items)
             if (
                 in_array(
                     $item['projection']['schema'] ?? null,
-                    ['relation-map/public-v2', 'knowledge-map/public-v1'],
+                    ['relation-map/public-v2', 'relation-map/public-v3', 'knowledge-map/public-v1'],
                     true,
                 )
             ) {
                 $view = $item['projection'];
+                if (
+                    ($view['schema'] ?? '') === 'relation-map/public-v3' &&
+                    !mbb_relation_map_v3_public_display(
+                        $view['display'] ?? null,
+                        $view['map'] ?? null,
+                    )
+                ) {
+                    throw new RuntimeException('relation_map_display');
+                }
+                if (
+                    ($view['schema'] ?? '') === 'relation-map/public-v3' &&
+                    !mbb_relation_map_edge_ids_valid($view['edgeIds'] ?? null, $view['map'] ?? null)
+                ) {
+                    throw new RuntimeException('relation_map_edge_ids');
+                }
                 if (
                     !in_array($item['state'], ['available', 'author-fallback'], true) ||
                     !mbb_component_equal($view['map'] ?? (object) [], $item['params'])
@@ -591,6 +619,9 @@ function mbb_projection_insert(DOMDocument $doc, DOMElement $root, array $items)
                         'reader' => $view['schema'],
                         'publicView' => $view['map'],
                         'edgeIds' => $view['edgeIds'],
+                        ...($view['schema'] ?? '') === 'relation-map/public-v3'
+                            ? ['display' => $view['display']]
+                            : [],
                         'status' =>
                             $view['interactive'] && $view['map'] ? 'available' : 'unavailable',
                     ]),
@@ -617,8 +648,14 @@ function mbb_projection_insert(DOMDocument $doc, DOMElement $root, array $items)
                     mbb_relation_map_append(
                         $doc,
                         $wrapper,
-                        mbb_relation_map_envelope($view['map'], $view['locale']),
+                        mbb_relation_map_envelope(
+                            $view['map'],
+                            $view['locale'],
+                            $view['schema'] === 'relation-map/public-v3' ? 65536 : 16384,
+                        ),
                         $view['schema'] === 'knowledge-map/public-v1' ? 'knowledge-map/v1' : null,
+                        $view['schema'] === 'relation-map/public-v3' ? $view['edgeIds'] : [],
+                        $view['schema'] === 'relation-map/public-v3' ? 65536 : 16384,
                     );
                 }
                 $bytes =

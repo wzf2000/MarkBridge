@@ -1173,7 +1173,7 @@ final class Converter
                 if (
                     !in_array(
                         $attrs['params']->format ?? null,
-                        ['relation-map/v2', 'knowledge-map/v1'],
+                        ['relation-map/v2', 'relation-map/v3', 'knowledge-map/v1'],
                         true,
                     )
                 ) {

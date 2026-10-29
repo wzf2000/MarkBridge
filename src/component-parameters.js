@@ -206,7 +206,8 @@ export function validateParameterSchema(value, schema) {
 
 // Only this known closed native contract uses selected-item forms above the generic UI bound.
 function relationParameterSchema(schema) {
-  const keys = ['format', 'title', 'groups', 'nodes', 'edges'];
+  const v3 = schema?.properties?.format?.enum?.[0] === 'relation-map/v3';
+  const keys = ['format', 'title', 'groups', 'nodes', 'edges', ...(v3 ? ['display'] : [])];
   if (
     !object(schema) ||
     schema.type !== 'object' ||
@@ -219,13 +220,14 @@ function relationParameterSchema(schema) {
     schema.properties.title?.type !== 'string' ||
     schema.properties.format?.type !== 'string' ||
     schema.properties.format.enum?.length !== 1 ||
-    !['relation-map/v1', 'relation-map/v2', 'knowledge-map/v1'].includes(
+    !['relation-map/v1', 'relation-map/v2', 'relation-map/v3', 'knowledge-map/v1'].includes(
       schema.properties.format.enum[0],
     )
   )
     return false;
   const knowledge = schema.properties.format.enum[0] === 'knowledge-map/v1';
-  const v2 = knowledge || schema.properties.format.enum[0] === 'relation-map/v2';
+  const v2 =
+    knowledge || ['relation-map/v2', 'relation-map/v3'].includes(schema.properties.format.enum[0]);
   const target = schema.properties.nodes?.items?.properties?.target;
   if (
     v2 &&
@@ -584,6 +586,11 @@ export function createParameterEditor({
       component === 'navigation-map' ? component : null,
       '0.2.0',
     );
+    const relationV3Upgrade = useComponentDescriptor(
+      wp,
+      component === 'navigation-map' ? component : null,
+      '0.3.0',
+    );
     const provider = find(component, candidateVersion);
     const schema = provider?.schema;
     const [raw, setRaw] = wp.element.useState(drafts.get(clientId)?.raw ?? original);
@@ -592,9 +599,12 @@ export function createParameterEditor({
     const [selectedItems, setSelectedItems] = wp.element.useState({});
     const relationForm = relationParameterSchema(schema);
     const knowledge = relationForm && schema.properties.format.enum[0] === 'knowledge-map/v1';
+    const relationV3 = relationForm && schema.properties.format.enum[0] === 'relation-map/v3';
     const relationV2 =
       relationForm &&
-      ['relation-map/v2', 'knowledge-map/v1'].includes(schema.properties.format.enum[0]);
+      ['relation-map/v2', 'relation-map/v3', 'knowledge-map/v1'].includes(
+        schema.properties.format.enum[0],
+      );
     const authorSession = wp.element.useRef({});
     const authorLife = wp.element.useRef({ active: true, signature: '', generation: 0 });
     const [, refreshLocalDraft] = wp.element.useState(0);
@@ -788,7 +798,7 @@ export function createParameterEditor({
           throw Error(parameterLabel(issues[0].path) + ': ' + T(issues[0].message));
         if (
           relationForm &&
-          ['relation-map/v1', 'relation-map/v2', 'knowledge-map/v1'].includes(
+          ['relation-map/v1', 'relation-map/v2', 'relation-map/v3', 'knowledge-map/v1'].includes(
             registered?.readerMode,
           )
         ) {
@@ -800,9 +810,11 @@ export function createParameterEditor({
             );
           (knowledge
             ? globalThis.MBBKnowledgeMap
-            : relationV2
-              ? globalThis.MBBRelationMapV2
-              : globalThis.MBBRelationMap
+            : relationV3
+              ? globalThis.MBBRelationMapV3
+              : relationV2
+                ? globalThis.MBBRelationMapV2
+                : globalThis.MBBRelationMap
           ).validate(parsed);
         }
         if (author?.apiVersion === 2) author.validate(parsed, candidateActivity);
@@ -868,7 +880,46 @@ export function createParameterEditor({
         'aria-invalid': issue ? 'true' : undefined,
       };
       let control;
-      if (relationV2 && path.length === 3 && path[0] === 'nodes' && path[2] === 'target') {
+      if (relationV3 && path.length === 1 && path[0] === 'display' && object(v.mobileStart)) {
+        const hint = v.mobileStart;
+        const choices =
+          hint.kind === 'group' ? candidate.groups : hint.kind === 'node' ? candidate.nodes : [];
+        control = el(
+          'fieldset',
+          { key: keyOf(path) },
+          el('legend', {}, T('Mobile starting branch')),
+          el(wp.components.SelectControl, {
+            label: T('Initial focus'),
+            value: hint.kind,
+            options: [
+              { value: 'auto', label: T('Automatic') },
+              { value: 'group', label: T('Group') },
+              { value: 'node', label: T('Node') },
+            ],
+            onChange: (kind) =>
+              set(path, {
+                mobileStart: {
+                  kind,
+                  id:
+                    kind === 'auto'
+                      ? ''
+                      : (kind === 'group' ? candidate.groups : candidate.nodes)?.[0]?.id || '',
+                },
+              }),
+          }),
+          hint.kind !== 'auto'
+            ? el(wp.components.SelectControl, {
+                label: T('Starting item'),
+                value: hint.id,
+                options: [
+                  { value: '', label: T('Choose an existing item') },
+                  ...choices.map((n) => ({ value: n.id, label: n.title })),
+                ],
+                onChange: (id) => set(path, { mobileStart: { ...hint, id } }),
+              })
+            : null,
+        );
+      } else if (relationV2 && path.length === 3 && path[0] === 'nodes' && path[2] === 'target') {
         control = el(ArticleTarget, {
           key: String(candidate.nodes?.[path[1]]?.id || keyOf(path)),
           value: v,
@@ -916,7 +967,12 @@ export function createParameterEditor({
               'practice',
             ].includes(item) &&
             schema.properties?.format?.enum?.some((v) =>
-              ['relation-map/v1', 'relation-map/v2', 'knowledge-map/v1'].includes(v),
+              [
+                'relation-map/v1',
+                'relation-map/v2',
+                'relation-map/v3',
+                'knowledge-map/v1',
+              ].includes(v),
             )
               ? {
                   prerequisite: T('Prior understanding'),
@@ -1230,6 +1286,24 @@ export function createParameterEditor({
                     'These parameters use the JSON editor. All fields are preserved; the server verifies them when saving.',
                   ),
             }),
+      component === 'navigation-map' && candidateVersion === '0.2.0' && relationV3Upgrade?.schema
+        ? el(
+            wp.components.Button,
+            {
+              variant: 'secondary',
+              onClick: () => {
+                const next = {
+                  ...clone(candidate),
+                  format: 'relation-map/v3',
+                  display: { mobileStart: { kind: 'auto', id: '' } },
+                };
+                change(JSON.stringify(next, null, 2), '0.3.0');
+                setMode('form');
+              },
+            },
+            T('Prepare relationship layout upgrade'),
+          )
+        : null,
       component === 'navigation-map' && candidateVersion === '0.1.0' && relationUpgrade?.schema
         ? el(
             wp.components.Button,

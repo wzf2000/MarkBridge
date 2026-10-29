@@ -4,7 +4,7 @@
   <a href="LICENSE"><img alt="License: GPL-3.0-or-later" src="https://img.shields.io/badge/license-GPL--3.0--or--later-818cf8"></a>
   <img alt="WordPress 7.1" src="https://img.shields.io/badge/WordPress-7.1-21759b">
   <img alt="PHP 8.2+" src="https://img.shields.io/badge/PHP-8.2%2B-777bb4">
-  <img alt="Version 3.9.0-rc.3" src="https://img.shields.io/badge/version-3.9.0-rc.3-818cf8">
+  <img alt="Version 3.10.0-rc.1" src="https://img.shields.io/badge/version-3.10.0-rc.1-818cf8">
 </p>
 
 <p align="center"><strong>用 Markdown 写作，用区块调整。保存时，让两种格式保持一致。</strong></p>
@@ -40,6 +40,8 @@ flowchart LR
 ```
 
 ## 开始使用
+
+**3.10.0-rc.1** 新增可导航关系图 0.3 的自动有向分层、主题区域打包与同源同类共享干线。作者可独立设置手机初始分支；受控引用、当前读者权限和旧精确版本保持。参见 Teaching Components 的可导航关系图文档。
 
 **3.9.0-rc.3** 整理关系图的分支导航、缩放与图例，手机跨分支操作明确指出目标组；阅读页自测的题干和富文本选项减少重复段距。节点、路由、权限与正式保存规则保持。
 

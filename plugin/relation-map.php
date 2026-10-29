@@ -65,7 +65,7 @@ function mbb_relation_map_static_bytes(stdClass $p): int
     }
     return $total;
 }
-function mbb_relation_map_valid(mixed $p): bool
+function mbb_relation_map_valid(mixed $p, int $drawingBytes = 16384): bool
 {
     $closed = static fn($v, $keys, $optional = []) => $v instanceof stdClass &&
         !array_diff(array_keys(get_object_vars($v)), array_merge($keys, $optional)) &&
@@ -85,6 +85,7 @@ function mbb_relation_map_valid(mixed $p): bool
     if (
         !$closed($p, ['format', 'title', 'groups', 'nodes', 'edges']) ||
         $p->format !== 'relation-map/v1' ||
+        !in_array($drawingBytes, [16384, 65536], true) ||
         !$text($p->title, 160) ||
         !is_array($p->groups) ||
         !array_is_list($p->groups) ||
@@ -97,7 +98,7 @@ function mbb_relation_map_valid(mixed $p): bool
         !is_array($p->edges) ||
         !array_is_list($p->edges) ||
         count($p->edges) > 128 ||
-        strlen(json_encode($p, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) > 16384
+        strlen(json_encode($p, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) > $drawingBytes
     ) {
         return false;
     }
@@ -152,9 +153,9 @@ function markbridge_teaching_supports_relation_map(): bool
 {
     return true;
 }
-function mbb_relation_map_envelope(mixed $p, string $locale): array
+function mbb_relation_map_envelope(mixed $p, string $locale, int $drawingBytes = 16384): array
 {
-    if (!mbb_relation_map_valid($p)) {
+    if (!mbb_relation_map_valid($p, $drawingBytes)) {
         throw new RuntimeException('relation_map_params');
     }
     return [
@@ -184,12 +185,15 @@ function mbb_relation_map_append(
     DOMElement $root,
     array $view,
     ?string $semantics = null,
+    array $edgeIds = [],
+    int $drawingBytes = 16384,
 ): void {
     if (
         array_keys($view) !== ['schema', 'map', 'locale'] ||
         $view['schema'] !== 'relation-map/v1' ||
         !in_array($view['locale'], ['zh', 'en'], true) ||
-        !mbb_relation_map_valid($view['map'])
+        !mbb_relation_map_valid($view['map'], $drawingBytes) ||
+        ($drawingBytes === 65536 && !mbb_relation_map_edge_ids_valid($edgeIds, $view['map']))
     ) {
         throw new RuntimeException('relation_map_projection');
     }
@@ -249,8 +253,17 @@ function mbb_relation_map_append(
     }
     $make($root, 'h3', $T('All relationships'));
     $ul = $make($root, 'ul');
-    foreach ($p->edges as $e) {
+    foreach ($p->edges as $edgeIndex => $e) {
         $li = $make($ul, 'li');
+        if (
+            isset($edgeIds[$edgeIndex]) &&
+            preg_match('/^e_[a-f0-9]{32}$/D', $edgeIds[$edgeIndex])
+        ) {
+            $li->setAttribute('data-mbb-edge-id', $edgeIds[$edgeIndex]);
+            $li->setAttribute('data-from', $e->from);
+            $li->setAttribute('data-to', $e->to);
+            $li->setAttribute('data-kind', $e->kind);
+        }
         foreach (['from', 'to'] as $i => $key) {
             if ($i) {
                 $li->appendChild($doc->createTextNode(' → '));
@@ -264,4 +277,19 @@ function mbb_relation_map_append(
             ),
         );
     }
+}
+
+/** Public identity carrier, always aligned with the closed drawing edge array. */
+function mbb_relation_map_edge_ids_valid(mixed $ids, mixed $map): bool
+{
+    return ($map === null && $ids === []) ||
+        (is_array($ids) &&
+            array_is_list($ids) &&
+            is_array($map->edges ?? null) &&
+            count($ids) === count($map->edges) &&
+            count(array_unique($ids, SORT_REGULAR)) === count($ids) &&
+            !array_filter(
+                $ids,
+                static fn($id) => !is_string($id) || !preg_match('/^e_[a-f0-9]{32}$/D', $id),
+            ));
 }

@@ -122,7 +122,8 @@
         ]) ||
         typeof item.target !== 'string' ||
         !['available', 'unavailable', 'author-fallback'].includes(item.state) ||
-        new TextEncoder().encode(JSON.stringify(item.params)).length > 16384
+        new TextEncoder().encode(JSON.stringify(item.params)).length >
+          (item.projection?.schema === 'relation-map/public-v3' ? 65536 : 16384)
       )
         fail();
       const targets = [...root.querySelectorAll('[id]')].filter((n) => n.id === item.target);
@@ -132,19 +133,31 @@
       wrapper.setAttribute('data-mbb-generated', '');
       try {
         if (
-          ['relation-map/v1', 'relation-map/public-v2', 'knowledge-map/public-v1'].includes(
-            item.projection?.schema,
-          )
+          [
+            'relation-map/v1',
+            'relation-map/public-v2',
+            'relation-map/public-v3',
+            'knowledge-map/public-v1',
+          ].includes(item.projection?.schema)
         ) {
-          const v2 = ['relation-map/public-v2', 'knowledge-map/public-v1'].includes(
-            item.projection.schema,
-          );
+          const v2 = [
+            'relation-map/public-v2',
+            'relation-map/public-v3',
+            'knowledge-map/public-v1',
+          ].includes(item.projection.schema);
           if (
             !['available', 'author-fallback'].includes(item.state) ||
             !closed(
               item.projection,
               v2
-                ? ['schema', 'map', 'locale', 'edgeIds', 'interactive']
+                ? [
+                    'schema',
+                    'map',
+                    'locale',
+                    'edgeIds',
+                    'interactive',
+                    ...(item.projection.schema === 'relation-map/public-v3' ? ['display'] : []),
+                  ]
                 : ['schema', 'map', 'locale'],
               v2 ? ['incomplete'] : [],
             ) ||
@@ -159,9 +172,15 @@
               !Array.isArray(item.projection.edgeIds) ||
               typeof item.projection.interactive !== 'boolean' ||
               item.projection.edgeIds.length !== (item.projection.map?.edges?.length || 0) ||
+              new Set(item.projection.edgeIds).size !== item.projection.edgeIds.length ||
               item.projection.edgeIds.some(
                 (id) => typeof id !== 'string' || !/^e_[a-f0-9]{32}$/.test(id),
               ))
+          )
+            fail();
+          if (
+            item.projection.schema === 'relation-map/public-v3' &&
+            !globalThis.MBBRelationMapV3.publicDisplay(item.projection.display, item.projection.map)
           )
             fail();
           if (v2 && (item.projection.incomplete ?? true)) {
@@ -173,17 +192,17 @@
           }
           if (item.projection.map)
             wrapper.append(
-              globalThis.MBBRelationMap.staticView(
-                doc,
-                item.projection.map,
-                item.projection.locale === 'zh',
-                {
-                  semantics:
-                    item.projection.schema === 'knowledge-map/public-v1'
-                      ? 'knowledge-map/v1'
-                      : null,
-                },
-              ),
+              (item.projection.schema === 'relation-map/public-v3'
+                ? globalThis.MBBRelationMapV3Reader
+                : globalThis.MBBRelationMap
+              ).staticView(doc, item.projection.map, item.projection.locale === 'zh', {
+                edgeIds:
+                  item.projection.schema === 'relation-map/public-v3'
+                    ? item.projection.edgeIds
+                    : [],
+                semantics:
+                  item.projection.schema === 'knowledge-map/public-v1' ? 'knowledge-map/v1' : null,
+              }),
             );
           const bytes = new TextEncoder().encode(wrapper.outerHTML).length;
           if (bytes > 131072 || total + bytes > 524288) fail();

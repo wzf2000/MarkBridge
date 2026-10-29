@@ -2153,7 +2153,7 @@
   "Loading activity templates…": "正在加载自测模板…",
   "Format": "格式",
   "Groups": "分组",
-  "Group": "所属分组",
+  "Group": "分组",
   "Identifier": "稳定标识",
   "URL": "文章链接",
   "Description": "简要说明",
@@ -2284,5 +2284,12 @@
   "The native editor did not retain the complete candidate. Current input is preserved; use Markdown edit / upload to preview it again.": "原生编辑器未完整保留候选。当前输入已保留，请使用“Markdown 编辑 / 上传”重新预览。",
   "Save the adopted document with the normal editor Save / Update action. Its exact source has not been saved.": "请使用编辑器的普通“保存 / 更新”操作保存已采用的正文；其原始文本尚未保存。",
   "The adopted candidate was edited before saving or its baseline changed. Your input is preserved. Copy your current edits for safekeeping, then undo back to the saved original, reopen the tool, and prepare and save the candidate before editing its body.": "采用后的正文在首次保存前被编辑，或原基线已变化，当前输入已保留。请先复制留存这些修改，再撤销回已保存的原稿，重新打开工具并预检、采用和保存候选，然后继续编辑正文。",
-  "The native editor is synchronizing Undo or Redo. Your input is preserved. Wait for the editor to finish, then save again.": "原生编辑器正在同步撤销或重做，当前输入已保留。请等待编辑器完成后再保存。"
+  "The native editor is synchronizing Undo or Redo. Your input is preserved. Wait for the editor to finish, then save again.": "原生编辑器正在同步撤销或重做，当前输入已保留。请等待编辑器完成后再保存。",
+  "Mobile starting branch": "手机初始分支",
+  "Initial focus": "初始显示",
+  "Automatic": "自动选择",
+  "Node": "节点",
+  "Starting item": "初始项目",
+  "Prepare relationship layout upgrade": "准备关系图布局升级",
+  "Show entire branch": "显示整个分支"
 }

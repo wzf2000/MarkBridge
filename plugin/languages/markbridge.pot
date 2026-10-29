@@ -1029,6 +1029,10 @@ msgid "Author–year"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Automatic"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Automatic copy failed. Select the summary to copy it manually."
 msgstr ""
 
@@ -3445,6 +3449,10 @@ msgid "Indexed component versions"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Initial focus"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Initial values"
 msgstr ""
 
@@ -4290,6 +4298,10 @@ msgid "Mobile column stacking must be boolean"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Mobile starting branch"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Mode"
 msgstr ""
 
@@ -4577,6 +4589,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "No versioned metadata proposal exists. An unversioned header remains ordinary body content."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Node"
 msgstr ""
 
 #: plugin/i18n.js
@@ -5007,6 +5023,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Prepare or discard local author edits before applying parameters."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Prepare relationship layout upgrade"
 msgstr ""
 
 #: plugin/i18n.js
@@ -5933,6 +5953,10 @@ msgid "Show diagram"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Show entire branch"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Show full text"
 msgstr ""
 
@@ -6120,6 +6144,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Start interactive demonstration"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Starting item"
 msgstr ""
 
 #: plugin/i18n.js
