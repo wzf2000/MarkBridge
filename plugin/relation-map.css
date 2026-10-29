@@ -34,8 +34,8 @@
   flex-wrap: wrap;
   list-style: none;
   padding: 0;
-  margin: 1rem 0;
-  font-size: 0.9rem;
+  margin: 0;
+  font-size: 0.85rem;
 }
 .mbb-relation-legend li {
   display: flex;
@@ -54,7 +54,25 @@
   border-color: var(--rm-optimization);
   border-top-style: dotted;
 }
+.mbb-relation-navigation {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 12px 20px;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--rm-line);
+  border-radius: 6px;
+  background: var(--rm-canvas);
+}
+.mbb-relation-navigation .mbb-relation-legend {
+  grid-column: 1 / -1;
+  padding: 10px 0 0;
+  list-style: none;
+  border-top: 1px solid var(--rm-line);
+}
 .mbb-relation-toolbar {
+  justify-content: flex-end;
   display: flex;
   flex-wrap: wrap;
   align-items: end;
@@ -68,7 +86,7 @@
 .mbb-relation-map button,
 .mbb-relation-map select {
   font: inherit;
-  min-height: 40px;
+  min-height: 44px;
   padding: 0.45rem 0.75rem;
   border: 1px solid var(--rm-line);
   border-radius: var(--mbb-border-radius, 5px);
@@ -83,7 +101,9 @@
 .mbb-relation-status {
   font-size: 0.85rem;
   color: var(--rm-muted);
-  margin-block: 0.5rem;
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 .mbb-relation-viewport {
   position: relative;
@@ -191,8 +211,25 @@
 .mbb-relation-cross {
   margin-block: 1rem;
 }
-.mbb-relation-cross li {
-  margin-block: 1rem;
+.mbb-relation-map .mbb-relation-cross > ul {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  padding: 0;
+}
+.mbb-relation-map .mbb-relation-cross li {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--rm-line);
+  border-inline-start: 3px solid var(--rm-recommended);
+  border-radius: 5px;
+  background: var(--rm-surface);
+}
+.mbb-relation-cross-item.compare {
+  border-inline-start-color: var(--rm-compare);
+}
+.mbb-relation-cross-item.optimization {
+  border-inline-start-color: var(--rm-optimization);
 }
 .mbb-relation-cross p {
   margin: 0.35rem 0;
@@ -227,6 +264,30 @@
 @media (max-width: 700px) {
   .mbb-relation-heading h3 {
     font-size: 1.25rem;
+  }
+  .mbb-relation-navigation {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    padding: 10px;
+  }
+  .mbb-relation-toolbar {
+    justify-content: flex-start;
+    align-items: center;
+  }
+  .mbb-relation-branch-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .mbb-relation-navigation .mbb-relation-legend {
+    gap: 8px 12px;
+    padding-top: 8px;
+    font-size: 0.8rem;
+  }
+  .mbb-relation-key {
+    width: 1.4rem;
   }
   .mbb-relation-toolbar label {
     flex: 1;

@@ -4,7 +4,7 @@
   <a href="LICENSE"><img alt="License: GPL-3.0-or-later" src="https://img.shields.io/badge/license-GPL--3.0--or--later-818cf8"></a>
   <img alt="WordPress 7.1" src="https://img.shields.io/badge/WordPress-7.1-21759b">
   <img alt="PHP 8.2+" src="https://img.shields.io/badge/PHP-8.2%2B-777bb4">
-  <img alt="Version 3.9.0-rc.2" src="https://img.shields.io/badge/version-3.9.0-rc.2-818cf8">
+  <img alt="Version 3.9.0-rc.3" src="https://img.shields.io/badge/version-3.9.0-rc.3-818cf8">
 </p>
 
 <p align="center"><strong>用 Markdown 写作，用区块调整。保存时，让两种格式保持一致。</strong></p>
@@ -41,7 +41,9 @@ flowchart LR
 
 ## 开始使用
 
-**3.9.0-rc.2** 为本地受信作者工具提供[正文候选 SDK](docs/SDK.md#document-body-tools-main-39-api-1)：从已保存原文准备候选，经过独立差异和静态预览后显式应用，再使用普通保存。工具从“更多”进入；文件交换沿用批量草稿导入与默认新身份。该候选版供扩展作者接入正文审阅与文件交换工具，接口见 SDK。采用后请先保存，再继续原生正文编辑；过期时按提示重新预检。
+**3.9.0-rc.3** 整理关系图的分支导航、缩放与图例，手机跨分支操作明确指出目标组；阅读页自测的题干和富文本选项减少重复段距。节点、路由、权限与正式保存规则保持。
+
+**3.9** 为本地受信作者工具提供[正文候选 SDK](docs/SDK.md#document-body-tools-main-39-api-1)：从已保存原文准备候选，经过独立差异和静态预览后显式应用，再使用普通保存。工具从“更多”进入；文件交换沿用批量草稿导入与默认新身份。该候选版供扩展作者接入正文审阅与文件交换工具，接口见 SDK。采用后请先保存，再继续原生正文编辑；过期时按提示重新预检。
 
 **3.8.0**新增知识关系图支持：区分概念、阅读和练习，链接到文章、阶段或活动；桌面显示全图，手机先看分支。配合 Teaching Components 1.7 维护关系，链接按当前阅读权限解析。Courseware 0.1 可将原文章编排成课程，并在文集页准备可明确采用的出版候选，详见[关系图](docs/TEACHING-EXTENSIONS.md#受控知识图main-38)和[文集说明](docs/COLLECTIONS.md)。
 
