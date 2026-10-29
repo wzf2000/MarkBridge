@@ -295,6 +295,8 @@
     const back = button(T('Back to branch'), () => {
       initialNodeFocus = null;
       fullMode = false;
+      zoom = 1;
+      pan = { x: 0, y: 0 };
       saveView();
       render();
       select.focus();
@@ -428,8 +430,10 @@
       panToggle.setAttribute('aria-pressed', String(value));
       panToggle.textContent = T('Drag canvas: ') + (value ? T('on') : T('off'));
     }
+    const fitScale = () =>
+      fullMode && mobile.matches ? 1 : Math.min(1, viewport.clientWidth / width);
     function transform() {
-      const fit = fullMode && mobile.matches ? 1 : Math.min(1, viewport.clientWidth / width);
+      const fit = fitScale();
       board.style.transform = `translate(${pan.x}px,${pan.y}px) scale(${fit * zoom})`;
       viewport.style.height =
         fullMode && mobile.matches
@@ -438,12 +442,14 @@
             ? Math.min(500, Math.ceil(height * fit * zoom)) + 'px'
             : Math.ceil(height * fit * zoom) + 'px';
       status.textContent = fullMode
-        ? T('Full map') + ' · ' + Math.round(zoom * 100) + '%'
+        ? T('Full map') + ' · ' + Math.round(fit * zoom * 100) + '%'
         : T('Current branch') +
           ' · ' +
           p.nodes.filter((n) => n.group === select.value).length +
           ' ' +
           T('Nodes');
+      zoomOut.disabled = zoom <= 0.4;
+      zoomIn.disabled = zoom >= 2.5;
     }
     function changeZoom(next) {
       zoom = Math.max(0.4, Math.min(2.5, next));
@@ -653,8 +659,10 @@
               if (target) {
                 target.classList.add('is-highlighted');
                 pan = {
-                  x: viewport.clientWidth / 2 - target.offsetLeft - target.offsetWidth / 2,
-                  y: 260 - target.offsetTop - target.offsetHeight / 2,
+                  x:
+                    viewport.clientWidth / 2 -
+                    (target.offsetLeft + target.offsetWidth / 2) * fitScale() * zoom,
+                  y: 260 - (target.offsetTop + target.offsetHeight / 2) * fitScale() * zoom,
                 };
                 transform();
                 target.focus({ preventScroll: true });
