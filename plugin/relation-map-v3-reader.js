@@ -461,6 +461,11 @@
         lastVisible = false;
         return;
       }
+      const activeNode = board.contains(doc.activeElement)
+        ? doc.activeElement.closest('.mbb-relation-node')?.dataset.node
+        : null;
+      hoveredNode = null;
+      focusedNode = activeNode || null;
       setPanning(false);
       svg.replaceChildren();
       board.querySelectorAll('.mbb-relation-node,.mbb-relation-lane').forEach((n) => n.remove());
@@ -630,24 +635,34 @@
         cross.append(el('h4', '', T('Connections to other branches')));
         if (!related.length)
           cross.append(el('p', '', T('No cross-branch relationships in this branch.')));
-        const ul = el('ul');
-        for (const e of related) {
-          const li = el('li', 'mbb-relation-cross-item ' + e.kind),
+        for (const targetGroup of p.groups.filter((g) => g.id !== select.value)) {
+          const groupEdges = related.filter((e) =>
+            [e.from, e.to].some((id) => p.nodes.find((n) => n.id === id).group === targetGroup.id),
+          );
+          if (!groupEdges.length) continue;
+          const section = el('section', 'mbb-relation-cross-group'),
+            ul = el('ul'),
             targetNode = p.nodes.find(
               (n) =>
-                n.id ===
-                (p.nodes.find((n) => n.id === e.to).group !== select.value ? e.to : e.from),
-            ),
-            targetGroup = p.groups.find((g) => g.id === targetNode.group);
-          for (const [i, key] of ['from', 'to'].entries()) {
-            if (i) li.append(doc.createTextNode(' → '));
-            const n = p.nodes.find((n) => n.id === e[key]),
-              a = el('a', '', n.title);
-            a.href = n.url;
-            li.append(a);
+                n.group === targetGroup.id &&
+                groupEdges.some((e) => e.from === n.id || e.to === n.id),
+            );
+          section.append(el('h5', '', targetGroup.title));
+          for (const e of groupEdges) {
+            const li = el('li', 'mbb-relation-cross-item ' + e.kind);
+            li.dataset.edgeId = edgeIds[p.edges.indexOf(e)];
+            for (const [i, key] of ['from', 'to'].entries()) {
+              if (i) li.append(doc.createTextNode(' → '));
+              const n = p.nodes.find((n) => n.id === e[key]),
+                a = el('a', '', n.title);
+              a.href = n.url;
+              li.append(a);
+            }
+            li.append(el('p', '', kinds[e.kind] + (e.why ? '：' + e.why : '')));
+            ul.append(li);
           }
-          li.append(el('p', '', kinds[e.kind] + (e.why ? '：' + e.why : '')));
-          li.append(
+          section.append(
+            ul,
             button(T('Show in map') + ' · ' + targetGroup.title, () => {
               initialNodeFocus = null;
               fullMode = true;
@@ -670,9 +685,8 @@
               }
             }),
           );
-          ul.append(li);
+          cross.append(section);
         }
-        cross.append(ul);
       }
       groupLabel.hidden = fullMode;
       wholeBranch.hidden = fullMode || !initialNodeFocus || !mobile.matches;
@@ -691,13 +705,26 @@
             Math.min(0, windowHeight - height * fit),
           );
           const anchor = anchors.get(initialNodeFocus);
-          anchor.style.outline = '2px solid var(--rm-line)';
-          anchor.style.outlineOffset = '2px';
           anchor.dataset.initialFocus = '';
         }
       }
       trace(traceNode && visibleIds.has(traceNode) ? traceNode : null);
       transform();
+      if (activeNode && anchors.has(activeNode)) {
+        const target = anchors.get(activeNode);
+        target.focus({ preventScroll: true });
+        const viewRect = viewport.getBoundingClientRect(),
+          targetRect = target.getBoundingClientRect(),
+          margin = 8;
+        if (targetRect.left < viewRect.left + margin)
+          pan.x += viewRect.left + margin - targetRect.left;
+        else if (targetRect.right > viewRect.right - margin)
+          pan.x -= targetRect.right - viewRect.right + margin;
+        if (targetRect.top < viewRect.top + margin) pan.y += viewRect.top + margin - targetRect.top;
+        else if (targetRect.bottom > viewRect.bottom - margin)
+          pan.y -= targetRect.bottom - viewRect.bottom + margin;
+        transform();
+      }
       lastWidth = node.clientWidth;
       lastViewportWidth = viewport.clientWidth;
       lastVisible = true;
@@ -793,6 +820,7 @@
         onResize();
       }
     });
+    doc.fonts?.addEventListener('loadingdone', onResize);
     // Use the same border-inclusive clientWidth as render and the host visibility hook.
     const resize = new ResizeObserver(checkVisibility);
     resize.observe(node);
@@ -823,6 +851,7 @@
       dispose() {
         disposed = true;
         resize.disconnect();
+        doc.fonts?.removeEventListener('loadingdone', onResize);
         mobile.removeEventListener('change', modeChanged);
         cancelAnimationFrame(raf);
         ui.remove();

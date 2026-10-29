@@ -372,3 +372,48 @@
   border-inline-start: 3px solid var(--rm-recommended);
   padding-inline-start: 8px;
 }
+
+.mbb-relation-map-v3 .mbb-relation-node.is-trace-muted {
+  opacity: 1;
+  color: var(--rm-muted);
+}
+.mbb-relation-map-v3 .mbb-relation-node[data-initial-focus] {
+  outline: 2px solid var(--rm-recommended);
+  outline-offset: 2px;
+}
+.mbb-relation-map-v3 .mbb-relation-node:focus-visible {
+  outline: 3px solid var(--rm-ink);
+  outline-offset: 4px;
+  box-shadow: 0 0 0 2px var(--rm-surface);
+}
+.mbb-relation-map-v3 .mbb-relation-cross-group {
+  margin-block: 16px;
+}
+.mbb-relation-map-v3 .mbb-relation-cross-group > h5 {
+  margin: 0 0 8px;
+  font: inherit;
+  font-weight: 600;
+}
+.mbb-relation-map-v3 .mbb-relation-cross-group > ul {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 8px;
+}
+@media (max-width: 700px) {
+  .mbb-relation-map-v3 .mbb-relation-toolbar .mbb-relation-branch-picker {
+    flex: 1 0 100%;
+    width: 100%;
+  }
+  .mbb-relation-map-v3 .mbb-relation-branch-picker select {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+.mbb-relation-map-v3 .mbb-relation-cross a,
+.mbb-relation-map-v3 .mbb-relation-details a {
+  color: var(--rm-ink);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
