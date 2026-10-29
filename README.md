@@ -4,7 +4,7 @@
   <a href="LICENSE"><img alt="License: GPL-3.0-or-later" src="https://img.shields.io/badge/license-GPL--3.0--or--later-818cf8"></a>
   <img alt="WordPress 7.1" src="https://img.shields.io/badge/WordPress-7.1-21759b">
   <img alt="PHP 8.2+" src="https://img.shields.io/badge/PHP-8.2%2B-777bb4">
-  <img alt="Version 3.10.0-rc.2" src="https://img.shields.io/badge/version-3.10.0-rc.2-818cf8">
+  <img alt="Version 3.10.0-rc.3" src="https://img.shields.io/badge/version-3.10.0-rc.3-818cf8">
 </p>
 
 <p align="center"><strong>用 Markdown 写作，用区块调整。保存时，让两种格式保持一致。</strong></p>
@@ -41,7 +41,7 @@ flowchart LR
 
 ## 开始使用
 
-**3.10.0-rc.2** 改善可导航关系图 0.3 的阅读与维护：悬停或键盘聚焦可追踪节点的直接关系，手机分支选择器与跨组关系按阅读顺序组织，重排后保留仍可见节点的焦点。全图显示实际比例，返回分支恢复正常视图；作者可在标题附近设置手机起点；输入错误会就地提示，删除被引用的组或节点前需先解除对应引用。自动分层、主题区域打包、共享干线、受控引用、读者权限与旧精确版本保持。参见 Teaching Components 的可导航关系图文档。
+**3.10.0-rc.3** 让可导航关系图 0.3 更容易沿线阅读：减少短折返，为箭头到达与节点侧边留出空间，同一终点、同一类型可共用局部到达段。点击线段可查看一条完整关系及两端文章；共用线段会列出关系供选择，关系清单也支持键盘选择与 Escape 清除。线条颜色对应起点分支，线型继续区分关系类型，明暗主题均可辨认。悬停与键盘聚焦节点的关系追踪、受控引用、读者权限和旧精确版本保持。参见 Teaching Components 的可导航关系图文档。
 
 **3.9.0-rc.3** 整理关系图的分支导航、缩放与图例，手机跨分支操作明确指出目标组；阅读页自测的题干和富文本选项减少重复段距。节点、路由、权限与正式保存规则保持。
 

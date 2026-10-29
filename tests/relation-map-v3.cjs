@@ -111,6 +111,81 @@ function checkGeometry(map, options = {}) {
         ? Math.min(Math.max(a[0], b[0]), Math.max(c[0], d[0])) -
           Math.max(Math.min(a[0], b[0]), Math.min(c[0], d[0]))
         : 0;
+  // Full semantic paths may overlap only inside a real same-target, same-kind arrival.
+  // Visual union alone cannot prove this: it deliberately draws each common segment once.
+  for (let i = 0; i < geometry.edges.length; i++) {
+    const a = geometry.edges[i];
+    const length = (u, v) => Math.abs(u[0] - v[0]) + Math.abs(u[1] - v[1]);
+    assert(length(a.points[0], a.points[1]) >= 24, 'departure is too short to follow');
+    assert(length(a.points.at(-2), a.points.at(-1)) >= 24, 'arrival is too short to follow');
+    for (let k = 1; k < a.points.length - 1; k++) {
+      const before = a.points[k - 1],
+        point = a.points[k],
+        after = a.points[k + 1];
+      const dot =
+        (point[0] - before[0]) * (after[0] - point[0]) +
+        (point[1] - before[1]) * (after[1] - point[1]);
+      assert(dot >= 0, 'route reverses over its departure, arrival or an intermediate leg');
+    }
+    const [start, departure] = a.points,
+      end = a.points.at(-1),
+      arrival = a.points.at(-2);
+    assert(
+      departure[0] === start[0] && departure[1] > start[1],
+      'departure leaves the bottom normally',
+    );
+    assert(
+      a.tail.side === 'top'
+        ? end[0] === arrival[0] && end[1] > arrival[1]
+        : end[1] === arrival[1] &&
+            (a.tail.side === 'left' ? end[0] > arrival[0] : end[0] < arrival[0]),
+      'arrival must enter normally without reversing its protected stub',
+    );
+
+    const safe = geometry.boxes
+      .filter((n) => n.id !== a.from && n.id !== a.to)
+      .map((r) => ({ ...r, x: r.x - 12, y: r.y - 12, w: r.w + 24, h: r.h + 24 }));
+    for (let k = 1; k < a.points.length; k++)
+      assert(!L.segmentBlocked(a.points[k - 1], a.points[k], safe), 'route hugs an unrelated node');
+    for (let j = 0; j < i; j++) {
+      const b = geometry.edges[j];
+      if (a.bundle === b.bundle) continue;
+      for (let ai = 1; ai < a.points.length; ai++)
+        for (let bi = 1; bi < b.points.length; bi++) {
+          const ap = a.points[ai - 1],
+            aq = a.points[ai],
+            bp = b.points[bi - 1],
+            bq = b.points[bi];
+          if (overlap(ap, aq, bp, bq) <= 0.01) continue;
+          assert(a.to === b.to && a.kind === b.kind, 'unrelated semantic paths merge');
+          const axis = a.tail.axis;
+          assert(
+            a.tail.id === b.tail.id &&
+              ap[1 - axis] === a.tail.fixed &&
+              aq[1 - axis] === a.tail.fixed &&
+              bp[1 - axis] === a.tail.fixed &&
+              bq[1 - axis] === a.tail.fixed,
+            'shared arrival must stay on its target rail',
+          );
+          const start = Math.max(Math.min(ap[axis], aq[axis]), Math.min(bp[axis], bq[axis]));
+          const end = Math.min(Math.max(ap[axis], aq[axis]), Math.max(bp[axis], bq[axis]));
+          assert(start >= a.tail.lo && end <= a.tail.hi, 'paths merge before their local arrival');
+        }
+    }
+  }
+  for (const s of geometry.segments) {
+    assert(
+      s.members.every((id) => geometry.edges.some((e) => e.id === id)),
+      'segment has a fake identity',
+    );
+    if (s.sharedTail) {
+      const members = s.members.map((id) => geometry.edges.find((e) => e.id === id));
+      assert(
+        members.every((e) => e.to === members[0].to && e.kind === members[0].kind),
+        'shared visual tail needs the same true endpoint and kind',
+      );
+    }
+  }
   for (let i = 0; i < geometry.segments.length; i++)
     for (let j = 0; j < i; j++) {
       const a = geometry.segments[i],
@@ -144,6 +219,59 @@ assert.equal(
 );
 assert.equal(g.edges.filter((e) => e.to === 'd').length, 2);
 assert(g.segments.some((s) => s.members.includes(edgeIds[0]) && s.members.includes(edgeIds[1])));
+assert(
+  g.segments.some(
+    (s) => s.sharedTail && s.members.includes(edgeIds[2]) && s.members.includes(edgeIds[3]),
+  ),
+  'same target and kind share a local arrival',
+);
+const aligned = checkGeometry({
+  ...publicMap,
+  groups: [publicMap.groups[0]],
+  nodes: publicMap.nodes.slice(0, 2),
+  edges: [{ from: 'a', to: 'b', kind: 'recommended' }],
+});
+assert.equal(aligned.edges[0].points.length, 2, 'aligned unobstructed relationship stays straight');
+const reordered = {
+  ...publicMap,
+  nodes: [publicMap.nodes[0], publicMap.nodes[1], { ...publicMap.nodes[2], group: 'practice' }],
+  edges: [
+    { id: 'incoming-compare', from: 'c', to: 'b', kind: 'compare' },
+    { id: 'local-compare', from: 'a', to: 'b', kind: 'compare' },
+    { id: 'centered-recommended', from: 'a', to: 'b', kind: 'recommended' },
+  ],
+};
+for (const order of [reordered.edges, [...reordered.edges].reverse()]) {
+  const stable = checkGeometry({ ...reordered, edges: order }, { edgeIds: order.map((e) => e.id) }),
+    recommended = stable.edges.find((e) => e.id === 'centered-recommended'),
+    source = stable.boxes.find((n) => n.id === 'a');
+  assert.equal(
+    recommended.points.length,
+    2,
+    'edge enumeration must not bend an aligned reading step',
+  );
+  assert.equal(
+    recommended.points[0][0],
+    source.x + source.w / 2,
+    'recommended port stays centered',
+  );
+  assert.deepEqual(
+    stable.edges.map((e) => e.id),
+    order.map((e) => e.id),
+    'canonical ports preserve independent identities',
+  );
+}
+
+const mixed = checkGeometry({
+  ...publicMap,
+  edges: [
+    ...publicMap.edges,
+    { from: 'a', to: 'd', kind: 'compare' },
+    { from: 'c', to: 'd', kind: 'optimization' },
+  ],
+});
+assert(mixed.segments.filter((s) => s.sharedTail).every((s) => s.kind === 'recommended'));
+
 assert.deepEqual(
   g.edges.map((e) => e.id),
   edgeIds,
@@ -175,6 +303,25 @@ const measured = checkGeometry(single, {
 });
 assert.equal(measured.boxes[0].h, 460);
 assert.equal(measured.regions[0].header.h, 220);
+// A strongly connected first row can receive many relationships before any local rank.
+// Reserve the complete common-arrival corridor above it, clear of its group title.
+const converging = {
+  format: 'relation-map/v1',
+  title: 'Many arrivals',
+  groups: [{ id: 'many', title: 'Concentrated arrivals' }],
+  nodes: Array.from({ length: 13 }, (_, i) => ({
+    id: 'm' + i,
+    group: 'many',
+    title: 'Node ' + i,
+    url: '#m' + i,
+  })),
+  edges: [],
+};
+for (let i = 1; i < 13; i++) {
+  converging.edges.push({ from: 'm' + i, to: 'm0', kind: 'recommended' });
+  converging.edges.push({ from: 'm0', to: 'm' + i, kind: 'recommended' });
+}
+checkGeometry(converging, { edgeIds: converging.edges.map((_, i) => 'arrival-' + i) });
 const dense = {
   format: 'relation-map/v1',
   title: '预算',

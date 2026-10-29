@@ -2295,5 +2295,11 @@
   "Choose an existing mobile starting item, or use Automatic.": "请选择现有的手机起点，或改用自动选择。",
   "Remove references before deleting this item:": "请先解除以下引用，再删除此项：",
   "Sets the first mobile view. Readers can switch branches or open the full map.": "设置手机首次进入时显示的分支或节点；读者仍可切换分支或查看全图。",
-  "Unavailable starting item": "起点已不存在"
+  "Unavailable starting item": "起点已不存在",
+  "Selected relationship": "已选择的关系",
+  "Choose a relationship": "选择一条关系",
+  "Clear selection": "清除选择",
+  "Show relationship": "查看关系",
+  "Colors match the source branch; patterns show the relationship type.": "线条颜色对应起点分支，实线、虚线与点线区分关系类型。",
+  "Shared arrivals use a neutral color.": "共同到达段使用中性色。"
 }

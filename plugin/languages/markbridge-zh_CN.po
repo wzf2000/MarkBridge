@@ -1555,6 +1555,10 @@ msgid "Choose a reference target"
 msgstr "选择引用目标"
 
 #: plugin/i18n.js
+msgid "Choose a relationship"
+msgstr "选择一条关系"
+
+#: plugin/i18n.js
 msgid "Choose a revision"
 msgstr "请选择历史版本"
 
@@ -1681,6 +1685,10 @@ msgstr "引用键映射："
 #: plugin/i18n.js
 msgid "Citation style"
 msgstr "引文样式"
+
+#: plugin/i18n.js
+msgid "Clear selection"
+msgstr "清除选择"
 
 #: plugin/i18n.js
 msgid "Clear this account's local candidates"
@@ -1849,6 +1857,10 @@ msgstr "文集标题"
 #: plugin/i18n.js
 msgid "Collections"
 msgstr "文集"
+
+#: plugin/i18n.js
+msgid "Colors match the source branch; patterns show the relationship type."
+msgstr "线条颜色对应起点分支，实线、虚线与点线区分关系类型。"
 
 #: plugin/i18n.js
 msgid "Column alignment must be top, center or bottom"
@@ -5908,6 +5920,10 @@ msgid "Selected mathematical expression"
 msgstr "当前选择的数学表达式"
 
 #: plugin/i18n.js
+msgid "Selected relationship"
+msgstr "已选择的关系"
+
+#: plugin/i18n.js
 msgid "Selected the containing structure."
 msgstr "已选中所属结构。"
 
@@ -5947,6 +5963,10 @@ msgstr "将当前版本设为默认"
 #: plugin/i18n.js
 msgid "Sets the first mobile view. Readers can switch branches or open the full map."
 msgstr "设置手机首次进入时显示的分支或节点；读者仍可切换分支或查看全图。"
+
+#: plugin/i18n.js
+msgid "Shared arrivals use a neutral color."
+msgstr "共同到达段使用中性色。"
 
 #: plugin/i18n.js
 msgid "Shorten node titles or article URLs, or reduce relationships to fit the static output budget."
@@ -5991,6 +6011,10 @@ msgstr "显示更多差异"
 #: plugin/i18n.js
 msgid "Show more lines"
 msgstr "显示更多行"
+
+#: plugin/i18n.js
+msgid "Show relationship"
+msgstr "查看关系"
 
 #: plugin/i18n.js
 msgid "Sign in again with an account that can edit."

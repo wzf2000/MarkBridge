@@ -322,8 +322,19 @@
     const status = el('p', 'mbb-relation-status');
     status.setAttribute('role', 'status');
     status.setAttribute('aria-live', 'polite');
-    navigation.append(status, toolbar, legend);
-    ui.append(navigation);
+    const colorHelp = el(
+      'p',
+      'mbb-relation-color-help',
+      T('Colors match the source branch; patterns show the relationship type.') +
+        ' ' +
+        T('Shared arrivals use a neutral color.'),
+    );
+    const inspection = el('section', 'mbb-relation-inspection');
+    inspection.hidden = true;
+    inspection.setAttribute('aria-label', T('Selected relationship'));
+    inspection.tabIndex = -1;
+    navigation.append(status, toolbar, legend, colorHelp);
+    ui.append(navigation, inspection);
     const viewport = el('div', 'mbb-relation-viewport'),
       board = el('div', 'mbb-relation-board'),
       svg = doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -401,8 +412,125 @@
     }
     let hoveredNode = null,
       focusedNode = null,
-      traceNode = null;
+      traceNode = null,
+      selectedEdge = null,
+      candidateEdges = [],
+      selectionTrigger = null;
+    const edgeById = new Map(p.edges.map((edge, i) => [edgeIds[i], { ...edge, id: edgeIds[i] }]));
+    const groupIndex = (from) =>
+      p.groups.findIndex((g) => g.id === p.nodes.find((n) => n.id === from).group);
+    const sourceColor = (from) => 'var(--rm-source-' + (groupIndex(from) % 8) + ')';
+    function relationshipContent(parent, edge) {
+      for (const [i, key] of ['from', 'to'].entries()) {
+        if (i) parent.append(doc.createTextNode(' → '));
+        const n = p.nodes.find((n) => n.id === edge[key]),
+          a = el('a', '', n.title);
+        a.href = n.url;
+        parent.append(a);
+      }
+      parent.append(el('p', '', kinds[edge.kind] + (edge.why ? '：' + edge.why : '')));
+    }
+    function applySelection() {
+      const selected = edgeById.get(selectedEdge);
+      board.classList.toggle('has-selected-edge', !!selected);
+      for (const edge of svg.querySelectorAll('.mbb-relation-edge-identity'))
+        edge.classList.toggle('is-selected', edge.dataset.id === selectedEdge);
+      for (const arrow of svg.querySelectorAll('.arrow')) {
+        arrow.classList.toggle('is-selected', arrow.dataset.edgeId === selectedEdge);
+        if (arrow.dataset.edgeId === selectedEdge)
+          svg.insertBefore(arrow, svg.querySelector('[data-edge-hits]'));
+      }
+      for (const anchor of board.querySelectorAll('.mbb-relation-node'))
+        anchor.classList.toggle(
+          'is-selected-endpoint',
+          !!selected && [selected.from, selected.to].includes(anchor.dataset.node),
+        );
+      for (const item of details.querySelectorAll('[data-mbb-edge-id]')) {
+        item.classList.toggle('is-selected', item.dataset.mbbEdgeId === selectedEdge);
+        item
+          .querySelector('button')
+          ?.setAttribute('aria-pressed', String(item.dataset.mbbEdgeId === selectedEdge));
+      }
+    }
+    function showInspection() {
+      const ownedFocus = inspection.contains(doc.activeElement);
+      inspection.replaceChildren();
+      inspection.hidden = !selectedEdge && !candidateEdges.length;
+      if (inspection.hidden) return;
+      const header = el('div', 'mbb-relation-inspection-header');
+      header.append(
+        el('strong', '', selectedEdge ? T('Selected relationship') : T('Choose a relationship')),
+        button(T('Clear selection'), clearSelection),
+      );
+      inspection.append(header);
+      if (selectedEdge) relationshipContent(inspection, edgeById.get(selectedEdge));
+      else {
+        const list = el('ul');
+        for (const id of candidateEdges) {
+          const edge = edgeById.get(id),
+            names = [edge.from, edge.to].map((id) => p.nodes.find((n) => n.id === id).title);
+          const item = el('li');
+          const pick = button(names.join(' → ') + ' · ' + kinds[edge.kind], () => chooseEdge(id));
+          pick.dataset.edgeId = id;
+          item.append(pick);
+          if (edge.why) {
+            const why = el('p', '', edge.why);
+            why.id = descriptionPrefix + 'candidate-' + id;
+            pick.setAttribute('aria-describedby', why.id);
+            item.append(why);
+          }
+          list.append(item);
+        }
+        inspection.append(list);
+      }
+      if (ownedFocus) inspection.focus({ preventScroll: true });
+    }
+    function clearSelection() {
+      const ownedFocus = inspection.contains(doc.activeElement);
+      selectedEdge = null;
+      candidateEdges = [];
+      applySelection();
+      showInspection();
+      trace(hoveredNode || focusedNode);
+      if (ownedFocus)
+        (selectionTrigger?.isConnected ? selectionTrigger : viewport).focus({
+          preventScroll: true,
+        });
+    }
+    function chooseEdge(id, reveal = false) {
+      const edge = edgeById.get(id);
+      if (!edge) return;
+      if (!inspection.contains(doc.activeElement))
+        selectionTrigger = doc.activeElement?.closest('button') || viewport;
+      selectedEdge = id;
+      candidateEdges = [];
+      if (
+        reveal &&
+        !fullMode &&
+        [edge.from, edge.to].some((id) => p.nodes.find((n) => n.id === id).group !== select.value)
+      ) {
+        initialNodeFocus = null;
+        fullMode = true;
+        saveView();
+        render();
+      }
+      trace(null);
+      applySelection();
+      showInspection();
+    }
+    for (const item of details.querySelectorAll('[data-mbb-edge-id]')) {
+      const pick = button(T('Show relationship'), () => chooseEdge(item.dataset.mbbEdgeId, true));
+      pick.setAttribute('aria-pressed', 'false');
+      item.append(doc.createTextNode(' '), pick);
+    }
+    ui.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && (selectedEdge || candidateEdges.length)) {
+        event.preventDefault();
+        clearSelection();
+      }
+    });
     function trace(id) {
+      if (selectedEdge) id = null;
       traceNode = id;
       const related = p.edges
           .map((edge, i) => ({ ...edge, id: edgeIds[i] }))
@@ -472,6 +600,17 @@
       const visibleGroups = fullMode ? p.groups : p.groups.filter((g) => g.id === select.value),
         visible = p.nodes.filter((n) => visibleGroups.some((g) => g.id === n.group)),
         visibleIds = new Set(visible.map((n) => n.id));
+      if (
+        selectedEdge &&
+        [edgeById.get(selectedEdge).from, edgeById.get(selectedEdge).to].some(
+          (id) => !visibleIds.has(id),
+        )
+      )
+        clearSelection();
+      candidateEdges = candidateEdges.filter((id) =>
+        [edgeById.get(id).from, edgeById.get(id).to].every((id) => visibleIds.has(id)),
+      );
+      showInspection();
       const visibleEdges = p.edges.filter((e) => visibleIds.has(e.from) && visibleIds.has(e.to)),
         crossEdges = visibleEdges.filter(
           (e) =>
@@ -479,7 +618,7 @@
         );
       const layoutMap = { ...p, groups: visibleGroups, nodes: visible, edges: visibleEdges };
       const layoutOptions = {
-        width: fullMode ? Math.max(940, viewport.clientWidth) : viewport.clientWidth,
+        width: fullMode ? Math.max(1040, viewport.clientWidth) : viewport.clientWidth,
         maxColumns: fullMode ? 2 : 1,
         compact: !fullMode,
         nodeWidth: fullMode ? 168 : Math.max(168, Math.min(280, viewport.clientWidth - 60)),
@@ -534,7 +673,11 @@
       for (const region of preview.regions) {
         const lane = el(
           'div',
-          'mbb-relation-lane lane-' + (p.groups.findIndex((g) => g.id === region.id) % 4),
+          'mbb-relation-lane lane-' + (p.groups.findIndex((g) => g.id === region.id) % 8),
+        );
+        lane.style.setProperty(
+          '--rm-source',
+          'var(--rm-source-' + (p.groups.findIndex((g) => g.id === region.id) % 8) + ')',
         );
         lane.style.width = region.w + 'px';
         lane.style.visibility = 'hidden';
@@ -587,7 +730,11 @@
           gaps.append(gap);
           const line = doc.createElementNS(NS, 'path');
           line.setAttribute('d', d);
-          line.setAttribute('class', 'edge ' + segment.kind);
+          line.setAttribute(
+            'class',
+            'edge ' + segment.kind + (segment.sharedTail ? ' is-shared-tail' : ''),
+          );
+          line.style.setProperty('--rm-source', sourceColor(edgeById.get(segment.members[0]).from));
           line.dataset.bundle = segment.bundle;
           line.dataset.members = JSON.stringify(segment.members);
           colors.append(line);
@@ -599,6 +746,7 @@
         line.setAttribute('d', d);
         line.setAttribute('class', 'mbb-relation-edge-identity ' + e.kind);
         line.setAttribute('fill', 'none');
+        line.style.setProperty('--rm-source', sourceColor(e.from));
         line.setAttribute('stroke', 'transparent');
         line.dataset.from = e.from;
         line.dataset.to = e.to;
@@ -620,9 +768,37 @@
           `${end[0]},${end[1]} ${end[0] - dx * 8 - dy * 4},${end[1] - dy * 8 + dx * 4} ${end[0] - dx * 8 + dy * 4},${end[1] - dy * 8 - dx * 4}`,
         );
         arrow.setAttribute('class', 'arrow ' + e.kind);
+        arrow.style.setProperty('--rm-source', sourceColor(e.from));
+        if (geometry.segments.some((s) => s.sharedTail && s.members.includes(e.id)))
+          arrow.classList.add('is-shared-tail');
         arrow.dataset.edgeId = e.id;
         svg.append(arrow);
       }
+      // Hit targets belong to visible segments, never individual overlapping full paths.
+      const hits = doc.createElementNS(NS, 'g');
+      hits.setAttribute('aria-hidden', 'true');
+      hits.dataset.edgeHits = '';
+      for (const segment of geometry.segments) {
+        const hit = doc.createElementNS(NS, 'path');
+        hit.setAttribute('d', path(segment.points));
+        hit.setAttribute('class', 'mbb-relation-edge-hit');
+        hit.dataset.members = JSON.stringify(segment.members);
+        hit.addEventListener('click', () => {
+          if (segment.members.length === 1) chooseEdge(segment.members[0]);
+          else {
+            selectionTrigger = doc.activeElement?.closest('button') || viewport;
+            selectedEdge = null;
+            candidateEdges = [...segment.members];
+            applySelection();
+            showInspection();
+          }
+          inspection.focus({ preventScroll: true });
+          inspection.scrollIntoView({ block: 'nearest' });
+        });
+        hits.append(hit);
+      }
+      svg.append(hits);
+      applySelection();
       // Geometry is public data only and exposed for deterministic layout/obstacle checks.
       node.mbbRelationGeometry = geometry;
       cross.replaceChildren();

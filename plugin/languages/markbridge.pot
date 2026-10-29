@@ -1555,6 +1555,10 @@ msgid "Choose a reference target"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Choose a relationship"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Choose a revision"
 msgstr ""
 
@@ -1680,6 +1684,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Citation style"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Clear selection"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1848,6 +1856,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Collections"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Colors match the source branch; patterns show the relationship type."
 msgstr ""
 
 #: plugin/i18n.js
@@ -5908,6 +5920,10 @@ msgid "Selected mathematical expression"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Selected relationship"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Selected the containing structure."
 msgstr ""
 
@@ -5946,6 +5962,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Sets the first mobile view. Readers can switch branches or open the full map."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Shared arrivals use a neutral color."
 msgstr ""
 
 #: plugin/i18n.js
@@ -5990,6 +6010,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Show more lines"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Show relationship"
 msgstr ""
 
 #: plugin/i18n.js
