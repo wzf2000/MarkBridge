@@ -429,6 +429,9 @@
   --rm-source-6: #6867a2;
   --rm-source-7: #6d7736;
 }
+.mbb-relation-map-v3 .mbb-relation-key {
+  border-color: var(--rm-muted);
+}
 .mbb-relation-map-v3 .mbb-relation-lane {
   background: color-mix(in srgb, var(--rm-source) 8%, var(--rm-canvas));
   border-color: color-mix(in srgb, var(--rm-source) 30%, var(--rm-canvas));
