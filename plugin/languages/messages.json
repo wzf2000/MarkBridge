@@ -2291,5 +2291,9 @@
   "Node": "节点",
   "Starting item": "初始项目",
   "Prepare relationship layout upgrade": "准备关系图布局升级",
-  "Show entire branch": "显示整个分支"
+  "Show entire branch": "显示整个分支",
+  "Choose an existing mobile starting item, or use Automatic.": "请选择现有的手机起点，或改用自动选择。",
+  "Remove references before deleting this item:": "请先解除以下引用，再删除此项：",
+  "Sets the first mobile view. Readers can switch branches or open the full map.": "设置手机首次进入时显示的分支或节点；读者仍可切换分支或查看全图。",
+  "Unavailable starting item": "起点已不存在"
 }

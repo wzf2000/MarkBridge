@@ -1603,6 +1603,10 @@ msgid "Choose an existing line."
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Choose an existing mobile starting item, or use Automatic."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Choose an option"
 msgstr ""
 
@@ -5478,6 +5482,10 @@ msgid "Remove item"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Remove references before deleting this item:"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Rename label and references"
 msgstr ""
 
@@ -5934,6 +5942,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Set current version as default"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Sets the first mobile view. Readers can switch branches or open the full map."
 msgstr ""
 
 #: plugin/i18n.js
@@ -8591,6 +8603,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Unavailable article"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Unavailable starting item"
 msgstr ""
 
 #: plugin/i18n.js

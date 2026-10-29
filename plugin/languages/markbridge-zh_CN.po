@@ -1603,6 +1603,10 @@ msgid "Choose an existing line."
 msgstr "请选择存在的行号。"
 
 #: plugin/i18n.js
+msgid "Choose an existing mobile starting item, or use Automatic."
+msgstr "请选择现有的手机起点，或改用自动选择。"
+
+#: plugin/i18n.js
 msgid "Choose an option"
 msgstr "请选择"
 
@@ -5478,6 +5482,10 @@ msgid "Remove item"
 msgstr "删除项目"
 
 #: plugin/i18n.js
+msgid "Remove references before deleting this item:"
+msgstr "请先解除以下引用，再删除此项："
+
+#: plugin/i18n.js
 msgid "Rename label and references"
 msgstr "更名并更新引用"
 
@@ -5935,6 +5943,10 @@ msgstr "服务器标题：%1$s；状态：%2$s。"
 #: plugin/i18n.js
 msgid "Set current version as default"
 msgstr "将当前版本设为默认"
+
+#: plugin/i18n.js
+msgid "Sets the first mobile view. Readers can switch branches or open the full map."
+msgstr "设置手机首次进入时显示的分支或节点；读者仍可切换分支或查看全图。"
 
 #: plugin/i18n.js
 msgid "Shorten node titles or article URLs, or reduce relationships to fit the static output budget."
@@ -8592,6 +8604,10 @@ msgstr "不可用"
 #: plugin/i18n.js
 msgid "Unavailable article"
 msgstr "文章不可用"
+
+#: plugin/i18n.js
+msgid "Unavailable starting item"
+msgstr "起点已不存在"
 
 #: plugin/i18n.js
 msgid "Unclassified purpose"
