@@ -339,3 +339,36 @@
     color: #000;
   }
 }
+
+/* Trace one node's real relationships without changing the shared visual bundles. */
+.mbb-relation-map-v3 .mbb-relation-board.is-tracing [data-bundle-lines],
+.mbb-relation-map-v3 .mbb-relation-board.is-tracing [data-bundle-halo] {
+  opacity: 0.2;
+}
+.mbb-relation-map-v3 .is-trace-muted {
+  opacity: 0.65;
+}
+.mbb-relation-map-v3 .mbb-relation-node.is-trace-related {
+  border-color: var(--rm-ink);
+  box-shadow: 0 0 0 1px var(--rm-ink);
+}
+.mbb-relation-map-v3 .mbb-relation-node.is-trace-source {
+  outline: 3px solid var(--rm-recommended);
+  outline-offset: 3px;
+}
+.mbb-relation-map-v3 .mbb-relation-edge-identity.is-traced {
+  stroke: var(--rm-recommended);
+  stroke-width: 3;
+}
+.mbb-relation-map-v3 .mbb-relation-edge-identity.is-traced.compare {
+  stroke: var(--rm-compare);
+  stroke-dasharray: 5 4;
+}
+.mbb-relation-map-v3 .mbb-relation-edge-identity.is-traced.optimization {
+  stroke: var(--rm-optimization);
+  stroke-dasharray: 2 4;
+}
+.mbb-relation-map-v3 .mbb-relation-details li.is-trace-related {
+  border-inline-start: 3px solid var(--rm-recommended);
+  padding-inline-start: 8px;
+}

@@ -189,7 +189,11 @@
           a = el('a', n.title);
         a.href = n.url;
         li.append(a);
-        if (n.description) li.append(el('p', n.description));
+        if (n.description) {
+          const description = el('p', n.description);
+          if (options.idPrefix) description.id = options.idPrefix + n.id;
+          li.append(description);
+        }
         list.append(li);
       }
       section.append(list);
@@ -202,6 +206,7 @@
       const edgeId = options.edgeIds?.[p.edges.indexOf(e)];
       if (typeof edgeId === 'string' && /^e_[a-f0-9]{32}$/.test(edgeId)) {
         li.dataset.mbbEdgeId = edgeId;
+        if (options.idPrefix) li.id = options.idPrefix + edgeId;
         li.dataset.from = e.from;
         li.dataset.to = e.to;
         li.dataset.kind = e.kind;
@@ -218,6 +223,7 @@
     root.append(list);
     return root;
   }
+  let readerSerial = 0;
   function enhance(node, raw, edgeIds, options = {}) {
     if (!edgeIdsValid(edgeIds, raw)) throw Error('Invalid public relationship identities.');
     const p = validate(raw),
@@ -231,7 +237,7 @@
       if (text) n.textContent = text;
       return n;
     };
-    const ui = el('div', 'mbb-relation-map'),
+    const ui = el('div', 'mbb-relation-map mbb-relation-map-v3'),
       heading = el('div', 'mbb-relation-heading'),
       title = el('h3', '', p.title),
       help = el(
@@ -328,7 +334,11 @@
     ui.append(cross);
     const details = el('details', 'mbb-relation-details'),
       summary = el('summary', '', T('All relationships and articles'));
-    details.append(summary, staticView(doc, p, zh, { ...options, edgeIds }));
+    const descriptionPrefix = 'mbb-relation-v3-' + ++readerSerial + '-';
+    details.append(
+      summary,
+      staticView(doc, p, zh, { ...options, edgeIds, idPrefix: descriptionPrefix }),
+    );
     ui.append(details);
     const mobile = matchMedia('(max-width: 700px)');
     let fullMode = !mobile.matches,
@@ -386,6 +396,29 @@
       } catch {
         /* Storage restrictions never prevent native links or local navigation. */
       }
+    }
+    let hoveredNode = null,
+      focusedNode = null,
+      traceNode = null;
+    function trace(id) {
+      traceNode = id;
+      const related = p.edges
+          .map((edge, i) => ({ ...edge, id: edgeIds[i] }))
+          .filter((edge) => edge.from === id || edge.to === id),
+        ids = new Set(related.map((edge) => edge.id)),
+        endpoints = new Set([id, ...related.flatMap((edge) => [edge.from, edge.to])]);
+      board.classList.toggle('is-tracing', !!id);
+      for (const anchor of board.querySelectorAll('.mbb-relation-node')) {
+        anchor.classList.toggle('is-trace-source', anchor.dataset.node === id);
+        anchor.classList.toggle('is-trace-related', !!id && endpoints.has(anchor.dataset.node));
+        anchor.classList.toggle('is-trace-muted', !!id && !endpoints.has(anchor.dataset.node));
+      }
+      for (const edge of svg.querySelectorAll('.mbb-relation-edge-identity'))
+        edge.classList.toggle('is-traced', !!id && ids.has(edge.dataset.id));
+      for (const arrow of svg.querySelectorAll('.arrow'))
+        arrow.classList.toggle('is-trace-muted', !!id && !ids.has(arrow.dataset.edgeId));
+      for (const item of details.querySelectorAll('[data-mbb-edge-id]'))
+        item.classList.toggle('is-trace-related', !!id && ids.has(item.dataset.mbbEdgeId));
     }
     function setPanning(value) {
       if (panning === value && !drag) return;
@@ -454,6 +487,31 @@
         a.style.boxSizing = 'border-box';
         a.style.visibility = 'hidden';
         if (n.description) a.title = n.description;
+        const descriptions = p.edges.flatMap((edge, i) =>
+          edge.from === n.id || edge.to === n.id ? [descriptionPrefix + edgeIds[i]] : [],
+        );
+        if (n.description) descriptions.unshift(descriptionPrefix + n.id);
+        if (descriptions.length) a.setAttribute('aria-describedby', descriptions.join(' '));
+        a.addEventListener('pointerenter', () => {
+          hoveredNode = n.id;
+          trace(n.id);
+        });
+        a.addEventListener('pointermove', () => {
+          hoveredNode = n.id;
+          if (traceNode !== n.id) trace(n.id);
+        });
+        a.addEventListener('pointerleave', () => {
+          hoveredNode = null;
+          trace(focusedNode);
+        });
+        a.addEventListener('focus', () => {
+          focusedNode = n.id;
+          trace(n.id);
+        });
+        a.addEventListener('blur', () => {
+          focusedNode = null;
+          trace(hoveredNode);
+        });
         board.append(a);
         anchors.set(n.id, a);
         layoutOptions.heights[n.id] = Math.max(64, Math.ceil(a.offsetHeight));
@@ -528,7 +586,7 @@
         const d = path(e.points);
         const line = doc.createElementNS(NS, 'path');
         line.setAttribute('d', d);
-        line.setAttribute('class', 'mbb-relation-edge-identity');
+        line.setAttribute('class', 'mbb-relation-edge-identity ' + e.kind);
         line.setAttribute('fill', 'none');
         line.setAttribute('stroke', 'transparent');
         line.dataset.from = e.from;
@@ -551,6 +609,7 @@
           `${end[0]},${end[1]} ${end[0] - dx * 8 - dy * 4},${end[1] - dy * 8 + dx * 4} ${end[0] - dx * 8 + dy * 4},${end[1] - dy * 8 - dx * 4}`,
         );
         arrow.setAttribute('class', 'arrow ' + e.kind);
+        arrow.dataset.edgeId = e.id;
         svg.append(arrow);
       }
       // Geometry is public data only and exposed for deterministic layout/obstacle checks.
@@ -629,6 +688,7 @@
           anchor.dataset.initialFocus = '';
         }
       }
+      trace(traceNode && visibleIds.has(traceNode) ? traceNode : null);
       transform();
       lastWidth = node.clientWidth;
       lastViewportWidth = viewport.clientWidth;
