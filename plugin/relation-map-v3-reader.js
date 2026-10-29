@@ -783,20 +783,81 @@
         hit.setAttribute('d', path(segment.points));
         hit.setAttribute('class', 'mbb-relation-edge-hit');
         hit.dataset.members = JSON.stringify(segment.members);
-        hit.addEventListener('click', () => {
-          if (segment.members.length === 1) chooseEdge(segment.members[0]);
-          else {
-            selectionTrigger = doc.activeElement?.closest('button') || viewport;
-            selectedEdge = null;
-            candidateEdges = [...segment.members];
-            applySelection();
-            showInspection();
-          }
-          inspection.focus({ preventScroll: true });
-          inspection.scrollIntoView({ block: 'nearest' });
-        });
         hits.append(hit);
       }
+      // Transparent touch targets overlap. Resolve intent from screen-space centerlines,
+      // so SVG painting order, fitting, zoom and panning cannot choose a neighboring edge.
+      hits.addEventListener('click', (event) => {
+        const matrix = svg.getScreenCTM();
+        if (!matrix) return;
+        const rect = viewport.getBoundingClientRect(),
+          window = doc.defaultView,
+          clip = [
+            Math.max(0, rect.left),
+            Math.max(0, rect.top),
+            Math.min(window.innerWidth, rect.right),
+            Math.min(window.innerHeight, rect.bottom),
+          ];
+        if (clip[0] >= clip[2] || clip[1] >= clip[3]) return;
+        const screen = ([x, y]) => [
+          matrix.a * x + matrix.c * y + matrix.e,
+          matrix.b * x + matrix.d * y + matrix.f,
+        ];
+        const distances = geometry.segments.map((segment) => {
+          const [a, b] = segment.points.map(screen),
+            dx = b[0] - a[0],
+            dy = b[1] - a[1],
+            lengthSquared = dx * dx + dy * dy;
+          let from = 0,
+            to = 1;
+          // Clip centerlines before measuring: a hidden rail's wide transparent hit
+          // can enter the viewport, but that rail is not a visible choice.
+          for (const axis of [0, 1]) {
+            const delta = b[axis] - a[axis];
+            if (!delta) {
+              if (a[axis] < clip[axis] || a[axis] > clip[axis + 2]) return Infinity;
+            } else {
+              const first = (clip[axis] - a[axis]) / delta,
+                last = (clip[axis + 2] - a[axis]) / delta;
+              from = Math.max(from, Math.min(first, last));
+              to = Math.min(to, Math.max(first, last));
+              if (from > to) return Infinity;
+            }
+          }
+          const projection = lengthSquared
+            ? Math.max(
+                from,
+                Math.min(
+                  to,
+                  ((event.clientX - a[0]) * dx + (event.clientY - a[1]) * dy) / lengthSquared,
+                ),
+              )
+            : 0;
+          return Math.hypot(
+            event.clientX - a[0] - projection * dx,
+            event.clientY - a[1] - projection * dy,
+          );
+        });
+        const nearest = Math.min(...distances);
+        if (nearest > 9) return;
+        const members = [
+          ...new Set(
+            geometry.segments.flatMap((segment, i) =>
+              distances[i] <= 9 && distances[i] - nearest <= 1.25 ? segment.members : [],
+            ),
+          ),
+        ];
+        if (members.length === 1) chooseEdge(members[0]);
+        else {
+          selectionTrigger = doc.activeElement?.closest('button') || viewport;
+          selectedEdge = null;
+          candidateEdges = members;
+          applySelection();
+          showInspection();
+        }
+        inspection.focus({ preventScroll: true });
+        inspection.scrollIntoView({ block: 'nearest' });
+      });
       svg.append(hits);
       applySelection();
       // Geometry is public data only and exposed for deterministic layout/obstacle checks.
