@@ -29,6 +29,7 @@ import {
   adapterSourceAttributes,
 } from './block-adapters.js';
 import { componentParams } from './component-data.js';
+import { codeRunnerStaticElement } from './code-runner-static.js';
 import { codeTabsAttributes, codeTabsMarkdown, registerCodeTabs } from './code-tabs.js';
 // Versioned teaching syntax has a closed schema. Bodies use the ordinary parser.
 export const teachingSchemas = {
@@ -1074,31 +1075,33 @@ export function registerTeaching() {
                 : null,
               ...controls.filter((control) => !visible.includes(control.key)),
               kind === 'component' && !a.activity
-                ? el(
-                    'div',
-                    {
-                      'data-mbb-generated': '',
-                      'data-mbb-teaching': 'component',
-                      'data-mbb-teaching-config': JSON.stringify({
-                        component: a.component,
-                        componentVersion: a.componentVersion,
-                        params: a.params,
-                        status: (window.MBBComponents || []).some(
-                          (p) => p.id === a.component && p.version === a.componentVersion,
-                        )
-                          ? 'available'
-                          : 'missing',
-                        provider: (window.MBBComponents || []).find(
-                          (p) => p.id === a.component && p.version === a.componentVersion,
-                        ),
-                      }),
-                    },
-                    el(
+                ? a.component === 'code-runner' && a.componentVersion === '0.1.0'
+                  ? codeRunnerStaticElement(el, a.params)
+                  : el(
                       'div',
-                      { className: 'mbb-teaching-body' },
-                      T('Interactive editor preview. Edit the static fallback body below.'),
-                    ),
-                  )
+                      {
+                        'data-mbb-generated': '',
+                        'data-mbb-teaching': 'component',
+                        'data-mbb-teaching-config': JSON.stringify({
+                          component: a.component,
+                          componentVersion: a.componentVersion,
+                          params: a.params,
+                          status: (window.MBBComponents || []).some(
+                            (p) => p.id === a.component && p.version === a.componentVersion,
+                          )
+                            ? 'available'
+                            : 'missing',
+                          provider: (window.MBBComponents || []).find(
+                            (p) => p.id === a.component && p.version === a.componentVersion,
+                          ),
+                        }),
+                      },
+                      el(
+                        'div',
+                        { className: 'mbb-teaching-body' },
+                        T('Interactive editor preview. Edit the static fallback body below.'),
+                      ),
+                    )
                 : null,
             ),
           ),

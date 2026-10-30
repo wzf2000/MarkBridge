@@ -2301,5 +2301,9 @@
   "Clear selection": "清除选择",
   "Show relationship": "查看关系",
   "Colors match the source branch; patterns show the relationship type.": "线条颜色对应起点分支，实线、虚线与点线区分关系类型。",
-  "Shared arrivals use a neutral color.": "共同到达段使用中性色。"
+  "Shared arrivals use a neutral color.": "共同到达段使用中性色。",
+  "One source file and the standard library. The example remains readable when execution is unavailable.": "单文件与标准库。运行服务不可用时，仍可阅读和复制示例。",
+  "Standard input": "标准输入",
+  "The code example parameters are invalid. Preserve the original content and check the source and input.": "代码示例参数无效，请保留原文并检查源码和输入。",
+  "One source file and the standard library. The editor preview does not execute programs.": "单文件与标准库。后台预览不执行程序。"
 }

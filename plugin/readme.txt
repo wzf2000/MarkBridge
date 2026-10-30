@@ -3,7 +3,7 @@ Tags: markdown, blocks, editor, mathjax, revisions
 Requires at least: 7.1
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 3.10.1
+Stable tag: 3.11.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -13,6 +13,8 @@ Markdown and WordPress blocks, saved and restored together.
 MarkBridge provides paired Markdown/block editing, previews, revisions, local MathJax rendering and Markdown comments.
 
 New installations use the bundled PHP converter with PHP 8.2+, DOM and mbstring on WordPress 7.1.x. No Node.js runtime or subprocess is required for supported content. Existing non-empty runtime settings retain Node until an administrator explicitly switches; unsupported environments or content are rejected without fallback.
+
+MarkBridge 3.11.0 adds authorized saved-component instance snapshots and final permission checks for trusted extensions. The exact code-runner reading model preserves full source, stdin and rendered explanations even when optional execution is unavailable; Main does not execute submitted programs.
 
 MarkBridge 3.10.1 adds navigation-map v3 with layered layout, complete relationship selection and an explicit mobile start branch, alongside a read-only document candidate SDK and explicit File[] handoff to the existing batch draft workflow. Applying a candidate changes only unsaved editor state. Save adopted candidates before continuing native body edits; expired candidates must be prepared again. MarkBridge 3.8.0 adds controlled knowledge maps and an explicit, unsaved collection configuration candidate API. Knowledge-map targets are resolved against current permissions; unavailable nodes and relationships stay private. MarkBridge 3.7.0 adds explicit publication arrangement. Collection schema 1 remains supported; authors explicitly adopt schema 2 for publication metadata, chapter roles and derived chapter/object numbers. Source articles and revisions are unchanged. New fields require a compatible publication adapter. Teaching Components 1.5.0 adds configurable navigation maps with controlled document targets, native article links and mobile branch/full-map views. WordPress.org submission and approval are separate from a GitHub release. Download reviewed installation packages from GitHub Releases; source archives are not installation packages. Chinese and English interface text follows the WordPress user language in the editor and the site language for readers.
 
