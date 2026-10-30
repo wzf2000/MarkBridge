@@ -4,7 +4,7 @@
   <a href="LICENSE"><img alt="License: GPL-3.0-or-later" src="https://img.shields.io/badge/license-GPL--3.0--or--later-818cf8"></a>
   <img alt="WordPress 7.1" src="https://img.shields.io/badge/WordPress-7.1-21759b">
   <img alt="PHP 8.2+" src="https://img.shields.io/badge/PHP-8.2%2B-777bb4">
-  <img alt="Version 3.10.1" src="https://img.shields.io/badge/version-3.10.1-818cf8">
+  <img alt="Version 3.11.0" src="https://img.shields.io/badge/version-3.11.0-818cf8">
 </p>
 
 <p align="center"><strong>用 Markdown 写作，用区块调整。保存时，让两种格式保持一致。</strong></p>
@@ -41,7 +41,7 @@ flowchart LR
 
 ## 开始使用
 
-**3.11.0-rc.1** 为受信扩展新增服务端文章组件实例快照与最终授权校验 API，供可选 Runner 文章组件使用；执行服务由扩展配置，默认关闭。Main 不执行读者提交的程序。
+**3.11.0** 为受信扩展新增服务端文章组件实例快照与最终授权校验 API，供可选 Runner 文章组件使用；执行服务由扩展配置，默认关闭。Main 不执行读者提交的程序。
 
 **3.10.1** 修复旧组件冷启动时下载占满初始化预算的问题：固定资源下载与摘要校验共用最多 15 秒准备期，通过后才进入原有 5 秒初始化期限。既有组件版本、资源和文章保持；取消或隐藏期间返回的旧请求不会重开预览。
 
