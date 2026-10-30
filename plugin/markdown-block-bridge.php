@@ -4,7 +4,7 @@
  * Plugin URI: https://github.com/wzf2000/MarkBridge
  * Author: wzf2000
  * Author URI: https://github.com/wzf2000
- * Version: 3.10.1
+ * Version: 3.11.0-rc.1
  * License: GPL-3.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  * Requires at least: 7.1
@@ -184,6 +184,7 @@ require_once __DIR__ . '/code-literals.php';
 require_once __DIR__ . '/footnotes.php';
 require_once __DIR__ . '/technical.php';
 require_once __DIR__ . '/references.php';
+require_once __DIR__ . '/component-instances.php';
 require_once __DIR__ . '/collections.php';
 require_once __DIR__ . '/extensions.php';
 require_once __DIR__ . '/bibtex.php';

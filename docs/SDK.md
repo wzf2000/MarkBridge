@@ -305,3 +305,45 @@ confirmation remain mandatory. Default identity handling is **copy**, including 
 mapping; Markdown and single-document resource ZIP restrictions and upload limits remain unchanged.
 It does not edit the file input, start scanning automatically, replace an existing batch, or replace
 an article. Explicit replacement of the current article uses `propose`.
+
+## Saved component instance capability (Main 3.11)
+
+Trusted server-side extensions can call
+`markbridge_component_instance_snapshot(int $postId, string $instanceId, string $component, string $version): array`
+and `markbridge_component_instance_final(array $snapshot): bool`. This is a PHP capability, not a
+full-document REST endpoint. The post ID is the WordPress numeric post ID; the stable instance ID is
+the saved component's `id`, not a document ID or a client-supplied provider descriptor.
+
+```php
+try {
+  $snapshot = markbridge_component_instance_snapshot($postId, $instanceId, 'code-runner', '0.1.0');
+  // Use only the exact authorized instance data. Never accept a browser's snapshot as authority.
+  if (!markbridge_component_instance_final($snapshot)) {
+    throw new RuntimeException('unavailable');
+  }
+  $params = $snapshot['params'];
+  // A long operation must repeat final() immediately before delivering its output.
+} catch (Throwable) {
+  // Use one public unavailable error, without article data or internal reasons.
+}
+```
+
+Snapshots are sealed over their complete data and bound to the current user/session, post token,
+paired content, exact unique instance/provider, resource pins and file-source fingerprint. Duplicate
+instances, mismatched pairs, unavailable providers, invalid source bindings and unreadable posts
+fail. `final()` first verifies the complete seal, then reconstructs fresh authority from storage;
+changing `params`, token, identity or stamp cannot create authorization. Account/session, password,
+post visibility and source/provider changes invalidate the snapshot. Treat it as private transient
+server memory; avoid placing snapshots, source or output in logs, public assets or shared caches.
+A queue may persist only identifiers and the stamp, fetch a fresh snapshot later, compare its stamp,
+and call `final()` on that fresh complete snapshot. A stamp is not an independent permission grant.
+
+Main also understands the exact data-only `code-runner@0.1.0` reading model:
+`{version:1,language:"python"|"cpp",title,sourceChunks,stdinChunks}`. UTF-8 source/input chunks are
+at most 1024 bytes each, with at most 8/4 chunks; title is at most 160 UTF-8 bytes. It inherits the
+16 KiB JSON/1024-value/8-depth envelope budget and rejects unknown fields/control characters.
+Derived PHP reading markup and the safe editor preview show complete source and stdin even if
+Runner is disabled. The source has one canonical copy in `sourceChunks`; InnerBlocks can hold the
+author's explanation. Unknown versions retain their generic fallback. This reading contract has no
+execution, command, URL, browser grant or network capability. The optional Runner extension owns
+its separate private execution service and authorization lifecycle.

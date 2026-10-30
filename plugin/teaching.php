@@ -8,6 +8,7 @@ if (!defined('ABSPATH')) {
 }
 
 require_once __DIR__ . '/relation-map-documents.php';
+require_once __DIR__ . '/code-runner-static.php';
 // Protect literal shortcode syntax in derived code-tabs JSON strings, not array syntax.
 // JSON decoding still yields exactly the same configuration and original code bytes.
 function mbb_code_tabs_config_json(array $config): string
@@ -174,6 +175,12 @@ add_filter(
             }
         }
         if ($kind === 'component') {
+            if (
+                ($attrs['component'] ?? '') === 'code-runner' &&
+                ($attrs['componentVersion'] ?? '') === '0.1.0'
+            ) {
+                return mbb_code_runner_render($html, $attrs);
+            }
             if (
                 in_array(
                     $attrs['params']['format'] ?? null,

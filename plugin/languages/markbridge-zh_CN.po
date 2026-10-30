@@ -4690,6 +4690,14 @@ msgid "One provider plugin can include many component types. Exact versions are 
 msgstr "一个提供者插件可包含多种组件。精确版本是兼容记录，并非独立插件或一道题目。"
 
 #: plugin/i18n.js
+msgid "One source file and the standard library. The editor preview does not execute programs."
+msgstr "单文件与标准库。后台预览不执行程序。"
+
+#: plugin/i18n.js
+msgid "One source file and the standard library. The example remains readable when execution is unavailable."
+msgstr "单文件与标准库。运行服务不可用时，仍可阅读和复制示例。"
+
+#: plugin/i18n.js
 msgid "Only HTTP, HTTPS, mailto and relative links are supported"
 msgstr "仅支持 HTTP、HTTPS、mailto 和相对链接"
 
@@ -6171,6 +6179,10 @@ msgid "Staging directory permissions could not be restricted"
 msgstr "无法限制暂存目录权限"
 
 #: plugin/i18n.js
+msgid "Standard input"
+msgstr "标准输入"
+
+#: plugin/i18n.js
 msgid "Start"
 msgstr "起点"
 
@@ -6957,6 +6969,10 @@ msgstr "候选已进入差异预览，尚未写入 WordPress 或源文件。"
 #: plugin/i18n.js
 msgid "The candidate or opening baseline changed after the merge preview"
 msgstr "候选或打开基线在预览合并后变化"
+
+#: plugin/i18n.js
+msgid "The code example parameters are invalid. Preserve the original content and check the source and input."
+msgstr "代码示例参数无效，请保留原文并检查源码和输入。"
 
 #: plugin/i18n.js
 msgid "The code group fence structure is incomplete"

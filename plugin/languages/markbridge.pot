@@ -4690,6 +4690,14 @@ msgid "One provider plugin can include many component types. Exact versions are 
 msgstr ""
 
 #: plugin/i18n.js
+msgid "One source file and the standard library. The editor preview does not execute programs."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "One source file and the standard library. The example remains readable when execution is unavailable."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Only HTTP, HTTPS, mailto and relative links are supported"
 msgstr ""
 
@@ -6171,6 +6179,10 @@ msgid "Staging directory permissions could not be restricted"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Standard input"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Start"
 msgstr ""
 
@@ -6956,6 +6968,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "The candidate or opening baseline changed after the merge preview"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "The code example parameters are invalid. Preserve the original content and check the source and input."
 msgstr ""
 
 #: plugin/i18n.js
