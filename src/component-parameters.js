@@ -206,7 +206,8 @@ export function validateParameterSchema(value, schema) {
 
 // Only this known closed native contract uses selected-item forms above the generic UI bound.
 function relationParameterSchema(schema) {
-  const keys = ['format', 'title', 'groups', 'nodes', 'edges'];
+  const v3 = schema?.properties?.format?.enum?.[0] === 'relation-map/v3';
+  const keys = ['format', 'title', 'groups', 'nodes', 'edges', ...(v3 ? ['display'] : [])];
   if (
     !object(schema) ||
     schema.type !== 'object' ||
@@ -219,13 +220,14 @@ function relationParameterSchema(schema) {
     schema.properties.title?.type !== 'string' ||
     schema.properties.format?.type !== 'string' ||
     schema.properties.format.enum?.length !== 1 ||
-    !['relation-map/v1', 'relation-map/v2', 'knowledge-map/v1'].includes(
+    !['relation-map/v1', 'relation-map/v2', 'relation-map/v3', 'knowledge-map/v1'].includes(
       schema.properties.format.enum[0],
     )
   )
     return false;
   const knowledge = schema.properties.format.enum[0] === 'knowledge-map/v1';
-  const v2 = knowledge || schema.properties.format.enum[0] === 'relation-map/v2';
+  const v2 =
+    knowledge || ['relation-map/v2', 'relation-map/v3'].includes(schema.properties.format.enum[0]);
   const target = schema.properties.nodes?.items?.properties?.target;
   if (
     v2 &&
@@ -584,17 +586,39 @@ export function createParameterEditor({
       component === 'navigation-map' ? component : null,
       '0.2.0',
     );
+    const relationV3Upgrade = useComponentDescriptor(
+      wp,
+      component === 'navigation-map' ? component : null,
+      '0.3.0',
+    );
     const provider = find(component, candidateVersion);
     const schema = provider?.schema;
     const [raw, setRaw] = wp.element.useState(drafts.get(clientId)?.raw ?? original);
     const [error, setError] = wp.element.useState(drafts.get(clientId)?.error || '');
     const [mode, setMode] = wp.element.useState('form');
     const [selectedItems, setSelectedItems] = wp.element.useState({});
+    const [fieldIssue, setFieldIssue] = wp.element.useState(null);
+    const [removalIssue, setRemovalIssue] = wp.element.useState(null);
+    const editorRoot = wp.element.useRef(null);
+    const controlId = (path) => 'mbb-parameter-' + clientId + '-' + path.join('-');
+    const mobileErrorId = controlId(['mobile-error']);
+    const jsonId = controlId(['json']);
+    const jsonErrorId = controlId(['json-error']);
+    const focusControl = (id) =>
+      requestAnimationFrame(() => {
+        const control = editorRoot.current?.querySelector(
+          id === jsonId ? '[data-mbb-parameter-json] textarea' : '[id="' + id + '"]',
+        );
+        control?.focus();
+      });
     const relationForm = relationParameterSchema(schema);
     const knowledge = relationForm && schema.properties.format.enum[0] === 'knowledge-map/v1';
+    const relationV3 = relationForm && schema.properties.format.enum[0] === 'relation-map/v3';
     const relationV2 =
       relationForm &&
-      ['relation-map/v2', 'knowledge-map/v1'].includes(schema.properties.format.enum[0]);
+      ['relation-map/v2', 'relation-map/v3', 'knowledge-map/v1'].includes(
+        schema.properties.format.enum[0],
+      );
     const authorSession = wp.element.useRef({});
     const authorLife = wp.element.useRef({ active: true, signature: '', generation: 0 });
     const [, refreshLocalDraft] = wp.element.useState(0);
@@ -715,6 +739,8 @@ export function createParameterEditor({
       setCandidateVersion(targetVersion);
       setRaw(text);
       setError('');
+      setFieldIssue(null);
+      setRemovalIssue(null);
       const prior = drafts.get(clientId);
       if (
         text === original &&
@@ -762,6 +788,7 @@ export function createParameterEditor({
       refreshLocalDraft((n) => n + 1);
     };
     const commit = () => {
+      let issuePath = null;
       try {
         if (drafts.get(clientId)?.localDraft != null)
           throw Error(T('Prepare or discard local author edits before applying parameters.'));
@@ -784,11 +811,26 @@ export function createParameterEditor({
           throw Error(message);
         });
         const issues = validateParameterSchema(parsed, registered?.schema);
-        if (issues.length)
+        if (issues.length) {
+          issuePath = issues[0].path;
           throw Error(parameterLabel(issues[0].path) + ': ' + T(issues[0].message));
+        }
+        if (relationV3) {
+          const hint = parsed.display?.mobileStart;
+          if (
+            hint &&
+            ['group', 'node'].includes(hint.kind) &&
+            !(hint.kind === 'group' ? parsed.groups : parsed.nodes)?.some(
+              (item) => item.id === hint.id,
+            )
+          ) {
+            issuePath = ['display', 'mobileStart', 'id'];
+            throw Error(T('Choose an existing mobile starting item, or use Automatic.'));
+          }
+        }
         if (
           relationForm &&
-          ['relation-map/v1', 'relation-map/v2', 'knowledge-map/v1'].includes(
+          ['relation-map/v1', 'relation-map/v2', 'relation-map/v3', 'knowledge-map/v1'].includes(
             registered?.readerMode,
           )
         ) {
@@ -800,9 +842,11 @@ export function createParameterEditor({
             );
           (knowledge
             ? globalThis.MBBKnowledgeMap
-            : relationV2
-              ? globalThis.MBBRelationMapV2
-              : globalThis.MBBRelationMap
+            : relationV3
+              ? globalThis.MBBRelationMapV3
+              : relationV2
+                ? globalThis.MBBRelationMapV2
+                : globalThis.MBBRelationMap
           ).validate(parsed);
         }
         if (author?.apiVersion === 2) author.validate(parsed, candidateActivity);
@@ -828,8 +872,25 @@ export function createParameterEditor({
         refreshLocalDraft((n) => n + 1);
         syncDraftLock();
         setError('');
+        setFieldIssue(null);
+        setRemovalIssue(null);
       } catch (e) {
         const message = E(e);
+        if (relationV3) {
+          if (
+            form &&
+            mode === 'form' &&
+            issuePath?.[0] === 'display' &&
+            ['group', 'node'].includes(candidate.display?.mobileStart?.kind)
+          ) {
+            setFieldIssue({ target: 'mobile', message });
+            focusControl(controlId(['mobile-item']));
+          } else {
+            setFieldIssue({ target: 'json', message });
+            setMode('json');
+            focusControl(jsonId);
+          }
+        }
         setError(message);
         drafts.set(clientId, {
           raw,
@@ -845,8 +906,32 @@ export function createParameterEditor({
         syncDraftLock();
       }
     };
-    const set = (path, next, remove) =>
+    const set = (path, next, remove) => {
+      if (relationV3 && remove && path.length === 2 && ['groups', 'nodes'].includes(path[0])) {
+        const item = candidate[path[0]][path[1]],
+          references = [];
+        if (path[0] === 'groups') {
+          const nodes = candidate.nodes.filter((n) => n.group === item.id);
+          if (nodes.length)
+            references.push(T('Nodes') + ': ' + nodes.map((n) => n.title || n.id).join(', '));
+        } else {
+          const edges = candidate.edges.filter((e) => e.from === item.id || e.to === item.id);
+          if (edges.length) references.push(T('Edges') + ': ' + edges.map((e) => e.id).join(', '));
+        }
+        const hint = candidate.display?.mobileStart;
+        if (hint?.kind === (path[0] === 'groups' ? 'group' : 'node') && hint.id === item.id)
+          references.push(T('Mobile starting branch') + ': ' + (item.title || item.id));
+        if (references.length) {
+          setRemovalIssue({
+            path: keyOf(path),
+            message:
+              T('Remove references before deleting this item:') + ' ' + references.join('; '),
+          });
+          return;
+        }
+      }
       change(JSON.stringify(updateParameterValue(candidate, path, next, remove), null, 2));
+    };
     const render = (s, v, path, required = true, seed) => {
       const label = parameterLabel(path),
         issue = errors.get(keyOf(path));
@@ -868,7 +953,61 @@ export function createParameterEditor({
         'aria-invalid': issue ? 'true' : undefined,
       };
       let control;
-      if (relationV2 && path.length === 3 && path[0] === 'nodes' && path[2] === 'target') {
+      if (relationV3 && path.length === 1 && path[0] === 'display' && object(v.mobileStart)) {
+        const hint = v.mobileStart;
+        const choices =
+          hint.kind === 'group' ? candidate.groups : hint.kind === 'node' ? candidate.nodes : [];
+        control = el(
+          'fieldset',
+          { key: keyOf(path), 'data-mbb-mobile-start': '' },
+          el('legend', {}, T('Mobile starting branch')),
+          el(
+            'p',
+            {},
+            T('Sets the first mobile view. Readers can switch branches or open the full map.'),
+          ),
+          el(wp.components.SelectControl, {
+            id: controlId(['mobile-kind']),
+            label: T('Initial focus'),
+            value: hint.kind,
+            options: [
+              { value: 'auto', label: T('Automatic') },
+              { value: 'group', label: T('Group') },
+              { value: 'node', label: T('Node') },
+            ],
+            onChange: (kind) =>
+              set(path, {
+                mobileStart: {
+                  kind,
+                  id:
+                    kind === 'auto'
+                      ? ''
+                      : (kind === 'group' ? candidate.groups : candidate.nodes)?.[0]?.id || '',
+                },
+              }),
+          }),
+          hint.kind !== 'auto'
+            ? el(wp.components.SelectControl, {
+                id: controlId(['mobile-item']),
+                label: T('Starting item'),
+                value: hint.id,
+                'aria-invalid': fieldIssue?.target === 'mobile' ? 'true' : undefined,
+                help:
+                  fieldIssue?.target === 'mobile'
+                    ? el('span', { id: mobileErrorId, role: 'alert' }, fieldIssue.message)
+                    : undefined,
+                options: [
+                  { value: '', label: T('Choose an existing item') },
+                  ...(hint.id && !choices.some((n) => n.id === hint.id)
+                    ? [{ value: hint.id, label: T('Unavailable starting item') + ': ' + hint.id }]
+                    : []),
+                  ...choices.map((n) => ({ value: n.id, label: n.title })),
+                ],
+                onChange: (id) => set(path, { mobileStart: { ...hint, id } }),
+              })
+            : null,
+        );
+      } else if (relationV2 && path.length === 3 && path[0] === 'nodes' && path[2] === 'target') {
         control = el(ArticleTarget, {
           key: String(candidate.nodes?.[path[1]]?.id || keyOf(path)),
           value: v,
@@ -916,7 +1055,12 @@ export function createParameterEditor({
               'practice',
             ].includes(item) &&
             schema.properties?.format?.enum?.some((v) =>
-              ['relation-map/v1', 'relation-map/v2', 'knowledge-map/v1'].includes(v),
+              [
+                'relation-map/v1',
+                'relation-map/v2',
+                'relation-map/v3',
+                'knowledge-map/v1',
+              ].includes(v),
             )
               ? {
                   prerequisite: T('Prior understanding'),
@@ -953,7 +1097,15 @@ export function createParameterEditor({
           'fieldset',
           { key: keyOf(path) },
           el('legend', {}, label),
-          ...Object.entries(s.properties).map(([k, child]) =>
+          ...(relationV3 && path.length === 0
+            ? [
+                ...['format', 'title', 'display'].map((k) => [k, s.properties[k]]),
+                ...Object.entries(s.properties).filter(
+                  ([k]) => !['format', 'title', 'display'].includes(k),
+                ),
+              ]
+            : Object.entries(s.properties)
+          ).map(([k, child]) =>
             render(child, v[k], [...path, k], (s.required || []).includes(k), seed?.[k]),
           ),
         );
@@ -1020,11 +1172,25 @@ export function createParameterEditor({
                   wp.components.Button,
                   {
                     variant: 'tertiary',
+                    ...(relationV3 && removalIssue?.path === keyOf([...path, i])
+                      ? { 'aria-describedby': controlId([...path, i, 'remove-error']) }
+                      : {}),
                     disabled: v.length <= (s.minItems || 0),
                     onClick: () => set([...path, i], undefined, true),
                   },
                   T('Remove item') + ' ' + (i + 1),
                 ),
+                relationV3 && removalIssue?.path === keyOf([...path, i])
+                  ? el(
+                      'p',
+                      {
+                        id: controlId([...path, i, 'remove-error']),
+                        role: 'alert',
+                        'data-mbb-removal-error': '',
+                      },
+                      removalIssue.message,
+                    )
+                  : null,
               ),
           ),
           el(
@@ -1100,7 +1266,7 @@ export function createParameterEditor({
         : '');
     return el(
       'div',
-      { className: 'mbb-parameter-editor' },
+      { className: 'mbb-parameter-editor', ref: editorRoot },
       form || (authorSupported && author?.Editor)
         ? el(
             'div',
@@ -1220,16 +1386,47 @@ export function createParameterEditor({
               { className: 'mbb-parameter-form' },
               render(schema, candidate, [], true, provider?.defaults),
             )
-          : el(wp.components.TextareaControl, {
-              label: T('Parameter JSON (data only)'),
-              value: raw,
-              onChange: change,
-              help: form
-                ? undefined
-                : T(
-                    'These parameters use the JSON editor. All fields are preserved; the server verifies them when saving.',
-                  ),
-            }),
+          : el(
+              'div',
+              relationV3 ? { 'data-mbb-parameter-json': '' } : {},
+              el(wp.components.TextareaControl, {
+                ...(relationV3
+                  ? {
+                      'aria-invalid': fieldIssue?.target === 'json' ? 'true' : undefined,
+                      'aria-describedby': fieldIssue?.target === 'json' ? jsonErrorId : undefined,
+                    }
+                  : {}),
+                label: T('Parameter JSON (data only)'),
+                value: raw,
+                onChange: change,
+                help: form
+                  ? undefined
+                  : T(
+                      'These parameters use the JSON editor. All fields are preserved; the server verifies them when saving.',
+                    ),
+              }),
+              relationV3 && fieldIssue?.target === 'json'
+                ? el('p', { id: jsonErrorId, role: 'alert' }, fieldIssue.message)
+                : null,
+            ),
+      component === 'navigation-map' && candidateVersion === '0.2.0' && relationV3Upgrade?.schema
+        ? el(
+            wp.components.Button,
+            {
+              variant: 'secondary',
+              onClick: () => {
+                const next = {
+                  ...clone(candidate),
+                  format: 'relation-map/v3',
+                  display: { mobileStart: { kind: 'auto', id: '' } },
+                };
+                change(JSON.stringify(next, null, 2), '0.3.0');
+                setMode('form');
+              },
+            },
+            T('Prepare relationship layout upgrade'),
+          )
+        : null,
       component === 'navigation-map' && candidateVersion === '0.1.0' && relationUpgrade?.schema
         ? el(
             wp.components.Button,
@@ -1287,7 +1484,7 @@ export function createParameterEditor({
               candidateVersion,
           )
         : null,
-      notice || parseError
+      (notice || parseError) && !(relationV3 && fieldIssue)
         ? el('p', { role: error ? 'alert' : 'status' }, notice || parseError)
         : null,
       el(wp.components.Button, { variant: 'primary', onClick: commit }, T('Apply parameters')),
@@ -1300,6 +1497,8 @@ export function createParameterEditor({
             authorLife.current.generation++;
             refreshLocalDraft((n) => n + 1);
             setCandidateVersion(componentVersion);
+            setFieldIssue(null);
+            setRemovalIssue(null);
             authorSession.current = {};
             if (currentIssues(original, find(component, componentVersion)?.schema).length)
               drafts.set(clientId, { raw: original, baseline: original, identity });

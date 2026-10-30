@@ -232,7 +232,7 @@ function mbb_references_replace_tuples(string $source, array $mappings): string
                 $block['blockName'] === 'mbb/component' &&
                 in_array(
                     $block['attrs']['params']['format'] ?? null,
-                    ['relation-map/v2', 'knowledge-map/v1'],
+                    ['relation-map/v2', 'relation-map/v3', 'knowledge-map/v1'],
                     true,
                 )
             ) {

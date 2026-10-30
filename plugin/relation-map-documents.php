@@ -6,6 +6,7 @@ if (!defined('ABSPATH')) {
     }
 }
 require_once __DIR__ . '/knowledge-map.php';
+require_once __DIR__ . '/relation-map-v3.php';
 function mbb_relation_map_article(stdClass $target): ?array
 {
     if (!mbb_relation_map_v2_target($target) || !function_exists('mbb_references_control')) {
@@ -88,11 +89,18 @@ function mbb_relation_map_private_headers(): void
 function mbb_relation_map_v2_view(mixed $params, string $context): array
 {
     mbb_relation_map_private_headers();
-    $empty = ['map' => null, 'dependencies' => [], 'edgeIds' => []];
+    $empty = [
+        'map' => null,
+        'dependencies' => [],
+        'edgeIds' => [],
+        'display' => ['mobileStart' => null],
+    ];
     if (
         !(($params->format ?? null) === 'knowledge-map/v1'
             ? mbb_knowledge_map_valid($params)
-            : mbb_relation_map_v2_valid($params))
+            : (($params->format ?? null) === 'relation-map/v3'
+                ? mbb_relation_map_v3_valid($params)
+                : mbb_relation_map_v2_valid($params)))
     ) {
         return $empty;
     }
@@ -181,10 +189,28 @@ function mbb_relation_map_v2_view(mixed $params, string $context): array
         'nodes' => array_values($nodes),
         'edges' => $edges,
     ];
-    if (!mbb_relation_map_valid($map)) {
+    if (!mbb_relation_map_valid($map, $params->format === 'relation-map/v3' ? 65536 : 16384)) {
         return $empty;
     }
-    return ['map' => $map, 'dependencies' => $dependencies, 'edgeIds' => $edgeIds];
+    $display = ['mobileStart' => null];
+    if ($params->format === 'relation-map/v3') {
+        $hint = $params->display->mobileStart;
+        // Only final emitted nodes establish visibility, never the first resolver pass.
+        if ($hint->kind === 'node' && isset($nodes[$hint->id])) {
+            $display['mobileStart'] = ['kind' => 'node', 'id' => $nodes[$hint->id]->id];
+        } elseif (
+            $hint->kind === 'group' &&
+            array_filter($nodes, static fn($n) => $n->group === $opaque('g', $hint->id))
+        ) {
+            $display['mobileStart'] = ['kind' => 'group', 'id' => $opaque('g', $hint->id)];
+        }
+    }
+    return [
+        'map' => $map,
+        'dependencies' => $dependencies,
+        'edgeIds' => $edgeIds,
+        'display' => $display,
+    ];
 }
 /** Render from fresh server-only author attributes, including when the provider is missing. */
 function mbb_relation_map_v2_render(string $html, array $attrs): string
@@ -232,9 +258,12 @@ function mbb_relation_map_v2_render(string $html, array $attrs): string
         'reader' =>
             $params->format === 'knowledge-map/v1'
                 ? 'knowledge-map/public-v1'
-                : 'relation-map/public-v2',
+                : ($params->format === 'relation-map/v3'
+                    ? 'relation-map/public-v3'
+                    : 'relation-map/public-v2'),
         'publicView' => $view['map'],
         'edgeIds' => $view['edgeIds'],
+        ...$params->format === 'relation-map/v3' ? ['display' => $view['display']] : [],
         'status' => 'unavailable',
     ];
     if ($view['map']) {
@@ -246,8 +275,14 @@ function mbb_relation_map_v2_render(string $html, array $attrs): string
         mbb_relation_map_append(
             $out,
             $root,
-            mbb_relation_map_envelope($view['map'], determine_locale()),
+            mbb_relation_map_envelope(
+                $view['map'],
+                determine_locale(),
+                $params->format === 'relation-map/v3' ? 65536 : 16384,
+            ),
             $params->format === 'knowledge-map/v1' ? 'knowledge-map/v1' : null,
+            $params->format === 'relation-map/v3' ? $view['edgeIds'] : [],
+            $params->format === 'relation-map/v3' ? 65536 : 16384,
         );
         $static .= $out->saveHTML($root);
         $provider = mbb_component_provider(
@@ -284,7 +319,9 @@ function mbb_relation_map_v2_stamp(string $serialized): string
     }
     $parts = [];
     foreach (mbb_component_descriptors($serialized) as $id => $attrs) {
-        if (($attrs->params->format ?? null) === 'relation-map/v2') {
+        if (
+            in_array($attrs->params->format ?? null, ['relation-map/v2', 'relation-map/v3'], true)
+        ) {
             $parts[$id] = mbb_relation_map_v2_view($attrs->params, 'export:' . $id);
         }
     }

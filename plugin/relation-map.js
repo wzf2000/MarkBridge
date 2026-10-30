@@ -235,9 +235,9 @@
       li.append(swatch, doc.createTextNode(kinds[kind]));
       legend.append(li);
     }
-    ui.append(legend);
+    const navigation = el('div', 'mbb-relation-navigation');
     const toolbar = el('div', 'mbb-relation-toolbar'),
-      groupLabel = el('label', '', T('Current branch')),
+      groupLabel = el('label', 'mbb-relation-branch-picker'),
       select = el('select');
     select.setAttribute('aria-label', T('Current branch'));
     for (const g of p.groups) {
@@ -245,7 +245,7 @@
       option.value = g.id;
       select.append(option);
     }
-    groupLabel.append(select);
+    groupLabel.append(el('span', 'mbb-relation-branch-label', T('Current branch')), select);
     const button = (text, click) => {
       const b = el('button', '', text);
       b.type = 'button';
@@ -277,11 +277,11 @@
     const panToggle = button(T('Drag canvas: off'), () => setPanning(!panning));
     panToggle.setAttribute('aria-pressed', 'false');
     toolbar.append(groupLabel, full, back, zoomOut, zoomIn, reset, panToggle);
-    ui.append(toolbar);
     const status = el('p', 'mbb-relation-status');
     status.setAttribute('role', 'status');
     status.setAttribute('aria-live', 'polite');
-    ui.append(status);
+    navigation.append(status, toolbar, legend);
+    ui.append(navigation);
     const viewport = el('div', 'mbb-relation-viewport'),
       board = el('div', 'mbb-relation-board'),
       svg = doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -321,7 +321,11 @@
         fullMode && mobile.matches ? '520px' : Math.ceil(height * fit * zoom) + 'px';
       status.textContent = fullMode
         ? T('Full map') + ' · ' + Math.round(zoom * 100) + '%'
-        : p.groups.find((g) => g.id === select.value).title;
+        : T('Current branch') +
+          ' · ' +
+          p.nodes.filter((n) => n.group === select.value).length +
+          ' ' +
+          T('Nodes');
     }
     function changeZoom(next) {
       zoom = Math.max(0.4, Math.min(2.5, next));
@@ -604,7 +608,13 @@
           cross.append(el('p', '', T('No cross-branch relationships in this branch.')));
         const ul = el('ul');
         for (const e of related) {
-          const li = el('li');
+          const li = el('li', 'mbb-relation-cross-item ' + e.kind),
+            targetNode = p.nodes.find(
+              (n) =>
+                n.id ===
+                (p.nodes.find((n) => n.id === e.to).group !== select.value ? e.to : e.from),
+            ),
+            targetGroup = p.groups.find((g) => g.id === targetNode.group);
           for (const [i, key] of ['from', 'to'].entries()) {
             if (i) li.append(doc.createTextNode(' → '));
             const n = p.nodes.find((n) => n.id === e[key]),
@@ -614,12 +624,12 @@
           }
           li.append(el('p', '', kinds[e.kind] + (e.why ? '：' + e.why : '')));
           li.append(
-            button(T('Show in map'), () => {
+            button(T('Show in map') + ' · ' + targetGroup.title, () => {
               fullMode = true;
               zoom = 1;
               pan = { x: 0, y: 0 };
               render();
-              const target = board.querySelector(`[data-node="${e.to}"]`);
+              const target = board.querySelector(`[data-node="${targetNode.id}"]`);
               if (target) {
                 target.classList.add('is-highlighted');
                 pan = {

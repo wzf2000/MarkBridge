@@ -1029,6 +1029,10 @@ msgid "Author–year"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Automatic"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Automatic copy failed. Select the summary to copy it manually."
 msgstr ""
 
@@ -1551,6 +1555,10 @@ msgid "Choose a reference target"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Choose a relationship"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Choose a revision"
 msgstr ""
 
@@ -1596,6 +1604,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Choose an existing line."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Choose an existing mobile starting item, or use Automatic."
 msgstr ""
 
 #: plugin/i18n.js
@@ -1672,6 +1684,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Citation style"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Clear selection"
 msgstr ""
 
 #: plugin/i18n.js
@@ -1840,6 +1856,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Collections"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Colors match the source branch; patterns show the relationship type."
 msgstr ""
 
 #: plugin/i18n.js
@@ -3445,6 +3465,10 @@ msgid "Indexed component versions"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Initial focus"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Initial values"
 msgstr ""
 
@@ -4290,6 +4314,10 @@ msgid "Mobile column stacking must be boolean"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Mobile starting branch"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Mode"
 msgstr ""
 
@@ -4577,6 +4605,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "No versioned metadata proposal exists. An unversioned header remains ordinary body content."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Node"
 msgstr ""
 
 #: plugin/i18n.js
@@ -5007,6 +5039,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Prepare or discard local author edits before applying parameters."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Prepare relationship layout upgrade"
 msgstr ""
 
 #: plugin/i18n.js
@@ -5458,6 +5494,10 @@ msgid "Remove item"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Remove references before deleting this item:"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Rename label and references"
 msgstr ""
 
@@ -5880,6 +5920,10 @@ msgid "Selected mathematical expression"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Selected relationship"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Selected the containing structure."
 msgstr ""
 
@@ -5917,6 +5961,14 @@ msgid "Set current version as default"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Sets the first mobile view. Readers can switch branches or open the full map."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Shared arrivals use a neutral color."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Shorten node titles or article URLs, or reduce relationships to fit the static output budget."
 msgstr ""
 
@@ -5930,6 +5982,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Show diagram"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Show entire branch"
 msgstr ""
 
 #: plugin/i18n.js
@@ -5954,6 +6010,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Show more lines"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Show relationship"
 msgstr ""
 
 #: plugin/i18n.js
@@ -6120,6 +6180,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Start interactive demonstration"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Starting item"
 msgstr ""
 
 #: plugin/i18n.js
@@ -8563,6 +8627,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Unavailable article"
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Unavailable starting item"
 msgstr ""
 
 #: plugin/i18n.js

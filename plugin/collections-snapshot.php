@@ -74,9 +74,13 @@ function mbb_collections_renderer(string $adapter): array
             'projections.css',
             'relation-map.php',
             'relation-map-v2.php',
+            'relation-map-v3.php',
             'knowledge-map.php',
             'knowledge-map.js',
             'relation-map-v2.js',
+            'relation-map-v3.js',
+            'relation-map-layout-v3.js',
+            'relation-map-v3-reader.js',
             'relation-map-documents.php',
             'relation-map.js',
             'relation-map.css',
@@ -329,10 +333,15 @@ function mbb_collections_components(string $serialized): array
                 mbb_component_json(
                     in_array(
                         $a->params->format ?? null,
-                        ['relation-map/v2', 'knowledge-map/v1'],
+                        ['relation-map/v2', 'relation-map/v3', 'knowledge-map/v1'],
                         true,
                     )
-                        ? mbb_relation_map_v2_view($a->params, 'publication:' . $id)['map']
+                        ? (($a->params->format ?? null) === 'relation-map/v3'
+                            ? array_intersect_key(
+                                mbb_relation_map_v2_view($a->params, 'publication:' . $id),
+                                array_flip(['map', 'display', 'edgeIds']),
+                            )
+                            : mbb_relation_map_v2_view($a->params, 'publication:' . $id)['map'])
                         : $a->params,
                 ),
             ),
