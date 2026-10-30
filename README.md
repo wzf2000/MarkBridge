@@ -4,7 +4,7 @@
   <a href="LICENSE"><img alt="License: GPL-3.0-or-later" src="https://img.shields.io/badge/license-GPL--3.0--or--later-818cf8"></a>
   <img alt="WordPress 7.1" src="https://img.shields.io/badge/WordPress-7.1-21759b">
   <img alt="PHP 8.2+" src="https://img.shields.io/badge/PHP-8.2%2B-777bb4">
-  <img alt="Version 3.10.0" src="https://img.shields.io/badge/version-3.10.0-818cf8">
+  <img alt="Version 3.10.1" src="https://img.shields.io/badge/version-3.10.1-818cf8">
 </p>
 
 <p align="center"><strong>用 Markdown 写作，用区块调整。保存时，让两种格式保持一致。</strong></p>
@@ -40,6 +40,8 @@ flowchart LR
 ```
 
 ## 开始使用
+
+**3.10.1** 修复旧组件冷启动时下载占满初始化预算的问题：固定资源下载与摘要校验共用最多 15 秒准备期，通过后才进入原有 5 秒初始化期限。既有组件版本、资源和文章保持；取消或隐藏期间返回的旧请求不会重开预览。
 
 **3.10.0** 让可导航关系图 0.3 更容易沿线阅读：减少短折返，为箭头到达与节点侧边留出空间，同一终点、同一类型可共用局部到达段。点击时按最近线选择，可查看一条完整关系及两端文章；共用线段会列出关系供选择，关系清单也支持键盘选择与 Escape 清除。线条颜色对应起点分支，线型继续区分关系类型，明暗主题均可辨认。悬停与键盘聚焦节点的关系追踪、受控引用、读者权限和旧精确版本保持。参见 Teaching Components 的可导航关系图文档。
 

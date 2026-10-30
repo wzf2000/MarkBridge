@@ -589,9 +589,9 @@
       }
       slots.add(node);
       loading = true;
-      startupDeadline =
-        performance.now() +
-        (resourceV2 ? MarkBridgeResources.LIMITS.preparationMs : budgets.startupMs);
+      // Both protocols verify network bytes before the provider initialization clock starts.
+      const preparationMs = globalThis.MarkBridgeResources?.LIMITS.preparationMs ?? 15000;
+      startupDeadline = performance.now() + preparationMs;
       node.dataset.mbbComponentState = 'loading';
       launch.setAttribute('aria-expanded', 'true');
       close.setAttribute('aria-expanded', 'true');
@@ -601,13 +601,10 @@
       close.hidden = false;
       status.textContent = T('Verifying component resources…');
       abort = new AbortController();
-      startup = setTimeout(
-        () => {
-          if (current === generation)
-            failure(T('Component initialization timed out.'), 'STARTUP_TIMEOUT');
-        },
-        resourceV2 ? MarkBridgeResources.LIMITS.preparationMs : budgets.startupMs,
-      );
+      startup = setTimeout(() => {
+        if (current === generation)
+          failure(T('Component initialization timed out.'), 'STARTUP_TIMEOUT');
+      }, preparationMs);
       try {
         let bytes, group;
         if (resourceV2) {
@@ -635,6 +632,19 @@
             throw coded('DIGEST', 'The component resource digest does not match');
         }
         if (current !== generation || !node.isConnected) return;
+        if (performance.now() > startupDeadline) {
+          failure(T('Component initialization timed out.'), 'STARTUP_TIMEOUT');
+          return;
+        }
+        if (!resourceV2) {
+          // v1 srcdoc loading and ready must fit the original provider startup budget.
+          clearTimeout(startup);
+          startupDeadline = performance.now() + budgets.startupMs;
+          startup = setTimeout(() => {
+            if (current === generation)
+              failure(T('Component initialization timed out.'), 'STARTUP_TIMEOUT');
+          }, budgets.startupMs);
+        }
         diagnostic?.stage('initialization');
         session = random();
         frame = document.createElement('iframe');
@@ -654,6 +664,10 @@
             return;
           }
           initialized = true;
+          if (!resourceV2 && performance.now() > startupDeadline) {
+            failure(T('Component initialization timed out.'), 'STARTUP_TIMEOUT');
+            return;
+          }
           if (resourceV2) {
             try {
               // Resource downloads and HTTP navigation share one bounded preparation.
