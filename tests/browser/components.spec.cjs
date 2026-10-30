@@ -604,40 +604,69 @@ test('close, suspension and config replacement cancel either pending header atte
   }
 });
 
-test('headers clear the soft timer but body cancellation remains linked to close and deadline', async ({
+test('headers clear the soft timer but body cancellation remains linked to close and preparation deadline', async ({
   page,
 }) => {
+  await page.clock.install();
   for (const action of ['close', 'deadline']) {
     await load(page, { budgets: { startupMs: 900 } });
     await transport(page, 'body');
-    await page.getByRole('button', { name: '启动交互演示' }).click();
+    await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
+    await page.getByRole('button', { name: '启动交互演示' }).dispatchEvent('click');
     await expect.poll(() => page.evaluate(() => resourceRequests.length)).toBe(1);
-    await page.waitForTimeout(400);
+    await page.clock.runFor(400);
     expect(await page.evaluate(() => resourceRequests[0].aborted)).toBe(false);
-    if (action === 'close') await page.getByRole('button', { name: '关闭交互预览' }).click();
-    else await expect(page.locator('[role=status]')).toContainText('初始化超时');
+    expect(await page.evaluate(() => resourceRequests.length)).toBe(1);
+    if (action === 'close') {
+      await page.getByRole('button', { name: '关闭交互预览' }).dispatchEvent('click');
+    } else {
+      await page.clock.runFor(14599);
+      expect(await page.evaluate(() => resourceRequests[0].aborted)).toBe(false);
+      await page.clock.runFor(1);
+      await expect(page.locator('#demo-0')).toHaveAttribute(
+        'data-mbb-failure-code',
+        'STARTUP_TIMEOUT',
+      );
+      expect(await page.evaluate(() => lastResourceAbortMs)).toBe(15000);
+    }
     await expect.poll(() => page.evaluate(() => resourceRequests[0].aborted)).toBe(true);
     expect(await page.evaluate(() => resourceRequests.length)).toBe(1);
     expect(await page.evaluate(() => MarkBridgeComponents.frameCount())).toBe(0);
+    await expect(page.locator('iframe')).toHaveCount(0);
+    await page.clock.resume();
   }
 });
 
-test('two stalled header requests terminate within the original shared budget', async ({
+test('two stalled header requests share one fifteen second preparation deadline', async ({
   page,
 }) => {
   await load(page, { budgets: { startupMs: 900 } });
   await transport(page, 'stall');
-  await page.getByRole('button', { name: '启动交互演示' }).click();
-  await expect(page.locator('[role=status]')).toContainText('初始化超时');
-  const elapsed = await page.evaluate(() => lastResourceAbortMs);
-  expect(elapsed).toBeGreaterThanOrEqual(850);
-  expect(elapsed).toBeLessThanOrEqual(1050);
+  await page.clock.install();
+  await page.clock.pauseAt(await page.evaluate(() => Date.now() + 1000));
+  await page.getByRole('button', { name: '启动交互演示' }).dispatchEvent('click');
+  await expect.poll(() => page.evaluate(() => resourceRequests.length)).toBe(1);
+  await page.clock.runFor(299);
+  expect(await page.evaluate(() => resourceRequests)).toEqual([{ method: 'GET', aborted: false }]);
+  await page.clock.runFor(1);
+  await expect.poll(() => page.evaluate(() => resourceRequests.length)).toBe(2);
+  expect(await page.evaluate(() => resourceRequests)).toEqual([
+    { method: 'GET', aborted: true },
+    { method: 'GET', aborted: false },
+  ]);
+  await page.clock.runFor(14699);
+  expect(await page.evaluate(() => resourceRequests[1].aborted)).toBe(false);
+  await expect(page.locator('iframe')).toHaveCount(0);
+  await page.clock.runFor(1);
+  await expect(page.locator('#demo-0')).toHaveAttribute('data-mbb-failure-code', 'STARTUP_TIMEOUT');
+  expect(await page.evaluate(() => lastResourceAbortMs)).toBe(15000);
   await expect(page.locator('.fallback')).toBeVisible();
   expect(await page.evaluate(() => resourceRequests)).toEqual([
     { method: 'GET', aborted: true },
     { method: 'GET', aborted: true },
   ]);
   expect(await page.evaluate(() => MarkBridgeComponents.frameCount())).toBe(0);
+  await expect(page.locator('iframe')).toHaveCount(0);
 });
 
 test('late iframe load callbacks cannot initialize or kill a replacement preview', async ({
