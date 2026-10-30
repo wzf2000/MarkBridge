@@ -398,12 +398,10 @@ test.describe('v3 nearest visible centerline selection', () => {
     );
     await page.mouse.click(requested.x, requested.y);
     const actual = await page.evaluate(() => globalThis.nativeLineClick);
-    await test
-      .info()
-      .attach('native-click-coordinates', {
-        body: JSON.stringify({ requested, actual }),
-        contentType: 'application/json',
-      });
+    await test.info().attach('native-click-coordinates', {
+      body: JSON.stringify({ requested, actual }),
+      contentType: 'application/json',
+    });
     expect(Math.abs(actual.x - requested.x)).toBeLessThan(1);
     await page.keyboard.press('Escape');
     for (const reverse of [false, true]) {
