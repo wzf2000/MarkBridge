@@ -64,3 +64,26 @@ assert.equal(
   false,
 );
 console.log('PHP/JS exact static Runner model and text-only preview passed');
+const v2 = { ...p, version: 2, language: 'javascript' };
+assert.equal(context.model(v2), null);
+assert.ok(context.model(v2, '0.2.0'));
+assert.equal(context.model(p, '0.2.0'), null);
+assert.equal(context.model(v2, '0.3.0'), null);
+for (const version of ['0.1.0', '0.2.0', '0.3.0']) {
+  for (const language of ['javascript', 'python', 'cpp', 'js']) {
+    for (const modelVersion of [1, 2]) {
+      const sample = { ...p, version: modelVersion, language };
+      const accepted = execFileSync(
+        'php',
+        [
+          '-r',
+          'require "plugin/code-runner-static.php";echo mbb_code_runner_model(json_decode(stream_get_contents(STDIN)), $argv[1]) ? "yes" : "no";',
+          version,
+        ],
+        { input: JSON.stringify(sample), encoding: 'utf8' },
+      );
+      assert.equal(!!context.model(sample, version), accepted === 'yes');
+    }
+  }
+}
+console.log('v1/v2 exact PHP/Node language matrix passed');

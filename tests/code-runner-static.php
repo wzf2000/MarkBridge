@@ -74,3 +74,24 @@ foreach (
     static_check(mbb_code_runner_static($a) === null, 'Malformed model accepted');
 }
 echo "Static Runner contract without provider passed\n";
+$v2 = clone $p;
+$v2->version = 2;
+$v2->language = 'javascript';
+$a['componentVersion'] = '0.2.0';
+$a['params'] = $v2;
+$staticV2 = mbb_code_runner_static($a, $explanation);
+static_check(is_string($staticV2), 'Exact v2 fallback rejected');
+static_check(str_contains($staticV2, 'JavaScript'), 'JavaScript fallback language missing');
+static_check(
+    mbb_code_runner_explanation($staticV2, true) === $explanation,
+    'v2 explanation changed',
+);
+static_check(
+    str_contains(
+        $staticV2,
+        htmlspecialchars(implode('', $v2->sourceChunks), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
+    ),
+    'v2 source bytes changed',
+);
+static_check(mbb_code_runner_model($v2) === null, 'Legacy model inferred v2');
+echo "Exact v2 static fallback and explanation passed\n";

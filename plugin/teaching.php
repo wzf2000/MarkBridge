@@ -177,7 +177,7 @@ add_filter(
         if ($kind === 'component') {
             if (
                 ($attrs['component'] ?? '') === 'code-runner' &&
-                ($attrs['componentVersion'] ?? '') === '0.1.0'
+                in_array($attrs['componentVersion'] ?? '', ['0.1.0', '0.2.0'], true)
             ) {
                 return mbb_code_runner_render($html, $attrs);
             }

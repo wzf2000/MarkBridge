@@ -1,7 +1,7 @@
 import { translate as T } from './i18n.js';
 import { componentParams } from './component-data.js';
 // Exact data-only reading model; never starts a frame, worker or execution request.
-export function codeRunnerModel(value) {
+export function codeRunnerModel(value, version = '0.1.0') {
   try {
     componentParams(value, () => {
       throw Error('invalid');
@@ -11,8 +11,11 @@ export function codeRunnerModel(value) {
     if (
       Object.keys(value).length !== keys.length ||
       Object.keys(value).some((k) => !keys.includes(k)) ||
-      value.version !== 1 ||
-      !['python', 'cpp'].includes(value.language) ||
+      !['0.1.0', '0.2.0'].includes(version) ||
+      value.version !== (version === '0.2.0' ? 2 : 1) ||
+      !(version === '0.2.0' ? ['javascript', 'python', 'cpp'] : ['python', 'cpp']).includes(
+        value.language,
+      ) ||
       typeof value.title !== 'string' ||
       size(value.title) < 1 ||
       size(value.title) > 160 ||
@@ -40,8 +43,8 @@ export function codeRunnerModel(value) {
     return null;
   }
 }
-export function codeRunnerStaticElement(el, params) {
-  const p = codeRunnerModel(params);
+export function codeRunnerStaticElement(el, params, version = '0.1.0') {
+  const p = codeRunnerModel(params, version);
   if (!p)
     return el(
       'p',
@@ -57,10 +60,12 @@ export function codeRunnerStaticElement(el, params) {
     el(
       'p',
       {},
-      (p.language === 'python' ? 'Python' : 'C++20') +
+      { javascript: 'JavaScript', python: 'Python', cpp: 'C++20' }[p.language] +
         ' · ' +
         T(
-          'One source file and the standard library. The editor preview does not execute programs.',
+          p.language === 'javascript'
+            ? 'Synchronous JavaScript. The input variable contains the standard input text. The editor preview does not execute programs.'
+            : 'One source file and the standard library. The editor preview does not execute programs.',
         ),
     ),
     el('pre', {}, el('code', {}, p.sourceChunks.join(''))),

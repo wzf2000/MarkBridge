@@ -4,7 +4,7 @@
   <a href="LICENSE"><img alt="License: GPL-3.0-or-later" src="https://img.shields.io/badge/license-GPL--3.0--or--later-818cf8"></a>
   <img alt="WordPress 7.1" src="https://img.shields.io/badge/WordPress-7.1-21759b">
   <img alt="PHP 8.2+" src="https://img.shields.io/badge/PHP-8.2%2B-777bb4">
-  <img alt="Version 3.11.0" src="https://img.shields.io/badge/version-3.11.0-818cf8">
+  <img alt="Version 3.12.0" src="https://img.shields.io/badge/version-3.12.0-818cf8">
 </p>
 
 <p align="center"><strong>用 Markdown 写作，用区块调整。保存时，让两种格式保持一致。</strong></p>
@@ -40,6 +40,8 @@ flowchart LR
 ```
 
 ## 开始使用
+
+**3.12.0** 为文章代码组件新增精确 `code-runner@0.2.0` 静态阅读模型，支持 JavaScript、Python 和 C++；旧版本不自动升级。源码、标准输入与讲解在扩展停用或无脚本时仍完整可读。
 
 **3.11.0** 为受信扩展新增服务端文章组件实例快照与最终授权校验 API，供可选 Runner 文章组件使用；执行服务由扩展配置，默认关闭。Main 不执行读者提交的程序。
 

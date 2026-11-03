@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.12.0
+
+- 新增精确 code-runner@0.2.0 / params.version=2 的 JavaScript、Python、C++ 静态阅读；完整保留源码、标准输入和讲解。旧 0.1.0 / v1 不扩展、不自动升级。
+
 ## 3.11.0
 
 - 精确 `code-runner@0.1.0` 的闭合源码模型提供静态代码、stdin 与后台安全预览；缺失 Runner 扩展时仍可阅读，不执行程序。

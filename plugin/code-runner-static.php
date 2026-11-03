@@ -4,7 +4,7 @@ if (!defined('ABSPATH') && PHP_SAPI !== 'cli') {
     exit();
 }
 require_once __DIR__ . '/includes/i18n.php';
-function mbb_code_runner_model($value): ?stdClass
+function mbb_code_runner_model($value, string $version = '0.1.0'): ?stdClass
 {
     try {
         $p = is_array($value) ? (object) $value : $value;
@@ -18,8 +18,13 @@ function mbb_code_runner_model($value): ?stdClass
                 'sourceChunks',
                 'stdinChunks',
             ]) ||
-            ($p->version ?? null) !== 1 ||
-            !in_array($p->language ?? null, ['python', 'cpp'], true) ||
+            !in_array($version, ['0.1.0', '0.2.0'], true) ||
+            ($p->version ?? null) !== ($version === '0.2.0' ? 2 : 1) ||
+            !in_array(
+                $p->language ?? null,
+                $version === '0.2.0' ? ['javascript', 'python', 'cpp'] : ['python', 'cpp'],
+                true,
+            ) ||
             !is_string($p->title ?? null) ||
             strlen($p->title) < 1 ||
             strlen($p->title) > 160 ||
@@ -79,7 +84,7 @@ function mbb_code_runner_static(array $attrs, string $explanation = ''): ?string
 {
     if (
         ($attrs['component'] ?? '') !== 'code-runner' ||
-        ($attrs['componentVersion'] ?? '') !== '0.1.0'
+        !in_array($attrs['componentVersion'] ?? '', ['0.1.0', '0.2.0'], true)
     ) {
         return null;
     }
@@ -89,7 +94,7 @@ function mbb_code_runner_static(array $attrs, string $explanation = ''): ?string
     ) {
         return null;
     }
-    $p = mbb_code_runner_model($attrs['params'] ?? null);
+    $p = mbb_code_runner_model($attrs['params'] ?? null, $attrs['componentVersion']);
     if (!$p) {
         return null;
     }
@@ -99,11 +104,13 @@ function mbb_code_runner_static(array $attrs, string $explanation = ''): ?string
         '"><h3>' .
         $escape($p->title) .
         '</h3><p>' .
-        ($p->language === 'python' ? 'Python' : 'C++20') .
+        ['javascript' => 'JavaScript', 'python' => 'Python', 'cpp' => 'C++20'][$p->language] .
         ' · ' .
         $escape(
             mbb_t(
-                'One source file and the standard library. The example remains readable when execution is unavailable.',
+                $p->language === 'javascript'
+                    ? 'Synchronous JavaScript. The input variable contains the standard input text. The example remains readable when execution is unavailable.'
+                    : 'One source file and the standard library. The example remains readable when execution is unavailable.',
             ),
         ) .
         '</p><div class="mbb-code-runner-explanation">' .
