@@ -60,9 +60,28 @@ for (const plain of [false, true]) {
       await page.locator('#mbb-more > summary').click();
       await page.locator('#mbb-recovery-open').click();
       await expect(page.locator('.mbb-server-backups')).toContainText('Last formal save:');
-      // Let the real editor mount, then pause before exercising exact debounce boundaries.
+      await page.waitForFunction(
+        () =>
+          window.taskBlocks?.length === 2 &&
+          wp.data.select('core/editor').isEditedPostDirty() === false,
+      );
+      // A mounted canvas can still publish its initial onChange through the native watcher.
+      // Let that scheduler settle before injecting a synthetic Markdown change; otherwise
+      // its clean blocks snapshot can correctly replace our capture without making a write.
       // Mixing a ticking clock with fastForward can briefly move Date.now backwards.
       await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now() + 1000)));
+      let ticket = await page.evaluate(() => MarkBridgePairedBackups.ticket());
+      let idleSamples = 0;
+      for (let attempt = 0; attempt < 10 && idleSamples < 2; attempt++) {
+        await page.clock.runFor(250);
+        const current = await page.evaluate(() => ({
+          ticket: MarkBridgePairedBackups.ticket(),
+          clean: wp.data.select('core/editor').isEditedPostDirty() === false,
+        }));
+        idleSamples = current.clean && current.ticket === ticket ? idleSamples + 1 : 0;
+        ticket = current.ticket;
+      }
+      expect(idleSamples, 'native mount watcher reaches a clean idle state').toBe(2);
       const capture = () =>
         page.evaluate(() => {
           window.backupCapture = () => ({
