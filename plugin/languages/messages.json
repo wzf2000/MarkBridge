@@ -2305,5 +2305,7 @@
   "One source file and the standard library. The example remains readable when execution is unavailable.": "单文件与标准库。运行服务不可用时，仍可阅读和复制示例。",
   "Standard input": "标准输入",
   "The code example parameters are invalid. Preserve the original content and check the source and input.": "代码示例参数无效，请保留原文并检查源码和输入。",
-  "One source file and the standard library. The editor preview does not execute programs.": "单文件与标准库。后台预览不执行程序。"
+  "One source file and the standard library. The editor preview does not execute programs.": "单文件与标准库。后台预览不执行程序。",
+  "Synchronous JavaScript. The input variable contains the standard input text. The example remains readable when execution is unavailable.": "JavaScript 同步脚本。input 变量是标准输入文本；无法运行时仍可阅读示例。",
+  "Synchronous JavaScript. The input variable contains the standard input text. The editor preview does not execute programs.": "JavaScript 同步脚本。input 变量是标准输入文本；编辑器预览不执行程序。"
 }

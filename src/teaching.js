@@ -1075,8 +1075,8 @@ export function registerTeaching() {
                 : null,
               ...controls.filter((control) => !visible.includes(control.key)),
               kind === 'component' && !a.activity
-                ? a.component === 'code-runner' && a.componentVersion === '0.1.0'
-                  ? codeRunnerStaticElement(el, a.params)
+                ? a.component === 'code-runner' && ['0.1.0', '0.2.0'].includes(a.componentVersion)
+                  ? codeRunnerStaticElement(el, a.params, a.componentVersion)
                   : el(
                       'div',
                       {

@@ -6353,6 +6353,14 @@ msgid "Synchronize horizontal scrolling"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Synchronous JavaScript. The input variable contains the standard input text. The editor preview does not execute programs."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Synchronous JavaScript. The input variable contains the standard input text. The example remains readable when execution is unavailable."
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Table"
 msgstr ""
 

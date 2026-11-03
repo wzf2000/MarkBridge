@@ -1575,6 +1575,8 @@
   "Suggested reading order",
   "Sync by content anchors",
   "Synchronize horizontal scrolling",
+  "Synchronous JavaScript. The input variable contains the standard input text. The editor preview does not execute programs.",
+  "Synchronous JavaScript. The input variable contains the standard input text. The example remains readable when execution is unavailable.",
   "Table",
   "Table blocks cannot contain child blocks",
   "Table column counts differ",
