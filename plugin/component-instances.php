@@ -52,7 +52,7 @@ function markbridge_component_instance_snapshot(
         ) {
             throw new RuntimeException('unavailable');
         }
-        $source = mbb_references_source_digest($pair['post']);
+        $source = mbb_references_source_digest($pair['post'], true);
         if (
             $source !== null &&
             !hash_equals($source, hash('sha256', $pair['post']->post_content_filtered))
@@ -78,7 +78,7 @@ function markbridge_component_instance_snapshot(
             get_current_user_id() !== $identity['user'] ||
             !hash_equals($identity['session'], hash('sha256', wp_get_session_token())) ||
             !hash_equals($identity['token'], mbb_token(mbb_references_fresh_post($postId))) ||
-            mbb_references_source_digest(mbb_references_fresh_post($postId)) !== $source
+            mbb_references_source_digest(mbb_references_fresh_post($postId), true) !== $source
         ) {
             throw new RuntimeException('unavailable');
         }

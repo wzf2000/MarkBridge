@@ -3,6 +3,10 @@
   margin: 1rem 0;
   color: inherit;
 }
+/* The static Runner wrapper already contains its complete reading and print view. */
+.mbb-code-runner-static > .mbb-projection[data-mbb-generated] {
+  display: none;
+}
 .mbb-projection svg {
   display: block;
   width: 100%;
