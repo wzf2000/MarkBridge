@@ -5,6 +5,38 @@ if (!defined('ABSPATH') && PHP_SAPI !== 'cli') {
 }
 require_once __DIR__ . '/source-navigation.php';
 
+/** Server-only author preview scope, independent of request flags and block attributes. */
+final class MBB_Author_Preview
+{
+    private static int $depth = 0;
+
+    public static function active(): bool
+    {
+        return self::$depth > 0;
+    }
+
+    public static function render($request, array $document, array $projected)
+    {
+        $permission = mbb_permission($request);
+        if (is_wp_error($permission)) {
+            return $permission;
+        }
+        self::$depth++;
+        try {
+            // Include the navigation-free fallback in the same authenticated scope.
+            return mbb_preview_navigation($document, $projected);
+        } finally {
+            self::$depth--;
+        }
+    }
+}
+
+/** Whether an authenticated author's candidate is currently being rendered as static HTML. */
+function markbridge_is_author_preview(): bool
+{
+    return MBB_Author_Preview::active();
+}
+
 function mbb_preview_strip_navigation(string $html): string
 {
     $tags = new WP_HTML_Tag_Processor($html);

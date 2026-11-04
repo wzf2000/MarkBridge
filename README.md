@@ -4,7 +4,7 @@
   <a href="LICENSE"><img alt="License: GPL-3.0-or-later" src="https://img.shields.io/badge/license-GPL--3.0--or--later-818cf8"></a>
   <img alt="WordPress 7.1" src="https://img.shields.io/badge/WordPress-7.1-21759b">
   <img alt="PHP 8.2+" src="https://img.shields.io/badge/PHP-8.2%2B-777bb4">
-  <img alt="Version 3.12.1" src="https://img.shields.io/badge/version-3.12.1-818cf8">
+  <img alt="Version 3.12.2" src="https://img.shields.io/badge/version-3.12.2-818cf8">
 </p>
 
 <p align="center"><strong>用 Markdown 写作，用区块调整。保存时，让两种格式保持一致。</strong></p>
@@ -40,6 +40,8 @@ flowchart LR
 ```
 
 ## 开始使用
+
+**3.12.2** 修复 Markdown 正文预览中代码运行组件消失的问题；未保存的新组件与源码修改也可查看完整静态内容。后台预览不提供运行控件。
 
 **3.12.1** 支持文件来源文章的受信只读读取与代码运行核验，后台写回继续独立授权；源不可用时保留有权阅读的已保存示例，并修复静态代码与打印重复显示。
 
