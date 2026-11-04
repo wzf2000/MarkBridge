@@ -338,6 +338,32 @@ server memory; avoid placing snapshots, source or output in logs, public assets 
 A queue may persist only identifiers and the stamp, fetch a fresh snapshot later, compare its stamp,
 and call `final()` on that fresh complete snapshot. A stamp is not an independent permission grant.
 
+### Read-only file-source integration
+
+File-managed instance snapshots resolve their source through `mbb_source_read_target($post)`.
+A trusted site integration may supply a path with the `mbb_source_read_target` filter; resolve it
+from a private mapping keyed by the saved post, never from a request. Core requires an existing,
+readable, nonsymlink regular file and verifies the SHA-256 of its real path against the saved
+`_mbb_source_path_hash`. It reads fresh source bytes and requires their digest to match the saved
+Markdown at snapshot creation and again at final authorization. The post token also binds the
+source path identity, so rebinding an identical file invalidates an earlier snapshot.
+
+Only a `null` read-filter result means that no read mapping was supplied: core then asks the
+legacy `mbb_source_write_target` filter and applies the same read checks without requiring write
+permission. `false`, an empty string, `WP_Error`, or an invalid path explicitly denies reading;
+none falls back to the legacy mapping. Existing integrations that return a path only after testing
+writability should supply a separate read filter for sources mounted read-only.
+
+`mbb_source_target()` and its `mbb_source_write_target` filter retain their independent write
+checks. A read mapping grants no browser save/writeback authority. The editor source endpoint uses the read resolver; it enables writeback only when the independent
+write resolver returns the same real path and the original write capability passes. Read-only
+source bytes must match the saved Markdown; writable mappings retain external-edit conflict
+comparison. Mutation/reference preparation
+continues using the write resolver; only saved component capability reads use the read resolver.
+If execution authorization fails, an extension may retain the currently authorized saved static
+example after checking the complete saved block and final article permission/version. It must not
+return unsaved source-file bytes, stale explanations, execution credentials, or private content.
+
 Main also understands the exact data-only `code-runner@0.1.0` reading model:
 `{version:1,language:"python"|"cpp",title,sourceChunks,stdinChunks}`. UTF-8 source/input chunks are
 at most 1024 bytes each, with at most 8/4 chunks; title is at most 160 UTF-8 bytes. It inherits the

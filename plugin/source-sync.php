@@ -127,6 +127,50 @@ function mbb_source_target($post)
     return $real;
 }
 
+/**
+ * Resolve a bound file for reading, without granting browser writeback.
+ * Only null means no read integration: retain legacy write-target resolution.
+ * Any explicit denial/invalid result must fail closed instead of falling back.
+ */
+function mbb_source_read_target($post)
+{
+    $p = is_object($post) ? $post : get_post($post);
+    if (!$p || get_post_meta($p->ID, '_mbb_source_managed', true) !== 'file') {
+        return new WP_Error('source_unmanaged', mbb_t('This article has no source file binding.'), [
+            'status' => 409,
+        ]);
+    }
+    $path = apply_filters('mbb_source_read_target', null, $p);
+    if ($path === null) {
+        $path = apply_filters('mbb_source_write_target', null, $p);
+    }
+    if (is_string($path)) {
+        clearstatcache(true, $path);
+    }
+    if (!is_string($path) || $path === '' || !is_file($path) || is_link($path)) {
+        return new WP_Error(
+            'source_target_unavailable',
+            mbb_t('The bound source file is currently unavailable.'),
+            ['status' => 409],
+        );
+    }
+    $real = realpath($path);
+    if (!is_string($real) || !is_readable($real)) {
+        return new WP_Error(
+            'source_target_unavailable',
+            mbb_t('The bound source file is currently unavailable.'),
+            ['status' => 409],
+        );
+    }
+    $bound = get_post_meta($p->ID, '_mbb_source_path_hash', true);
+    if (!$bound || !hash_equals((string) $bound, hash('sha256', $real))) {
+        return new WP_Error('source_binding', mbb_t('Source binding verification failed.'), [
+            'status' => 409,
+        ]);
+    }
+    return $real;
+}
+
 function mbb_source_fingerprint($path)
 {
     $contents = file_get_contents($path);
@@ -136,6 +180,34 @@ function mbb_source_fingerprint($path)
         ]);
     }
     return ['sha256' => hash('sha256', $contents), 'contents' => $contents];
+}
+
+/** Read the editor source without treating a read mapping as writeback authority. */
+function mbb_source_editor_read($post)
+{
+    $target = mbb_source_read_target($post);
+    if (is_wp_error($target)) {
+        return $target;
+    }
+    $fingerprint = mbb_source_fingerprint($target);
+    if (is_wp_error($fingerprint)) {
+        return $fingerprint;
+    }
+    $writeTarget = mbb_source_target($post);
+    $sameWriteTarget = !is_wp_error($writeTarget) && $writeTarget === $target;
+    // Writable sources keep the existing external-change comparison/merge workflow.
+    // A read-only integration exposes only source bytes already saved with this article.
+    if (!$sameWriteTarget && $fingerprint['contents'] !== $post->post_content_filtered) {
+        return new WP_Error(
+            'source_conflict',
+            mbb_t('The source binding or content changed. Read it again before synchronization.'),
+            ['status' => 409],
+        );
+    }
+    $capability = apply_filters('mbb_source_write_capability', 'edit_post', $post->ID);
+    $fingerprint['write_available'] =
+        $sameWriteTarget && (bool) $capability && current_user_can($capability, $post->ID);
+    return $fingerprint;
 }
 
 function mbb_source_atomic_write($path, $contents)

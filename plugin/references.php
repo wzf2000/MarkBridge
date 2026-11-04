@@ -184,12 +184,12 @@ function mbb_references_verify_operation($request, int $id, array $identity): vo
         );
     }
 }
-function mbb_references_source_digest($post): ?string
+function mbb_references_source_digest($post, bool $readOnly = false): ?string
 {
     if (!$post || get_post_meta($post->ID, '_mbb_source_managed', true) !== 'file') {
         return null;
     }
-    $target = mbb_source_target($post);
+    $target = $readOnly ? mbb_source_read_target($post) : mbb_source_target($post);
     if (is_wp_error($target)) {
         mbb_references_fail(
             'source_conflict',

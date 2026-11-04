@@ -128,13 +128,16 @@ function get_preview_post_link(...$args)
 {
     return '/preview';
 }
-function mbb_source_target($post)
+// The recovery model consumes the editor's source-read result; filesystem binding/read
+// behavior is covered by source-read-target.php, not this permission-only fixture.
+function mbb_source_editor_read($post)
 {
-    return ['path' => '/synthetic/private/source.md'];
-}
-function mbb_source_fingerprint($target)
-{
-    return ['sha256' => hash('sha256', 'synthetic file')];
+    $capability = apply_filters('mbb_source_write_capability', 'edit_post', $post->ID);
+    return [
+        'sha256' => hash('sha256', 'synthetic file'),
+        'contents' => 'synthetic file',
+        'write_available' => (bool) $capability && current_user_can($capability, $post->ID),
+    ];
 }
 function apply_filters($hook, $v, ...$args)
 {

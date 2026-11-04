@@ -42,8 +42,11 @@ function mbb_component_domain_valid(...$args)
 {
     return true;
 }
-function mbb_references_source_digest(...$args)
+function mbb_references_source_digest($post, bool $readOnly = false)
 {
+    if (!$readOnly) {
+        throw new RuntimeException('Component reading requested write authority');
+    }
     return $GLOBALS['source'];
 }
 function get_current_user_id()

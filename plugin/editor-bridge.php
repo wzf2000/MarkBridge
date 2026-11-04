@@ -107,15 +107,10 @@ function mbb_state($id)
         'preview_url' => get_preview_post_link($id),
     ];
     if ($state['source_managed']) {
-        $target = mbb_source_target($p);
-        $capability = apply_filters('mbb_source_write_capability', 'edit_post', $id);
-        $state['source_write_available'] =
-            !is_wp_error($target) && (bool) $capability && current_user_can($capability, $id);
-        if (!is_wp_error($target)) {
-            $fingerprint = mbb_source_fingerprint($target);
-            if (!is_wp_error($fingerprint)) {
-                $state['source_sha256'] = $fingerprint['sha256'];
-            }
+        $source = mbb_source_editor_read($p);
+        $state['source_write_available'] = !is_wp_error($source) && $source['write_available'];
+        if (!is_wp_error($source)) {
+            $state['source_sha256'] = $source['sha256'];
         }
     }
     return $state;
@@ -1197,11 +1192,7 @@ add_action('rest_api_init', function () {
                     409,
                 );
             }
-            $target = mbb_source_target($p);
-            if (is_wp_error($target)) {
-                return $target;
-            }
-            $fingerprint = mbb_source_fingerprint($target);
+            $fingerprint = mbb_source_editor_read($p);
             if (is_wp_error($fingerprint)) {
                 return $fingerprint;
             }
@@ -1210,6 +1201,7 @@ add_action('rest_api_init', function () {
                 'expected' => mbb_token($p),
                 'source_sha256' => $fingerprint['sha256'],
                 'source' => $fingerprint['contents'],
+                'write_available' => $fingerprint['write_available'],
             ];
         },
     ]);
