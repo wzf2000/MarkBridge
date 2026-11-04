@@ -269,13 +269,36 @@ function do_blocks($serialized)
     ba_mutate_registry('render');
     return $serialized;
 }
-function mbb_preview_navigation($document, $projected)
+// This model isolates registry mutation during render. The real authenticated scope and
+// navigation cleanup are covered by author-preview.php and the WordPress integration suite.
+class MBB_Author_Preview
 {
-    // This model checks registry mutation during render. Real navigation uses the WP lab suite.
-    return [
-        'html' => mbb_render_footnotes(do_blocks($projected['serialized'])),
-        'navigation' => null,
-    ];
+    public static function render($request, array $document, array $projected)
+    {
+        return [
+            'html' => mbb_render_footnotes(do_blocks($projected['serialized'])),
+            'navigation' => null,
+        ];
+    }
+}
+function absint($value)
+{
+    return abs((int) $value);
+}
+function is_user_logged_in()
+{
+    return $GLOBALS['ba_logged_in'];
+}
+function current_user_can(...$args)
+{
+    return $GLOBALS['ba_can_edit'];
+}
+class BA_Preview_Request extends ArrayObject
+{
+    public function get_param($name)
+    {
+        return $this[$name] ?? null;
+    }
 }
 function mbb_candidate_current($request)
 {
@@ -288,6 +311,9 @@ function mbb_candidate_current($request)
 define('ABSPATH', __DIR__ . '/');
 require dirname(__DIR__) . '/plugin/native-media.php';
 $api = file_get_contents(dirname(__DIR__) . '/plugin/editor-bridge.php');
+$begin = strpos($api, 'function mbb_permission($r)');
+$end = strpos($api, 'function mbb_source_write_permission($r)', $begin);
+eval(substr($api, $begin, $end - $begin));
 $begin = strpos($api, 'function mbb_candidate($r)');
 $end = strpos($api, 'function mbb_candidate_current($r)', $begin);
 eval(substr($api, $begin, $end - $begin));
@@ -297,9 +323,22 @@ eval(substr($api, $begin, $end - $begin));
 $GLOBALS['ba_candidate_document'] = $doc['document'];
 $GLOBALS['ba_mutation_descriptor'] = json_decode(json_encode($descriptor), true);
 $GLOBALS['ba_mutation_descriptor']['template']['children'][1]['children'][1]['text'] = ' : ';
+$GLOBALS['ba_logged_in'] = $GLOBALS['ba_can_edit'] = true;
+foreach (['ba_logged_in', 'ba_can_edit'] as $permission) {
+    $GLOBALS[$permission] = false;
+    $GLOBALS['ba_mutation_phase'] = 'parse';
+    $result = mbb_preview(new BA_Preview_Request());
+    ba_assert(
+        is_wp_error($result) &&
+            $result->code === 'forbidden' &&
+            $GLOBALS['ba_mutation_phase'] === 'parse',
+        'Unauthorized preview reached candidate preparation',
+    );
+    $GLOBALS[$permission] = true;
+}
 foreach (['parse', 'render'] as $phase) {
     $GLOBALS['ba_mutation_phase'] = $phase;
-    $result = mbb_preview(new ArrayObject());
+    $result = mbb_preview(new BA_Preview_Request());
     ba_assert(
         is_wp_error($result) && $result->code === 'adapter_conflict',
         'Old rendered candidate acquired a new registry digest',

@@ -2,6 +2,20 @@
 
 This API is for installed, reviewed PHP and JavaScript code. Authored Markdown and parameters cannot name a callback, path, URL or script. Normal article preview, Apply, paired save, revision and source-file guards remain authoritative. The SDK has no separate article save endpoint.
 
+## Static author preview context (Main 3.12.2)
+
+`markbridge_is_author_preview(): bool` is a read-only server API for trusted PHP renderers.
+It is true only while Main renders an authenticated author's candidate through `mbb_preview()`,
+including source navigation and its static fallback. Internal document-tool and batch-import
+previews use the same permission check. The scope supports nested previews and is cleared even if
+rendering throws. Direct calls to `mbb_preview_navigation()` do not enable it.
+
+When true, a reader renderer may preserve the candidate's already validated static HTML instead of
+looking up an instance in the saved article. A new or edited candidate need not match saved content.
+Do not inject execution controls or credentials into this static preview. Request parameters, block
+attributes and preview navigation markers cannot enable this context. Outside it, retain normal
+saved-source, instance and reading-permission checks; this API grants no execution or save authority.
+
 ## Indexed exact component definitions (Main 3.4)
 
 Feature-detect `markbridge_teaching_supports_component_catalog()`. Call

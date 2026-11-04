@@ -476,6 +476,11 @@ function mbb_candidate_current($r)
 }
 function mbb_preview($r)
 {
+    // Internal SDK/batch and direct CLI calls must enforce the route's author permission too.
+    $permission = mbb_permission($r);
+    if (is_wp_error($permission)) {
+        return $permission;
+    }
     $c = mbb_candidate($r);
     if (is_wp_error($c)) {
         return $c;
@@ -500,10 +505,14 @@ function mbb_preview($r)
     $receipt_request = clone $r;
     $receipt_request['frontmatter_receipt'] = $c['frontmatter_receipt'];
     $c['resource_receipt'] = mbb_resource_receipt($receipt_request, $c);
-    $rendered = mbb_preview_navigation(
+    $rendered = MBB_Author_Preview::render(
+        $r,
         $c['document'],
         $c['resource_plan']['projectedDocument'] ?? $c['document'],
     );
+    if (is_wp_error($rendered)) {
+        return $rendered;
+    }
     $c['html'] = $rendered['html'];
     $c['navigation'] = $rendered['navigation'];
     if (!hash_equals($c['_adapter_registry_digest'], mbb_block_adapter_digest())) {
