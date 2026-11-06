@@ -3,7 +3,7 @@ Tags: markdown, blocks, editor, mathjax, revisions
 Requires at least: 7.1
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 3.12.3-rc.1
+Stable tag: 3.12.3-rc.2
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -26,6 +26,9 @@ Private paired candidate backups for existing managed articles are stored in non
 3. Import a test Markdown draft, preview, save and reopen. Existing Node installations should review the upgrade guide before changing their backend.
 
 == Changelog ==
+
+= 3.12.3-rc.2 =
+* 在数学 Worker 首次消息或错误后释放启动 URL，避免 WebKit 异步加载竞态；保留公式语义和语音。
 
 = 3.12.3-rc.1 =
 * 手机阶段导航提供单行选择、前后箭头与收起；保留全文和键盘操作。
