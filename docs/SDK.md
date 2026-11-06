@@ -123,6 +123,24 @@ Local tests: `tests/projections.{php,cjs}`, `tests/projection-plan.php`, `tests/
 
 The ordinary source sanitizer still refuses MathML/SVG. StaticExport alone marks verified generated math wrappers with `data-mbb-math-projection="chtml/v1"`; Publisher uses only those exact nodes and their checked original TeX labels, never ordinary authored aria-label text. Publication client registration may additionally carry closed `output:{filename,downloadLabel,generateLabel,previewLabel,description}` for format-specific controls. Core still owns candidate inspection, confirmation, artifact digest and final download authorization.
 
+## Reading excerpts with mathematical content
+
+`MBB_MATH.createReference(sourceElement)` projects an already-readable article excerpt into a new `.mbb-math-reference` element. It preserves paragraph/list/emphasis/code/link structure and reconstructs MarkBridge inline and display formulas from their TeX. It does not copy rendered MathJax wrappers, original IDs, paragraph identities, styling, event attributes or controls. Only HTTP(S) links survive. It accepts a DOM element, not an HTML string; callers still own source access checks. This is an excerpt projection, not a general HTML sanitizer or a parser for stored plain-text comment snapshots.
+
+Append the reference to a visible panel, then call `await MBB_MATH.typeset(reference)`. This uses the same isolated engine, font configuration and TeX limits as the article. The call is scoped to the supplied container (including a formula at the root) and can be repeated without adding wrappers. Do not call `typeset(document)` when opening a panel. The engine owns the children of each `.mbb-math` / `.wp-block-mbb-math` element; put comment controls outside these nodes. A display formula's `mjx-container` owns horizontal overflow.
+
+```js
+const reference = window.MBB_MATH.createReference(readableParagraph);
+quote.replaceChildren(reference);
+requestAnimationFrame(() => {
+  if (panelIsOpen() && reference.isConnected) {
+    window.MBB_MATH.typeset(reference);
+  }
+});
+```
+
+The caller keeps focus, scroll and stage history. If the panel closes or replaces its excerpt before the scheduled call, skip that detached reference; no renderer disposal is needed. `typeset` retains source TeX and sets `data-mbb-math-error` when the existing engine cannot render it. Keep ordinary text fallback if the API is not loaded, the source paragraph no longer exists, or only a historical plain-text snapshot is available. Do not guess inline/display boundaries from that snapshot. Do not truncate references with CSS line-clamp: use the panel's ordinary content scrolling and the formula's horizontal scrolling. Theme typography should inherit from the article reading settings.
+
 ## Generic author presentation
 
 The schema stays data-only. Core uses display-only field labels and one-based array item numbers, with registered localized component titles. Unknown keys are humanized without deleting or remapping data; exact keys/implementation version remain in advanced configuration details. No component-specific algorithm is dispatched by these labels. Sparse-x bars in the chart-static sample follow row order with equal group spacing; line/scatter retain numeric x. The research provider and its immutable resources are not changed by the sample bridge.

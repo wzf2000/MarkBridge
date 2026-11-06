@@ -435,7 +435,7 @@
   "Explicitly apply edits. The server validates parameters against the registered schema when saving.": "编辑后明确应用；保存时由服务端登记 schema 校验。",
   "Teaching component": "教学组件",
   "Collapsible content": "折叠内容",
-  "Stage navigation": "阶段导览",
+  "Stage navigation": "阶段导航",
   "Stage": "阶段",
   "Code comparison": "代码比较",
   "By stage": "分阶段",
@@ -2307,5 +2307,7 @@
   "The code example parameters are invalid. Preserve the original content and check the source and input.": "代码示例参数无效，请保留原文并检查源码和输入。",
   "One source file and the standard library. The editor preview does not execute programs.": "单文件与标准库。后台预览不执行程序。",
   "Synchronous JavaScript. The input variable contains the standard input text. The example remains readable when execution is unavailable.": "JavaScript 同步脚本。input 变量是标准输入文本；无法运行时仍可阅读示例。",
-  "Synchronous JavaScript. The input variable contains the standard input text. The editor preview does not execute programs.": "JavaScript 同步脚本。input 变量是标准输入文本；编辑器预览不执行程序。"
+  "Synchronous JavaScript. The input variable contains the standard input text. The editor preview does not execute programs.": "JavaScript 同步脚本。input 变量是标准输入文本；编辑器预览不执行程序。",
+  "Collapse stage navigation": "收起阶段导航",
+  "Expand stage navigation": "展开阶段导航"
 }

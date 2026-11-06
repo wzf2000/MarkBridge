@@ -893,7 +893,7 @@
           all.setAttribute('aria-pressed', String(full));
           staged.setAttribute('aria-pressed', String(!full));
           controls.querySelector('select')?.value !== undefined &&
-            (controls.querySelector('select').value = String(current));
+            (controls.querySelector('select').value = full ? 'full' : String(current));
           progress.value = full ? steps.length : current + 1;
           status.textContent = full
             ? T('Show full text')
@@ -930,6 +930,20 @@
         modes.append(staged, all);
         const navigation = document.createElement('div');
         navigation.className = 'mbb-stage-navigation';
+        navigation.id = node.id + '-mbb-navigation';
+        while (document.getElementById(navigation.id)) navigation.id += '-nav';
+        for (const [control, direction] of [
+          [prev, 'previous'],
+          [next, 'next'],
+        ]) {
+          control.classList.add('mbb-stage-arrow', 'mbb-stage-' + direction);
+          control.setAttribute('aria-label', control.textContent);
+          control.title = control.textContent;
+          const label = document.createElement('span');
+          label.className = 'mbb-stage-arrow-label';
+          label.textContent = control.textContent;
+          control.replaceChildren(label);
+        }
         if (options.previous) navigation.append(prev);
         if (options.next) navigation.append(next);
         const progressGroup = document.createElement('div');
@@ -938,6 +952,10 @@
         controls.append(modes, progressGroup, navigation);
         const chooser = document.createElement('select');
         chooser.setAttribute('aria-label', T('Choose a stage'));
+        const fullOption = document.createElement('option');
+        fullOption.value = 'full';
+        fullOption.textContent = T('Full text');
+        chooser.append(fullOption);
         steps.forEach((step, index) => {
           const option = document.createElement('option');
           option.value = String(index);
@@ -946,10 +964,40 @@
           chooser.append(option);
         });
         chooser.addEventListener('change', () => {
+          if (chooser.value === 'full') {
+            all.click();
+            return;
+          }
           full = false;
           select(steps[Number(chooser.value)], true);
         });
         navigation.insertBefore(chooser, next.parentNode ? next : null);
+        let compactCollapsed = false;
+        const compactViewport = matchMedia('(max-width: 700px)');
+        const compactToggle = button(T('Collapse stage navigation'), () => {
+          compactCollapsed = !compactCollapsed;
+          compactState();
+        });
+        compactToggle.className = 'mbb-stage-compact-toggle';
+        compactToggle.setAttribute('aria-controls', navigation.id);
+        const compactLabel = document.createElement('span');
+        compactLabel.textContent = T('Stage navigation');
+        compactToggle.replaceChildren(compactLabel);
+        function compactState() {
+          const collapsed = compactViewport.matches && compactCollapsed;
+          navigation.hidden = collapsed;
+          controls.classList.toggle('mbb-stage-collapsed', collapsed);
+          compactToggle.setAttribute('aria-expanded', String(!collapsed));
+          compactToggle.setAttribute(
+            'aria-label',
+            collapsed ? T('Expand stage navigation') : T('Collapse stage navigation'),
+          );
+          compactToggle.title = compactToggle.getAttribute('aria-label');
+          scheduleStageMeasurement();
+        }
+        compactViewport.addEventListener('change', compactState);
+        controls.append(compactToggle);
+        compactState();
         node.insertBefore(controls, body);
         stageBars.set(node, controls);
         stageResize?.observe(controls);

@@ -1839,6 +1839,10 @@ msgid "Collapse diagram"
 msgstr "收起图示"
 
 #: plugin/i18n.js
+msgid "Collapse stage navigation"
+msgstr "收起阶段导航"
+
+#: plugin/i18n.js
 msgid "Collapsible content"
 msgstr "折叠内容"
 
@@ -2779,6 +2783,10 @@ msgstr "仅在原身份未被占用时保留；已占用的身份会阻止保存
 #: plugin/i18n.js
 msgid "Existing image URLs are preserved; the server does not download them."
 msgstr "保留现有图片地址，服务端不会下载这些图片。"
+
+#: plugin/i18n.js
+msgid "Expand stage navigation"
+msgstr "展开阶段导航"
 
 #: plugin/i18n.js
 msgid "Expected a single code element"
@@ -6164,7 +6172,7 @@ msgstr "阶段模式需为 full/staged 且全文入口必须启用"
 
 #: plugin/i18n.js
 msgid "Stage navigation"
-msgstr "阶段导览"
+msgstr "阶段导航"
 
 #: plugin/i18n.js
 msgid "Staging cleanup did not complete"
