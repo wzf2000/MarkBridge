@@ -4,7 +4,7 @@
   <a href="LICENSE"><img alt="License: GPL-3.0-or-later" src="https://img.shields.io/badge/license-GPL--3.0--or--later-818cf8"></a>
   <img alt="WordPress 7.1" src="https://img.shields.io/badge/WordPress-7.1-21759b">
   <img alt="PHP 8.2+" src="https://img.shields.io/badge/PHP-8.2%2B-777bb4">
-  <img alt="Version 3.12.3-rc.2" src="https://img.shields.io/badge/version-3.12.3-rc.2-818cf8">
+  <img alt="Version 3.12.3" src="https://img.shields.io/badge/version-3.12.3-818cf8">
 </p>
 
 <p align="center"><strong>用 Markdown 写作，用区块调整。保存时，让两种格式保持一致。</strong></p>
@@ -41,9 +41,7 @@ flowchart LR
 
 ## 开始使用
 
-**3.12.3-rc.2** 修复数学 Worker 启动时的 Blob URL 提前释放问题，保留正文与引用公式的语义阅读能力。此候选仍待组合验收。
-
-**3.12.3-rc.1** 提供手机单行阶段导航与可收起控件；段评引用可通过新接口复用正文公式排版，保留行内与块级结构。本版本为集成验收候选。
+**3.12.3** 提供手机单行阶段导航与可收起控件；段评引用可通过新接口复用正文公式排版，保留行内与块级结构。修复数学 Worker 启动时的 Blob URL 提前释放问题，保留正文与引用公式的语义阅读能力。
 
 **3.12.2** 修复 Markdown 正文预览中代码运行组件消失的问题；未保存的新组件与源码修改也可查看完整静态内容。后台预览不提供运行控件。
 

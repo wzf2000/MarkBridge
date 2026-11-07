@@ -3,7 +3,7 @@ Tags: markdown, blocks, editor, mathjax, revisions
 Requires at least: 7.1
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 3.12.3-rc.2
+Stable tag: 3.12.3
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -13,6 +13,8 @@ Markdown and WordPress blocks, saved and restored together.
 MarkBridge provides paired Markdown/block editing, previews, revisions, local MathJax rendering and Markdown comments.
 
 New installations use the bundled PHP converter with PHP 8.2+, DOM and mbstring on WordPress 7.1.x. No Node.js runtime or subprocess is required for supported content. Existing non-empty runtime settings retain Node until an administrator explicitly switches; unsupported environments or content are rejected without fallback.
+
+MarkBridge 3.12.3 adds compact mobile stage controls and safe paragraph references that reuse the article math renderer. Math worker bootstrap URLs remain valid until the first worker message or error, preserving semantic math and speech support.
 
 MarkBridge 3.11.0 adds authorized saved-component instance snapshots and final permission checks for trusted extensions. The exact code-runner reading model preserves full source, stdin and rendered explanations even when optional execution is unavailable; Main does not execute submitted programs.
 
@@ -26,6 +28,10 @@ Private paired candidate backups for existing managed articles are stored in non
 3. Import a test Markdown draft, preview, save and reopen. Existing Node installations should review the upgrade guide before changing their backend.
 
 == Changelog ==
+
+= 3.12.3 =
+* Add compact mobile stage controls and math references with matching inline/block layout.
+* Fix early worker bootstrap URL revocation while preserving semantic math and speech.
 
 = 3.12.3-rc.2 =
 * 在数学 Worker 首次消息或错误后释放启动 URL，避免 WebKit 异步加载竞态；保留公式语义和语音。
