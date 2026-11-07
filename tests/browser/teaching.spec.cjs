@@ -31,15 +31,23 @@ test('teaching retains nodes, reveals deep anchors, restores history and prints 
   await page.getByRole('button', { name: '下一阶段', exact: true }).click();
   await expect(page.locator('#two')).toBeVisible();
   await expect(page.locator('#target')).toBeHidden();
-  await page.getByRole('button', { name: '全文', exact: true }).click();
+  if (page.viewportSize().width <= 700) {
+    await page.getByRole('combobox', { name: '选择阶段', exact: true }).selectOption('full');
+  } else {
+    await page.getByRole('button', { name: '全文', exact: true }).click();
+  }
   await expect(page.locator('#target')).toBeVisible();
   await expect(page.locator('#unrelated .mbb-teaching-body')).toBeHidden();
   expect(await page.evaluate(() => history.state.companion.drawer)).toBe(true);
   await page.goBack();
-  await expect(page.getByRole('button', { name: '全文', exact: true })).toHaveAttribute(
-    'aria-pressed',
-    'false',
-  );
+  if (page.viewportSize().width <= 700) {
+    await expect(page.getByRole('combobox', { name: '选择阶段', exact: true })).toHaveValue('1');
+  } else {
+    await expect(page.getByRole('button', { name: '全文', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+  }
   await expect(page.locator('#target')).toBeHidden();
   const revealed = await page.evaluate(() => {
     let complete = false;
