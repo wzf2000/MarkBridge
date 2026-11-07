@@ -45,7 +45,11 @@ test('derived references reveal stages, folds and proof without replacing author
   );
   await page.goBack();
   await expect(page.locator('#technical-two')).toBeHidden();
-  await page.getByRole('button', { name: 'Full text', exact: true }).click();
+  if (page.viewportSize().width <= 700) {
+    await page.getByRole('combobox', { name: 'Choose a stage', exact: true }).selectOption('full');
+  } else {
+    await page.getByRole('button', { name: 'Full text', exact: true }).click();
+  }
   await expect(page.locator('#proof-paragraph')).toBeVisible();
   await page.locator('#proof-route summary').click();
   await expect(page.locator('#proof-paragraph')).toBeHidden();
