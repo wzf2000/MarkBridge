@@ -1,6 +1,8 @@
 """A refused distribution must not replace a reviewed ZIP or pass publisher validation."""
 
 import importlib.util
+import hashlib
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -72,6 +74,59 @@ class PackageLimits(unittest.TestCase):
                 stream.truncate(10_000_000)
             with self.assertRaises(ValueError):
                 release.verify_bundle(root, "2.0.0", "a" * 40)
+
+
+class RetainedAssets(unittest.TestCase):
+    def fixture(self, root):
+        body = b"previous reviewed browser resource\n"
+        digest = hashlib.sha256(body).hexdigest()
+        name = "reader-" + digest[:12] + ".js"
+        (root / "plugin").mkdir()
+        (root / "plugin" / name).write_bytes(body)
+        data = {"schema": 1, "files": {name: digest}}
+        (root / "retained-assets.json").write_text(json.dumps(data))
+        return name, data, {"retained-assets.json", "plugin/" + name}
+
+    def test_exact_tracked_resource_is_retained_and_untracked_extra_is_ignored(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            name, _, tracked = self.fixture(root)
+            (root / "plugin" / "unreviewed-aaaaaaaaaaaa.js").write_bytes(b"untracked")
+            self.assertEqual(package.retained_assets(root, tracked, set()), {"plugin/" + name})
+
+    def test_rejects_tampering_untracked_inputs_active_collision_and_symlinks(self):
+        for mode in ["bytes", "untracked", "manifest", "active", "symlink", "undeclared"]:
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                name, _, tracked = self.fixture(root)
+                active = set()
+                if mode == "bytes":
+                    (root / "plugin" / name).write_bytes(b"changed")
+                elif mode == "untracked":
+                    tracked.remove("plugin/" + name)
+                elif mode == "manifest":
+                    tracked.remove("retained-assets.json")
+                elif mode == "active":
+                    active.add(name)
+                elif mode == "symlink":
+                    (root / "original.js").write_bytes((root / "plugin" / name).read_bytes())
+                    (root / "plugin" / name).unlink()
+                    (root / "plugin" / name).symlink_to(root / "original.js")
+                else:
+                    tracked.add("plugin/unreviewed-aaaaaaaaaaaa.js")
+                with self.assertRaises(RuntimeError):
+                    package.retained_assets(root, tracked, active)
+
+    def test_rejects_non_hash_names_digest_prefix_mismatch_and_path_escape(self):
+        for name in ["reader.js", "reader-aaaaaaaaaaaa.js", "../reader-aaaaaaaaaaaa.js"]:
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                original, data, tracked = self.fixture(root)
+                data["files"] = {name: data["files"][original]}
+                (root / "retained-assets.json").write_text(json.dumps(data))
+                tracked.add("plugin/" + name)
+                with self.assertRaises(RuntimeError):
+                    package.retained_assets(root, tracked, set())
 
 
 if __name__ == "__main__":

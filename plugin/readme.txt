@@ -32,6 +32,7 @@ Private paired candidate backups for existing managed articles are stored in non
 = 3.12.3 =
 * Add compact mobile stage controls and math references with matching inline/block layout.
 * Fix early worker bootstrap URL revocation while preserving semantic math and speech.
+* Retain explicitly reviewed content-hashed resources during upgrades without changing the active resource map.
 
 = 3.12.3-rc.2 =
 * 在数学 Worker 首次消息或错误后释放启动 URL，避免 WebKit 异步加载竞态；保留公式语义和语音。

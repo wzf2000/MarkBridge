@@ -3,11 +3,51 @@
 import hashlib
 import json
 from pathlib import Path
+import re
 import subprocess
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 MAX_ARCHIVE_BYTES = 10_000_000
+HASHED_ASSET = re.compile(r"[a-z0-9][a-z0-9-]*-([0-9a-f]{12})\.(?:js|css|html)")
+
+
+def retained_assets(root, tracked, active):
+    """Only reviewed, tracked content-addressed compatibility resources enter the ZIP."""
+    manifest = root / "retained-assets.json"
+    if "retained-assets.json" not in tracked or manifest.is_symlink() or not manifest.is_file():
+        raise RuntimeError("Retained asset manifest must be a tracked regular file")
+    data = json.loads(manifest.read_text())
+    if (
+        not isinstance(data, dict)
+        or set(data) != {"schema", "files"}
+        or data["schema"] != 1
+        or not isinstance(data["files"], dict)
+    ):
+        raise RuntimeError("Invalid retained asset manifest")
+    retained = set()
+    for name, digest in data["files"].items():
+        match = HASHED_ASSET.fullmatch(name)
+        path = root / "plugin" / name
+        relative = "plugin/" + name
+        if (
+            match is None
+            or not isinstance(digest, str)
+            or re.fullmatch(r"[0-9a-f]{64}", digest) is None
+            or match.group(1) != digest[:12]
+            or name in active
+            or relative not in tracked
+            or path.is_symlink()
+            or not path.is_file()
+            or hashlib.sha256(path.read_bytes()).hexdigest() != digest
+        ):
+            raise RuntimeError("Invalid retained asset: " + name)
+        retained.add(relative)
+    for name in tracked:
+        if name.startswith("plugin/") and HASHED_ASSET.fullmatch(name[len("plugin/") :]):
+            if name not in retained and name[len("plugin/") :] not in active:
+                raise RuntimeError("Undeclared tracked compatibility asset: " + name)
+    return retained
 
 
 def finalize_archive(candidate, archive):
@@ -38,6 +78,7 @@ def main():
     archive = output / ("markbridge-" + version + ".zip")
     tracked = set(subprocess.check_output(["git", "ls-files"], cwd=ROOT, text=True).splitlines())
     assets = json.loads((ROOT / "plugin/assets.json").read_text())
+    retained = retained_assets(ROOT, tracked, set(assets.values()))
     vendor = json.loads((ROOT / "plugin/vendor-manifest.json").read_text())
     php_manifest = json.loads((ROOT / "plugin/php-converter-manifest.json").read_text())
     if php_manifest.get("schema") != 2 or not php_manifest.get("files"):
@@ -82,7 +123,9 @@ def main():
         for name in tracked
         if name.startswith(("plugin/", "docs/"))
         and not name.startswith("plugin/includes/php-converter/src/")
+        and not (name.startswith("plugin/") and HASHED_ASSET.fullmatch(name[len("plugin/") :]))
     }
+    allowed |= retained
     allowed |= {"plugin/" + name for name in generated}
     allowed |= {"LICENSE", "NOTICE.md", "README.md", "CHANGELOG.md", "CONTRIBUTING.md"}
     for directory in ["plugin", "docs"]:
