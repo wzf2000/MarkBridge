@@ -359,7 +359,11 @@
     return cache.get(key);
   }
   async function typeset(rootNode) {
-    const nodes = [...rootNode.querySelectorAll('span.mbb-math,pre.wp-block-mbb-math')];
+    const selector = 'span.mbb-math,pre.wp-block-mbb-math';
+    const nodes = [
+      ...(rootNode.matches?.(selector) ? [rootNode] : []),
+      ...rootNode.querySelectorAll(selector),
+    ];
     await Promise.all(
       nodes.map(async (n) => {
         const display = n.tagName === 'PRE',
@@ -370,7 +374,7 @@
         const expected = tex;
         n.setAttribute('data-mbb-tex', tex);
         enableReader(n);
-        if (n.dataset.mbbRendered === tex) return;
+        if (n.dataset.mbbRendered === tex && n.querySelector(':scope > .mbb-typeset')) return;
         n.classList.add('tex2jax_ignore');
         const diagnostic = window.MBB_DIAGNOSTICS?.begin('math');
         try {
@@ -413,6 +417,81 @@
         }
       }),
     );
+  }
+  // Project an already-readable DOM excerpt, never HTML from a comment or API response.
+  // Keep TeX and its display mode, not the renderer's generated DOM or original identities.
+  function createReference(source) {
+    if (!source || source.nodeType !== 1) throw new TypeError('Expected an excerpt element');
+    const owner = source.ownerDocument;
+    const reference = owner.createElement('div');
+    reference.className = 'mbb-math-reference';
+    const allowed = new Set([
+      'P',
+      'SPAN',
+      'STRONG',
+      'EM',
+      'B',
+      'I',
+      'S',
+      'DEL',
+      'SUB',
+      'SUP',
+      'CODE',
+      'PRE',
+      'BLOCKQUOTE',
+      'UL',
+      'OL',
+      'LI',
+      'BR',
+      'A',
+    ]);
+    function project(node, parent) {
+      if (node.nodeType === 3) {
+        parent.append(owner.createTextNode(node.nodeValue));
+        return;
+      }
+      if (node.nodeType !== 1) return;
+      if (node.matches('span.mbb-math,pre.wp-block-mbb-math')) {
+        const display = node.tagName === 'PRE';
+        const tex = display
+          ? (node.querySelector('code')?.textContent ?? node.getAttribute('data-mbb-tex'))
+          : node.getAttribute('data-mbb-tex');
+        if (tex === null) return;
+        const math = owner.createElement(display ? 'pre' : 'span');
+        math.className = display ? 'wp-block-mbb-math' : 'mbb-math';
+        math.setAttribute('data-mbb-tex', tex);
+        if (display) {
+          const code = owner.createElement('code');
+          code.textContent = tex;
+          math.append(code);
+        } else math.textContent = tex;
+        parent.append(math);
+        return;
+      }
+      if (
+        node.matches(
+          'script,style,iframe,object,embed,svg,math,template,button,input,textarea,select,' +
+            '[data-mbb-generated],.mbb-typeset,mjx-container',
+        )
+      )
+        return;
+      const copy = allowed.has(node.tagName) ? owner.createElement(node.localName) : null;
+      if (copy?.tagName === 'A') {
+        try {
+          const url = new URL(node.getAttribute('href'), source.baseURI);
+          if (node.hasAttribute('href') && ['http:', 'https:'].includes(url.protocol)) {
+            copy.href = url.href;
+            copy.rel = 'noopener noreferrer';
+          }
+        } catch {
+          /* An unusable link remains readable text. */
+        }
+      }
+      for (const child of node.childNodes) project(child, copy || parent);
+      if (copy) parent.append(copy);
+    }
+    project(source, reference);
+    return reference;
   }
   const previewFonts = new Map();
   async function previewStyle() {
@@ -498,6 +577,7 @@
   window.MBB_MATH = {
     render,
     typeset,
+    createReference,
     preview,
     presentationMathML: async (tex, display = false) => {
       if (typeof tex !== 'string' || tex.length > 20000 || typeof display !== 'boolean')

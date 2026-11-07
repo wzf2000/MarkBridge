@@ -261,7 +261,11 @@ test('full article view and old history entries preserve the selected language',
     `<div id="course" data-mbb-teaching="steps" data-mbb-teaching-config='{"mode":"staged","previous":true,"next":true}'><div class="mbb-teaching-body"><div id="stage-one" data-mbb-teaching="step"><p class="mbb-teaching-title">First</p>${markup()}</div><div id="stage-two" data-mbb-teaching="step">Second</div></div></div>`,
   );
   await page.getByRole('tab', { name: 'Python', exact: true }).click();
-  await page.getByRole('button', { name: '全文', exact: true }).click();
+  if (page.viewportSize().width <= 700) {
+    await page.getByRole('combobox', { name: '选择阶段', exact: true }).selectOption('full');
+  } else {
+    await page.getByRole('button', { name: '全文', exact: true }).click();
+  }
   await expect(page.locator('#stage-two')).toBeVisible();
   await expect(page.locator('#python')).toBeVisible();
   await expect(page.locator('#javascript')).toBeHidden();

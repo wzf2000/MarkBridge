@@ -16,10 +16,38 @@ const F = (message, ...values) => {
     return kind === 'd' ? String(Number(value)) : String(value ?? '');
   });
 };
+// Keep the bootstrap URL alive until the speech worker has actually loaded.
+// Revoking immediately after new Worker() races WebKit's asynchronous loading.
+const mbbCreateSpeechWorker = async (listener, { path, maps, worker }) => {
+  const source = `self.maps = ${JSON.stringify(maps)};\nimportScripts(${JSON.stringify(path + '/' + worker)});`;
+  const url = URL.createObjectURL(new Blob([source], { type: 'text/javascript' }));
+  let released = false;
+  const release = () => {
+    if (released) return;
+    released = true;
+    URL.revokeObjectURL(url);
+  };
+  try {
+    const instance = new Worker(url);
+    instance.addEventListener('message', release, { once: true });
+    instance.addEventListener('error', release, { once: true });
+    instance.onmessage = listener;
+    return instance;
+  } catch (error) {
+    release();
+    throw error;
+  }
+};
 // A dedicated document owns MathJax; the theme's v2 global is never overwritten.
 window.MathJax = {
   loader: { paths: { fonts: new URL('vendor', location.href).href } },
-  startup: { typeset: false },
+  startup: {
+    typeset: false,
+    ready() {
+      MathJax.startup.defaultReady();
+      MathJax.startup.adaptor.createWorker = mbbCreateSpeechWorker;
+    },
+  },
   tex: {
     packages: {
       '[-]': ['newcommand', 'textmacros', 'noundefined', 'require', 'autoload', 'configmacros'],

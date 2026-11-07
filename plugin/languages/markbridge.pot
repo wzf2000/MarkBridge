@@ -1839,6 +1839,10 @@ msgid "Collapse diagram"
 msgstr ""
 
 #: plugin/i18n.js
+msgid "Collapse stage navigation"
+msgstr ""
+
+#: plugin/i18n.js
 msgid "Collapsible content"
 msgstr ""
 
@@ -2778,6 +2782,10 @@ msgstr ""
 
 #: plugin/i18n.js
 msgid "Existing image URLs are preserved; the server does not download them."
+msgstr ""
+
+#: plugin/i18n.js
+msgid "Expand stage navigation"
 msgstr ""
 
 #: plugin/i18n.js
