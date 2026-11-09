@@ -405,3 +405,5 @@ Runner is disabled. The source has one canonical copy in `sourceChunks`; InnerBl
 author's explanation. Unknown versions retain their generic fallback. This reading contract has no
 execution, command, URL, browser grant or network capability. The optional Runner extension owns
 its separate private execution service and authorization lifecycle.
+
+Main 3.12.4 supports up to 64 eagerly registered exact component versions (previously 32). The 65th registration is rejected; per-document, schema, execution and lazy catalog limits are unchanged. Existing IDs, defaults and registration order remain intact.

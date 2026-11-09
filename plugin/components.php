@@ -392,7 +392,7 @@ function mbb_component_register_checked(
     ];
     if (
         (!$resolved &&
-            (count($registry) >= 32 ||
+            (count($registry) >= 64 ||
                 !mbb_component_index_room($id, $provider['version'] ?? ''))) ||
         array_diff(array_keys($provider), [
             ...$fields,

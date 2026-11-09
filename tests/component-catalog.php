@@ -652,7 +652,7 @@ try {
     $GLOBALS['mbb_component_indexes'] = [];
     $GLOBALS['mbb_component_factories'] = [];
     $GLOBALS['mbb_component_resolved'] = [];
-    for ($i = 0; $i < 32; $i++) {
+    for ($i = 0; $i < 64; $i++) {
         catalog_assert(
             markbridge_register_teaching_component('legacy-' . $i, $provider),
             'Legacy capacity changed',
@@ -660,7 +660,7 @@ try {
     }
     catalog_assert(
         !markbridge_register_teaching_component('legacy-overflow', $provider),
-        'Legacy 32 cap raised',
+        'Legacy 64 cap raised',
     );
     $GLOBALS['mbb_components'] = [];
     $GLOBALS['mbb_component_indexes'] = [];

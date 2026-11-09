@@ -3,7 +3,7 @@ Tags: markdown, blocks, editor, mathjax, revisions
 Requires at least: 7.1
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 3.12.3
+Stable tag: 3.12.4
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -28,6 +28,9 @@ Private paired candidate backups for existing managed articles are stored in non
 3. Import a test Markdown draft, preview, save and reopen. Existing Node installations should review the upgrade guide before changing their backend.
 
 == Changelog ==
+
+= 3.12.4 =
+* Raise the bounded eager provider capacity to 64 so installed extension combinations retain legacy replay and sorting components. Article, schema and execution limits are unchanged.
 
 = 3.12.3 =
 * Add compact mobile stage controls and math references with matching inline/block layout.

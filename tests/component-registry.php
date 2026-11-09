@@ -573,7 +573,7 @@ try {
         count(mbb_component_available()) < count(mbb_component_registry()),
         'Unavailable providers entered author menu',
     );
-    while (count(mbb_component_registry()) < 32) {
+    while (count(mbb_component_registry()) < 64) {
         registry_assert(
             markbridge_register_teaching_component(
                 'capacity-' . count(mbb_component_registry()),
@@ -582,9 +582,15 @@ try {
             'Provider capacity setup failed',
         );
     }
+    $fullRegistry = mbb_component_registry();
     registry_assert(
         !markbridge_register_teaching_component('capacity-overflow', $provider),
         'Provider registry was unbounded',
+    );
+    registry_assert(
+        mbb_component_registry() === $fullRegistry &&
+            end($GLOBALS['mbb_component_rejections'])['reason'] === 'invalid-registration',
+        'Overflow changed registered providers or lost its rejection reason',
     );
     echo "Registry closed schemas, strong types, bounded local resources, conflicts and registration failure recovery passed.\n";
 } finally {
