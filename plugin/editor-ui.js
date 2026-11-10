@@ -1210,7 +1210,8 @@
         (cfg.teachingStyle || '') +
         (cfg.technicalStyle || '') +
         (cfg.nativeMediaStyle || '') +
-        (cfg.codeDisplayStyle || '');
+        (cfg.codeDisplayStyle || '') +
+        (cfg.projectionStyle || '');
       nextPreview.srcdoc = window.MBBSourceTools
         ? window.MBBSourceTools.frameDocument(previewContent.content, previewStyles, navigation)
         : '<!doctype html><html><head><meta charset="utf-8"><style>' +
@@ -1220,6 +1221,7 @@
           (MBB_EDITOR.technicalStyle || '') +
           (MBB_EDITOR.nativeMediaStyle || '') +
           (MBB_EDITOR.codeDisplayStyle || '') +
+          (MBB_EDITOR.projectionStyle || '') +
           'body{font:16px/1.7 system-ui;padding:16px;overflow-wrap:anywhere}pre{overflow:auto}table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:4px}img{max-width:100%}</style></head><body data-mbb-content-view>' +
           previewContent.innerHTML +
           '</body></html>';
@@ -2257,7 +2259,11 @@
             post_id: Number(dialog?.open ? base?.post_id : cfg.postId),
             expected: dialog?.open ? base?.expected : cfg.state?.expected,
           }),
-          clean: () => {
+          canApply: () => {
+            const state = dialog?.open ? base : cfg.state;
+            return !state?.source_managed || (!!state.source_write_available && !source.readOnly);
+          },
+          canReadPreview: () => {
             if (
               window.MarkBridgeParameterDrafts?.pending() ||
               resources?.pending() ||
@@ -2286,7 +2292,6 @@
                 !busy &&
                 !saving &&
                 mode === 'markdown' &&
-                !source.readOnly &&
                 !source.disabled &&
                 readSource() === state.document.source &&
                 title.value === state.title &&
@@ -2306,8 +2311,11 @@
             (cfg.teachingStyle || '') +
             (cfg.technicalStyle || '') +
             (cfg.nativeMediaStyle || '') +
-            (cfg.codeDisplayStyle || ''),
+            (cfg.codeDisplayStyle || '') +
+            (cfg.projectionStyle || ''),
           validateApply: (document) => {
+            if (source.readOnly && dialog?.open)
+              throw Error(T('You do not have permission to edit this article.'));
             if (!dialog?.open) nativeDocumentCandidate?.validate(document);
           },
           apply: (document, opening) => {

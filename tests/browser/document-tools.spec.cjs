@@ -121,85 +121,104 @@ test('document tool keeps its draft on cancel and explicitly applies without sav
         'document-tools/preview',
         'document-tools/preview',
         'document-tools/preview',
-        'document-tools/preview',
+        'document-tools/apply',
       ],
     });
 });
 
-test('Main source application uses existing byte-preserving Undo and never saves', async ({
-  page,
-}) => {
-  const original = '# Original\r\n\r\nA\r\n',
-    candidate = '# Candidate\r\n\r\nB\r\n';
-  const calls = [];
-  await page.route('**/wp-json/mbb/v1/**', (route) => {
-    const name = new URL(route.request().url()).pathname.split('/mbb/v1/')[1];
-    calls.push(name);
-    const common = {
-      post_id: 12,
-      source_managed: false,
-      title: 'Fixture document',
-      post_status: 'draft',
-      featured_media: 0,
-      expected: 'saved-baseline',
-      document: { schema: 1, documentId: 'TestDoc', source: original, serialized: '' },
-    };
-    const data =
-      name.startsWith('document?') || name === 'document'
-        ? common
-        : name === 'document-tools/capture'
-          ? {
-              source: original,
-              serialized: '',
-              documentId: 'TestDoc',
-              identity: null,
-              sourceSha256: 'a',
-              serializedSha256: 'b',
-              receipt: 'synthetic',
-            }
-          : name === 'document-tools/preview'
+for (const readOnly of [false, true])
+  test(`Main source candidate ${readOnly ? 'previews read-only' : 'applies with Undo'} and never saves`, async ({
+    page,
+  }, info) => {
+    const errors = [];
+    page.on('pageerror', (error) => errors.push({ name: error.name, message: error.message }));
+    const original = '# Original\r\n\r\nA\r\n',
+      candidate = '# Candidate\r\n\r\nB\r\n';
+    const calls = [];
+    await page.route('**/wp-json/mbb/v1/**', (route) => {
+      const name = new URL(route.request().url()).pathname.split('/mbb/v1/')[1];
+      calls.push(name);
+      const common = {
+        post_id: 12,
+        source_managed: readOnly,
+        source_write_available: !readOnly,
+        title: 'Fixture document',
+        post_status: 'draft',
+        featured_media: 0,
+        expected: 'saved-baseline',
+        document: { schema: 1, documentId: 'TestDoc', source: original, serialized: '' },
+      };
+      const data =
+        name.startsWith('document?') || name === 'document'
+          ? common
+          : name === 'document-tools/capture'
             ? {
-                before: original,
-                html: '<p>Candidate</p>',
-                document: { source: candidate, serialized: '' },
+                source: original,
+                serialized: '',
+                documentId: 'TestDoc',
+                identity: null,
+                sourceSha256: 'a',
+                serializedSha256: 'b',
+                receipt: 'synthetic',
               }
-            : { message: 'No merge baseline in synthetic test', code: 'merge_unavailable' };
-    return route.fulfill({
-      status: name.startsWith('merge/') ? 409 : 200,
-      contentType: 'application/json',
-      body: JSON.stringify(data),
+            : ['document-tools/preview', 'document-tools/apply'].includes(name)
+              ? {
+                  before: original,
+                  html: '<p>Candidate</p>',
+                  document: { source: candidate, serialized: '' },
+                }
+              : { message: 'No merge baseline in synthetic test', code: 'merge_unavailable' };
+      return route.fulfill({
+        status: name.startsWith('merge/') ? 409 : 200,
+        contentType: 'application/json',
+        body: JSON.stringify(data),
+      });
     });
-  });
-  await page.goto('/editor?locale=en_US');
-  await page.evaluate(() => {
-    MarkBridgeDocumentTools.registerTool('source-review', {
-      label: 'Source review',
-      render(host, api) {
-        const button = document.createElement('button');
-        button.textContent = 'Prepare source candidate';
-        button.onclick = async () => {
-          const opening = await api.capture();
-          await api.propose({
-            openingToken: opening.openingToken,
-            source: '# Candidate\r\n\r\nB\r\n',
-          });
-        };
-        host.append(button);
-      },
+    await page.goto('/editor?locale=en_US');
+    await page.evaluate(() => {
+      MarkBridgeDocumentTools.registerTool('source-review', {
+        label: 'Source review',
+        render(host, api) {
+          const button = document.createElement('button');
+          button.textContent = 'Prepare source candidate';
+          button.onclick = async () => {
+            const opening = await api.capture();
+            await api.propose({
+              openingToken: opening.openingToken,
+              source: '# Candidate\r\n\r\nB\r\n',
+            });
+          };
+          host.append(button);
+        },
+      });
     });
+    await page.locator('.mbb-open').click();
+    await expect(page.locator('#mbb-source')).toHaveValue(original.replace(/\r\n/g, '\n'));
+    await page.locator('.mbb-document-more summary').click();
+    await page.getByRole('button', { name: 'Source review', exact: true }).click();
+    await page.getByRole('button', { name: 'Prepare source candidate', exact: true }).click();
+    if (readOnly) {
+      await expect(
+        page.getByRole('button', { name: 'Apply to editor', exact: true }),
+      ).toBeDisabled();
+      await expect(page.locator('#mbb-source')).toHaveAttribute('readonly', '');
+      await page.screenshot({ path: info.outputPath('readonly-candidate.png') });
+      await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+      await page.getByRole('button', { name: 'Prepare source candidate', exact: true }).click();
+      await expect(
+        page.getByRole('button', { name: 'Apply to editor', exact: true }),
+      ).toBeDisabled();
+      expect(calls.filter((name) => /(?:apply|save)$/.test(name))).toEqual([]);
+      expect(errors).toEqual([]);
+      return;
+    }
+    await page.getByRole('button', { name: 'Apply to editor', exact: true }).click();
+    await expect(page.locator('#mbb-dialog')).toBeVisible();
+    await expect(page.locator('#mbb-source')).toHaveValue(candidate.replace(/\r\n/g, '\n'));
+    await page.locator('#mbb-source').focus();
+    await page.keyboard.press('Control+z');
+    await expect(page.locator('#mbb-source')).toHaveValue(original.replace(/\r\n/g, '\n'));
+    await page.keyboard.press('Control+Shift+z');
+    await expect(page.locator('#mbb-source')).toHaveValue(candidate.replace(/\r\n/g, '\n'));
+    expect(calls.filter((name) => name.endsWith('save'))).toEqual([]);
   });
-  await page.locator('.mbb-open').click();
-  await expect(page.locator('#mbb-source')).toHaveValue(original.replace(/\r\n/g, '\n'));
-  await page.locator('.mbb-document-more summary').click();
-  await page.getByRole('button', { name: 'Source review', exact: true }).click();
-  await page.getByRole('button', { name: 'Prepare source candidate', exact: true }).click();
-  await page.getByRole('button', { name: 'Apply to editor', exact: true }).click();
-  await expect(page.locator('#mbb-dialog')).toBeVisible();
-  await expect(page.locator('#mbb-source')).toHaveValue(candidate.replace(/\r\n/g, '\n'));
-  await page.locator('#mbb-source').focus();
-  await page.keyboard.press('Control+z');
-  await expect(page.locator('#mbb-source')).toHaveValue(original.replace(/\r\n/g, '\n'));
-  await page.keyboard.press('Control+Shift+z');
-  await expect(page.locator('#mbb-source')).toHaveValue(candidate.replace(/\r\n/g, '\n'));
-  expect(calls.filter((name) => name.endsWith('save'))).toEqual([]);
-});

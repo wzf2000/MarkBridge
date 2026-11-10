@@ -24,7 +24,12 @@ final class MBB_Author_Preview
         self::$depth++;
         try {
             // Include the navigation-free fallback in the same authenticated scope.
-            return mbb_preview_navigation($document, $projected);
+            $rendered = mbb_preview_navigation($document, $projected);
+            if (function_exists('mbb_references_fresh_user')) {
+                mbb_references_fresh_user();
+            }
+            $permission = mbb_permission($request);
+            return is_wp_error($permission) ? $permission : $rendered;
         } finally {
             self::$depth--;
         }
@@ -50,9 +55,27 @@ function mbb_preview_strip_navigation(string $html): string
 
 function mbb_preview_navigation(array $document, array $projected): array
 {
+    $rendered = mbb_preview_navigation_blocks($document, $projected);
+    if (
+        MBB_Author_Preview::active() &&
+        str_contains($projected['serialized'], '<!-- wp:mbb/component ')
+    ) {
+        $rendered['html'] = mbb_component_static_document(
+            $rendered['html'],
+            $projected['serialized'],
+            function_exists('get_locale') ? get_locale() : 'en',
+        );
+    }
+    $rendered['html'] = mbb_render_technical(mbb_render_footnotes($rendered['html']));
+    return $rendered;
+}
+
+/** Navigation failure recovery covers anchors only, never projection rendering or authority. */
+function mbb_preview_navigation_blocks(array $document, array $projected): array
+{
     $source = $document['source'];
     $fallback = static fn(): array => [
-        'html' => mbb_render_technical(mbb_render_footnotes(do_blocks($projected['serialized']))),
+        'html' => do_blocks($projected['serialized']),
         'navigation' => null,
     ];
     // Resource projection can rewrite source offsets. Never attach those to the original upload.
@@ -134,7 +157,7 @@ function mbb_preview_navigation(array $document, array $projected): array
             }),
         );
         return [
-            'html' => mbb_render_technical(mbb_render_footnotes($html)),
+            'html' => $html,
             'navigation' => $navigation,
         ];
     } catch (Throwable $e) {

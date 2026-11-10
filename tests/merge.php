@@ -80,6 +80,9 @@ function mbb_frontmatter_current($p)
 }
 function apply_filters($name, $value, ...$args)
 {
+    if ($name === 'mbb_source_read_target' && array_key_exists('readTarget', $GLOBALS)) {
+        return $GLOBALS['readTarget'];
+    }
     return $name === 'mbb_source_write_target' ? $GLOBALS['file'] : $value;
 }
 function absint($value)
@@ -335,6 +338,7 @@ try {
     $sourceOpening = callMerge('open', ['expected' => mbb_token($GLOBALS['post'])]);
     assertMerge(!is_wp_error($sourceOpening), 'Source opening failed');
     $sourceToken = mbb_token($GLOBALS['post']);
+    $originalFile = $file;
     $files[] = $newFile = tempnam(sys_get_temp_dir(), 'mbb-merge-rebind-');
     file_put_contents($newFile, $c);
     $GLOBALS['file'] = $newFile;
@@ -347,9 +351,29 @@ try {
         callMerge('latest', ['opening' => $sourceOpening, 'candidate' => $b]),
         'merge_binding',
     );
-    $GLOBALS['file'] = $file;
+    $GLOBALS['file'] = $originalFile;
     $GLOBALS['meta']['_mbb_source_path_hash'] = hash('sha256', realpath($file));
     $GLOBALS['sourceWrite'] = false;
+    $readOnlyFile = $file;
+    $GLOBALS['readTarget'] = $readOnlyFile;
+    $GLOBALS['file'] = null;
+    assertMerge(
+        !is_wp_error(callMerge('open', ['expected' => mbb_token($GLOBALS['post'])])),
+        'Read-only opening refused',
+    );
+    $GLOBALS['sourceWrite'] = true;
+    errorMerge(
+        callMerge('latest', ['opening' => $sourceOpening, 'candidate' => $b]),
+        'merge_source',
+    );
+    $GLOBALS['sourceWrite'] = false;
+    $GLOBALS['edit'] = false;
+    errorMerge(callMerge('open', ['expected' => mbb_token($GLOBALS['post'])]), 'merge_forbidden');
+    $GLOBALS['edit'] = true;
+    $GLOBALS['file'] = $readOnlyFile;
+    $GLOBALS['readTarget'] = false;
+    errorMerge(callMerge('open', ['expected' => mbb_token($GLOBALS['post'])]), 'merge_source');
+    unset($GLOBALS['readTarget']);
     errorMerge(
         callMerge('latest', ['opening' => $sourceOpening, 'candidate' => $b]),
         'merge_forbidden',

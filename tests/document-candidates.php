@@ -55,6 +55,26 @@ function mbb_merge_current($id, $expected)
     return $GLOBALS['snapshot'];
 }
 function mbb_merge_assert_current($s, $id) {}
+function mbb_merge_permission($r)
+{
+    return $GLOBALS['writeAllowed'] ? true : new WP_Error('forbidden', 403);
+}
+function get_post_meta($id, $key, $single = true)
+{
+    return $GLOBALS['snapshot']['source_managed'] ? 'file' : '';
+}
+function mbb_source_read_target($p)
+{
+    return $GLOBALS['readFile'];
+}
+function mbb_source_target($p)
+{
+    return $GLOBALS['writeFile'] ?? new WP_Error('forbidden', 403);
+}
+function mbb_merge_read_source($path)
+{
+    return file_get_contents($path);
+}
 function mbb_component_descriptors($s)
 {
     return $GLOBALS['descriptors'];
@@ -155,7 +175,7 @@ function dc_raw_request(
     foreach ($overrides as $key => $value) {
         $request->set_param($key, $value);
     }
-    return mbb_document_tools_request($request, $preview);
+    return mbb_document_tools_request($request, $preview, $GLOBALS['applyRequest'] ?? false);
 }
 function dc_request(array $data, bool $preview)
 {
@@ -164,6 +184,7 @@ function dc_request(array $data, bool $preview)
 $GLOBALS['actor'] = 7;
 $GLOBALS['session'] = 'session-a';
 $GLOBALS['allowed'] = true;
+$GLOBALS['writeAllowed'] = true;
 $GLOBALS['descriptors'] = [];
 $GLOBALS['previews'] = 0;
 $GLOBALS['snapshot'] = [
@@ -343,4 +364,36 @@ dc_assert(
     $error instanceof WP_Error && $error->status === 422 && $GLOBALS['previews'] === $beforeInvalid,
     'escaped duplicate preview source rejected before preparation',
 );
+$GLOBALS['applyRequest'] = true;
+dc_assert(dc_request($preview, true) instanceof WP_REST_Response, 'ordinary apply validation');
+$GLOBALS['duringPreview'] = static function () {
+    $GLOBALS['writeAllowed'] = false;
+};
+dc_assert(
+    is_wp_error(dc_request($preview, true)),
+    'apply rechecks write permission after conversion',
+);
+$GLOBALS['duringPreview'] = null;
+$GLOBALS['writeAllowed'] = true;
+$file = tempnam(sys_get_temp_dir(), 'mbb-candidate-read-');
+try {
+    file_put_contents($file, $GLOBALS['snapshot']['document']['source']);
+    $GLOBALS['snapshot']['source_managed'] = true;
+    $GLOBALS['snapshot']['source_sha256'] = hash_file('sha256', $file);
+    $GLOBALS['readFile'] = $file;
+    $GLOBALS['applyRequest'] = false;
+    $readCapture = dc_request($input, false);
+    dc_assert($readCapture instanceof WP_REST_Response, 'read-only capture');
+    $readPreview = array_replace($preview, ['receipt' => $readCapture->data['receipt']]);
+    dc_assert(dc_request($readPreview, true) instanceof WP_REST_Response, 'read-only preview');
+    $GLOBALS['applyRequest'] = true;
+    dc_assert(is_wp_error(dc_request($readPreview, true)), 'read-only apply denied');
+    $GLOBALS['writeFile'] = $file;
+    dc_assert(dc_request($readPreview, true) instanceof WP_REST_Response, 'writable file apply');
+    $GLOBALS['applyRequest'] = false;
+    file_put_contents($file, 'external change');
+    dc_assert(is_wp_error(dc_request($readPreview, true)), 'source change invalidates preview');
+} finally {
+    unlink($file);
+}
 echo "document-candidates receipt and closed JSON model passed\n";

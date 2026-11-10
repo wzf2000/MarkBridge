@@ -10,6 +10,13 @@ including source navigation and its static fallback. Internal document-tool and 
 previews use the same permission check. The scope supports nested previews and is cleared even if
 rendering throws. Direct calls to `mbb_preview_navigation()` do not enable it.
 
+Main 3.12.5 also renders registered static component projections in this scope, using the current
+resource-projected candidate's serialized blocks, before footnotes and technical rendering.
+It retains the projection schema, parameter, resource-fingerprint, budget and reference-permission
+checks, and rechecks author permission before returning. Navigation fallback does not retry or
+swallow projection failures. This does not call the frontend `the_content` chain or substitute a
+saved article for an unsaved candidate.
+
 When true, a reader renderer may preserve the candidate's already validated static HTML instead of
 looking up an instance in the saved article. A new or edited candidate need not match saved content.
 Do not inject execution controls or credentials into this static preview. Request parameters, block
@@ -311,6 +318,17 @@ before retrying. Save the adoption before continuing native body editing. After 
 save, subsequent ordinary block edits use the existing native conversion rules.
 
 The private `POST /mbb/v1/document-tools/capture` and `/preview` routes are read-only.
+From Main 3.12.5, file-backed captures and previews use the read resolver and do not require a
+writable source or parent directory. They still require clean editor state, author permission,
+the saved pair, source binding and current source/stat fingerprints. Read-only candidates can be
+reviewed and cancelled; Apply remains disabled.
+
+Core validates an explicit local Apply through `POST /mbb/v1/document-tools/apply`, using the same
+closed JSON request as `/preview`. The route returns only an in-memory preview and never saves;
+it additionally checks write authority, the same read/write path and a writable parent directory
+before and after rendering. The client consumes the session before changing the local editor.
+`/source-save` remains the independent source persistence path. Extensions continue using the
+existing `capture()`/`propose()` SDK; they do not call the private Apply route directly.
 Requests must use an `application/json` object with exactly `{post_id, expected}` for capture and
 `{post_id, expected, receipt, source}` for preview. Extra/missing fields, non-scalar field types,
 invalid Unicode and duplicate top-level keys (including escaped spellings) are rejected. Only the
@@ -390,8 +408,9 @@ writability should supply a separate read filter for sources mounted read-only.
 checks. A read mapping grants no browser save/writeback authority. The editor source endpoint uses the read resolver; it enables writeback only when the independent
 write resolver returns the same real path and the original write capability passes. Read-only
 source bytes must match the saved Markdown; writable mappings retain external-edit conflict
-comparison. Mutation/reference preparation
-continues using the write resolver; only saved component capability reads use the read resolver.
+comparison. Read-only merge opening baselines and document-tool capture/preview also use the
+read resolver. Merge latest/adopt confirmation and source persistence retain the independent write
+resolver and write capability. A read-only review cannot authorize local Apply or source saving.
 If execution authorization fails, an extension may retain the currently authorized saved static
 example after checking the complete saved block and final article permission/version. It must not
 return unsaved source-file bytes, stale explanations, execution credentials, or private content.

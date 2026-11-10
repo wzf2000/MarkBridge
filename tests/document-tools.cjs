@@ -77,12 +77,14 @@ const tick = () => new Promise((r) => setImmediate(r));
     disposed = 0,
     applied = 0,
     hold,
-    release;
+    release,
+    canApply = true;
   let failure = null;
   const calls = [];
   const core = context.install({
     stamp: () => stamp,
-    clean: () => !dirty,
+    canReadPreview: () => !dirty,
+    canApply: () => canApply,
     context: () => ({ post_id: 1, expected: 'a'.repeat(64) }),
     diff: (host, before, after) => {
       host.textContent = before + after;
@@ -202,6 +204,16 @@ const tick = () => new Promise((r) => setImmediate(r));
   menu.children[0].children[0].onclick();
   await tick();
   opening = await sdk.capture();
+  canApply = false;
+  const readOnlyPreview = sdk.propose({ openingToken: opening.openingToken, source: 'B' });
+  await tick();
+  assert.equal(body.children[1].children.at(-2).disabled, true);
+  await body.children[1].children.at(-2).onclick();
+  await assert.rejects(readOnlyPreview);
+  assert.equal(applied, 0);
+  body.children[1].close();
+  canApply = true;
+  opening = await sdk.capture();
   const apply = sdk.propose({ openingToken: opening.openingToken, source: 'B' });
   await tick();
   await body.children[1].children.at(-2).onclick();
@@ -209,6 +221,7 @@ const tick = () => new Promise((r) => setImmediate(r));
   assert.equal(applied, 1);
   assert.equal(disposed, 2);
   assert.equal(calls.filter((r) => r.endsWith('/preview')).length, 3 + rejectedPreviews);
+  assert.equal(calls.filter((r) => r.endsWith('/apply')).length, 1);
   assert(!calls.some((r) => r.includes('save')));
   assert(!sdk.isCurrent(opening.openingToken));
   let handed;

@@ -1517,6 +1517,7 @@ function mbb_enqueue_ui()
         'technicalStyle' => file_get_contents(__DIR__ . '/technical.css'),
         'nativeMediaStyle' => file_get_contents(__DIR__ . '/media-presentation.css'),
         'codeDisplayStyle' => file_get_contents(__DIR__ . '/code-display.css'),
+        'projectionStyle' => file_get_contents(__DIR__ . '/projections.css'),
         'navigationBridge' => [
             'script' => file_get_contents(__DIR__ . '/preview-navigation.js'),
             'sha256' => base64_encode(

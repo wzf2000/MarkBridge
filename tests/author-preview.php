@@ -100,6 +100,16 @@ function do_blocks($serialized)
     }
     return $serialized;
 }
+function mbb_component_static_document($html, $serialized, $locale)
+{
+    author_preview_check(markbridge_is_author_preview(), 'Projection missing trusted scope');
+    $GLOBALS['projectionCalls']++;
+    $GLOBALS['projectionSerialized'] = $serialized;
+    if ($GLOBALS['duringProjection'] ?? null) {
+        $GLOBALS['duringProjection']();
+    }
+    return $html;
+}
 function mbb_render_footnotes($html)
 {
     return $html;
@@ -119,7 +129,7 @@ $request = new class {
     }
 };
 $GLOBALS['loggedIn'] = $GLOBALS['allowed'] = $GLOBALS['managed'] = true;
-$GLOBALS['fallbackCalls'] = 0;
+$GLOBALS['fallbackCalls'] = $GLOBALS['projectionCalls'] = 0;
 $document = ['source' => "Candidate\n", 'serialized' => '<p>Candidate</p>'];
 author_preview_check(!markbridge_is_author_preview(), 'Context active before preview');
 $result = MBB_Author_Preview::render($request, $document, $document);
@@ -128,9 +138,34 @@ author_preview_check(
     'Normal navigation render failed',
 );
 author_preview_check(!markbridge_is_author_preview(), 'Context leaked after normal preview');
+author_preview_check(
+    $GLOBALS['projectionCalls'] === 0,
+    'Plain document entered component projection',
+);
 $projected = ['source' => 'different source', 'serialized' => '<p>Projected</p>'];
 $result = MBB_Author_Preview::render($request, $document, $projected);
 author_preview_check($result['html'] === $projected['serialized'], 'Projected fallback failed');
+author_preview_check(
+    $GLOBALS['projectionCalls'] === 0,
+    'Plain fallback entered component projection',
+);
+$component = [
+    'source' => "Candidate\n",
+    'serialized' =>
+        '<!-- wp:mbb/component {"id":"preview","component":"synthetic","componentVersion":"0.1.0","params":{}} --><section id="preview">Candidate</section><!-- /wp:mbb/component -->',
+];
+MBB_Author_Preview::render($request, $component, $component);
+author_preview_check($GLOBALS['projectionCalls'] === 1, 'Normal component preview projected twice');
+$componentProjected = ['source' => 'different source', 'serialized' => $component['serialized']];
+MBB_Author_Preview::render($request, $document, $componentProjected);
+author_preview_check(
+    $GLOBALS['projectionSerialized'] === $componentProjected['serialized'],
+    'Projection did not use projected candidate bytes',
+);
+author_preview_check(
+    $GLOBALS['projectionCalls'] === 2,
+    'Fallback component preview projected twice',
+);
 $GLOBALS['during'] = static function () use ($request, $document, $projected) {
     $GLOBALS['during'] = null;
     MBB_Author_Preview::render($request, $document, $projected);
@@ -149,6 +184,28 @@ try {
 }
 author_preview_check(!markbridge_is_author_preview(), 'Context leaked after escaping exception');
 $GLOBALS['fallbackThrows'] = false;
+$GLOBALS['duringProjection'] = static function () {
+    throw new RuntimeException('projection-failure');
+};
+try {
+    MBB_Author_Preview::render($request, $component, $component);
+    throw new RuntimeException('Expected projection exception');
+} catch (RuntimeException $error) {
+    author_preview_check(
+        $error->getMessage() === 'projection-failure',
+        'Projection error swallowed as navigation fallback',
+    );
+}
+author_preview_check(!markbridge_is_author_preview(), 'Projection exception leaked scope');
+$GLOBALS['duringProjection'] = static function () {
+    $GLOBALS['allowed'] = false;
+};
+author_preview_check(
+    is_wp_error(MBB_Author_Preview::render($request, $component, $component)),
+    'Projection permission revocation leaked result',
+);
+$GLOBALS['duringProjection'] = null;
+$GLOBALS['allowed'] = true;
 foreach (['loggedIn', 'allowed', 'managed'] as $key) {
     $GLOBALS[$key] = false;
     $request->postId = $key === 'managed' ? 42 : 0;

@@ -41,7 +41,7 @@ const MBBCreateDocumentTools = (core) => {
       current.generation !== generation ||
       current.stamp !== core.stamp() ||
       Date.now() >= current.expires ||
-      !core.clean()
+      !(core.canReadPreview || core.clean)()
     ) {
       if (current) invalidate();
       return false;
@@ -54,7 +54,7 @@ const MBBCreateDocumentTools = (core) => {
       openingSession = session,
       openingGeneration = generation,
       stamp = core.stamp();
-    if (!toolDialog?.open || !core.clean()) throw stale();
+    if (!toolDialog?.open || !(core.canReadPreview || core.clean)()) throw stale();
     const context = core.context();
     const result = await core.api('document-tools/capture', context);
     if (
@@ -63,7 +63,7 @@ const MBBCreateDocumentTools = (core) => {
       generation !== openingGeneration ||
       !toolDialog?.open ||
       stamp !== core.stamp() ||
-      !core.clean()
+      !(core.canReadPreview || core.clean)()
     )
       throw stale();
     const token = crypto.randomUUID();
@@ -115,9 +115,15 @@ const MBBCreateDocumentTools = (core) => {
       'aria-label': T('Review document candidate'),
     });
     candidateDialog = dialog;
-    const status = node('p', T('Apply changes to the editor, then use the normal save action.'), {
-      role: 'status',
-    });
+    const status = node(
+      'p',
+      core.canApply?.() === false
+        ? T(
+            'This article is synchronized from a source file. Edit the source and run the synchronization tool; blocks and previews remain available here.',
+          )
+        : T('Apply changes to the editor, then use the normal save action.'),
+      { role: 'status' },
+    );
     const diff = node('div', '', { class: 'mbb-diff' });
     core.diff(diff, preview.before, source);
     const fragment = document.createElement('template');
@@ -132,6 +138,7 @@ const MBBCreateDocumentTools = (core) => {
       type: 'button',
       class: 'button button-primary',
     });
+    apply.disabled = core.canApply?.() === false;
     const cancel = node('button', T('Cancel'), { type: 'button' });
     let settled = false;
     return new Promise((resolve, reject) => {
@@ -155,14 +162,16 @@ const MBBCreateDocumentTools = (core) => {
       apply.onclick = async () => {
         apply.disabled = true;
         try {
-          if (serial !== request || !isCurrent(openingToken)) throw stale();
+          if (serial !== request || !isCurrent(openingToken) || core.canApply?.() === false)
+            throw stale();
           // Recheck authority, baseline pins and bytes immediately before local application.
-          const checked = await core.api('document-tools/preview', payload);
+          const checked = await core.api('document-tools/apply', payload);
           if (
             serial !== request ||
             candidateDialog !== dialog ||
             !dialog.open ||
             !isCurrent(openingToken) ||
+            core.canApply?.() === false ||
             checked.document.serialized !== preview.document.serialized ||
             checked.document.source !== source
           )

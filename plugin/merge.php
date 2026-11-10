@@ -63,6 +63,10 @@ function mbb_merge_keys($data, array $keys): void
         mbb_merge_throw('merge_shape', mbb_t('Merge data has unknown or missing fields'));
     }
 }
+function mbb_merge_read_permission($r)
+{
+    return mbb_export_permission(['post_id' => $r['post_id'] ?? null]);
+}
 function mbb_merge_permission($r)
 {
     $id = $r['post_id'] ?? null;
@@ -162,10 +166,12 @@ function mbb_merge_pair($document): array
     }
     return $verified;
 }
-function mbb_merge_current(int $id, ?string $expected = null): array
+function mbb_merge_current(int $id, ?string $expected = null, bool $write = false): array
 {
     clean_post_cache($id);
-    $permission = mbb_merge_permission(['post_id' => $id]);
+    $permission = $write
+        ? mbb_merge_permission(['post_id' => $id])
+        : mbb_merge_read_permission(['post_id' => $id]);
     if ($permission !== true) {
         mbb_merge_throw(
             'merge_forbidden',
@@ -194,7 +200,7 @@ function mbb_merge_current(int $id, ?string $expected = null): array
     $managed = get_post_meta($id, '_mbb_source_managed', true) === 'file';
     $sha = null;
     if ($managed) {
-        $target = mbb_source_target($p);
+        $target = $write ? mbb_source_target($p) : mbb_source_read_target($p);
         if (is_wp_error($target)) {
             mbb_merge_throw(
                 'merge_source',
@@ -223,14 +229,17 @@ function mbb_merge_current(int $id, ?string $expected = null): array
             'source_managed' => $managed,
             'source_sha256' => $sha,
         ] + $metadata;
-    mbb_merge_assert_current($snapshot, $id);
+    mbb_merge_assert_current($snapshot, $id, $write);
     return $snapshot;
 }
 // Optimistic read validation: no fields read after conversion may be paired with an older token.
-function mbb_merge_assert_current(array $snapshot, int $id): void
+function mbb_merge_assert_current(array $snapshot, int $id, bool $write = false): void
 {
     clean_post_cache($id);
-    if (mbb_merge_permission(['post_id' => $id]) !== true) {
+    $permission = $write
+        ? mbb_merge_permission(['post_id' => $id])
+        : mbb_merge_read_permission(['post_id' => $id]);
+    if ($permission !== true) {
         mbb_merge_throw('merge_forbidden', mbb_t('Permissions changed while reading merge inputs'));
     }
     $p = get_post($id);
@@ -258,7 +267,7 @@ function mbb_merge_assert_current(array $snapshot, int $id): void
         }
     }
     if ($snapshot['source_managed']) {
-        $target = mbb_source_target($p);
+        $target = $write ? mbb_source_target($p) : mbb_source_read_target($p);
         if (
             is_wp_error($target) ||
             hash('sha256', mbb_merge_read_source($target)) !== $snapshot['source_sha256']
@@ -332,7 +341,7 @@ function mbb_merge_claims(
     ?array $opening = null,
     ?array $candidate = null,
 ): array {
-    mbb_merge_assert_current($snapshot, $id);
+    mbb_merge_assert_current($snapshot, $id, $kind === 'latest');
     $p = get_post($id);
     $claims = [
         'schema' => 1,
@@ -369,7 +378,7 @@ function mbb_merge_claims(
         $claims['candidate'] = hash('sha256', mbb_component_json($candidate));
         $claims['expires'] = min($claims['expires'], $opening['claims']['expires']);
     }
-    mbb_merge_assert_current($snapshot, $id);
+    mbb_merge_assert_current($snapshot, $id, $kind === 'latest');
     return $claims;
 }
 function mbb_merge_sign(array $claims): string
@@ -565,7 +574,7 @@ function mbb_merge_latest($r)
         $data = mbb_merge_request($r, ['schema', 'post_id', 'opening', 'candidate']);
         $opening = mbb_merge_verify($data['opening'], $data['post_id'], 'opening');
         $candidate = mbb_merge_candidate($data['candidate']);
-        $snapshot = mbb_merge_current($data['post_id']);
+        $snapshot = mbb_merge_current($data['post_id'], null, true);
         return mbb_merge_envelope(
             $snapshot,
             mbb_merge_claims($snapshot, $data['post_id'], 'latest', $opening, $candidate),
@@ -597,7 +606,7 @@ function mbb_merge_adopt($r)
                 mbb_t('The candidate or opening baseline changed after the merge preview'),
             );
         }
-        $current = mbb_merge_current($data['post_id'], $latest['expected']);
+        $current = mbb_merge_current($data['post_id'], $latest['expected'], true);
         if (!mbb_merge_same_snapshot($current, $latest)) {
             mbb_merge_throw(
                 'merge_conflict',
@@ -623,7 +632,7 @@ function mbb_merge_adopt($r)
                 ),
             );
         }
-        $final = mbb_merge_current($data['post_id'], $latest['expected']);
+        $final = mbb_merge_current($data['post_id'], $latest['expected'], true);
         if (!mbb_merge_same_snapshot($final, $latest)) {
             mbb_merge_throw(
                 'merge_conflict',
@@ -633,7 +642,7 @@ function mbb_merge_adopt($r)
         $final['post_id'] = $data['post_id'];
         $final['source_write_available'] = $final['source_managed'];
         $final['frontmatter_current'] = mbb_frontmatter_current(get_post($data['post_id']));
-        mbb_merge_assert_current($final, $data['post_id']);
+        mbb_merge_assert_current($final, $data['post_id'], true);
         return ['schema' => 1, 'saved' => false, 'document' => $document, 'newbase' => $final];
     } catch (Throwable $error) {
         return mbb_merge_error($error);
@@ -643,7 +652,8 @@ add_action('rest_api_init', static function () {
     foreach (['open', 'latest', 'adopt'] as $action) {
         register_rest_route('mbb/v1', '/merge/' . $action, [
             'methods' => 'POST',
-            'permission_callback' => 'mbb_merge_permission',
+            'permission_callback' =>
+                $action === 'open' ? 'mbb_merge_read_permission' : 'mbb_merge_permission',
             'callback' => 'mbb_merge_' . $action,
         ]);
     }

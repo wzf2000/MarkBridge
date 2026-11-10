@@ -3,7 +3,7 @@ Tags: markdown, blocks, editor, mathjax, revisions
 Requires at least: 7.1
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 3.12.4
+Stable tag: 3.12.5
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -28,6 +28,11 @@ Private paired candidate backups for existing managed articles are stored in non
 3. Import a test Markdown draft, preview, save and reopen. Existing Node installations should review the upgrade guide before changing their backend.
 
 == Changelog ==
+
+= 3.12.5 =
+* Author previews include trusted static component projections from the current candidate, including replay titles and step explanations, while preserving math, authored content and reference permissions.
+* Read-only file sources support review capture and candidate previews with binding, paired-source and concurrent-change checks.
+* Read-only candidates cannot be applied. A separate apply validation checks write authority before and after conversion; source saving and merge confirmation retain their write requirements.
 
 = 3.12.4 =
 * Raise the bounded eager provider capacity to 64 so installed extension combinations retain legacy replay and sorting components. Article, schema and execution limits are unchanged.

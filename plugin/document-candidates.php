@@ -77,12 +77,18 @@ function mbb_document_tools_current(int $id, string $expected): array
     }
     $file = null;
     if ($snapshot['source_managed']) {
-        $path = mbb_source_target(get_post($id));
-        if (is_wp_error($path) || !is_writable($path) || !is_writable(dirname($path))) {
+        $path = mbb_source_read_target(get_post($id));
+        if (is_wp_error($path)) {
             mbb_document_tools_fail();
         }
         clearstatcache(true, $path);
         $stat = stat($path);
+        if (
+            !$stat ||
+            !hash_equals($snapshot['source_sha256'], hash('sha256', mbb_merge_read_source($path)))
+        ) {
+            mbb_document_tools_fail();
+        }
         $file = hash(
             'sha256',
             mbb_component_json([
@@ -220,7 +226,32 @@ function mbb_document_tools_unique_json_keys(string $body): void
         }
     }
 }
-function mbb_document_tools_request($r, bool $preview)
+function mbb_document_tools_apply_permission($r)
+{
+    $allowed = mbb_merge_permission($r);
+    if ($allowed !== true) {
+        return $allowed;
+    }
+    $id = (int) $r['post_id'];
+    if (get_post_meta($id, '_mbb_source_managed', true) === 'file') {
+        $read = mbb_source_read_target(get_post($id));
+        $write = mbb_source_target(get_post($id));
+        if (
+            is_wp_error($read) ||
+            is_wp_error($write) ||
+            $read !== $write ||
+            !is_writable(dirname($write))
+        ) {
+            return mbb_error(
+                'source_forbidden',
+                mbb_t('You do not have permission to write this article\'s source file.'),
+                403,
+            );
+        }
+    }
+    return true;
+}
+function mbb_document_tools_request($r, bool $preview, bool $apply = false)
 {
     try {
         $r = mbb_document_tools_input($r, $preview);
@@ -236,6 +267,9 @@ function mbb_document_tools_request($r, bool $preview)
     try {
         $id = $r['post_id'];
         if (!is_int($id) || $id < 1 || !is_string($r['expected'])) {
+            mbb_document_tools_fail();
+        }
+        if ($apply && mbb_document_tools_apply_permission($r) !== true) {
             mbb_document_tools_fail();
         }
         $current = mbb_document_tools_current($id, $r['expected']);
@@ -296,6 +330,9 @@ function mbb_document_tools_request($r, bool $preview)
                 );
             }
             $final = mbb_document_tools_current($id, $r['expected']);
+            if ($apply && mbb_document_tools_apply_permission($r) !== true) {
+                mbb_document_tools_fail();
+            }
             if ($baseline !== $final['claims'] || $claims['expires'] <= time()) {
                 mbb_document_tools_fail();
             }
@@ -320,11 +357,18 @@ function mbb_document_tools_request($r, bool $preview)
     }
 }
 add_action('rest_api_init', static function () {
-    foreach (['capture' => false, 'preview' => true] as $name => $preview) {
+    foreach (['capture' => false, 'preview' => true, 'apply' => true] as $name => $preview) {
         register_rest_route('mbb/v1', '/document-tools/' . $name, [
             'methods' => 'POST',
-            'permission_callback' => 'mbb_merge_permission',
-            'callback' => static fn($r) => mbb_document_tools_request($r, $preview),
+            'permission_callback' =>
+                $name === 'apply'
+                    ? 'mbb_document_tools_apply_permission'
+                    : 'mbb_merge_read_permission',
+            'callback' => static fn($r) => mbb_document_tools_request(
+                $r,
+                $preview,
+                $name === 'apply',
+            ),
         ]);
     }
 });

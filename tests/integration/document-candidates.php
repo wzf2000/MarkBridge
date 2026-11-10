@@ -35,7 +35,7 @@ function dc_wp_request(string $route, array $data)
 $previous = get_current_user_id();
 $user = $id = 0;
 $sourceFile = null;
-$sourceFilter = null;
+$sourceFilter = $readFilter = null;
 try {
     $suffix = bin2hex(random_bytes(6));
     $user = wp_insert_user([
@@ -144,6 +144,46 @@ try {
         'Writable file preview failed',
     );
     dc_wp_assert(file_get_contents($sourceFile) === $source, 'Preview wrote source file');
+    dc_wp_assert(
+        dc_wp_request('document-tools/apply', $filePreview)->get_status() === 200,
+        'Writable file apply validation failed',
+    );
+    remove_filter('mbb_source_write_target', $sourceFilter, 10);
+    $readFilter = $sourceFilter;
+    add_filter('mbb_source_read_target', $readFilter, 10, 2);
+    $readCapture = dc_wp_request('document-tools/capture', $fileInput);
+    dc_wp_assert($readCapture->get_status() === 200, 'Read-only source capture failed');
+    $readPreview = array_replace($filePreview, ['receipt' => $readCapture->get_data()['receipt']]);
+    dc_wp_assert(
+        dc_wp_request('document-tools/preview', $readPreview)->get_status() === 200,
+        'Read-only source preview failed',
+    );
+    dc_wp_assert(
+        dc_wp_request('document-tools/apply', $readPreview)->get_status() === 403,
+        'Read-only apply authorized',
+    );
+    $deniedSave = dc_wp_request(
+        'source-save',
+        $fileInput + [
+            'source' => '# Cannot save',
+            'source_sha256' => hash('sha256', $source),
+        ],
+    );
+    dc_wp_assert(
+        $deniedSave->get_status() === 409 &&
+            $deniedSave->get_data()['code'] === 'source_target_unavailable',
+        'Read-only save did not reject the missing write target',
+    );
+    $revokeRead = static fn($value, $post) => (int) $post->ID === $id ? false : $value;
+    add_filter('mbb_source_read_target', $revokeRead, 20, 2);
+    dc_wp_assert(
+        dc_wp_request('document-tools/preview', $readPreview)->get_status() !== 200,
+        'Revoked read authorized preview',
+    );
+    remove_filter('mbb_source_read_target', $revokeRead, 20);
+    remove_filter('mbb_source_read_target', $readFilter, 10);
+    add_filter('mbb_source_write_target', $sourceFilter, 10, 2);
+
     file_put_contents($sourceFile, $source . 'External edit');
     dc_wp_assert(
         dc_wp_request('document-tools/preview', $filePreview)->get_status() !== 200,
@@ -166,6 +206,12 @@ try {
     dc_wp_assert(mbb_document(get_post($id)) === $original, 'Read-only operations changed body');
     echo "document candidate real REST checks passed\n";
 } finally {
+    if (isset($revokeRead)) {
+        remove_filter('mbb_source_read_target', $revokeRead, 20);
+    }
+    if ($readFilter) {
+        remove_filter('mbb_source_read_target', $readFilter, 10);
+    }
     if ($sourceFilter) {
         remove_filter('mbb_source_write_target', $sourceFilter, 10);
     }
