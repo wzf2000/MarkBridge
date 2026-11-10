@@ -43,12 +43,8 @@ function ap_math(string $html): array
     }
     return $math;
 }
-function ap_revoke_renderer(object $params, array $context): array
-{
-    $tree = mbbtc_replay_projection($params, $context);
-    wp_set_current_user(0);
-    return $tree;
-}
+$callbackFile = dirname(__DIR__) . '/fixtures/author-revoke-projection.php';
+require $callbackFile;
 $previous = get_current_user_id();
 $registry = $GLOBALS['mbb_projection_renderers'];
 try {
@@ -150,8 +146,8 @@ try {
     unset($GLOBALS['mbb_projection_renderers']['teaching-replay@0.1.0']);
     $definition['render'] = 'ap_revoke_renderer';
     $definition['files'][] = [
-        'file' => realpath(__FILE__),
-        'sha256' => hash_file('sha256', __FILE__),
+        'file' => realpath($callbackFile),
+        'sha256' => hash_file('sha256', $callbackFile),
     ];
     ap_assert(
         mbb_register_component_projection('teaching-replay', '0.1.0', $definition),
