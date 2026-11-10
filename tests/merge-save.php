@@ -327,6 +327,31 @@ try {
         return (int) $p->ID === $id ? $target : $value;
     };
     add_filter('mbb_source_write_target', $mapping, 10, 2);
+    $sourceOriginal = $final['source'];
+    foreach (
+        [$sourceOriginal . "\nWritable source roundtrip.\n", $sourceOriginal]
+        as $sourceCandidate
+    ) {
+        $post = get_post($id);
+        mgs_ok(
+            mgs_call('/mbb/v1/source-save', [
+                'mode' => 'markdown',
+                'post_id' => $id,
+                'expected' => mbb_token($post),
+                'source_sha256' => hash_file('sha256', $file),
+                'source' => $sourceCandidate,
+                'title' => $post->post_title,
+                'post_status' => $post->post_status,
+                'featured_media' => (int) get_post_thumbnail_id($id),
+            ]),
+            'Writable source-save roundtrip failed',
+        );
+        mgs_assert(
+            file_get_contents($file) === $sourceCandidate &&
+                get_post($id)->post_content_filtered === $sourceCandidate,
+            'Source-save file/pair mismatch',
+        );
+    }
     $sourceA = mgs_ok(
         mgs_call('/mbb/v1/merge/open', [
             'schema' => 1,
@@ -357,13 +382,22 @@ try {
     update_post_meta($id, '_mbb_source_path_hash', hash('sha256', realpath($file)));
     $capability = static fn() => 'manage_options';
     add_filter('mbb_source_write_capability', $capability);
-    mgs_assert(
+    $readOnlyOpening = mgs_ok(
         mgs_call('/mbb/v1/merge/open', [
             'schema' => 1,
             'post_id' => $id,
             'expected' => mbb_token(get_post($id)),
+        ]),
+        'Missing write permission incorrectly blocked read-only opening',
+    );
+    mgs_assert(
+        mgs_call('/mbb/v1/merge/latest', [
+            'schema' => 1,
+            'post_id' => $id,
+            'opening' => $readOnlyOpening,
+            'candidate' => $mine,
         ])->get_status() === 403,
-        'Missing source write permission accepted',
+        'Missing source write permission accepted latest confirmation',
     );
     remove_filter('mbb_source_write_capability', $capability);
     $capability = null;
