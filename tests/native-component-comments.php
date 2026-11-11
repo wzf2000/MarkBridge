@@ -96,6 +96,7 @@ foreach (
         ],
         ['fraction-v2', (object) ['answer' => 0.1, 'tolerance' => 1e-8, 'integer' => false], 2],
         ['nested-components', new stdClass(), 1],
+        ['decimal-v2', (object) ['answer' => 1.1, 'tolerance' => 0.000001, 'integer' => false], 2],
     ]
     as [$name, $params, $version]
 ) {
@@ -139,6 +140,17 @@ foreach (
     );
     $repaired = mbb_native_component_comment_bytes($prepared, $incoming);
     $read = mbb_native_component_read_bytes($prepared, $incoming);
+    native_comment_check(
+        $read === $incoming,
+        'editor read restores exact component bytes ' . $name,
+    );
+    if ($name === 'decimal-v2') {
+        native_comment_check(
+            str_contains($incoming, '"tolerance":0.000001') &&
+                str_contains($prepared, '"tolerance":1.0e-6'),
+            'actual core read projects a decimal tolerance to exponent notation',
+        );
+    }
     preg_match('/<!-- wp:mbb\/component (\{[\s\S]*?\}) -->/', $incoming, $beforeHeader);
     preg_match('/<!-- wp:mbb\/component (\{[\s\S]*?\}) -->/', $read, $readHeader);
     native_comment_check(
@@ -286,12 +298,10 @@ foreach (['value', 'metadata', 'type', 'structure'] as $change) {
         $changed[0]['innerContent'] = array_values($changed[0]['innerContent']);
     }
     $serialized = serialize_blocks($changed);
-    if (in_array($change, ['value', 'type'], true)) {
-        native_comment_check(
-            mbb_native_component_read_bytes($serialized, $incoming) === $serialized,
-            'editor read does not reverse semantic ' . $change . ' changes',
-        );
-    }
+    native_comment_check(
+        mbb_native_component_read_bytes($serialized, $incoming) === $serialized,
+        'editor read does not reverse genuine ' . $change . ' changes',
+    );
     native_comment_check(
         mbb_native_component_comment_bytes($serialized, $incoming) === $serialized,
         'actual ' . $change . ' must not be restored',
@@ -299,6 +309,10 @@ foreach (['value', 'metadata', 'type', 'structure'] as $change) {
 }
 $wrapped = '<!-- wp:group --><div class="wp-block-group">' . $prepared . '</div><!-- /wp:group -->';
 $wrapped = serialize_blocks(parse_blocks($wrapped));
+native_comment_check(
+    mbb_native_component_read_bytes($wrapped, $incoming) === $wrapped,
+    'editor read retains changed enclosing structure',
+);
 native_comment_check(
     mbb_native_component_comment_bytes($wrapped, $incoming) === $wrapped,
     'changed enclosing structure must not restore',

@@ -91,6 +91,9 @@ function mbb_native_component_read_bytes(string $projected, string $stored): str
         }
         $counts[$a->id] = ($counts[$a->id] ?? 0) + 1;
     }
+    // Restore only a byte-exact core serialization of an unchanged component subtree.
+    // Validate both header sets first: ambiguous or malformed JSON must stay projected.
+    $projected = mbb_native_component_comment_bytes($projected, $stored);
     return preg_replace_callback(
         $pattern,
         static function ($match) use ($headers, $counts) {

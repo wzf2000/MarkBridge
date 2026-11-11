@@ -102,6 +102,57 @@ try {
         mbb_component_equal(native_read_params($read->get_data()['content']['raw']), $params),
         'Actual editor REST read preserves nested empty objects and legitimate arrays',
     );
+    $numericSource = str_replace(
+        '"params":' . wp_json_encode($params, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+        '"params":{"answer":1.1,"tolerance":0.000001,"integer":false}',
+        $source,
+    );
+    native_read_assert($numericSource !== $source, 'Decimal tolerance fixture differs');
+    $numericPair = mbb_convert([
+        'mode' => 'markdown',
+        'source' => $numericSource,
+        'documentId' => $identity . 'Decimal',
+    ]);
+    native_read_assert(!is_wp_error($numericPair), 'Decimal tolerance pair converts');
+    $numericId = wp_insert_post(
+        wp_slash([
+            'post_type' => 'post',
+            'post_status' => 'draft',
+            'post_author' => get_current_user_id(),
+            'post_title' => $identity . 'Decimal',
+            'post_content' => $numericPair['serialized'],
+            'post_content_filtered' => $numericPair['source'],
+        ]),
+        true,
+    );
+    native_read_assert(!is_wp_error($numericId) && $numericId > 0, 'Owned decimal draft created');
+    $readPosts[] = $numericId;
+    update_post_meta($numericId, '_mbb_origin', 'markdown_import');
+    update_post_meta($numericId, '_mbb_document_id', $identity . 'Decimal');
+    $numericToken = mbb_token(get_post($numericId));
+    $numericRevisions = array_keys(wp_get_post_revisions($numericId));
+    remove_filter('rest_prepare_post', 'mbb_native_component_read_response', 20);
+    try {
+        $numericProjected = native_read_request($numericId)->get_data()['content']['raw'];
+        native_read_assert(
+            str_contains($numericPair['serialized'], '"tolerance":0.000001') &&
+                str_contains($numericProjected, '"tolerance":1.0e-6') &&
+                $numericProjected !== $numericPair['serialized'],
+            'Real REST core projection changes decimal tolerance bytes',
+        );
+    } finally {
+        add_filter('rest_prepare_post', 'mbb_native_component_read_response', 20, 3);
+    }
+    $numericRead = native_read_request($numericId)->get_data()['content']['raw'];
+    clean_post_cache($numericId);
+    native_read_assert(
+        $numericRead === $numericPair['serialized'] &&
+            get_post($numericId)->post_content === $numericPair['serialized'] &&
+            get_post($numericId)->post_content_filtered === $numericPair['source'] &&
+            mbb_token(get_post($numericId)) === $numericToken &&
+            array_keys(wp_get_post_revisions($numericId)) === $numericRevisions,
+        'Decimal editor read matches the saved pair without writes or revision changes',
+    );
     $ordinaryRead = native_read_request($ordinary);
     native_read_assert(
         is_array(native_read_params($ordinaryRead->get_data()['content']['raw'])->empty),

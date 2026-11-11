@@ -3,7 +3,7 @@ Tags: markdown, blocks, editor, mathjax, revisions
 Requires at least: 7.1
 Tested up to: 7.1
 Requires PHP: 8.2
-Stable tag: 3.12.5
+Stable tag: 3.12.6
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
@@ -28,6 +28,9 @@ Private paired candidate backups for existing managed articles are stored in non
 3. Import a test Markdown draft, preview, save and reopen. Existing Node installations should review the upgrade guide before changing their backend.
 
 == Changelog ==
+
+= 3.12.6 =
+* Preserve exact component comment bytes when WordPress rewrites decimal parameters into exponent notation during editor reads. Unchanged articles can open document review; genuine hook changes, permissions and stored content remain intact.
 
 = 3.12.5 =
 * Author previews include trusted static component projections from the current candidate, including replay titles and step explanations, while preserving math, authored content and reference permissions.
